@@ -216,6 +216,85 @@ export default function ScholarshipScreeningPage() {
             </section>
 
             <section className="screening-section">
+              <h2>Eligibility Rules</h2>
+              <ul className="rules-list">
+                <li className="rules-item">
+                  <span className="rules-item-label">Top 1 (free all, no entrance exam, no interview)</span>
+                  <span className={application.eligibilityRules.isTopOne ? "rules-badge-yes" : "rules-badge-no"}>
+                    {application.eligibilityRules.isTopOne ? "Yes" : "No"}
+                  </span>
+                </li>
+                <li className="rules-item">
+                  <span className="rules-item-label">Entrance Exam Required (Non-BCASian)</span>
+                  <span
+                    className={
+                      application.eligibilityRules.entranceExamRequired === null
+                        ? "rules-badge-unknown"
+                        : application.eligibilityRules.entranceExamRequired
+                          ? "rules-badge-yes"
+                          : "rules-badge-no"
+                    }
+                  >
+                    {application.eligibilityRules.entranceExamRequired === null
+                      ? "Unknown"
+                      : application.eligibilityRules.entranceExamRequired
+                        ? "Required"
+                        : "Not Required"}
+                  </span>
+                </li>
+                {application.eligibilityRules.entranceExamRequired && (
+                  <li className="rules-item">
+                    <span className="rules-item-label">Entrance Exam Scheduled</span>
+                    <span
+                      className={
+                        application.eligibilityRules.entranceExamScheduled ? "rules-badge-yes" : "rules-badge-no"
+                      }
+                    >
+                      {application.eligibilityRules.entranceExamScheduled ? "Yes" : "Not Yet"}
+                    </span>
+                  </li>
+                )}
+                <li className="rules-item">
+                  <span className="rules-item-label">Scholarship Slots</span>
+                  <span className="rules-item-value">
+                    {application.eligibilityRules.remainingSlots} remaining of{" "}
+                    {application.eligibilityRules.totalSlots}
+                  </span>
+                </li>
+                <li className="rules-item">
+                  <span className="rules-item-label">Reapplication</span>
+                  <span className={application.eligibilityRules.isReapplication ? "rules-badge-yes" : "rules-badge-no"}>
+                    {application.eligibilityRules.isReapplication ? "Yes" : "No"}
+                  </span>
+                </li>
+              </ul>
+
+              {application.eligibilityRules.previousAttempts.length > 0 && (
+                <div className="reapplication-history">
+                  <h3>Previous Attempts for This Scholarship</h3>
+                  <ul className="reapplication-list">
+                    {application.eligibilityRules.previousAttempts.map((attempt) => (
+                      <li key={attempt.applicationId} className="reapplication-row">
+                        <span className="reapplication-status">{attempt.status}</span>
+                        <span className="reapplication-verdict">
+                          {attempt.screeningVerdict
+                            ? attempt.screeningVerdict === "Qualified"
+                              ? "Qualified"
+                              : "Not Qualified"
+                            : "Not screened"}
+                        </span>
+                        <span className="reapplication-date">{formatDateTime(attempt.submittedAt)}</span>
+                        {attempt.screeningRemarks && (
+                          <span className="reapplication-remarks">"{attempt.screeningRemarks}"</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
+
+            <section className="screening-section">
               <h2>Submitted Documents</h2>
               {application.documents.length === 0 ? (
                 <p>No documents uploaded yet.</p>

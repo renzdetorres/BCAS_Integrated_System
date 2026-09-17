@@ -606,3 +606,37 @@ BEGIN
         ADD UpdatedAt DATETIME2(3) NOT NULL CONSTRAINT DF_ScholarshipApplications_UpdatedAt DEFAULT SYSUTCDATETIME();
 END
 GO
+
+-- -----------------------------------------------------------------------------
+-- Scholarships.IsTopOne + Top 1 Scholarship seed row
+-- BISAASS-44 Scholarship Eligibility Rules Engine. IsTopOne marks the "Top
+-- 1: free all, no entrance exam, no interview" tier (see
+-- EvaluatorScholarshipApplicationRepository, which folds this into the
+-- eligibility rules it computes for the Evaluator). The other three rules
+-- in this ticket don't need new schema:
+--   * Non-BCASian: entrance exam required - reads ApplicantProfiles.IsBcasian
+--     (already exists) and dbo.ExamScheduleSelections (already exists,
+--     BISAASS-20) for whether the applicant has one scheduled.
+--   * Academic/Entrance Scholarship: limited slots - already
+--     TotalSlots/RemainingSlots (BISAASS-17), already enforced at
+--     submission by ScholarshipApplicationRepository.CreateAsync.
+--   * Reapplication - already unrestricted (nothing ever blocked a second
+--     application for the same scholarship); the rules engine surfaces the
+--     applicant's prior attempts for this same scholarship, by querying
+--     ScholarshipApplications/ScholarshipEligibilityScreenings, so an
+--     Evaluator has that context per "subject to school rules" - no new
+--     table needed to track that a given attempt is a reapplication.
+-- -----------------------------------------------------------------------------
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.Scholarships') AND name = N'IsTopOne'
+)
+BEGIN
+    ALTER TABLE dbo.Scholarships ADD IsTopOne BIT NOT NULL CONSTRAINT DF_Scholarships_IsTopOne DEFAULT (0);
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.Scholarships WHERE Name = N'Top 1 Scholarship')
+    INSERT INTO dbo.Scholarships (Name, ScholarshipType, TotalSlots, RemainingSlots, MinimumGradeAverage, IsTopOne) VALUES
+        (N'Top 1 Scholarship', N'TopOne', 3, 3, 95.00, 1);
+GO
