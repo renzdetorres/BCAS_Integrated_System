@@ -89,6 +89,7 @@ export default function ExamSchedulePage() {
               <p className="exam-schedule-confirmed-label">Your confirmed schedule</p>
               <p className="exam-schedule-confirmed-date">{formatDate(selection.examDate)}</p>
               <p className="exam-schedule-confirmed-time">{formatTime(selection.examTime)}</p>
+              <Link to="/exam-permit">View my exam permit &rarr;</Link>
             </div>
           )}
 
@@ -118,7 +119,7 @@ export default function ExamSchedulePage() {
                 >
                   {schedules.map((s) => (
                     <option key={s.examScheduleId} value={s.examScheduleId}>
-                      {s.dayType} &middot; {formatDate(s.examDate)} &middot; {formatTime(s.examTime)}
+                      {s.dayType} &middot; {formatDate(s.examDate)} &middot; {formatTime(s.examTime)} &middot; {s.venue}
                     </option>
                   ))}
                 </select>

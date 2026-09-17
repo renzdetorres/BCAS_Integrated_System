@@ -10,6 +10,7 @@ public static class ExamScheduleMappingExtensions
         DayType = schedule.DayType,
         ExamDate = schedule.ExamDate,
         ExamTime = schedule.ExamTime,
+        Venue = schedule.Venue,
     };
 
     public static ExamScheduleSelectionResponse ToResponse(this ExamScheduleSelection selection) => new()

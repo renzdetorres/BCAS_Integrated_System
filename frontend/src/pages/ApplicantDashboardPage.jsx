@@ -18,6 +18,7 @@ const QUICK_LINKS = [
   { to: "/scholarships", label: "Scholarship Application" },
   { to: "/documents", label: "Documents" },
   { to: "/exam-schedule", label: "Entrance Exam Schedule" },
+  { to: "/exam-permit", label: "Exam Permit" },
   { to: "/announcements", label: "Announcements" },
 ];
 

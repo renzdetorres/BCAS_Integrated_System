@@ -40,6 +40,8 @@ builder.Services.AddScoped<IApplicationHistoryRepository, ApplicationHistoryRepo
 builder.Services.AddScoped<IApplicationHistoryService, ApplicationHistoryService>();
 builder.Services.AddScoped<IExamScheduleRepository, ExamScheduleRepository>();
 builder.Services.AddScoped<IExamScheduleService, ExamScheduleService>();
+builder.Services.AddScoped<IExamRescheduleRequestRepository, ExamRescheduleRequestRepository>();
+builder.Services.AddScoped<IExamPermitService, ExamPermitService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

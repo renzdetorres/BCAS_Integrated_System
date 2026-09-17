@@ -439,16 +439,19 @@ Applicant picks an entrance-exam schedule from a list of slots. Adds two
 tables (`database/schema.sql`):
 
 - `ExamSchedules` - the catalog of selectable slots (`DayType` of
-  `Saturday`/`Weekday`, `ExamDate`, `ExamTime`, `IsOffered`). No
+  `Saturday`/`Weekday`, `ExamDate`, `ExamTime`, `Venue`, `IsOffered`). No
   admin-management endpoint exists for it yet, so it's seeded the same way
   `Deadlines` and `Scholarships` were. `Saturday` rows are always
   selectable regardless of `IsOffered` - that flag only gates `Weekday`
   rows, standing in for the "set by Admin-Registrar based on teacher
   availability" rule from this ticket's acceptance criteria until an admin
-  UI for it exists.
+  UI for it exists. (`Venue` was added in BISAASS-21 for the exam permit.)
 - `ExamScheduleSelections` - one-to-one with `Users` (like
-  `ApplicantProfiles`): an applicant has a single confirmed exam schedule,
-  and selecting again replaces it rather than accumulating history.
+  `ApplicantProfiles`, enforced via a `UNIQUE` constraint on `UserId`): an
+  applicant has a single confirmed exam schedule, and selecting again
+  replaces it rather than accumulating history. Its own surrogate
+  `ExamScheduleSelectionId` (added in BISAASS-21) is what the exam permit's
+  permit number is derived from.
 
 ### API
 
@@ -479,3 +482,70 @@ Request body:
 applicant's confirmed date and time (once one is selected) above a picker
 of the currently available schedules. Linked from the dashboard's quick
 links as "Entrance Exam Schedule".
+
+## BISAASS-21: Exam Permit View, Download & Rescheduling Request
+
+Applicant views/downloads the permit for their confirmed entrance exam,
+and can request to be rescheduled off it. Builds directly on
+BISAASS-20's `ExamScheduleSelections` row - there's no separate "issue the
+permit" step; a confirmed schedule *is* an issued permit, identified by a
+permit number derived from the selection's own id
+(`EP-` + `ExamScheduleSelectionId` zero-padded to 6 digits, e.g.
+`EP-000001` - see `ExamPermitMappingExtensions`), so there's no separate
+counter to keep in sync.
+
+Adds one table (`database/schema.sql`):
+
+- `ExamRescheduleRequests` - an applicant's request to move off their
+  confirmed schedule (`Reason`, `Status`). A filtered unique index allows
+  at most one `Pending` request per applicant at the database level,
+  backing up the same check in `ExamRescheduleRequestRepository`. The
+  `Status` `CHECK` constraint already allows `Approved`/`Rejected` too,
+  anticipating the Admin-Registrar approval workflow (a later ticket, no
+  UI yet) the same way `AdmissionApplications`/`ScholarshipApplications`
+  anticipated their own future workflows - so once that ticket lands and
+  approves a request by updating the applicant's `ExamScheduleSelections`
+  row to a new schedule, `GET /api/exam-permit` picks it up automatically
+  without further changes here, since it always reads the current
+  selection live. Until then a request only ever reaches `Pending`.
+
+"Downloadable/printable" is handled entirely client-side (`window.print()`
+plus a `@media print` stylesheet that hides everything but the permit
+card) rather than generating a PDF server-side - consistent with the
+project having no PDF-generation dependency anywhere else (`ApplicantDocuments`
+stores PDFs applicants upload, it doesn't produce them).
+
+### API
+
+All endpoints require the `bcas_auth` cookie for the `Applicant` role.
+
+`GET /api/exam-permit` - `200 OK` with the caller's permit
+(`permitNumber`, `examScheduleId`, `dayType`, `examDate`, `examTime`,
+`venue`, `issuedAt`), or `400 Bad Request` if no schedule has been
+selected yet (reuses BISAASS-20's `ExamScheduleSelections` lookup).
+
+`GET /api/exam-permit/reschedule-request` - `200 OK` with the caller's
+most recently submitted reschedule request (`requestId`, `reason`,
+`status`, `submittedAt`), or `404 Not Found` if they've never submitted
+one.
+
+`POST /api/exam-permit/reschedule-request`
+
+Request body:
+```json
+{ "reason": "I have a scheduling conflict on that date." }
+```
+- `201 Created` with the new request (`status: "Pending"`).
+- `400 Bad Request` if no schedule has been selected yet, or if the caller
+  already has a request awaiting a decision.
+
+### Frontend
+
+`/exam-permit` (gated by `RequireRole(["Applicant"])`) shows the permit
+card (permit number, schedule, date, time, venue) with a "Print / Save as
+PDF" button, and below it a reschedule section: a reason form when there's
+no request pending, or a status badge (Pending/Approved/Rejected) with the
+submitted reason otherwise. Prompts to pick a schedule first
+(linking to `/exam-schedule`) if the applicant hasn't selected one.
+Linked from the dashboard's quick links as "Exam Permit", and from
+`/exam-schedule`'s confirmation banner once a schedule is selected.
