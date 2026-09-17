@@ -19,7 +19,7 @@ public class ExamScheduleRepository : IExamScheduleRepository
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
-SELECT ExamScheduleId, DayType, ExamDate, ExamTime, IsOffered
+SELECT ExamScheduleId, DayType, ExamDate, ExamTime, Venue, IsOffered
 FROM dbo.ExamSchedules
 WHERE DayType = N'Saturday' OR (DayType = N'Weekday' AND IsOffered = 1)
 ORDER BY ExamDate ASC, ExamTime ASC;";
@@ -41,7 +41,8 @@ ORDER BY ExamDate ASC, ExamTime ASC;";
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
-SELECT sel.UserId, sel.ExamScheduleId, sch.DayType, sch.ExamDate, sch.ExamTime, sel.SelectedAt
+SELECT sel.ExamScheduleSelectionId, sel.UserId, sel.ExamScheduleId, sch.DayType, sch.ExamDate, sch.ExamTime,
+       sch.Venue, sel.SelectedAt
 FROM dbo.ExamScheduleSelections sel
 JOIN dbo.ExamSchedules sch ON sch.ExamScheduleId = sel.ExamScheduleId
 WHERE sel.UserId = @UserId;";
@@ -126,16 +127,19 @@ WHEN NOT MATCHED THEN
         DayType = reader.GetString(reader.GetOrdinal("DayType")),
         ExamDate = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("ExamDate"))),
         ExamTime = TimeOnly.FromTimeSpan(reader.GetTimeSpan(reader.GetOrdinal("ExamTime"))),
+        Venue = reader.GetString(reader.GetOrdinal("Venue")),
         IsOffered = reader.GetBoolean(reader.GetOrdinal("IsOffered")),
     };
 
     private static ExamScheduleSelection MapSelection(SqlDataReader reader) => new()
     {
+        ExamScheduleSelectionId = reader.GetInt32(reader.GetOrdinal("ExamScheduleSelectionId")),
         UserId = reader.GetGuid(reader.GetOrdinal("UserId")),
         ExamScheduleId = reader.GetInt32(reader.GetOrdinal("ExamScheduleId")),
         DayType = reader.GetString(reader.GetOrdinal("DayType")),
         ExamDate = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("ExamDate"))),
         ExamTime = TimeOnly.FromTimeSpan(reader.GetTimeSpan(reader.GetOrdinal("ExamTime"))),
+        Venue = reader.GetString(reader.GetOrdinal("Venue")),
         SelectedAt = reader.GetDateTime(reader.GetOrdinal("SelectedAt")),
     };
 }

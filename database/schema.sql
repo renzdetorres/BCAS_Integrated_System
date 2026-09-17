@@ -307,6 +307,8 @@ GO
 -- enforced in the query (see ExamScheduleRepository), not by ever forcing
 -- Saturday's IsOffered to 1. No admin-management endpoint exists yet, so
 -- rows are seeded here, the same way Deadlines and Scholarships were.
+-- Venue was added in BISAASS-21 - the exam permit shows it alongside the
+-- date/time, so it lives on the slot rather than the selection.
 -- -----------------------------------------------------------------------------
 IF OBJECT_ID(N'dbo.ExamSchedules', N'U') IS NULL
 BEGIN
@@ -316,6 +318,7 @@ BEGIN
         DayType         NVARCHAR(10)    NOT NULL,
         ExamDate        DATE            NOT NULL,
         ExamTime        TIME(0)         NOT NULL,
+        Venue           NVARCHAR(200)   NOT NULL,
         IsOffered       BIT             NOT NULL CONSTRAINT DF_ExamSchedules_IsOffered DEFAULT (1),
         CreatedAt       DATETIME2(3)    NOT NULL CONSTRAINT DF_ExamSchedules_CreatedAt DEFAULT SYSUTCDATETIME(),
         CONSTRAINT CK_ExamSchedules_DayType CHECK (DayType IN (N'Saturday', N'Weekday'))
@@ -324,15 +327,15 @@ END
 GO
 
 IF NOT EXISTS (SELECT 1 FROM dbo.ExamSchedules WHERE DayType = N'Saturday' AND ExamDate = '2026-10-03')
-    INSERT INTO dbo.ExamSchedules (DayType, ExamDate, ExamTime, IsOffered) VALUES (N'Saturday', '2026-10-03', '08:00', 1);
+    INSERT INTO dbo.ExamSchedules (DayType, ExamDate, ExamTime, Venue, IsOffered) VALUES (N'Saturday', '2026-10-03', '08:00', N'BCAS Main Campus - Gymnasium', 1);
 IF NOT EXISTS (SELECT 1 FROM dbo.ExamSchedules WHERE DayType = N'Saturday' AND ExamDate = '2026-10-10')
-    INSERT INTO dbo.ExamSchedules (DayType, ExamDate, ExamTime, IsOffered) VALUES (N'Saturday', '2026-10-10', '08:00', 1);
+    INSERT INTO dbo.ExamSchedules (DayType, ExamDate, ExamTime, Venue, IsOffered) VALUES (N'Saturday', '2026-10-10', '08:00', N'BCAS Main Campus - Gymnasium', 1);
 IF NOT EXISTS (SELECT 1 FROM dbo.ExamSchedules WHERE DayType = N'Saturday' AND ExamDate = '2026-10-17')
-    INSERT INTO dbo.ExamSchedules (DayType, ExamDate, ExamTime, IsOffered) VALUES (N'Saturday', '2026-10-17', '08:00', 1);
+    INSERT INTO dbo.ExamSchedules (DayType, ExamDate, ExamTime, Venue, IsOffered) VALUES (N'Saturday', '2026-10-17', '08:00', N'BCAS Main Campus - Gymnasium', 1);
 IF NOT EXISTS (SELECT 1 FROM dbo.ExamSchedules WHERE DayType = N'Weekday' AND ExamDate = '2026-10-06')
-    INSERT INTO dbo.ExamSchedules (DayType, ExamDate, ExamTime, IsOffered) VALUES (N'Weekday', '2026-10-06', '13:00', 1);
+    INSERT INTO dbo.ExamSchedules (DayType, ExamDate, ExamTime, Venue, IsOffered) VALUES (N'Weekday', '2026-10-06', '13:00', N'BCAS Main Campus - Room 201', 1);
 IF NOT EXISTS (SELECT 1 FROM dbo.ExamSchedules WHERE DayType = N'Weekday' AND ExamDate = '2026-10-08')
-    INSERT INTO dbo.ExamSchedules (DayType, ExamDate, ExamTime, IsOffered) VALUES (N'Weekday', '2026-10-08', '13:00', 0);
+    INSERT INTO dbo.ExamSchedules (DayType, ExamDate, ExamTime, Venue, IsOffered) VALUES (N'Weekday', '2026-10-08', '13:00', N'BCAS Main Campus - Room 201', 0);
 GO
 
 -- -----------------------------------------------------------------------------
@@ -340,16 +343,57 @@ GO
 -- One-to-one with Users (BISAASS-20) - an applicant has a single confirmed
 -- entrance-exam schedule; selecting again replaces it (see
 -- ExamScheduleRepository.SelectAsync), it isn't accumulated as history.
+-- ExamScheduleSelectionId (added in BISAASS-21) is a surrogate key purely so
+-- the exam permit has a stable, human-readable permit number
+-- ("EP-" + the id, zero-padded - see ExamPermitMappingExtensions) without a
+-- separate counter table; UserId keeps the one-per-applicant rule via its
+-- own UNIQUE constraint instead of being the primary key.
 -- -----------------------------------------------------------------------------
 IF OBJECT_ID(N'dbo.ExamScheduleSelections', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.ExamScheduleSelections
     (
-        UserId          UNIQUEIDENTIFIER NOT NULL CONSTRAINT PK_ExamScheduleSelections PRIMARY KEY,
-        ExamScheduleId  INT              NOT NULL,
-        SelectedAt      DATETIME2(3)     NOT NULL CONSTRAINT DF_ExamScheduleSelections_SelectedAt DEFAULT SYSUTCDATETIME(),
+        ExamScheduleSelectionId INT              NOT NULL IDENTITY(1,1) CONSTRAINT PK_ExamScheduleSelections PRIMARY KEY,
+        UserId                  UNIQUEIDENTIFIER NOT NULL,
+        ExamScheduleId          INT              NOT NULL,
+        SelectedAt              DATETIME2(3)     NOT NULL CONSTRAINT DF_ExamScheduleSelections_SelectedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT UQ_ExamScheduleSelections_UserId UNIQUE (UserId),
         CONSTRAINT FK_ExamScheduleSelections_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId),
         CONSTRAINT FK_ExamScheduleSelections_ExamSchedules FOREIGN KEY (ExamScheduleId) REFERENCES dbo.ExamSchedules (ExamScheduleId)
     );
+END
+GO
+
+-- -----------------------------------------------------------------------------
+-- ExamRescheduleRequests
+-- An applicant's request to move off their confirmed exam schedule
+-- (BISAASS-21). The filtered unique index keeps at most one Pending request
+-- per applicant at the database level, backing up the same check in
+-- ExamRescheduleRequestRepository. Approving/rejecting a request - and, on
+-- approval, moving the applicant's ExamScheduleSelections row to a new
+-- schedule - is an Admin-Registrar action with no UI yet (a later ticket);
+-- the wider Status CHECK anticipates it without needing a schema change,
+-- the same way AdmissionApplications/ScholarshipApplications did for their
+-- own future workflows. Until then a request only ever reaches Pending.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.ExamRescheduleRequests', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ExamRescheduleRequests
+    (
+        RequestId       UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_ExamRescheduleRequests_RequestId DEFAULT NEWID(),
+        UserId          UNIQUEIDENTIFIER NOT NULL,
+        Reason          NVARCHAR(500)    NOT NULL,
+        Status          NVARCHAR(20)     NOT NULL CONSTRAINT DF_ExamRescheduleRequests_Status DEFAULT (N'Pending'),
+        SubmittedAt     DATETIME2(3)     NOT NULL CONSTRAINT DF_ExamRescheduleRequests_SubmittedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_ExamRescheduleRequests PRIMARY KEY (RequestId),
+        CONSTRAINT FK_ExamRescheduleRequests_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT CK_ExamRescheduleRequests_Status CHECK (Status IN (N'Pending', N'Approved', N'Rejected'))
+    );
+
+    CREATE NONCLUSTERED INDEX IX_ExamRescheduleRequests_UserId ON dbo.ExamRescheduleRequests (UserId);
+
+    CREATE UNIQUE NONCLUSTERED INDEX UQ_ExamRescheduleRequests_UserId_Pending
+        ON dbo.ExamRescheduleRequests (UserId)
+        WHERE Status = N'Pending';
 END
 GO

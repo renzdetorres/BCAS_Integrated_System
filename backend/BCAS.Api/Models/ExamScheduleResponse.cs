@@ -6,4 +6,5 @@ public class ExamScheduleResponse
     public string DayType { get; set; } = string.Empty;
     public DateOnly ExamDate { get; set; }
     public TimeOnly ExamTime { get; set; }
+    public string Venue { get; set; } = string.Empty;
 }

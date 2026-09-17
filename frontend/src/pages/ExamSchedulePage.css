@@ -58,6 +58,15 @@
   color: #1a2332;
 }
 
+.exam-schedule-confirmed a {
+  display: inline-block;
+  margin-top: 8px;
+  color: #1e7e34;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
 .exam-schedule-confirmed-time {
   margin: 2px 0 0;
   color: #5c6b7a;
