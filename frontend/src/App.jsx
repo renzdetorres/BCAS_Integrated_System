@@ -19,6 +19,7 @@ import ExamSchedulePage from "./pages/ExamSchedulePage.jsx";
 import ExamPermitPage from "./pages/ExamPermitPage.jsx";
 import ApplicationTrackingPage from "./pages/ApplicationTrackingPage.jsx";
 import ApplicationReceiptPage from "./pages/ApplicationReceiptPage.jsx";
+import ScholarshipScreeningPage from "./pages/ScholarshipScreeningPage.jsx";
 
 export default function App() {
   return (
@@ -35,6 +36,12 @@ export default function App() {
               <Route path="/admin/users" element={<ManageUsersPage />} />
               <Route path="/admin/notification-settings" element={<NotificationSettingsPage />} />
               <Route path="/admin/settings" element={<AdminSettingsPage />} />
+            </Route>
+            <Route element={<RequireRole allowedRoles={["Evaluator"]} />}>
+              <Route
+                path="/evaluator/scholarship-applications/:applicationId"
+                element={<ScholarshipScreeningPage />}
+              />
             </Route>
             <Route element={<RequireRole allowedRoles={["Applicant"]} />}>
               <Route path="/profile" element={<ApplicantProfilePage />} />

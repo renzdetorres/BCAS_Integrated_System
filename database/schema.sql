@@ -513,3 +513,55 @@ IF NOT EXISTS (SELECT 1 FROM dbo.SystemSettings WHERE SettingKey = N'Scholarship
     INSERT INTO dbo.SystemSettings (SettingKey, DisplayName, Description, IsEnabled) VALUES
         (N'ScholarshipApplicationsOpen', N'Scholarship Applications Open', N'When off, applicants cannot submit new scholarship applications. Existing applications already in the workflow are unaffected.', 1);
 GO
+
+-- -----------------------------------------------------------------------------
+-- Scholarships.MinimumGradeAverage
+-- BISAASS-42 Scholarship Screening. The "scholarship requirement" an
+-- Evaluator checks an applicant's GradeAverage against before recording a
+-- Qualified/Not Qualified verdict. Nullable - a scholarship with no minimum
+-- set simply has nothing to compare against (see
+-- EvaluatorScholarshipApplicationRepository, which reports
+-- MeetsMinimumGrade as unknown rather than false in that case). Scholarships
+-- already exists in earlier-provisioned databases, so this is an ALTER
+-- rather than a column on the CREATE TABLE above; the backfill only touches
+-- rows that haven't already been given a value, so it's safe to re-run.
+-- -----------------------------------------------------------------------------
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.Scholarships') AND name = N'MinimumGradeAverage'
+)
+BEGIN
+    ALTER TABLE dbo.Scholarships ADD MinimumGradeAverage DECIMAL(5,2) NULL;
+END
+GO
+
+UPDATE dbo.Scholarships SET MinimumGradeAverage = 90.00 WHERE Name = N'Academic Excellence Scholarship' AND MinimumGradeAverage IS NULL;
+UPDATE dbo.Scholarships SET MinimumGradeAverage = 80.00 WHERE Name = N'Financial Need Grant' AND MinimumGradeAverage IS NULL;
+UPDATE dbo.Scholarships SET MinimumGradeAverage = 75.00 WHERE Name = N'Athletic Scholarship' AND MinimumGradeAverage IS NULL;
+GO
+
+-- -----------------------------------------------------------------------------
+-- ScholarshipEligibilityScreenings
+-- BISAASS-42 Scholarship Screening. One row per application - a re-screening
+-- (the Evaluator changes their mind) replaces the row in place via MERGE
+-- (see EvaluatorScholarshipApplicationRepository.UpsertScreeningAsync), the
+-- same "latest state, no history" convention ApplicantDocuments already
+-- uses for re-uploads. This is a screening-stage verdict distinct from
+-- ScholarshipApplications.Status, which the guided workflow (BISAASS-43)
+-- still owns.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.ScholarshipEligibilityScreenings', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ScholarshipEligibilityScreenings
+    (
+        ApplicationId       UNIQUEIDENTIFIER NOT NULL CONSTRAINT PK_ScholarshipEligibilityScreenings PRIMARY KEY,
+        Verdict             NVARCHAR(20)     NOT NULL,
+        Remarks             NVARCHAR(1000)   NULL,
+        EvaluatedByUserId   UNIQUEIDENTIFIER NOT NULL,
+        EvaluatedAt         DATETIME2(3)     NOT NULL CONSTRAINT DF_ScholarshipEligibilityScreenings_EvaluatedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT FK_ScholarshipEligibilityScreenings_Applications FOREIGN KEY (ApplicationId) REFERENCES dbo.ScholarshipApplications (ApplicationId),
+        CONSTRAINT FK_ScholarshipEligibilityScreenings_Evaluator FOREIGN KEY (EvaluatedByUserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT CK_ScholarshipEligibilityScreenings_Verdict CHECK (Verdict IN (N'Qualified', N'NotQualified'))
+    );
+END
+GO

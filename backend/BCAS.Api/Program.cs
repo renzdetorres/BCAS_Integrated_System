@@ -53,6 +53,8 @@ builder.Services.AddScoped<ISystemSettingsRepository, SystemSettingsRepository>(
 builder.Services.AddScoped<ISystemSettingsService, SystemSettingsService>();
 builder.Services.AddScoped<IEvaluatorDashboardRepository, EvaluatorDashboardRepository>();
 builder.Services.AddScoped<IEvaluatorDashboardService, EvaluatorDashboardService>();
+builder.Services.AddScoped<IEvaluatorScholarshipApplicationRepository, EvaluatorScholarshipApplicationRepository>();
+builder.Services.AddScoped<IEvaluatorScholarshipApplicationService, EvaluatorScholarshipApplicationService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
