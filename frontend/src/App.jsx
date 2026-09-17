@@ -15,6 +15,7 @@ import MyApplicationHistoryPage from "./pages/MyApplicationHistoryPage.jsx";
 import DocumentsPage from "./pages/DocumentsPage.jsx";
 import ExamSchedulePage from "./pages/ExamSchedulePage.jsx";
 import ExamPermitPage from "./pages/ExamPermitPage.jsx";
+import ApplicationTrackingPage from "./pages/ApplicationTrackingPage.jsx";
 
 export default function App() {
   return (
@@ -38,6 +39,7 @@ export default function App() {
               <Route path="/documents" element={<DocumentsPage />} />
               <Route path="/exam-schedule" element={<ExamSchedulePage />} />
               <Route path="/exam-permit" element={<ExamPermitPage />} />
+              <Route path="/application-tracking" element={<ApplicationTrackingPage />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />

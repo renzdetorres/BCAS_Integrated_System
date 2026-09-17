@@ -549,3 +549,75 @@ submitted reason otherwise. Prompts to pick a schedule first
 (linking to `/exam-schedule`) if the applicant hasn't selected one.
 Linked from the dashboard's quick links as "Exam Permit", and from
 `/exam-schedule`'s confirmation banner once a schedule is selected.
+
+## BISAASS-22: Application Tracking (Status & Document Reasons)
+
+Applicant sees each application's current step in its workflow, plus the
+per-document verification status and flagged/rejected reasons already
+built for BISAASS-19. No schema changes were needed - every step is
+derived on read from existing tables (`AdmissionApplications.Status`,
+`ScholarshipApplications.Status`, `ExamScheduleSelections`, and the
+document checklist), the same way BISAASS-11/13 needed no new SQL either.
+
+`ApplicationTrackingService` (`backend/BCAS.Api/Services/ApplicationTrackingService.cs`)
+maps each application onto its named workflow:
+
+- Admission: `Submitted` → `DocumentsReceived` → `UnderReview` →
+  `ExamScheduled` → `ExamCompleted` → `DecisionReleased`.
+- Scholarship: `Submitted` → `DocumentsVerified` → `EligibilityScreening`
+  → `Evaluation` → `Result`.
+
+`UnderReview`/`ExamCompleted`/`EligibilityScreening`/`Evaluation` can only
+be *inferred* right now - `UnderReview`/`EligibilityScreening` fire once
+`Status` reaches `UnderReview`, and `ExamCompleted`/`Evaluation` fire
+together with `DecisionReleased`/`Result` once `Status` reaches
+`Approved`/`Rejected` - because no Admin-Registrar/Evaluator workflow
+exists yet to set anything finer-grained (the same gap called out for
+BISAASS-16/17's `Status` values). Once that workflow lands and starts
+moving `Status` through its fuller range, these steps reflect it
+automatically with no change needed here. `DocumentsReceived` means every
+required document has been uploaded (any status but `NotSubmitted`);
+`DocumentsVerified` is the stricter bar of every one being `Verified` -
+both reuse `IApplicantDocumentService.GetMyChecklistAsync`, since
+`ApplicantDocuments` is one checklist per applicant, not per application.
+
+### API
+
+`GET /api/application-tracking` - requires the `bcas_auth` cookie for the
+`Applicant` role. `200 OK` with:
+
+```json
+{
+  "admissionApplications": [
+    {
+      "applicationId": "...",
+      "applicationType": "NewStudent",
+      "courseAppliedFor": "BS Computer Science",
+      "status": "Submitted",
+      "steps": [
+        { "step": "Submitted", "isComplete": true, "isCurrent": false },
+        { "step": "DocumentsReceived", "isComplete": false, "isCurrent": true },
+        { "step": "UnderReview", "isComplete": false, "isCurrent": false },
+        { "step": "ExamScheduled", "isComplete": false, "isCurrent": false },
+        { "step": "ExamCompleted", "isComplete": false, "isCurrent": false },
+        { "step": "DecisionReleased", "isComplete": false, "isCurrent": false }
+      ],
+      "submittedAt": "2026-09-10T02:14:00Z"
+    }
+  ],
+  "scholarshipApplications": [ /* same shape, with scholarshipName and the Scholarship steps */ ],
+  "documents": { "applicationType": "NewStudent", "requirements": [ /* BISAASS-19's checklist shape */ ] }
+}
+```
+
+`documents` is `null` if the applicant has no admission application yet
+(there's no checklist to compute without one).
+
+### Frontend
+
+`/application-tracking` (gated by `RequireRole(["Applicant"])`) lists
+every admission and scholarship application with a step "pill" tracker
+(completed steps in green, the current step in blue), followed by the
+document checklist with status badges and flagged reasons - reusing the
+same status vocabulary and labels as `/documents`. Linked from the
+dashboard's quick links as "Application Tracking".
