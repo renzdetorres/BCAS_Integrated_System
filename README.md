@@ -651,3 +651,34 @@ with a category badge and posted date), every other role still sees the
 placeholder until their own view exists. Already linked from the
 dashboard's quick links as "Announcements" (added in BISAASS-14, pointing
 at the placeholder until now).
+
+## BISAASS-25: Application Confirmation Receipt (Download/Print)
+
+Printable/downloadable receipt shown immediately after a successful
+admission or scholarship application submission, and retrievable later
+from application history. No backend or SQL changes were needed -
+BISAASS-18's `GET /api/applications/history` already returns every field
+the receipt needs (`applicationId`, `applicationType`/`scholarshipName`,
+`status`, `submittedAt`) for both application categories in one response,
+so the receipt is built entirely on the frontend from that existing
+endpoint, the same way BISAASS-11/13 needed no backend work either.
+"Downloadable/printable" is handled the same way BISAASS-21's exam permit
+was: `window.print()` plus a `@media print` stylesheet, no server-side
+PDF generation.
+
+### Frontend
+
+`/applications/receipt/:applicationId` (gated by
+`RequireRole(["Applicant"])`) fetches the applicant's full application
+history and renders the matching item as a receipt (application id,
+category, type-specific detail, status, and a full date+time submission
+timestamp) with a "Print / Save as PDF" button. Because it's a real,
+directly-loadable route rather than transient state, it works the same
+whether reached right after submitting, from a saved link, or after a
+page refresh.
+
+`AdmissionApplicationPage` and `ScholarshipApplicationPage` now navigate
+straight to this route on a successful submit instead of updating their
+own local list, satisfying "immediately after submission." `/applications/history`
+(BISAASS-18) gained a "View / Print Receipt" link in its detail panel,
+satisfying "retrievable later from application history."

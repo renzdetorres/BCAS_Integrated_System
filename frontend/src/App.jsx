@@ -16,6 +16,7 @@ import DocumentsPage from "./pages/DocumentsPage.jsx";
 import ExamSchedulePage from "./pages/ExamSchedulePage.jsx";
 import ExamPermitPage from "./pages/ExamPermitPage.jsx";
 import ApplicationTrackingPage from "./pages/ApplicationTrackingPage.jsx";
+import ApplicationReceiptPage from "./pages/ApplicationReceiptPage.jsx";
 
 export default function App() {
   return (
@@ -35,6 +36,7 @@ export default function App() {
               <Route path="/profile" element={<ApplicantProfilePage />} />
               <Route path="/applications" element={<AdmissionApplicationPage />} />
               <Route path="/applications/history" element={<MyApplicationHistoryPage />} />
+              <Route path="/applications/receipt/:applicationId" element={<ApplicationReceiptPage />} />
               <Route path="/scholarships" element={<ScholarshipApplicationPage />} />
               <Route path="/documents" element={<DocumentsPage />} />
               <Route path="/exam-schedule" element={<ExamSchedulePage />} />

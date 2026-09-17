@@ -194,6 +194,18 @@
   gap: 12px;
 }
 
+.history-receipt-link {
+  align-self: flex-start;
+  color: #2f6fed;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.history-receipt-link:hover {
+  text-decoration: underline;
+}
+
 .history-detail-row {
   display: flex;
   flex-direction: column;
