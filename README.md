@@ -372,3 +372,63 @@ Request body:
 former `ComingSoonPage` placeholder) has the submit form plus a list of the
 applicant's past applications with status badges. A profile-incomplete
 error surfaces a link straight to `/profile`.
+
+## BISAASS-17: Submit Scholarship Application
+
+Adds two tables (`database/schema.sql`):
+
+- `Scholarships` - the catalog of "slots" applicants apply against (name,
+  type, `TotalSlots`/`RemainingSlots`, active flag). No admin-management
+  endpoint exists for it yet, so it's seeded with three sample scholarships,
+  the same way `Deadlines` was in BISAASS-14.
+- `ScholarshipApplications` - applicant, chosen scholarship, grade average,
+  and a `ScholarshipType` that's a *snapshot* of the scholarship's type at
+  submission time (not re-entered by the applicant), so a later catalog
+  edit never rewrites an already-submitted application's history.
+
+Like BISAASS-16, submission is blocked until the applicant's profile is
+complete - BISAASS-17's own acceptance criteria don't restate that, but
+BISAASS-15's does in general terms ("application submission is blocked"),
+so this keeps the rule consistent across both application types rather
+than being an admission-only quirk.
+
+The remaining-slots check has to be race-safe: two applicants submitting
+for the last slot at the same moment must not both succeed. The reservation
+is one atomic conditional `UPDATE ... SET RemainingSlots = RemainingSlots -
+1 WHERE ScholarshipId = @Id AND IsActive = 1 AND RemainingSlots > 0`, and
+only if that actually matched a row does the same transaction insert the
+application - there's no separate "check, then act" read that a second
+request could race between (`backend/BCAS.Api/Data/ScholarshipApplicationRepository.cs`).
+
+### API
+
+All three endpoints require the `bcas_auth` cookie for the `Applicant`
+role.
+
+`GET /api/scholarships` - `200 OK` with active scholarships that still have
+at least one remaining slot.
+
+`GET /api/scholarship-applications` - `200 OK` with the caller's own
+scholarship applications, most recent first.
+
+`POST /api/scholarship-applications`
+
+Request body:
+```json
+{ "scholarshipId": 1, "gradeAverage": 95.5 }
+```
+- `201 Created` with the new application (`status: "Submitted"`).
+- `400 Bad Request` if the profile is incomplete, the scholarship is
+  inactive, or it has no remaining slots.
+- `404 Not Found` if `scholarshipId` doesn't exist.
+
+### Frontend
+
+`/scholarships` (gated by `RequireRole(["Applicant"])`) lists open
+scholarships with remaining-slot counts in a picker, a grade-average field,
+and the applicant's own past scholarship applications with status badges.
+On a successful submit it decrements the picked scholarship's remaining
+count locally (and drops it from the picker at zero) rather than
+re-fetching - the server-side count is the one that's actually
+authoritative. Linked from the dashboard's quick links as "Scholarship
+Application".

@@ -30,6 +30,10 @@ builder.Services.AddScoped<IApplicantProfileRepository, ApplicantProfileReposito
 builder.Services.AddScoped<IApplicantProfileService, ApplicantProfileService>();
 builder.Services.AddScoped<IAdmissionApplicationRepository, AdmissionApplicationRepository>();
 builder.Services.AddScoped<IAdmissionApplicationService, AdmissionApplicationService>();
+builder.Services.AddScoped<IScholarshipRepository, ScholarshipRepository>();
+builder.Services.AddScoped<IScholarshipService, ScholarshipService>();
+builder.Services.AddScoped<IScholarshipApplicationRepository, ScholarshipApplicationRepository>();
+builder.Services.AddScoped<IScholarshipApplicationService, ScholarshipApplicationService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

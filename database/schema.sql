@@ -153,3 +153,63 @@ BEGIN
     CREATE NONCLUSTERED INDEX IX_AdmissionApplications_UserId ON dbo.AdmissionApplications (UserId);
 END
 GO
+
+-- -----------------------------------------------------------------------------
+-- Scholarships
+-- The catalog of scholarship "slots" applicants can apply against (BISAASS-17).
+-- No admin-management endpoint exists yet, so rows are seeded here, same as
+-- Deadlines. RemainingSlots is decremented atomically on each accepted
+-- application (see ScholarshipApplicationRepository) - the CHECK constraint
+-- is a belt-and-suspenders backstop against it ever going negative or above
+-- TotalSlots.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.Scholarships', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Scholarships
+    (
+        ScholarshipId    INT             NOT NULL IDENTITY(1,1) CONSTRAINT PK_Scholarships PRIMARY KEY,
+        Name             NVARCHAR(200)   NOT NULL,
+        ScholarshipType  NVARCHAR(100)   NOT NULL,
+        TotalSlots       INT             NOT NULL,
+        RemainingSlots   INT             NOT NULL,
+        IsActive         BIT             NOT NULL CONSTRAINT DF_Scholarships_IsActive DEFAULT (1),
+        CreatedAt        DATETIME2(3)    NOT NULL CONSTRAINT DF_Scholarships_CreatedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT CK_Scholarships_RemainingSlots CHECK (RemainingSlots >= 0 AND RemainingSlots <= TotalSlots)
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.Scholarships WHERE Name = N'Academic Excellence Scholarship')
+    INSERT INTO dbo.Scholarships (Name, ScholarshipType, TotalSlots, RemainingSlots) VALUES (N'Academic Excellence Scholarship', N'Academic', 20, 20);
+IF NOT EXISTS (SELECT 1 FROM dbo.Scholarships WHERE Name = N'Financial Need Grant')
+    INSERT INTO dbo.Scholarships (Name, ScholarshipType, TotalSlots, RemainingSlots) VALUES (N'Financial Need Grant', N'Financial Need', 15, 15);
+IF NOT EXISTS (SELECT 1 FROM dbo.Scholarships WHERE Name = N'Athletic Scholarship')
+    INSERT INTO dbo.Scholarships (Name, ScholarshipType, TotalSlots, RemainingSlots) VALUES (N'Athletic Scholarship', N'Athletic', 10, 10);
+GO
+
+-- -----------------------------------------------------------------------------
+-- ScholarshipApplications
+-- ScholarshipType is a snapshot of the chosen Scholarship's type at
+-- submission time (not re-entered by the applicant), so a later catalog
+-- edit never rewrites the history of an already-submitted application.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.ScholarshipApplications', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ScholarshipApplications
+    (
+        ApplicationId    UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_ScholarshipApplications_ApplicationId DEFAULT NEWID(),
+        UserId           UNIQUEIDENTIFIER NOT NULL,
+        ScholarshipId    INT              NOT NULL,
+        ScholarshipType  NVARCHAR(100)    NOT NULL,
+        GradeAverage     DECIMAL(5,2)     NOT NULL,
+        Status           NVARCHAR(30)     NOT NULL CONSTRAINT DF_ScholarshipApplications_Status DEFAULT (N'Submitted'),
+        SubmittedAt      DATETIME2(3)     NOT NULL CONSTRAINT DF_ScholarshipApplications_SubmittedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_ScholarshipApplications PRIMARY KEY (ApplicationId),
+        CONSTRAINT FK_ScholarshipApplications_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT FK_ScholarshipApplications_Scholarships FOREIGN KEY (ScholarshipId) REFERENCES dbo.Scholarships (ScholarshipId),
+        CONSTRAINT CK_ScholarshipApplications_Status CHECK (Status IN (N'Submitted', N'UnderReview', N'Approved', N'Rejected'))
+    );
+
+    CREATE NONCLUSTERED INDEX IX_ScholarshipApplications_UserId ON dbo.ScholarshipApplications (UserId);
+END
+GO
