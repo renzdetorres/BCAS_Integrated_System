@@ -298,3 +298,58 @@ BEGIN
     CREATE NONCLUSTERED INDEX IX_ApplicantDocuments_UserId ON dbo.ApplicantDocuments (UserId);
 END
 GO
+
+-- -----------------------------------------------------------------------------
+-- ExamSchedules
+-- Catalog of entrance-exam slots applicants pick from (BISAASS-20). Saturday
+-- rows are always selectable regardless of IsOffered; IsOffered only gates
+-- Weekday rows, toggled by Admin-Registrar based on teacher availability -
+-- enforced in the query (see ExamScheduleRepository), not by ever forcing
+-- Saturday's IsOffered to 1. No admin-management endpoint exists yet, so
+-- rows are seeded here, the same way Deadlines and Scholarships were.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.ExamSchedules', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ExamSchedules
+    (
+        ExamScheduleId  INT             NOT NULL IDENTITY(1,1) CONSTRAINT PK_ExamSchedules PRIMARY KEY,
+        DayType         NVARCHAR(10)    NOT NULL,
+        ExamDate        DATE            NOT NULL,
+        ExamTime        TIME(0)         NOT NULL,
+        IsOffered       BIT             NOT NULL CONSTRAINT DF_ExamSchedules_IsOffered DEFAULT (1),
+        CreatedAt       DATETIME2(3)    NOT NULL CONSTRAINT DF_ExamSchedules_CreatedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT CK_ExamSchedules_DayType CHECK (DayType IN (N'Saturday', N'Weekday'))
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.ExamSchedules WHERE DayType = N'Saturday' AND ExamDate = '2026-10-03')
+    INSERT INTO dbo.ExamSchedules (DayType, ExamDate, ExamTime, IsOffered) VALUES (N'Saturday', '2026-10-03', '08:00', 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.ExamSchedules WHERE DayType = N'Saturday' AND ExamDate = '2026-10-10')
+    INSERT INTO dbo.ExamSchedules (DayType, ExamDate, ExamTime, IsOffered) VALUES (N'Saturday', '2026-10-10', '08:00', 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.ExamSchedules WHERE DayType = N'Saturday' AND ExamDate = '2026-10-17')
+    INSERT INTO dbo.ExamSchedules (DayType, ExamDate, ExamTime, IsOffered) VALUES (N'Saturday', '2026-10-17', '08:00', 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.ExamSchedules WHERE DayType = N'Weekday' AND ExamDate = '2026-10-06')
+    INSERT INTO dbo.ExamSchedules (DayType, ExamDate, ExamTime, IsOffered) VALUES (N'Weekday', '2026-10-06', '13:00', 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.ExamSchedules WHERE DayType = N'Weekday' AND ExamDate = '2026-10-08')
+    INSERT INTO dbo.ExamSchedules (DayType, ExamDate, ExamTime, IsOffered) VALUES (N'Weekday', '2026-10-08', '13:00', 0);
+GO
+
+-- -----------------------------------------------------------------------------
+-- ExamScheduleSelections
+-- One-to-one with Users (BISAASS-20) - an applicant has a single confirmed
+-- entrance-exam schedule; selecting again replaces it (see
+-- ExamScheduleRepository.SelectAsync), it isn't accumulated as history.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.ExamScheduleSelections', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ExamScheduleSelections
+    (
+        UserId          UNIQUEIDENTIFIER NOT NULL CONSTRAINT PK_ExamScheduleSelections PRIMARY KEY,
+        ExamScheduleId  INT              NOT NULL,
+        SelectedAt      DATETIME2(3)     NOT NULL CONSTRAINT DF_ExamScheduleSelections_SelectedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT FK_ExamScheduleSelections_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT FK_ExamScheduleSelections_ExamSchedules FOREIGN KEY (ExamScheduleId) REFERENCES dbo.ExamSchedules (ExamScheduleId)
+    );
+END
+GO

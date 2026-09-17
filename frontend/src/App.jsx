@@ -13,6 +13,7 @@ import AdmissionApplicationPage from "./pages/AdmissionApplicationPage.jsx";
 import ScholarshipApplicationPage from "./pages/ScholarshipApplicationPage.jsx";
 import MyApplicationHistoryPage from "./pages/MyApplicationHistoryPage.jsx";
 import DocumentsPage from "./pages/DocumentsPage.jsx";
+import ExamSchedulePage from "./pages/ExamSchedulePage.jsx";
 
 export default function App() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
               <Route path="/applications/history" element={<MyApplicationHistoryPage />} />
               <Route path="/scholarships" element={<ScholarshipApplicationPage />} />
               <Route path="/documents" element={<DocumentsPage />} />
+              <Route path="/exam-schedule" element={<ExamSchedulePage />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />

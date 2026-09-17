@@ -432,3 +432,50 @@ count locally (and drops it from the picker at zero) rather than
 re-fetching - the server-side count is the one that's actually
 authoritative. Linked from the dashboard's quick links as "Scholarship
 Application".
+
+## BISAASS-20: Entrance Exam Schedule Selection
+
+Applicant picks an entrance-exam schedule from a list of slots. Adds two
+tables (`database/schema.sql`):
+
+- `ExamSchedules` - the catalog of selectable slots (`DayType` of
+  `Saturday`/`Weekday`, `ExamDate`, `ExamTime`, `IsOffered`). No
+  admin-management endpoint exists for it yet, so it's seeded the same way
+  `Deadlines` and `Scholarships` were. `Saturday` rows are always
+  selectable regardless of `IsOffered` - that flag only gates `Weekday`
+  rows, standing in for the "set by Admin-Registrar based on teacher
+  availability" rule from this ticket's acceptance criteria until an admin
+  UI for it exists.
+- `ExamScheduleSelections` - one-to-one with `Users` (like
+  `ApplicantProfiles`): an applicant has a single confirmed exam schedule,
+  and selecting again replaces it rather than accumulating history.
+
+### API
+
+All endpoints require the `bcas_auth` cookie for the `Applicant` role.
+
+`GET /api/exam-schedules` - `200 OK` with selectable schedules (every
+Saturday row, plus Weekday rows with `isOffered: true`), soonest first.
+
+`GET /api/exam-schedules/selection` - `200 OK` with the caller's confirmed
+schedule, or `404 Not Found` if none has been selected yet.
+
+`PUT /api/exam-schedules/selection`
+
+Request body:
+```json
+{ "examScheduleId": 1 }
+```
+- `200 OK` with the confirmed schedule (`examScheduleId`, `dayType`,
+  `examDate`, `examTime`, `selectedAt`). Calling this again with a
+  different id replaces the previous selection.
+- `400 Bad Request` if the id is a Weekday slot that isn't currently
+  offered.
+- `404 Not Found` if `examScheduleId` doesn't exist.
+
+### Frontend
+
+`/exam-schedule` (gated by `RequireRole(["Applicant"])`) shows the
+applicant's confirmed date and time (once one is selected) above a picker
+of the currently available schedules. Linked from the dashboard's quick
+links as "Entrance Exam Schedule".
