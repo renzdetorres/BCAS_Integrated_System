@@ -1,10 +1,13 @@
+using BCAS.Api.Constants;
 using BCAS.Api.Models;
 
 namespace BCAS.Api.Mapping;
 
 public static class EvaluatorScholarshipApplicationMappingExtensions
 {
-    public static EvaluatorScholarshipApplicationDetailResponse ToResponse(this EvaluatorScholarshipApplicationDetail detail) => new()
+    public static EvaluatorScholarshipApplicationDetailResponse ToResponse(
+        this EvaluatorScholarshipApplicationDetail detail,
+        IReadOnlyList<ApplicantDocument> documents) => new()
     {
         ApplicationId = detail.ApplicationId,
         ApplicantName = detail.ApplicantName,
@@ -19,7 +22,12 @@ public static class EvaluatorScholarshipApplicationMappingExtensions
             : null,
         Status = detail.Status,
         SubmittedAt = detail.SubmittedAt,
+        UpdatedAt = detail.UpdatedAt,
         Screening = detail.Screening?.ToResponse(),
+        Documents = documents.Select(d => d.ToEvaluatorResponse()).ToList(),
+        WorkflowStages = ScholarshipWorkflowConstants.Stages,
+        CanAdvance = ScholarshipWorkflowConstants.Stages.Contains(detail.Status)
+            && detail.Status != ScholarshipWorkflowConstants.Stages[^1],
     };
 
     public static ScholarshipScreeningResponse ToResponse(this ScholarshipEligibilityScreening screening) => new()
@@ -28,5 +36,14 @@ public static class EvaluatorScholarshipApplicationMappingExtensions
         Remarks = screening.Remarks,
         EvaluatedByName = screening.EvaluatedByName,
         EvaluatedAt = screening.EvaluatedAt,
+    };
+
+    public static EvaluatorApplicantDocumentResponse ToEvaluatorResponse(this ApplicantDocument document) => new()
+    {
+        DocumentType = document.DocumentType,
+        FileName = document.FileName,
+        Status = document.Status,
+        FlaggedReason = document.FlaggedReason,
+        UploadedAt = document.UploadedAt,
     };
 }

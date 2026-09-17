@@ -41,3 +41,22 @@ export async function recordScholarshipScreening(applicationId, { verdict, remar
 
   return data;
 }
+
+export async function advanceScholarshipApplicationWorkflow(applicationId) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/evaluator/scholarship-applications/${applicationId}/advance`,
+    {
+      method: "POST",
+      credentials: "include",
+    }
+  );
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const message = extractErrorMessage(data) ?? "Failed to advance the application. Please try again.";
+    throw new ApiError(message, response.status);
+  }
+
+  return data;
+}

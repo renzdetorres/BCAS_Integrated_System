@@ -2,11 +2,24 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   SCREENING_VERDICTS,
+  advanceScholarshipApplicationWorkflow,
   getScholarshipApplicationDetail,
   recordScholarshipScreening,
 } from "../api/evaluatorScholarshipApplicationsApi.js";
 import { ApiError } from "../api/apiClient.js";
 import "./ScholarshipScreeningPage.css";
+
+const STAGE_LABELS = {
+  Submitted: "Submitted",
+  DocumentsVerified: "Documents Verified",
+  EligibilityScreening: "Eligibility Screening",
+  Evaluation: "Evaluation",
+  Result: "Result",
+};
+
+function stageLabel(stage) {
+  return STAGE_LABELS[stage] ?? stage;
+}
 
 function formatDateTime(isoDateTime) {
   return new Date(isoDateTime).toLocaleString(undefined, {
@@ -28,6 +41,8 @@ export default function ScholarshipScreeningPage() {
   const [saveError, setSaveError] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [savedMessage, setSavedMessage] = useState(null);
+  const [advanceError, setAdvanceError] = useState(null);
+  const [isAdvancing, setIsAdvancing] = useState(false);
 
   const loadApplication = useCallback(async () => {
     setIsLoading(true);
@@ -69,6 +84,19 @@ export default function ScholarshipScreeningPage() {
     }
   }
 
+  async function handleAdvance() {
+    setIsAdvancing(true);
+    setAdvanceError(null);
+    try {
+      const updated = await advanceScholarshipApplicationWorkflow(applicationId);
+      setApplication(updated);
+    } catch (error) {
+      setAdvanceError(error instanceof ApiError ? error.message : "Failed to advance the application.");
+    } finally {
+      setIsAdvancing(false);
+    }
+  }
+
   return (
     <main className="screening-page">
       <div className="screening-card">
@@ -86,6 +114,45 @@ export default function ScholarshipScreeningPage() {
 
         {!isLoading && !loadError && application && (
           <>
+            <section className="screening-section">
+              <h2>Workflow</h2>
+              <ol className="workflow-stepper">
+                {application.workflowStages.map((stage) => {
+                  const currentIndex = application.workflowStages.indexOf(application.status);
+                  const stageIndex = application.workflowStages.indexOf(stage);
+                  const isCurrent = stage === application.status;
+                  const isDone = currentIndex >= 0 && stageIndex < currentIndex;
+                  return (
+                    <li
+                      key={stage}
+                      className={
+                        isCurrent ? "workflow-step workflow-step-current" : isDone ? "workflow-step workflow-step-done" : "workflow-step"
+                      }
+                    >
+                      {stageLabel(stage)}
+                    </li>
+                  );
+                })}
+              </ol>
+              {!application.workflowStages.includes(application.status) && (
+                <p className="workflow-final-note">
+                  Status is <strong>{application.status}</strong> - a final decision outside this workflow.
+                </p>
+              )}
+
+              {advanceError && (
+                <p className="form-error" role="alert">
+                  {advanceError}
+                </p>
+              )}
+
+              {application.canAdvance && (
+                <button type="button" className="workflow-advance-button" onClick={handleAdvance} disabled={isAdvancing}>
+                  {isAdvancing ? "Advancing..." : "Advance to Next Stage"}
+                </button>
+              )}
+            </section>
+
             <section className="screening-section">
               <h2>Applicant</h2>
               <dl className="screening-detail-list">
@@ -146,6 +213,32 @@ export default function ScholarshipScreeningPage() {
                   <dd>{formatDateTime(application.submittedAt)}</dd>
                 </div>
               </dl>
+            </section>
+
+            <section className="screening-section">
+              <h2>Submitted Documents</h2>
+              {application.documents.length === 0 ? (
+                <p>No documents uploaded yet.</p>
+              ) : (
+                <ul className="document-list">
+                  {application.documents.map((document) => (
+                    <li key={document.documentType} className="document-row">
+                      <div>
+                        <span className="document-type">{document.documentType}</span>
+                        <span className="document-filename">{document.fileName}</span>
+                      </div>
+                      <div className="document-status-group">
+                        <span className={`document-status document-status-${document.status.toLowerCase()}`}>
+                          {document.status}
+                        </span>
+                        {document.flaggedReason && (
+                          <span className="document-flagged-reason">{document.flaggedReason}</span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </section>
 
             {application.screening && (
