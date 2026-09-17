@@ -60,6 +60,23 @@
   cursor: pointer;
 }
 
+.evaluator-dashboard-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.evaluator-dashboard-link {
+  color: #2f6fed;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.evaluator-dashboard-link:hover {
+  text-decoration: underline;
+}
+
 .evaluator-dashboard-card {
   background: #ffffff;
   border-radius: 12px;

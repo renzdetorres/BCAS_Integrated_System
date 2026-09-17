@@ -20,6 +20,7 @@ import ExamPermitPage from "./pages/ExamPermitPage.jsx";
 import ApplicationTrackingPage from "./pages/ApplicationTrackingPage.jsx";
 import ApplicationReceiptPage from "./pages/ApplicationReceiptPage.jsx";
 import ScholarshipScreeningPage from "./pages/ScholarshipScreeningPage.jsx";
+import ScholarshipSlotsPage from "./pages/ScholarshipSlotsPage.jsx";
 
 export default function App() {
   return (
@@ -42,6 +43,7 @@ export default function App() {
                 path="/evaluator/scholarship-applications/:applicationId"
                 element={<ScholarshipScreeningPage />}
               />
+              <Route path="/evaluator/scholarship-slots" element={<ScholarshipSlotsPage />} />
             </Route>
             <Route element={<RequireRole allowedRoles={["Applicant"]} />}>
               <Route path="/profile" element={<ApplicantProfilePage />} />
