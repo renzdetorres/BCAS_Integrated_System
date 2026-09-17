@@ -70,3 +70,30 @@ BEGIN
     CREATE NONCLUSTERED INDEX IX_Users_Email ON dbo.Users (Email);
 END
 GO
+
+-- -----------------------------------------------------------------------------
+-- Deadlines
+-- Drives the "upcoming deadlines" list on the applicant dashboard (BISAASS-14).
+-- Read-only for now - no admin management UI exists yet, rows are seeded here.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.Deadlines', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Deadlines
+    (
+        DeadlineId      INT             NOT NULL IDENTITY(1,1) CONSTRAINT PK_Deadlines PRIMARY KEY,
+        DeadlineType    NVARCHAR(50)    NOT NULL,
+        Title           NVARCHAR(200)   NOT NULL,
+        DeadlineDate    DATE            NOT NULL,
+        CreatedAt       DATETIME2(3)    NOT NULL CONSTRAINT DF_Deadlines_CreatedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT CK_Deadlines_DeadlineType CHECK (DeadlineType IN (N'ScholarshipDeadline', N'DocumentDeadline', N'EnrollmentPeriod'))
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.Deadlines WHERE DeadlineType = N'ScholarshipDeadline')
+    INSERT INTO dbo.Deadlines (DeadlineType, Title, DeadlineDate) VALUES (N'ScholarshipDeadline', N'Scholarship Application Deadline', '2026-10-15');
+IF NOT EXISTS (SELECT 1 FROM dbo.Deadlines WHERE DeadlineType = N'DocumentDeadline')
+    INSERT INTO dbo.Deadlines (DeadlineType, Title, DeadlineDate) VALUES (N'DocumentDeadline', N'Document Submission Deadline', '2026-10-31');
+IF NOT EXISTS (SELECT 1 FROM dbo.Deadlines WHERE DeadlineType = N'EnrollmentPeriod')
+    INSERT INTO dbo.Deadlines (DeadlineType, Title, DeadlineDate) VALUES (N'EnrollmentPeriod', N'Enrollment Period Opens', '2026-11-01');
+GO

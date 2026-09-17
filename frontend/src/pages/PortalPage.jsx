@@ -1,10 +1,9 @@
-import { Link, useNavigate } from "react-router-dom";
-import { logoutUser } from "../api/authApi.js";
+import { Link } from "react-router-dom";
 import { useSession } from "../context/SessionContext.jsx";
+import { useLogout } from "../hooks/useLogout.js";
 import "./PortalPage.css";
 
 const PORTAL_LABELS = {
-  Applicant: "Applicant Portal",
   Evaluator: "Evaluator Portal",
   SupportStaff: "Support Staff Portal",
   AcademicHead: "Academic Head Portal",
@@ -12,20 +11,13 @@ const PORTAL_LABELS = {
 };
 
 export default function PortalPage() {
-  const { session, setSession } = useSession();
-  const navigate = useNavigate();
+  const { session } = useSession();
+  const handleLogout = useLogout();
 
-  // RequireAuth guarantees session is set before this renders.
+  // RequireAuth guarantees session is set before this renders. Applicant
+  // has its own dashboard (see App.jsx) - this generic view covers staff
+  // roles, which don't have a dedicated portal yet.
   const portalLabel = PORTAL_LABELS[session.role] ?? "Portal";
-
-  async function handleLogout() {
-    try {
-      await logoutUser();
-    } finally {
-      setSession(null);
-      navigate("/login", { replace: true });
-    }
-  }
 
   return (
     <main className="portal-page">
