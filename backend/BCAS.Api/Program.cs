@@ -49,6 +49,8 @@ builder.Services.AddScoped<IAdminDashboardRepository, AdminDashboardRepository>(
 builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
 builder.Services.AddScoped<INotificationSettingsRepository, NotificationSettingsRepository>();
 builder.Services.AddScoped<INotificationSettingsService, NotificationSettingsService>();
+builder.Services.AddScoped<ISystemSettingsRepository, SystemSettingsRepository>();
+builder.Services.AddScoped<ISystemSettingsService, SystemSettingsService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -474,3 +474,34 @@ IF NOT EXISTS (SELECT 1 FROM dbo.NotificationTriggerConfigs WHERE TriggerKey = N
     INSERT INTO dbo.NotificationTriggerConfigs (TriggerKey, DisplayName, Description, IsEnabled) VALUES
         (N'PermitRelease', N'Exam Permit Release Alerts', N'Notifies an applicant by email when their exam permit is released and ready to download.', 1);
 GO
+
+-- -----------------------------------------------------------------------------
+-- SystemSettings
+-- BISAASS-40 Admin Settings (System-Level Configuration). One row per
+-- system-level admissions/scholarships setting an Admin can turn on or off.
+-- SettingKey is the stable code application code checks against (see
+-- AdmissionApplicationService and ScholarshipApplicationService, which gate
+-- new submissions on these). A missing row is treated as enabled (fail
+-- open) by the reading code, so this table only ever needs rows for
+-- settings that default to on.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.SystemSettings', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.SystemSettings
+    (
+        SettingKey      NVARCHAR(50)    NOT NULL CONSTRAINT PK_SystemSettings PRIMARY KEY,
+        DisplayName     NVARCHAR(100)   NOT NULL,
+        Description     NVARCHAR(300)   NOT NULL,
+        IsEnabled       BIT             NOT NULL CONSTRAINT DF_SystemSettings_IsEnabled DEFAULT (1),
+        UpdatedAt       DATETIME2(3)    NOT NULL CONSTRAINT DF_SystemSettings_UpdatedAt DEFAULT SYSUTCDATETIME()
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.SystemSettings WHERE SettingKey = N'AdmissionsApplicationsOpen')
+    INSERT INTO dbo.SystemSettings (SettingKey, DisplayName, Description, IsEnabled) VALUES
+        (N'AdmissionsApplicationsOpen', N'Admission Applications Open', N'When off, applicants cannot submit new admission applications. Existing applications already in the workflow are unaffected.', 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.SystemSettings WHERE SettingKey = N'ScholarshipApplicationsOpen')
+    INSERT INTO dbo.SystemSettings (SettingKey, DisplayName, Description, IsEnabled) VALUES
+        (N'ScholarshipApplicationsOpen', N'Scholarship Applications Open', N'When off, applicants cannot submit new scholarship applications. Existing applications already in the workflow are unaffected.', 1);
+GO

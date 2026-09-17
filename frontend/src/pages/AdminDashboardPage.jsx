@@ -73,6 +73,9 @@ export default function AdminDashboardPage() {
           <Link className="admin-dashboard-link" to="/admin/notification-settings">
             Notification Settings
           </Link>
+          <Link className="admin-dashboard-link" to="/admin/settings">
+            Admin Settings
+          </Link>
         </div>
 
         {isLoading && (

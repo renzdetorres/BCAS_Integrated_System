@@ -10,15 +10,18 @@ public class AdmissionApplicationService : IAdmissionApplicationService
 {
     private readonly IAdmissionApplicationRepository _applicationRepository;
     private readonly IApplicantProfileRepository _profileRepository;
+    private readonly ISystemSettingsRepository _systemSettingsRepository;
     private readonly ILogger<AdmissionApplicationService> _logger;
 
     public AdmissionApplicationService(
         IAdmissionApplicationRepository applicationRepository,
         IApplicantProfileRepository profileRepository,
+        ISystemSettingsRepository systemSettingsRepository,
         ILogger<AdmissionApplicationService> logger)
     {
         _applicationRepository = applicationRepository;
         _profileRepository = profileRepository;
+        _systemSettingsRepository = systemSettingsRepository;
         _logger = logger;
     }
 
@@ -27,6 +30,11 @@ public class AdmissionApplicationService : IAdmissionApplicationService
         SubmitAdmissionApplicationRequest request,
         CancellationToken cancellationToken = default)
     {
+        if (!await _systemSettingsRepository.IsEnabledAsync(SystemSettingKeys.AdmissionsApplicationsOpen, cancellationToken))
+        {
+            throw new AdmissionApplicationsClosedException();
+        }
+
         if (!AdmissionConstants.AllowedApplicationTypes.Contains(request.ApplicationType))
         {
             throw new InvalidApplicationTypeException(request.ApplicationType);

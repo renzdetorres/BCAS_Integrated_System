@@ -1,3 +1,4 @@
+using BCAS.Api.Constants;
 using BCAS.Api.Data;
 using BCAS.Api.Exceptions;
 using BCAS.Api.Mapping;
@@ -9,15 +10,18 @@ public class ScholarshipApplicationService : IScholarshipApplicationService
 {
     private readonly IScholarshipApplicationRepository _applicationRepository;
     private readonly IApplicantProfileRepository _profileRepository;
+    private readonly ISystemSettingsRepository _systemSettingsRepository;
     private readonly ILogger<ScholarshipApplicationService> _logger;
 
     public ScholarshipApplicationService(
         IScholarshipApplicationRepository applicationRepository,
         IApplicantProfileRepository profileRepository,
+        ISystemSettingsRepository systemSettingsRepository,
         ILogger<ScholarshipApplicationService> logger)
     {
         _applicationRepository = applicationRepository;
         _profileRepository = profileRepository;
+        _systemSettingsRepository = systemSettingsRepository;
         _logger = logger;
     }
 
@@ -26,6 +30,11 @@ public class ScholarshipApplicationService : IScholarshipApplicationService
         SubmitScholarshipApplicationRequest request,
         CancellationToken cancellationToken = default)
     {
+        if (!await _systemSettingsRepository.IsEnabledAsync(SystemSettingKeys.ScholarshipApplicationsOpen, cancellationToken))
+        {
+            throw new ScholarshipApplicationsClosedException();
+        }
+
         if (!await _profileRepository.ExistsAsync(userId, cancellationToken))
         {
             throw new ProfileIncompleteException();

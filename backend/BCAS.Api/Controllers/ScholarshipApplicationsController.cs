@@ -48,6 +48,15 @@ public class ScholarshipApplicationsController : ControllerBase
             var response = await _applicationService.SubmitAsync(User.GetUserId(), request, cancellationToken);
             return CreatedAtAction(nameof(GetMine), response);
         }
+        catch (ScholarshipApplicationsClosedException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Scholarship applications closed",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
         catch (ScholarshipNotFoundException ex)
         {
             return NotFound(new ProblemDetails
