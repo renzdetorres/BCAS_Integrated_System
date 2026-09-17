@@ -90,3 +90,35 @@ Request body:
   wrong password, or an inactive account - the response never reveals which
   case occurred, and the unknown-email path runs a dummy BCrypt check so it
   isn't distinguishable by timing either.
+
+`GET /api/auth/me` (requires the `bcas_auth` cookie) returns the signed-in
+user's profile, or `401 Unauthorized` without one. It exists to demonstrate
+that requests are authenticated via the cookie, and is what BISAASS-10 uses
+to prove logout works.
+
+## BISAASS-10: Logout (Server-Side Cookie Clear)
+
+`POST /api/auth/logout` clears the `bcas_auth` cookie server-side (an
+expired, empty replacement) and always returns `204 No Content` - it's safe
+to call whether or not a cookie is present.
+
+This is a stateless-JWT logout: it stops the *browser* from sending the
+token on future requests, which is what "subsequent requests are treated as
+unauthenticated" means for a normal client. It does not maintain a
+server-side revocation list, so a copy of the raw JWT taken before logout
+would still validate until it naturally expires (`Jwt:ExpiryMinutes`) if
+replayed directly - the ticket scopes this to clearing the cookie, not
+token revocation.
+
+Manual verification with `curl`:
+```sh
+curl -c cookies.txt -b cookies.txt -k https://localhost:7100/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"jane.doe@example.com","password":"at-least-8-characters"}'
+
+curl -b cookies.txt -k https://localhost:7100/api/auth/me   # 200 OK
+
+curl -c cookies.txt -b cookies.txt -k -X POST https://localhost:7100/api/auth/logout
+
+curl -b cookies.txt -k https://localhost:7100/api/auth/me   # 401 Unauthorized
+```
