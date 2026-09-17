@@ -12,6 +12,7 @@ import ApplicantProfilePage from "./pages/ApplicantProfilePage.jsx";
 import AdmissionApplicationPage from "./pages/AdmissionApplicationPage.jsx";
 import ScholarshipApplicationPage from "./pages/ScholarshipApplicationPage.jsx";
 import MyApplicationHistoryPage from "./pages/MyApplicationHistoryPage.jsx";
+import DocumentsPage from "./pages/DocumentsPage.jsx";
 
 export default function App() {
   return (
@@ -22,7 +23,6 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route element={<RequireAuth />}>
             <Route path="/portal" element={<PortalRouter />} />
-            <Route path="/documents" element={<ComingSoonPage title="Documents" />} />
             <Route path="/announcements" element={<ComingSoonPage title="Announcements" />} />
             <Route element={<RequireRole allowedRoles={["Admin"]} />}>
               <Route path="/admin/staff" element={<ProvisionStaffPage />} />
@@ -33,6 +33,7 @@ export default function App() {
               <Route path="/applications" element={<AdmissionApplicationPage />} />
               <Route path="/applications/history" element={<MyApplicationHistoryPage />} />
               <Route path="/scholarships" element={<ScholarshipApplicationPage />} />
+              <Route path="/documents" element={<DocumentsPage />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
