@@ -11,6 +11,9 @@ public class EvaluatorScholarshipApplicationDetail
 
     /// <summary>Null if the applicant has no profile yet (shouldn't happen - a profile is required to submit).</summary>
     public bool? IsBcasian { get; set; }
+
+    /// <summary>Used to look up the applicant's prior applications for this same scholarship.</summary>
+    public int ScholarshipId { get; set; }
     public string ScholarshipName { get; set; } = string.Empty;
     public string ScholarshipType { get; set; } = string.Empty;
     public decimal GradeAverage { get; set; }
@@ -23,4 +26,6 @@ public class EvaluatorScholarshipApplicationDetail
 
     /// <summary>Null if this application hasn't been screened yet.</summary>
     public ScholarshipEligibilityScreening? Screening { get; set; }
+
+    public ScholarshipEligibilityRules EligibilityRules { get; set; } = new();
 }

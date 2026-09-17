@@ -28,6 +28,7 @@ public static class EvaluatorScholarshipApplicationMappingExtensions
         WorkflowStages = ScholarshipWorkflowConstants.Stages,
         CanAdvance = ScholarshipWorkflowConstants.Stages.Contains(detail.Status)
             && detail.Status != ScholarshipWorkflowConstants.Stages[^1],
+        EligibilityRules = detail.EligibilityRules.ToResponse(),
     };
 
     public static ScholarshipScreeningResponse ToResponse(this ScholarshipEligibilityScreening screening) => new()
@@ -45,5 +46,25 @@ public static class EvaluatorScholarshipApplicationMappingExtensions
         Status = document.Status,
         FlaggedReason = document.FlaggedReason,
         UploadedAt = document.UploadedAt,
+    };
+
+    public static ScholarshipEligibilityRulesResponse ToResponse(this ScholarshipEligibilityRules rules) => new()
+    {
+        IsTopOne = rules.IsTopOne,
+        EntranceExamRequired = rules.EntranceExamRequired,
+        EntranceExamScheduled = rules.EntranceExamScheduled,
+        TotalSlots = rules.TotalSlots,
+        RemainingSlots = rules.RemainingSlots,
+        IsReapplication = rules.IsReapplication,
+        PreviousAttempts = rules.PreviousAttempts.Select(a => a.ToResponse()).ToList(),
+    };
+
+    public static ScholarshipReapplicationAttemptResponse ToResponse(this ScholarshipReapplicationAttempt attempt) => new()
+    {
+        ApplicationId = attempt.ApplicationId,
+        Status = attempt.Status,
+        SubmittedAt = attempt.SubmittedAt,
+        ScreeningVerdict = attempt.ScreeningVerdict,
+        ScreeningRemarks = attempt.ScreeningRemarks,
     };
 }

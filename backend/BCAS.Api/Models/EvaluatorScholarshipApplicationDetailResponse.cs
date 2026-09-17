@@ -24,4 +24,6 @@ public class EvaluatorScholarshipApplicationDetailResponse
 
     /// <summary>True if Status is a workflow stage other than the last one - i.e. Advance can be called.</summary>
     public bool CanAdvance { get; set; }
+
+    public ScholarshipEligibilityRulesResponse EligibilityRules { get; set; } = new();
 }

@@ -19,11 +19,16 @@ public class EvaluatorScholarshipApplicationRepository : IEvaluatorScholarshipAp
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
+        EvaluatorScholarshipApplicationDetail? detail;
+
         const string sql = @"
 SELECT
     sa.ApplicationId, sa.UserId, u.FirstName, u.LastName, u.Email,
     ap.IsBcasian,
-    sc.Name AS ScholarshipName, sa.ScholarshipType, sa.GradeAverage, sc.MinimumGradeAverage,
+    sa.ScholarshipId, sc.Name AS ScholarshipName, sa.ScholarshipType, sa.GradeAverage, sc.MinimumGradeAverage,
+    sc.IsTopOne, sc.TotalSlots, sc.RemainingSlots,
+    CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.ExamScheduleSelections ess WHERE ess.UserId = sa.UserId) THEN 1 ELSE 0 END AS BIT)
+        AS EntranceExamScheduled,
     sa.Status, sa.SubmittedAt, sa.UpdatedAt,
     ses.Verdict, ses.Remarks, ses.EvaluatedAt,
     eu.FirstName AS EvaluatorFirstName, eu.LastName AS EvaluatorLastName
@@ -35,11 +40,62 @@ LEFT JOIN dbo.ScholarshipEligibilityScreenings ses ON ses.ApplicationId = sa.App
 LEFT JOIN dbo.Users eu ON eu.UserId = ses.EvaluatedByUserId
 WHERE sa.ApplicationId = @ApplicationId;";
 
+        await using (var command = new SqlCommand(sql, connection))
+        {
+            command.Parameters.Add(new SqlParameter("@ApplicationId", SqlDbType.UniqueIdentifier) { Value = applicationId });
+
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            detail = await reader.ReadAsync(cancellationToken) ? MapDetail(reader) : null;
+        }
+
+        if (detail is null)
+        {
+            return null;
+        }
+
+        detail.EligibilityRules.PreviousAttempts = await GetPreviousAttemptsAsync(
+            connection, applicationId, detail.UserId, detail.ScholarshipId, cancellationToken);
+        detail.EligibilityRules.IsReapplication = detail.EligibilityRules.PreviousAttempts.Count > 0;
+
+        return detail;
+    }
+
+    /// <summary>Every earlier application by the same applicant for the same scholarship, most recent first.</summary>
+    private static async Task<IReadOnlyList<ScholarshipReapplicationAttempt>> GetPreviousAttemptsAsync(
+        SqlConnection connection,
+        Guid applicationId,
+        Guid userId,
+        int scholarshipId,
+        CancellationToken cancellationToken)
+    {
+        const string sql = @"
+SELECT sa.ApplicationId, sa.Status, sa.SubmittedAt, ses.Verdict, ses.Remarks
+FROM dbo.ScholarshipApplications sa
+LEFT JOIN dbo.ScholarshipEligibilityScreenings ses ON ses.ApplicationId = sa.ApplicationId
+WHERE sa.UserId = @UserId AND sa.ScholarshipId = @ScholarshipId AND sa.ApplicationId <> @ApplicationId
+ORDER BY sa.SubmittedAt DESC;";
+
         await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@UserId", SqlDbType.UniqueIdentifier) { Value = userId });
+        command.Parameters.Add(new SqlParameter("@ScholarshipId", SqlDbType.Int) { Value = scholarshipId });
         command.Parameters.Add(new SqlParameter("@ApplicationId", SqlDbType.UniqueIdentifier) { Value = applicationId });
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        return await reader.ReadAsync(cancellationToken) ? MapDetail(reader) : null;
+
+        var attempts = new List<ScholarshipReapplicationAttempt>();
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            attempts.Add(new ScholarshipReapplicationAttempt
+            {
+                ApplicationId = reader.GetGuid(reader.GetOrdinal("ApplicationId")),
+                Status = reader.GetString(reader.GetOrdinal("Status")),
+                SubmittedAt = reader.GetDateTime(reader.GetOrdinal("SubmittedAt")),
+                ScreeningVerdict = reader.IsDBNull(reader.GetOrdinal("Verdict")) ? null : reader.GetString(reader.GetOrdinal("Verdict")),
+                ScreeningRemarks = reader.IsDBNull(reader.GetOrdinal("Remarks")) ? null : reader.GetString(reader.GetOrdinal("Remarks")),
+            });
+        }
+
+        return attempts;
     }
 
     public async Task<ScholarshipEligibilityScreening?> UpsertScreeningAsync(
@@ -139,6 +195,7 @@ WHERE ApplicationId = @ApplicationId AND Status = @FromStatus;";
             ApplicantName = $"{reader.GetString(reader.GetOrdinal("FirstName"))} {reader.GetString(reader.GetOrdinal("LastName"))}",
             ApplicantEmail = reader.GetString(reader.GetOrdinal("Email")),
             IsBcasian = reader.IsDBNull(reader.GetOrdinal("IsBcasian")) ? null : reader.GetBoolean(reader.GetOrdinal("IsBcasian")),
+            ScholarshipId = reader.GetInt32(reader.GetOrdinal("ScholarshipId")),
             ScholarshipName = reader.GetString(reader.GetOrdinal("ScholarshipName")),
             ScholarshipType = reader.GetString(reader.GetOrdinal("ScholarshipType")),
             GradeAverage = reader.GetDecimal(reader.GetOrdinal("GradeAverage")),
@@ -148,6 +205,21 @@ WHERE ApplicationId = @ApplicationId AND Status = @FromStatus;";
             Status = reader.GetString(reader.GetOrdinal("Status")),
             SubmittedAt = reader.GetDateTime(reader.GetOrdinal("SubmittedAt")),
             UpdatedAt = reader.GetDateTime(reader.GetOrdinal("UpdatedAt")),
+        };
+
+        var isTopOne = reader.GetBoolean(reader.GetOrdinal("IsTopOne"));
+        detail.EligibilityRules = new ScholarshipEligibilityRules
+        {
+            IsTopOne = isTopOne,
+            // Waived entirely for Top 1 regardless of BCASian status; for
+            // every other scholarship it's required exactly for non-BCASian
+            // applicants. Null (not just false) when BCASian status itself
+            // is unknown, so the UI can distinguish "not required" from
+            // "can't tell yet".
+            EntranceExamRequired = isTopOne ? false : (detail.IsBcasian.HasValue ? !detail.IsBcasian.Value : null),
+            EntranceExamScheduled = reader.GetBoolean(reader.GetOrdinal("EntranceExamScheduled")),
+            TotalSlots = reader.GetInt32(reader.GetOrdinal("TotalSlots")),
+            RemainingSlots = reader.GetInt32(reader.GetOrdinal("RemainingSlots")),
         };
 
         if (!reader.IsDBNull(reader.GetOrdinal("Verdict")))
