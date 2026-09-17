@@ -1,0 +1,12 @@
+namespace BCAS.Api.Models;
+
+public class AdmissionApplication
+{
+    public Guid ApplicationId { get; set; }
+    public Guid UserId { get; set; }
+    public string ApplicationType { get; set; } = string.Empty;
+    public string CourseAppliedFor { get; set; } = string.Empty;
+    public string PreviousSchool { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public DateTime SubmittedAt { get; set; }
+}

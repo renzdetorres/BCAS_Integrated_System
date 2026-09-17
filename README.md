@@ -278,3 +278,157 @@ tickets (BISAASS-16 covers admission applications).
 The logout handler, until now copy-pasted between `LoginPage` and
 `PortalPage`, was pulled into a `useLogout()` hook
 (`frontend/src/hooks/useLogout.js`) since the dashboard needed it too.
+
+## BISAASS-15: Applicant Profile Setup & Management
+
+One-time profile setup, viewable/editable any time afterward. Adds an
+`ApplicantProfiles` table (`database/schema.sql`), one-to-one with `Users`.
+Every column is required to save, so a row's mere existence *is* "profile
+setup complete" - no separate flag to keep in sync. `FirstName`/`LastName`
+stay on `Users` as the single source of truth; saving the profile updates
+them there instead of duplicating them.
+
+### API
+
+Both endpoints require the `bcas_auth` cookie for the `Applicant` role, and
+always act on the caller's own id (from the JWT's `sub` claim, never a
+request parameter) - one applicant can't read or write another's profile.
+
+`GET /api/applicant/profile` - `200 OK` with the profile, or `404 Not
+Found` if setup hasn't been completed yet.
+
+`PUT /api/applicant/profile`
+
+Request body:
+```json
+{
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "birthDate": "2005-03-12",
+  "contactNumber": "09171234567",
+  "addressLine": "123 Sampaguita St., Brgy. San Roque",
+  "city": "Balanga",
+  "province": "Bataan",
+  "postalCode": "2100",
+  "isBcasian": false
+}
+```
+- `200 OK` with the saved profile (create or update - same endpoint).
+- `400 Bad Request` for missing fields or a `birthDate` in the future.
+
+Updating both `Users` (name) and `ApplicantProfiles` (everything else) is
+wrapped in one SQL transaction so the two never disagree.
+
+Extracted a `ClaimsPrincipal.GetUserId()` extension
+(`backend/BCAS.Api/Extensions/ClaimsPrincipalExtensions.cs`) for reading
+the JWT `sub` claim, replacing the inline version in `AuthController.Me()`
+now that a second controller needs the same thing.
+
+### Frontend
+
+`/profile` (gated by `RequireRole(["Applicant"])`) shows a form seeded from
+the existing profile, or blank (with the name pre-filled from the session)
+if none exists yet. Linked from the dashboard's quick links as "My
+Profile".
+
+## BISAASS-16: Submit Admission Application
+
+Adds an `AdmissionApplications` table (`database/schema.sql`): applicant,
+application type, course, previous school, and a `Status` that starts at
+`Submitted`. Nothing in this ticket's acceptance criteria limits an
+applicant to one application, so multiple are allowed - the response lists
+them most-recent-first. The `Status` `CHECK` constraint already allows
+`UnderReview`/`Approved`/`Rejected` too, anticipating the evaluator
+workflow (a later ticket) without a future schema change; no endpoint
+transitions a status away from `Submitted` yet.
+
+### API
+
+Both endpoints require the `bcas_auth` cookie for the `Applicant` role and
+act only on the caller's own applications.
+
+`GET /api/admission-applications` - `200 OK` with the caller's own
+applications, most recent first.
+
+`POST /api/admission-applications`
+
+Request body:
+```json
+{
+  "applicationType": "NewStudent",
+  "courseAppliedFor": "BS Computer Science",
+  "previousSchool": "Balanga National High School"
+}
+```
+- `201 Created` with the new application (`status: "Submitted"`).
+- `400 Bad Request` if `applicationType` isn't `NewStudent` or `Transferee`,
+  or if the applicant's profile isn't complete yet (reuses
+  `IApplicantProfileRepository.ExistsAsync`, added in BISAASS-15 for
+  exactly this check).
+
+### Frontend
+
+`/applications` (gated by `RequireRole(["Applicant"])`, replacing its
+former `ComingSoonPage` placeholder) has the submit form plus a list of the
+applicant's past applications with status badges. A profile-incomplete
+error surfaces a link straight to `/profile`.
+
+## BISAASS-17: Submit Scholarship Application
+
+Adds two tables (`database/schema.sql`):
+
+- `Scholarships` - the catalog of "slots" applicants apply against (name,
+  type, `TotalSlots`/`RemainingSlots`, active flag). No admin-management
+  endpoint exists for it yet, so it's seeded with three sample scholarships,
+  the same way `Deadlines` was in BISAASS-14.
+- `ScholarshipApplications` - applicant, chosen scholarship, grade average,
+  and a `ScholarshipType` that's a *snapshot* of the scholarship's type at
+  submission time (not re-entered by the applicant), so a later catalog
+  edit never rewrites an already-submitted application's history.
+
+Like BISAASS-16, submission is blocked until the applicant's profile is
+complete - BISAASS-17's own acceptance criteria don't restate that, but
+BISAASS-15's does in general terms ("application submission is blocked"),
+so this keeps the rule consistent across both application types rather
+than being an admission-only quirk.
+
+The remaining-slots check has to be race-safe: two applicants submitting
+for the last slot at the same moment must not both succeed. The reservation
+is one atomic conditional `UPDATE ... SET RemainingSlots = RemainingSlots -
+1 WHERE ScholarshipId = @Id AND IsActive = 1 AND RemainingSlots > 0`, and
+only if that actually matched a row does the same transaction insert the
+application - there's no separate "check, then act" read that a second
+request could race between (`backend/BCAS.Api/Data/ScholarshipApplicationRepository.cs`).
+
+### API
+
+All three endpoints require the `bcas_auth` cookie for the `Applicant`
+role.
+
+`GET /api/scholarships` - `200 OK` with active scholarships that still have
+at least one remaining slot.
+
+`GET /api/scholarship-applications` - `200 OK` with the caller's own
+scholarship applications, most recent first.
+
+`POST /api/scholarship-applications`
+
+Request body:
+```json
+{ "scholarshipId": 1, "gradeAverage": 95.5 }
+```
+- `201 Created` with the new application (`status: "Submitted"`).
+- `400 Bad Request` if the profile is incomplete, the scholarship is
+  inactive, or it has no remaining slots.
+- `404 Not Found` if `scholarshipId` doesn't exist.
+
+### Frontend
+
+`/scholarships` (gated by `RequireRole(["Applicant"])`) lists open
+scholarships with remaining-slot counts in a picker, a grade-average field,
+and the applicant's own past scholarship applications with status badges.
+On a successful submit it decrements the picked scholarship's remaining
+count locally (and drops it from the picker at zero) rather than
+re-fetching - the server-side count is the one that's actually
+authoritative. Linked from the dashboard's quick links as "Scholarship
+Application".

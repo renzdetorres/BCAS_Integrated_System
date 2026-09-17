@@ -8,6 +8,9 @@ import PortalRouter from "./pages/PortalRouter.jsx";
 import ProvisionStaffPage from "./pages/ProvisionStaffPage.jsx";
 import ManageUsersPage from "./pages/ManageUsersPage.jsx";
 import ComingSoonPage from "./pages/ComingSoonPage.jsx";
+import ApplicantProfilePage from "./pages/ApplicantProfilePage.jsx";
+import AdmissionApplicationPage from "./pages/AdmissionApplicationPage.jsx";
+import ScholarshipApplicationPage from "./pages/ScholarshipApplicationPage.jsx";
 
 export default function App() {
   return (
@@ -18,12 +21,16 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route element={<RequireAuth />}>
             <Route path="/portal" element={<PortalRouter />} />
-            <Route path="/applications" element={<ComingSoonPage title="My Application" />} />
             <Route path="/documents" element={<ComingSoonPage title="Documents" />} />
             <Route path="/announcements" element={<ComingSoonPage title="Announcements" />} />
             <Route element={<RequireRole allowedRoles={["Admin"]} />}>
               <Route path="/admin/staff" element={<ProvisionStaffPage />} />
               <Route path="/admin/users" element={<ManageUsersPage />} />
+            </Route>
+            <Route element={<RequireRole allowedRoles={["Applicant"]} />}>
+              <Route path="/profile" element={<ApplicantProfilePage />} />
+              <Route path="/applications" element={<AdmissionApplicationPage />} />
+              <Route path="/scholarships" element={<ScholarshipApplicationPage />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />

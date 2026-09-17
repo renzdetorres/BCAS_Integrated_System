@@ -97,3 +97,119 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Deadlines WHERE DeadlineType = N'DocumentDeadli
 IF NOT EXISTS (SELECT 1 FROM dbo.Deadlines WHERE DeadlineType = N'EnrollmentPeriod')
     INSERT INTO dbo.Deadlines (DeadlineType, Title, DeadlineDate) VALUES (N'EnrollmentPeriod', N'Enrollment Period Opens', '2026-11-01');
 GO
+
+-- -----------------------------------------------------------------------------
+-- ApplicantProfiles
+-- One-to-one with Users (BISAASS-15). A row's existence IS "profile setup
+-- complete" - every column here is required, so there's no partial/complete
+-- flag to keep in sync. Name (FirstName/LastName) stays on dbo.Users as the
+-- single source of truth; profile save updates it there rather than
+-- duplicating it here.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.ApplicantProfiles', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ApplicantProfiles
+    (
+        UserId          UNIQUEIDENTIFIER NOT NULL CONSTRAINT PK_ApplicantProfiles PRIMARY KEY,
+        BirthDate       DATE             NOT NULL,
+        ContactNumber   NVARCHAR(30)     NOT NULL,
+        AddressLine     NVARCHAR(200)    NOT NULL,
+        City            NVARCHAR(100)    NOT NULL,
+        Province        NVARCHAR(100)    NOT NULL,
+        PostalCode      NVARCHAR(20)     NOT NULL,
+        IsBcasian       BIT              NOT NULL CONSTRAINT DF_ApplicantProfiles_IsBcasian DEFAULT (0),
+        CreatedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_ApplicantProfiles_CreatedAt DEFAULT SYSUTCDATETIME(),
+        UpdatedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_ApplicantProfiles_UpdatedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT FK_ApplicantProfiles_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId)
+    );
+END
+GO
+
+-- -----------------------------------------------------------------------------
+-- AdmissionApplications
+-- One applicant may submit more than one (e.g. different courses); nothing
+-- in BISAASS-16's acceptance criteria limits it to one. Status starts and,
+-- for now, stays at 'Submitted' - the wider set in the CHECK constraint
+-- anticipates the evaluator workflow (a later ticket) without needing a
+-- schema change when it lands.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.AdmissionApplications', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.AdmissionApplications
+    (
+        ApplicationId       UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_AdmissionApplications_ApplicationId DEFAULT NEWID(),
+        UserId              UNIQUEIDENTIFIER NOT NULL,
+        ApplicationType     NVARCHAR(20)     NOT NULL,
+        CourseAppliedFor    NVARCHAR(200)    NOT NULL,
+        PreviousSchool      NVARCHAR(200)    NOT NULL,
+        Status              NVARCHAR(30)     NOT NULL CONSTRAINT DF_AdmissionApplications_Status DEFAULT (N'Submitted'),
+        SubmittedAt         DATETIME2(3)     NOT NULL CONSTRAINT DF_AdmissionApplications_SubmittedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_AdmissionApplications PRIMARY KEY (ApplicationId),
+        CONSTRAINT FK_AdmissionApplications_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT CK_AdmissionApplications_ApplicationType CHECK (ApplicationType IN (N'NewStudent', N'Transferee')),
+        CONSTRAINT CK_AdmissionApplications_Status CHECK (Status IN (N'Submitted', N'UnderReview', N'Approved', N'Rejected'))
+    );
+
+    CREATE NONCLUSTERED INDEX IX_AdmissionApplications_UserId ON dbo.AdmissionApplications (UserId);
+END
+GO
+
+-- -----------------------------------------------------------------------------
+-- Scholarships
+-- The catalog of scholarship "slots" applicants can apply against (BISAASS-17).
+-- No admin-management endpoint exists yet, so rows are seeded here, same as
+-- Deadlines. RemainingSlots is decremented atomically on each accepted
+-- application (see ScholarshipApplicationRepository) - the CHECK constraint
+-- is a belt-and-suspenders backstop against it ever going negative or above
+-- TotalSlots.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.Scholarships', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Scholarships
+    (
+        ScholarshipId    INT             NOT NULL IDENTITY(1,1) CONSTRAINT PK_Scholarships PRIMARY KEY,
+        Name             NVARCHAR(200)   NOT NULL,
+        ScholarshipType  NVARCHAR(100)   NOT NULL,
+        TotalSlots       INT             NOT NULL,
+        RemainingSlots   INT             NOT NULL,
+        IsActive         BIT             NOT NULL CONSTRAINT DF_Scholarships_IsActive DEFAULT (1),
+        CreatedAt        DATETIME2(3)    NOT NULL CONSTRAINT DF_Scholarships_CreatedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT CK_Scholarships_RemainingSlots CHECK (RemainingSlots >= 0 AND RemainingSlots <= TotalSlots)
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.Scholarships WHERE Name = N'Academic Excellence Scholarship')
+    INSERT INTO dbo.Scholarships (Name, ScholarshipType, TotalSlots, RemainingSlots) VALUES (N'Academic Excellence Scholarship', N'Academic', 20, 20);
+IF NOT EXISTS (SELECT 1 FROM dbo.Scholarships WHERE Name = N'Financial Need Grant')
+    INSERT INTO dbo.Scholarships (Name, ScholarshipType, TotalSlots, RemainingSlots) VALUES (N'Financial Need Grant', N'Financial Need', 15, 15);
+IF NOT EXISTS (SELECT 1 FROM dbo.Scholarships WHERE Name = N'Athletic Scholarship')
+    INSERT INTO dbo.Scholarships (Name, ScholarshipType, TotalSlots, RemainingSlots) VALUES (N'Athletic Scholarship', N'Athletic', 10, 10);
+GO
+
+-- -----------------------------------------------------------------------------
+-- ScholarshipApplications
+-- ScholarshipType is a snapshot of the chosen Scholarship's type at
+-- submission time (not re-entered by the applicant), so a later catalog
+-- edit never rewrites the history of an already-submitted application.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.ScholarshipApplications', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ScholarshipApplications
+    (
+        ApplicationId    UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_ScholarshipApplications_ApplicationId DEFAULT NEWID(),
+        UserId           UNIQUEIDENTIFIER NOT NULL,
+        ScholarshipId    INT              NOT NULL,
+        ScholarshipType  NVARCHAR(100)    NOT NULL,
+        GradeAverage     DECIMAL(5,2)     NOT NULL,
+        Status           NVARCHAR(30)     NOT NULL CONSTRAINT DF_ScholarshipApplications_Status DEFAULT (N'Submitted'),
+        SubmittedAt      DATETIME2(3)     NOT NULL CONSTRAINT DF_ScholarshipApplications_SubmittedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_ScholarshipApplications PRIMARY KEY (ApplicationId),
+        CONSTRAINT FK_ScholarshipApplications_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT FK_ScholarshipApplications_Scholarships FOREIGN KEY (ScholarshipId) REFERENCES dbo.Scholarships (ScholarshipId),
+        CONSTRAINT CK_ScholarshipApplications_Status CHECK (Status IN (N'Submitted', N'UnderReview', N'Approved', N'Rejected'))
+    );
+
+    CREATE NONCLUSTERED INDEX IX_ScholarshipApplications_UserId ON dbo.ScholarshipApplications (UserId);
+END
+GO
