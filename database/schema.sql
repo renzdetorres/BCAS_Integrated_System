@@ -261,3 +261,40 @@ AS
     FROM dbo.ScholarshipApplications sa
     JOIN dbo.Scholarships sc ON sc.ScholarshipId = sa.ScholarshipId;
 GO
+
+-- -----------------------------------------------------------------------------
+-- ApplicantDocuments
+-- One row per (applicant, document type) - a re-upload replaces the row in
+-- place (see ApplicantDocumentRepository.UpsertAsync) rather than
+-- accumulating history, and resets Status back to 'Pending' for
+-- re-verification (BISAASS-19). FileData holds the PDF itself; the app has
+-- no separate blob storage, and applicant document uploads are small
+-- enough that storing them in-row is fine. FlaggedReason is only ever set
+-- alongside Status = 'Flagged' - there is no evaluator UI yet to set
+-- either, so both stay at their defaults until that workflow exists.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.ApplicantDocuments', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ApplicantDocuments
+    (
+        DocumentId      UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_ApplicantDocuments_DocumentId DEFAULT NEWID(),
+        UserId          UNIQUEIDENTIFIER NOT NULL,
+        DocumentType    NVARCHAR(30)     NOT NULL,
+        FileName        NVARCHAR(260)    NOT NULL,
+        ContentType     NVARCHAR(100)    NOT NULL,
+        FileSizeBytes   INT              NOT NULL,
+        FileData        VARBINARY(MAX)   NOT NULL,
+        Status          NVARCHAR(20)     NOT NULL CONSTRAINT DF_ApplicantDocuments_Status DEFAULT (N'Pending'),
+        FlaggedReason   NVARCHAR(500)    NULL,
+        UploadedAt      DATETIME2(3)     NOT NULL CONSTRAINT DF_ApplicantDocuments_UploadedAt DEFAULT SYSUTCDATETIME(),
+        UpdatedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_ApplicantDocuments_UpdatedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_ApplicantDocuments PRIMARY KEY (DocumentId),
+        CONSTRAINT FK_ApplicantDocuments_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT UQ_ApplicantDocuments_UserId_DocumentType UNIQUE (UserId, DocumentType),
+        CONSTRAINT CK_ApplicantDocuments_DocumentType CHECK (DocumentType IN (N'ReportCard', N'IdPicture', N'PSA', N'TOR', N'SF10')),
+        CONSTRAINT CK_ApplicantDocuments_Status CHECK (Status IN (N'Pending', N'Verified', N'Rejected', N'Flagged'))
+    );
+
+    CREATE NONCLUSTERED INDEX IX_ApplicantDocuments_UserId ON dbo.ApplicantDocuments (UserId);
+END
+GO

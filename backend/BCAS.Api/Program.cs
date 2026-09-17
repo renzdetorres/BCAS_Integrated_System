@@ -34,6 +34,8 @@ builder.Services.AddScoped<IScholarshipRepository, ScholarshipRepository>();
 builder.Services.AddScoped<IScholarshipService, ScholarshipService>();
 builder.Services.AddScoped<IScholarshipApplicationRepository, ScholarshipApplicationRepository>();
 builder.Services.AddScoped<IScholarshipApplicationService, ScholarshipApplicationService>();
+builder.Services.AddScoped<IApplicantDocumentRepository, ApplicantDocumentRepository>();
+builder.Services.AddScoped<IApplicantDocumentService, ApplicantDocumentService>();
 builder.Services.AddScoped<IApplicationHistoryRepository, ApplicationHistoryRepository>();
 builder.Services.AddScoped<IApplicationHistoryService, ApplicationHistoryService>();
 
