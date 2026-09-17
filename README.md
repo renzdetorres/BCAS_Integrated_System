@@ -60,3 +60,33 @@ Request body:
 
 Passwords are hashed with BCrypt before being stored; the role is always
 forced to `Applicant` server-side regardless of any input.
+
+## BISAASS-9: Secure Login (BCrypt + JWT HttpOnly Cookie)
+
+Login endpoint verifies email/password against the stored BCrypt hash and, on
+success, issues a JWT stored in an HttpOnly cookie.
+
+Set a real `Jwt:SigningKey` (32+ random bytes) via configuration or an
+environment variable before deploying anywhere beyond local dev - the
+placeholder in `appsettings.json` is not a secret.
+
+### API
+
+`POST /api/auth/login`
+
+Request body:
+```json
+{
+  "email": "jane.doe@example.com",
+  "password": "at-least-8-characters"
+}
+```
+
+- `200 OK` with the user's profile (id, name, email, role) and a JWT set on
+  an HttpOnly, Secure, SameSite cookie (`bcas_auth`). The JWT encodes the
+  user's id, email and role as claims for downstream authorization.
+- `400 Bad Request` for invalid/missing fields.
+- `401 Unauthorized` with the same generic message for an unknown email, a
+  wrong password, or an inactive account - the response never reveals which
+  case occurred, and the unknown-email path runs a dummy BCrypt check so it
+  isn't distinguishable by timing either.

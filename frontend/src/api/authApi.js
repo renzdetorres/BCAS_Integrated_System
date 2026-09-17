@@ -25,6 +25,25 @@ export async function registerApplicant({ firstName, lastName, email, password }
   return data;
 }
 
+export async function loginUser({ email, password }) {
+  const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    // Required so the browser stores/sends the HttpOnly auth cookie the API sets.
+    credentials: "include",
+    body: JSON.stringify({ email, password }),
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const message = extractErrorMessage(data) ?? "Login failed. Please try again.";
+    throw new ApiError(message, response.status);
+  }
+
+  return data;
+}
+
 function extractErrorMessage(problemDetails) {
   if (!problemDetails) return null;
   if (problemDetails.detail) return problemDetails.detail;

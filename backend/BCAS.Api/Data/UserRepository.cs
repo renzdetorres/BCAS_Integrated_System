@@ -27,6 +27,39 @@ public class UserRepository : IUserRepository
         return result is not null;
     }
 
+    public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+SELECT u.UserId, u.FirstName, u.LastName, u.Email, u.PasswordHash, u.RoleId, r.RoleName, u.IsActive, u.CreatedAt
+FROM dbo.Users u
+JOIN dbo.Roles r ON r.RoleId = u.RoleId
+WHERE u.Email = @Email;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@Email", System.Data.SqlDbType.NVarChar, 256) { Value = email });
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        return new User
+        {
+            UserId = reader.GetGuid(reader.GetOrdinal("UserId")),
+            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+            LastName = reader.GetString(reader.GetOrdinal("LastName")),
+            Email = reader.GetString(reader.GetOrdinal("Email")),
+            PasswordHash = reader.GetString(reader.GetOrdinal("PasswordHash")),
+            RoleId = reader.GetInt32(reader.GetOrdinal("RoleId")),
+            RoleName = reader.GetString(reader.GetOrdinal("RoleName")),
+            IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
+            CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
+        };
+    }
+
     public async Task<User> CreateApplicantAsync(
         string firstName,
         string lastName,
