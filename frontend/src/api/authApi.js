@@ -44,6 +44,18 @@ export async function loginUser({ email, password }) {
   return data;
 }
 
+export async function logoutUser() {
+  const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
+    method: "POST",
+    // Required so the browser sends the HttpOnly auth cookie for the API to clear.
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new ApiError("Logout failed. Please try again.", response.status);
+  }
+}
+
 function extractErrorMessage(problemDetails) {
   if (!problemDetails) return null;
   if (problemDetails.detail) return problemDetails.detail;

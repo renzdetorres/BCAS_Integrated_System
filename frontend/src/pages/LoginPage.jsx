@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { loginUser, ApiError } from "../api/authApi.js";
+import { loginUser, logoutUser, ApiError } from "../api/authApi.js";
 import "./LoginPage.css";
 
 const initialForm = { email: "", password: "" };
@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [form, setForm] = useState(initialForm);
   const [errorMessage, setErrorMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState(null);
 
   function handleChange(event) {
@@ -36,6 +37,18 @@ export default function LoginPage() {
     }
   }
 
+  async function handleLogout() {
+    setIsLoggingOut(true);
+    try {
+      await logoutUser();
+    } finally {
+      // Clear local state regardless of network outcome - the server-side
+      // cookie clear is what actually ends the session.
+      setLoggedInUser(null);
+      setIsLoggingOut(false);
+    }
+  }
+
   if (loggedInUser) {
     return (
       <main className="login-page">
@@ -44,6 +57,9 @@ export default function LoginPage() {
           <p>
             Signed in as <strong>{loggedInUser.email}</strong> ({loggedInUser.role}).
           </p>
+          <button type="button" onClick={handleLogout} disabled={isLoggingOut}>
+            {isLoggingOut ? "Logging out..." : "Log Out"}
+          </button>
         </div>
       </main>
     );

@@ -64,7 +64,7 @@
   margin-bottom: 16px;
 }
 
-button[type="submit"] {
+.login-card button {
   width: 100%;
   padding: 12px;
   background: #2f6fed;
@@ -76,7 +76,7 @@ button[type="submit"] {
   cursor: pointer;
 }
 
-button[type="submit"]:disabled {
+.login-card button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }

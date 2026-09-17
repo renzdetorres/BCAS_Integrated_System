@@ -1,6 +1,10 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using BCAS.Api.Constants;
 using BCAS.Api.Exceptions;
 using BCAS.Api.Models;
 using BCAS.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BCAS.Api.Controllers;
@@ -9,8 +13,6 @@ namespace BCAS.Api.Controllers;
 [Route("api/auth")]
 public class AuthController : ControllerBase
 {
-    public const string AuthCookieName = "bcas_auth";
-
     private readonly IAuthService _authService;
 
     public AuthController(IAuthService authService)
@@ -63,7 +65,7 @@ public class AuthController : ControllerBase
         {
             var result = await _authService.LoginAsync(request, cancellationToken);
 
-            Response.Cookies.Append(AuthCookieName, result.Token, new CookieOptions
+            Response.Cookies.Append(AuthConstants.AuthCookieName, result.Token, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
@@ -83,5 +85,47 @@ public class AuthController : ControllerBase
                 Status = StatusCodes.Status401Unauthorized,
             });
         }
+    }
+
+    /// <summary>
+    /// Clears the auth cookie server-side, invalidating the client's session.
+    /// Idempotent - safe to call even when no cookie is present.
+    /// </summary>
+    [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public IActionResult Logout()
+    {
+        Response.Cookies.Delete(AuthConstants.AuthCookieName, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Lax,
+            Path = "/",
+        });
+
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Returns the identity of the currently authenticated user. Requires a
+    /// valid auth cookie - used to confirm that requests made without one
+    /// (e.g. after logout) are treated as unauthenticated.
+    /// </summary>
+    [Authorize]
+    [HttpGet("me")]
+    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public IActionResult Me()
+    {
+        var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        return Ok(new LoginResponse
+        {
+            UserId = Guid.Parse(userId!),
+            Email = User.FindFirstValue(JwtRegisteredClaimNames.Email) ?? string.Empty,
+            FirstName = User.FindFirstValue(ClaimTypes.GivenName) ?? string.Empty,
+            LastName = User.FindFirstValue(ClaimTypes.Surname) ?? string.Empty,
+            Role = User.FindFirstValue(ClaimTypes.Role) ?? string.Empty,
+        });
     }
 }
