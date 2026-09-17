@@ -197,6 +197,14 @@ GO
 -- ScholarshipType is a snapshot of the chosen Scholarship's type at
 -- submission time (not re-entered by the applicant), so a later catalog
 -- edit never rewrites the history of an already-submitted application.
+--
+-- BISAASS-41 Evaluator Dashboard reads this table directly: Status IN
+-- (Submitted, UnderReview) is the pending-evaluation queue, Status IN
+-- (Approved, Rejected) is "recently evaluated" (see
+-- EvaluatorDashboardRepository) - no schema change was needed for that
+-- ticket. There's no separate "decided at" timestamp yet, so recency there
+-- is approximated by SubmittedAt until the verdict-recording workflow
+-- (BISAASS-42/43) adds one.
 -- -----------------------------------------------------------------------------
 IF OBJECT_ID(N'dbo.ScholarshipApplications', N'U') IS NULL
 BEGIN

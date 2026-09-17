@@ -51,6 +51,8 @@ builder.Services.AddScoped<INotificationSettingsRepository, NotificationSettings
 builder.Services.AddScoped<INotificationSettingsService, NotificationSettingsService>();
 builder.Services.AddScoped<ISystemSettingsRepository, SystemSettingsRepository>();
 builder.Services.AddScoped<ISystemSettingsService, SystemSettingsService>();
+builder.Services.AddScoped<IEvaluatorDashboardRepository, EvaluatorDashboardRepository>();
+builder.Services.AddScoped<IEvaluatorDashboardService, EvaluatorDashboardService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
