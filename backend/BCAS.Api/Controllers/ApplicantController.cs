@@ -13,10 +13,12 @@ namespace BCAS.Api.Controllers;
 public class ApplicantController : ControllerBase
 {
     private readonly IApplicantProfileService _profileService;
+    private readonly IAuthService _authService;
 
-    public ApplicantController(IApplicantProfileService profileService)
+    public ApplicantController(IApplicantProfileService profileService, IAuthService authService)
     {
         _profileService = profileService;
+        _authService = authService;
     }
 
     /// <summary>
@@ -55,6 +57,36 @@ public class ApplicantController : ControllerBase
             return BadRequest(new ProblemDetails
             {
                 Title = "Invalid birth date",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+    }
+
+    /// <summary>
+    /// Changes the signed-in applicant's own password. Requires the current
+    /// password; the new one is re-hashed with BCrypt before being stored.
+    /// Does not affect the caller's current session - the existing JWT
+    /// remains valid until it naturally expires (same tradeoff as logout,
+    /// see BISAASS-10).
+    /// </summary>
+    [HttpPut("password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ChangePassword(
+        [FromBody] ChangePasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _authService.ChangePasswordAsync(User.GetUserId(), request, cancellationToken);
+            return NoContent();
+        }
+        catch (IncorrectCurrentPasswordException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Incorrect current password",
                 Detail = ex.Message,
                 Status = StatusCodes.Status400BadRequest,
             });

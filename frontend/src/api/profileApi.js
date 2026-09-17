@@ -35,3 +35,20 @@ export async function saveMyProfile(profile) {
 
   return data;
 }
+
+export async function changeMyPassword({ currentPassword, newPassword }) {
+  const response = await fetch(`${API_BASE_URL}/api/applicant/password`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+
+  if (response.status === 204) {
+    return;
+  }
+
+  const data = await response.json().catch(() => null);
+  const message = extractErrorMessage(data) ?? "Failed to change password. Please try again.";
+  throw new ApiError(message, response.status);
+}

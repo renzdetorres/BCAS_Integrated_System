@@ -44,6 +44,23 @@ WHERE u.Email = @Email;";
         return await reader.ReadAsync(cancellationToken) ? MapUser(reader) : null;
     }
 
+    public async Task<User?> GetByIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+SELECT u.UserId, u.FirstName, u.LastName, u.Email, u.PasswordHash, u.RoleId, r.RoleName, u.IsActive, u.CreatedAt
+FROM dbo.Users u
+JOIN dbo.Roles r ON r.RoleId = u.RoleId
+WHERE u.UserId = @UserId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@UserId", System.Data.SqlDbType.UniqueIdentifier) { Value = userId });
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        return await reader.ReadAsync(cancellationToken) ? MapUser(reader) : null;
+    }
+
     public Task<User> CreateApplicantAsync(
         string firstName,
         string lastName,
@@ -161,6 +178,21 @@ WHERE u.UserId = @UserId;";
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         return await reader.ReadAsync(cancellationToken) ? MapUser(reader) : null;
+    }
+
+    public async Task UpdatePasswordHashAsync(Guid userId, string passwordHash, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+UPDATE dbo.Users
+SET PasswordHash = @PasswordHash, UpdatedAt = SYSUTCDATETIME()
+WHERE UserId = @UserId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@PasswordHash", System.Data.SqlDbType.NVarChar, 200) { Value = passwordHash });
+        command.Parameters.Add(new SqlParameter("@UserId", System.Data.SqlDbType.UniqueIdentifier) { Value = userId });
+        await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
     private static User MapUser(SqlDataReader reader) => new()

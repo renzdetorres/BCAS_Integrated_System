@@ -682,3 +682,50 @@ straight to this route on a successful submit instead of updating their
 own local list, satisfying "immediately after submission." `/applications/history`
 (BISAASS-18) gained a "View / Print Receipt" link in its detail panel,
 satisfying "retrievable later from application history."
+
+## BISAASS-26: Applicant Settings (Profile & Password Management)
+
+Profile field updates were already fully built in BISAASS-15 - this
+ticket's new work is password changing plus folding both under a single
+"Settings" screen. No new tables were needed: `Users.PasswordHash`
+(BISAASS-8) is what a change overwrites.
+
+`IUserRepository` gained `GetByIdAsync` (profile lookups so far only ever
+went by email, for login) and `UpdatePasswordHashAsync`.
+`IAuthService.ChangePasswordAsync` verifies `CurrentPassword` against the
+stored BCrypt hash with `BCrypt.Verify` - the same check `LoginAsync`
+already does - before hashing and storing `NewPassword` with
+`BCrypt.HashPassword(..., workFactor: 12)`, identical to registration's
+hashing. It lives on `IAuthService` rather than
+`IApplicantProfileService` since it's password/`IUserRepository` logic,
+colocated with `RegisterApplicantAsync`/`LoginAsync` which already do the
+same hashing and verification; `ApplicantController` takes a second
+`IAuthService` dependency to call it.
+
+Changing the password does not revoke the caller's current session - the
+existing JWT stays valid until it naturally expires, the same
+stateless-JWT tradeoff BISAASS-10's logout already has.
+
+### API
+
+`PUT /api/applicant/password` - requires the `bcas_auth` cookie for the
+`Applicant` role.
+
+Request body:
+```json
+{ "currentPassword": "old-password-here", "newPassword": "at-least-8-characters" }
+```
+- `204 No Content` on success.
+- `400 Bad Request` if `newPassword` is under 8 characters, or if
+  `currentPassword` doesn't match the account's stored hash.
+
+### Frontend
+
+`/profile` (still gated by `RequireRole(["Applicant"])`, its route
+unchanged since other pages link to it directly for "complete your
+profile") is now a "Settings" page with two sections: the existing
+Profile form unchanged, and a new Change Password form (current password,
+new password, confirm new password - client-side checked for a match and
+8-character minimum before the request is even sent, mirroring
+`RegisterPage`'s validation). The dashboard's quick link label changed
+from "My Profile" to "Settings" to match.
