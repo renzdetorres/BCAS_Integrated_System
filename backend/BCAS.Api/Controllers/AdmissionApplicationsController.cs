@@ -45,6 +45,15 @@ public class AdmissionApplicationsController : ControllerBase
             var response = await _applicationService.SubmitAsync(User.GetUserId(), request, cancellationToken);
             return CreatedAtAction(nameof(GetMine), response);
         }
+        catch (AdmissionApplicationsClosedException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Admission applications closed",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
         catch (InvalidApplicationTypeException ex)
         {
             return BadRequest(new ProblemDetails
