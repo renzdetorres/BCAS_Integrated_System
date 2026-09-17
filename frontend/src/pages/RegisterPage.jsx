@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { registerApplicant, ApiError } from "../api/authApi.js";
 import "./RegisterPage.css";
 
@@ -64,9 +65,9 @@ export default function RegisterPage() {
             Your applicant account for <strong>{registeredEmail}</strong> has been created.
             You can now log in.
           </p>
-          <a className="register-link" href="/login">
+          <Link className="register-link" to="/login">
             Go to login
-          </a>
+          </Link>
         </div>
       </main>
     );

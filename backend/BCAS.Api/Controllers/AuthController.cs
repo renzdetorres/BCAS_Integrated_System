@@ -9,6 +9,8 @@ namespace BCAS.Api.Controllers;
 [Route("api/auth")]
 public class AuthController : ControllerBase
 {
+    public const string AuthCookieName = "bcas_auth";
+
     private readonly IAuthService _authService;
 
     public AuthController(IAuthService authService)
@@ -40,6 +42,45 @@ public class AuthController : ControllerBase
                 Title = "Email already registered",
                 Detail = ex.Message,
                 Status = StatusCodes.Status409Conflict,
+            });
+        }
+    }
+
+    /// <summary>
+    /// Verifies credentials and, on success, issues a JWT in an HttpOnly,
+    /// Secure, SameSite cookie. Failures (unknown email, wrong password,
+    /// inactive account) all return the same generic error.
+    /// </summary>
+    [HttpPost("login")]
+    [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<LoginResponse>> Login(
+        [FromBody] LoginRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await _authService.LoginAsync(request, cancellationToken);
+
+            Response.Cookies.Append(AuthCookieName, result.Token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Lax,
+                Path = "/",
+                Expires = result.ExpiresAtUtc,
+            });
+
+            return Ok(result.User);
+        }
+        catch (InvalidCredentialsException ex)
+        {
+            return Unauthorized(new ProblemDetails
+            {
+                Title = "Login failed",
+                Detail = ex.Message,
+                Status = StatusCodes.Status401Unauthorized,
             });
         }
     }
