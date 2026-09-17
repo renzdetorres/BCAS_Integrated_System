@@ -15,6 +15,7 @@ const DEADLINE_TYPE_LABELS = {
 const QUICK_LINKS = [
   { to: "/profile", label: "My Profile" },
   { to: "/applications/history", label: "My Application" },
+  { to: "/application-tracking", label: "Application Tracking" },
   { to: "/scholarships", label: "Scholarship Application" },
   { to: "/documents", label: "Documents" },
   { to: "/exam-schedule", label: "Entrance Exam Schedule" },
