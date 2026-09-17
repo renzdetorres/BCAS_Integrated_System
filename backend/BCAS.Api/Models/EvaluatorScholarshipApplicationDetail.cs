@@ -3,6 +3,9 @@ namespace BCAS.Api.Models;
 public class EvaluatorScholarshipApplicationDetail
 {
     public Guid ApplicationId { get; set; }
+
+    /// <summary>The applicant's user id - used to look up their submitted documents.</summary>
+    public Guid UserId { get; set; }
     public string ApplicantName { get; set; } = string.Empty;
     public string ApplicantEmail { get; set; } = string.Empty;
 
@@ -16,6 +19,7 @@ public class EvaluatorScholarshipApplicationDetail
     public decimal? MinimumGradeAverage { get; set; }
     public string Status { get; set; } = string.Empty;
     public DateTime SubmittedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 
     /// <summary>Null if this application hasn't been screened yet.</summary>
     public ScholarshipEligibilityScreening? Screening { get; set; }

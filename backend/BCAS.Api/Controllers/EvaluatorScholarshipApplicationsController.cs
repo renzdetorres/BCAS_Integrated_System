@@ -86,4 +86,42 @@ public class EvaluatorScholarshipApplicationsController : ControllerBase
             });
         }
     }
+
+    /// <summary>
+    /// Evaluator-only: moves an application forward one step in the
+    /// Submitted -> Documents Verified -> Eligibility Screening ->
+    /// Evaluation -> Result workflow.
+    /// </summary>
+    [HttpPost("{applicationId:guid}/advance")]
+    [ProducesResponseType(typeof(EvaluatorScholarshipApplicationDetailResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<EvaluatorScholarshipApplicationDetailResponse>> AdvanceWorkflow(
+        Guid applicationId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var detail = await _applicationService.AdvanceWorkflowAsync(applicationId, cancellationToken);
+            return Ok(detail);
+        }
+        catch (ScholarshipWorkflowCannotAdvanceException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Cannot advance workflow",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (ScholarshipApplicationNotFoundException ex)
+        {
+            return NotFound(new ProblemDetails
+            {
+                Title = "Scholarship application not found",
+                Detail = ex.Message,
+                Status = StatusCodes.Status404NotFound,
+            });
+        }
+    }
 }

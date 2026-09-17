@@ -198,13 +198,13 @@ GO
 -- submission time (not re-entered by the applicant), so a later catalog
 -- edit never rewrites the history of an already-submitted application.
 --
--- BISAASS-41 Evaluator Dashboard reads this table directly: Status IN
--- (Submitted, UnderReview) is the pending-evaluation queue, Status IN
--- (Approved, Rejected) is "recently evaluated" (see
--- EvaluatorDashboardRepository) - no schema change was needed for that
--- ticket. There's no separate "decided at" timestamp yet, so recency there
--- is approximated by SubmittedAt until the verdict-recording workflow
--- (BISAASS-42/43) adds one.
+-- BISAASS-41 Evaluator Dashboard reads this table directly: Status among
+-- the not-yet-Result workflow stages is the pending-evaluation queue,
+-- Status IN (Result, Approved, Rejected) is "recently evaluated" (see
+-- EvaluatorDashboardRepository). The workflow stages themselves, and the
+-- UpdatedAt column recency there now orders by, are BISAASS-43's addition -
+-- see the ScholarshipApplications workflow stages section further down this
+-- file.
 -- -----------------------------------------------------------------------------
 IF OBJECT_ID(N'dbo.ScholarshipApplications', N'U') IS NULL
 BEGIN
@@ -563,5 +563,46 @@ BEGIN
         CONSTRAINT FK_ScholarshipEligibilityScreenings_Evaluator FOREIGN KEY (EvaluatedByUserId) REFERENCES dbo.Users (UserId),
         CONSTRAINT CK_ScholarshipEligibilityScreenings_Verdict CHECK (Verdict IN (N'Qualified', N'NotQualified'))
     );
+END
+GO
+
+-- -----------------------------------------------------------------------------
+-- ScholarshipApplications workflow stages
+-- BISAASS-43 Scholarship Application Evaluation & Workflow Progression. An
+-- Evaluator moves an application through Submitted -> DocumentsVerified ->
+-- EligibilityScreening -> Evaluation -> Result (see
+-- ScholarshipWorkflowConstants.Stages and
+-- EvaluatorScholarshipApplicationRepository.AdvanceStatusAsync); Approved/
+-- Rejected stay in the allowed set for the final decision a later ticket
+-- (BISAASS-47, Academic Head approval) records. UnderReview is dropped -
+-- nothing ever set it, and the granular stages above supersede it as "the
+-- wider set anticipating the evaluator workflow" the original comment on
+-- this table's sibling (AdmissionApplications) described.
+-- UpdatedAt tracks the last workflow move, which is what "recently
+-- evaluated" on the Evaluator Dashboard (BISAASS-41) now orders by instead
+-- of approximating with SubmittedAt.
+-- -----------------------------------------------------------------------------
+IF EXISTS (
+    SELECT 1 FROM sys.check_constraints
+    WHERE name = N'CK_ScholarshipApplications_Status' AND parent_object_id = OBJECT_ID(N'dbo.ScholarshipApplications')
+)
+BEGIN
+    ALTER TABLE dbo.ScholarshipApplications DROP CONSTRAINT CK_ScholarshipApplications_Status;
+END
+GO
+
+ALTER TABLE dbo.ScholarshipApplications
+    ADD CONSTRAINT CK_ScholarshipApplications_Status CHECK (Status IN (
+        N'Submitted', N'DocumentsVerified', N'EligibilityScreening', N'Evaluation', N'Result', N'Approved', N'Rejected'
+    ));
+GO
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.ScholarshipApplications') AND name = N'UpdatedAt'
+)
+BEGIN
+    ALTER TABLE dbo.ScholarshipApplications
+        ADD UpdatedAt DATETIME2(3) NOT NULL CONSTRAINT DF_ScholarshipApplications_UpdatedAt DEFAULT SYSUTCDATETIME();
 END
 GO

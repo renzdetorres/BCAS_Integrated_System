@@ -21,10 +21,10 @@ public class EvaluatorScholarshipApplicationRepository : IEvaluatorScholarshipAp
 
         const string sql = @"
 SELECT
-    sa.ApplicationId, u.FirstName, u.LastName, u.Email,
+    sa.ApplicationId, sa.UserId, u.FirstName, u.LastName, u.Email,
     ap.IsBcasian,
     sc.Name AS ScholarshipName, sa.ScholarshipType, sa.GradeAverage, sc.MinimumGradeAverage,
-    sa.Status, sa.SubmittedAt,
+    sa.Status, sa.SubmittedAt, sa.UpdatedAt,
     ses.Verdict, ses.Remarks, ses.EvaluatedAt,
     eu.FirstName AS EvaluatorFirstName, eu.LastName AS EvaluatorLastName
 FROM dbo.ScholarshipApplications sa
@@ -102,11 +102,40 @@ WHERE ses.ApplicationId = @ApplicationId;";
         };
     }
 
+    public async Task<EvaluatorScholarshipApplicationDetail?> AdvanceStatusAsync(
+        Guid applicationId,
+        string fromStatus,
+        string toStatus,
+        CancellationToken cancellationToken = default)
+    {
+        await using (var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken))
+        {
+            const string sql = @"
+UPDATE dbo.ScholarshipApplications
+SET Status = @ToStatus, UpdatedAt = SYSUTCDATETIME()
+WHERE ApplicationId = @ApplicationId AND Status = @FromStatus;";
+
+            await using var command = new SqlCommand(sql, connection);
+            command.Parameters.Add(new SqlParameter("@ToStatus", SqlDbType.NVarChar, 30) { Value = toStatus });
+            command.Parameters.Add(new SqlParameter("@ApplicationId", SqlDbType.UniqueIdentifier) { Value = applicationId });
+            command.Parameters.Add(new SqlParameter("@FromStatus", SqlDbType.NVarChar, 30) { Value = fromStatus });
+
+            var rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
+            if (rowsAffected == 0)
+            {
+                return null;
+            }
+        }
+
+        return await GetDetailAsync(applicationId, cancellationToken);
+    }
+
     private static EvaluatorScholarshipApplicationDetail MapDetail(SqlDataReader reader)
     {
         var detail = new EvaluatorScholarshipApplicationDetail
         {
             ApplicationId = reader.GetGuid(reader.GetOrdinal("ApplicationId")),
+            UserId = reader.GetGuid(reader.GetOrdinal("UserId")),
             ApplicantName = $"{reader.GetString(reader.GetOrdinal("FirstName"))} {reader.GetString(reader.GetOrdinal("LastName"))}",
             ApplicantEmail = reader.GetString(reader.GetOrdinal("Email")),
             IsBcasian = reader.IsDBNull(reader.GetOrdinal("IsBcasian")) ? null : reader.GetBoolean(reader.GetOrdinal("IsBcasian")),
@@ -118,6 +147,7 @@ WHERE ses.ApplicationId = @ApplicationId;";
                 : reader.GetDecimal(reader.GetOrdinal("MinimumGradeAverage")),
             Status = reader.GetString(reader.GetOrdinal("Status")),
             SubmittedAt = reader.GetDateTime(reader.GetOrdinal("SubmittedAt")),
+            UpdatedAt = reader.GetDateTime(reader.GetOrdinal("UpdatedAt")),
         };
 
         if (!reader.IsDBNull(reader.GetOrdinal("Verdict")))

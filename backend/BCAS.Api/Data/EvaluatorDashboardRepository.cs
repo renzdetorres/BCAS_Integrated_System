@@ -20,7 +20,7 @@ public class EvaluatorDashboardRepository : IEvaluatorDashboardRepository
         const string sql = @"
 SELECT COUNT(*)
 FROM dbo.ScholarshipApplications
-WHERE Status IN (N'Submitted', N'UnderReview');";
+WHERE Status IN (N'Submitted', N'DocumentsVerified', N'EligibilityScreening', N'Evaluation');";
 
         await using var command = new SqlCommand(sql, connection);
         return (int)await command.ExecuteScalarAsync(cancellationToken);
@@ -36,7 +36,7 @@ SELECT TOP (@Take)
 FROM dbo.ScholarshipApplications sa
 JOIN dbo.Users u ON u.UserId = sa.UserId
 JOIN dbo.Scholarships sc ON sc.ScholarshipId = sa.ScholarshipId
-WHERE sa.Status IN (N'Submitted', N'UnderReview')
+WHERE sa.Status IN (N'Submitted', N'DocumentsVerified', N'EligibilityScreening', N'Evaluation')
 ORDER BY sa.SubmittedAt ASC;";
 
         return await GetApplicationsAsync(sql, take, cancellationToken);
@@ -44,17 +44,18 @@ ORDER BY sa.SubmittedAt ASC;";
 
     public async Task<IReadOnlyList<EvaluatorQueueApplication>> GetRecentlyEvaluatedAsync(int take, CancellationToken cancellationToken = default)
     {
-        // ScholarshipApplications has no separate "decided at" timestamp yet
-        // (that lands with the verdict-recording workflow) - SubmittedAt DESC
-        // is the closest available proxy for "most recently evaluated" today.
+        // "Evaluated" here means the workflow has reached Result (or a final
+        // decision, once BISAASS-47 starts setting Approved/Rejected) -
+        // UpdatedAt now tracks the last workflow move (BISAASS-43), so it's
+        // an accurate "most recent" order rather than a SubmittedAt proxy.
         const string sql = @"
 SELECT TOP (@Take)
     sa.ApplicationId, u.FirstName, u.LastName, sc.Name AS ScholarshipName, sa.ScholarshipType, sa.GradeAverage, sa.Status, sa.SubmittedAt
 FROM dbo.ScholarshipApplications sa
 JOIN dbo.Users u ON u.UserId = sa.UserId
 JOIN dbo.Scholarships sc ON sc.ScholarshipId = sa.ScholarshipId
-WHERE sa.Status IN (N'Approved', N'Rejected')
-ORDER BY sa.SubmittedAt DESC;";
+WHERE sa.Status IN (N'Result', N'Approved', N'Rejected')
+ORDER BY sa.UpdatedAt DESC;";
 
         return await GetApplicationsAsync(sql, take, cancellationToken);
     }

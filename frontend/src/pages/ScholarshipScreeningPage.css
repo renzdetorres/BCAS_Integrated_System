@@ -182,3 +182,133 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.workflow-stepper {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.workflow-step {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: #f0f2f5;
+  color: #5c6b7a;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.workflow-step-current {
+  background: #e8f0fe;
+  color: #2f6fed;
+}
+
+.workflow-step-done {
+  background: #e9f7ef;
+  color: #1e7e34;
+}
+
+.workflow-final-note {
+  color: #5c6b7a;
+  font-size: 0.85rem;
+  margin: 0 0 12px;
+}
+
+.workflow-advance-button {
+  padding: 10px 20px;
+  background: #1e7e34;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.workflow-advance-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.document-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.document-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e5e9ef;
+}
+
+.document-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.document-type {
+  display: block;
+  font-weight: 600;
+  color: #1a2332;
+  font-size: 0.9rem;
+}
+
+.document-filename {
+  display: block;
+  color: #5c6b7a;
+  font-size: 0.8rem;
+}
+
+.document-status-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.document-status {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.document-status-pending {
+  background: #fff4e0;
+  color: #b3791a;
+}
+
+.document-status-verified {
+  background: #e9f7ef;
+  color: #1e7e34;
+}
+
+.document-status-rejected {
+  background: #fdecea;
+  color: #c0392b;
+}
+
+.document-status-flagged {
+  background: #fdecea;
+  color: #c0392b;
+}
+
+.document-flagged-reason {
+  color: #c0392b;
+  font-size: 0.75rem;
+  max-width: 220px;
+  text-align: right;
+}

@@ -18,4 +18,17 @@ public interface IEvaluatorScholarshipApplicationRepository
         string? remarks,
         Guid evaluatedByUserId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Moves an application's Status from fromStatus to toStatus, but only
+    /// if it's still at fromStatus (optimistic concurrency - guards against
+    /// two evaluators advancing the same application at once). Returns the
+    /// updated detail, or null if no application has that id or its status
+    /// no longer matches fromStatus.
+    /// </summary>
+    Task<EvaluatorScholarshipApplicationDetail?> AdvanceStatusAsync(
+        Guid applicationId,
+        string fromStatus,
+        string toStatus,
+        CancellationToken cancellationToken = default);
 }

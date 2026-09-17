@@ -15,5 +15,13 @@ public class EvaluatorScholarshipApplicationDetailResponse
     public bool? MeetsMinimumGrade { get; set; }
     public string Status { get; set; } = string.Empty;
     public DateTime SubmittedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
     public ScholarshipScreeningResponse? Screening { get; set; }
+    public IReadOnlyList<EvaluatorApplicantDocumentResponse> Documents { get; set; } = Array.Empty<EvaluatorApplicantDocumentResponse>();
+
+    /// <summary>The full ordered workflow (Submitted -> ... -> Result), for rendering a progress stepper.</summary>
+    public IReadOnlyList<string> WorkflowStages { get; set; } = Array.Empty<string>();
+
+    /// <summary>True if Status is a workflow stage other than the last one - i.e. Advance can be called.</summary>
+    public bool CanAdvance { get; set; }
 }
