@@ -28,6 +28,8 @@ builder.Services.AddScoped<IDeadlineRepository, DeadlineRepository>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IApplicantProfileRepository, ApplicantProfileRepository>();
 builder.Services.AddScoped<IApplicantProfileService, ApplicantProfileService>();
+builder.Services.AddScoped<IAdmissionApplicationRepository, AdmissionApplicationRepository>();
+builder.Services.AddScoped<IAdmissionApplicationService, AdmissionApplicationService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

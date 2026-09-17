@@ -124,3 +124,32 @@ BEGIN
     );
 END
 GO
+
+-- -----------------------------------------------------------------------------
+-- AdmissionApplications
+-- One applicant may submit more than one (e.g. different courses); nothing
+-- in BISAASS-16's acceptance criteria limits it to one. Status starts and,
+-- for now, stays at 'Submitted' - the wider set in the CHECK constraint
+-- anticipates the evaluator workflow (a later ticket) without needing a
+-- schema change when it lands.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.AdmissionApplications', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.AdmissionApplications
+    (
+        ApplicationId       UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_AdmissionApplications_ApplicationId DEFAULT NEWID(),
+        UserId              UNIQUEIDENTIFIER NOT NULL,
+        ApplicationType     NVARCHAR(20)     NOT NULL,
+        CourseAppliedFor    NVARCHAR(200)    NOT NULL,
+        PreviousSchool      NVARCHAR(200)    NOT NULL,
+        Status              NVARCHAR(30)     NOT NULL CONSTRAINT DF_AdmissionApplications_Status DEFAULT (N'Submitted'),
+        SubmittedAt         DATETIME2(3)     NOT NULL CONSTRAINT DF_AdmissionApplications_SubmittedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_AdmissionApplications PRIMARY KEY (ApplicationId),
+        CONSTRAINT FK_AdmissionApplications_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT CK_AdmissionApplications_ApplicationType CHECK (ApplicationType IN (N'NewStudent', N'Transferee')),
+        CONSTRAINT CK_AdmissionApplications_Status CHECK (Status IN (N'Submitted', N'UnderReview', N'Approved', N'Rejected'))
+    );
+
+    CREATE NONCLUSTERED INDEX IX_AdmissionApplications_UserId ON dbo.AdmissionApplications (UserId);
+END
+GO

@@ -330,3 +330,45 @@ now that a second controller needs the same thing.
 the existing profile, or blank (with the name pre-filled from the session)
 if none exists yet. Linked from the dashboard's quick links as "My
 Profile".
+
+## BISAASS-16: Submit Admission Application
+
+Adds an `AdmissionApplications` table (`database/schema.sql`): applicant,
+application type, course, previous school, and a `Status` that starts at
+`Submitted`. Nothing in this ticket's acceptance criteria limits an
+applicant to one application, so multiple are allowed - the response lists
+them most-recent-first. The `Status` `CHECK` constraint already allows
+`UnderReview`/`Approved`/`Rejected` too, anticipating the evaluator
+workflow (a later ticket) without a future schema change; no endpoint
+transitions a status away from `Submitted` yet.
+
+### API
+
+Both endpoints require the `bcas_auth` cookie for the `Applicant` role and
+act only on the caller's own applications.
+
+`GET /api/admission-applications` - `200 OK` with the caller's own
+applications, most recent first.
+
+`POST /api/admission-applications`
+
+Request body:
+```json
+{
+  "applicationType": "NewStudent",
+  "courseAppliedFor": "BS Computer Science",
+  "previousSchool": "Balanga National High School"
+}
+```
+- `201 Created` with the new application (`status: "Submitted"`).
+- `400 Bad Request` if `applicationType` isn't `NewStudent` or `Transferee`,
+  or if the applicant's profile isn't complete yet (reuses
+  `IApplicantProfileRepository.ExistsAsync`, added in BISAASS-15 for
+  exactly this check).
+
+### Frontend
+
+`/applications` (gated by `RequireRole(["Applicant"])`, replacing its
+former `ComingSoonPage` placeholder) has the submit form plus a list of the
+applicant's past applications with status badges. A profile-incomplete
+error surfaces a link straight to `/profile`.
