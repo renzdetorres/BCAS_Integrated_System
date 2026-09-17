@@ -1,6 +1,7 @@
 import { API_BASE_URL, ApiError, extractErrorMessage } from "./apiClient.js";
 
 export const STAFF_ROLES = ["Evaluator", "SupportStaff", "AcademicHead", "Admin"];
+export const ALL_ROLES = ["Applicant", ...STAFF_ROLES];
 
 export async function provisionStaff({ firstName, lastName, email, password, role }) {
   const response = await fetch(`${API_BASE_URL}/api/admin/staff`, {
@@ -33,6 +34,24 @@ export async function listUsers() {
   }
 
   return response.json();
+}
+
+export async function updateUser(userId, { firstName, lastName, email, role }) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ firstName, lastName, email, role }),
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const message = extractErrorMessage(data) ?? "Failed to update account. Please try again.";
+    throw new ApiError(message, response.status);
+  }
+
+  return data;
 }
 
 export async function setUserActiveStatus(userId, isActive) {

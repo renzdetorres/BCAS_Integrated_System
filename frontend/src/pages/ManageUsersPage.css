@@ -103,3 +103,59 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.row-actions,
+.edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.edit-trigger,
+.edit-save,
+.edit-cancel {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.edit-trigger {
+  background: #eef2fb;
+  color: #2f6fed;
+}
+
+.edit-save {
+  background: #e9f7ef;
+  color: #1e7e34;
+}
+
+.edit-cancel {
+  background: #f0f2f5;
+  color: #5c6b7a;
+}
+
+.edit-save:disabled,
+.edit-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.edit-row {
+  background: #f9fbff;
+}
+
+.edit-input {
+  width: 100%;
+  max-width: 140px;
+  padding: 6px 8px;
+  border: 1px solid #cdd5e0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+}
+
+.edit-row select.edit-input {
+  max-width: 160px;
+}

@@ -16,4 +16,14 @@ public static class AuthConstants
         "AcademicHead",
         "Admin",
     };
+
+    /// <summary>
+    /// Every role in the system. Used when an Admin edits an account that
+    /// already exists (any role, Applicant included), as opposed to staff
+    /// provisioning which only ever creates new staff accounts.
+    /// </summary>
+    public static readonly IReadOnlySet<string> AllRoles = new HashSet<string>(AllowedStaffRoles, StringComparer.Ordinal)
+    {
+        "Applicant",
+    };
 }
