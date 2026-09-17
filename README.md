@@ -278,3 +278,55 @@ tickets (BISAASS-16 covers admission applications).
 The logout handler, until now copy-pasted between `LoginPage` and
 `PortalPage`, was pulled into a `useLogout()` hook
 (`frontend/src/hooks/useLogout.js`) since the dashboard needed it too.
+
+## BISAASS-15: Applicant Profile Setup & Management
+
+One-time profile setup, viewable/editable any time afterward. Adds an
+`ApplicantProfiles` table (`database/schema.sql`), one-to-one with `Users`.
+Every column is required to save, so a row's mere existence *is* "profile
+setup complete" - no separate flag to keep in sync. `FirstName`/`LastName`
+stay on `Users` as the single source of truth; saving the profile updates
+them there instead of duplicating them.
+
+### API
+
+Both endpoints require the `bcas_auth` cookie for the `Applicant` role, and
+always act on the caller's own id (from the JWT's `sub` claim, never a
+request parameter) - one applicant can't read or write another's profile.
+
+`GET /api/applicant/profile` - `200 OK` with the profile, or `404 Not
+Found` if setup hasn't been completed yet.
+
+`PUT /api/applicant/profile`
+
+Request body:
+```json
+{
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "birthDate": "2005-03-12",
+  "contactNumber": "09171234567",
+  "addressLine": "123 Sampaguita St., Brgy. San Roque",
+  "city": "Balanga",
+  "province": "Bataan",
+  "postalCode": "2100",
+  "isBcasian": false
+}
+```
+- `200 OK` with the saved profile (create or update - same endpoint).
+- `400 Bad Request` for missing fields or a `birthDate` in the future.
+
+Updating both `Users` (name) and `ApplicantProfiles` (everything else) is
+wrapped in one SQL transaction so the two never disagree.
+
+Extracted a `ClaimsPrincipal.GetUserId()` extension
+(`backend/BCAS.Api/Extensions/ClaimsPrincipalExtensions.cs`) for reading
+the JWT `sub` claim, replacing the inline version in `AuthController.Me()`
+now that a second controller needs the same thing.
+
+### Frontend
+
+`/profile` (gated by `RequireRole(["Applicant"])`) shows a form seeded from
+the existing profile, or blank (with the name pre-filled from the session)
+if none exists yet. Linked from the dashboard's quick links as "My
+Profile".

@@ -8,6 +8,7 @@ import PortalRouter from "./pages/PortalRouter.jsx";
 import ProvisionStaffPage from "./pages/ProvisionStaffPage.jsx";
 import ManageUsersPage from "./pages/ManageUsersPage.jsx";
 import ComingSoonPage from "./pages/ComingSoonPage.jsx";
+import ApplicantProfilePage from "./pages/ApplicantProfilePage.jsx";
 
 export default function App() {
   return (
@@ -24,6 +25,9 @@ export default function App() {
             <Route element={<RequireRole allowedRoles={["Admin"]} />}>
               <Route path="/admin/staff" element={<ProvisionStaffPage />} />
               <Route path="/admin/users" element={<ManageUsersPage />} />
+            </Route>
+            <Route element={<RequireRole allowedRoles={["Applicant"]} />}>
+              <Route path="/profile" element={<ApplicantProfilePage />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />

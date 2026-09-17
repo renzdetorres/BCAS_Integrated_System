@@ -26,6 +26,8 @@ builder.Services.AddScoped<IStaffProvisioningService, StaffProvisioningService>(
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 builder.Services.AddScoped<IDeadlineRepository, DeadlineRepository>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IApplicantProfileRepository, ApplicantProfileRepository>();
+builder.Services.AddScoped<IApplicantProfileService, ApplicantProfileService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

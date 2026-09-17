@@ -13,6 +13,7 @@ const DEADLINE_TYPE_LABELS = {
 };
 
 const QUICK_LINKS = [
+  { to: "/profile", label: "My Profile" },
   { to: "/applications", label: "My Application" },
   { to: "/documents", label: "Documents" },
   { to: "/announcements", label: "Announcements" },

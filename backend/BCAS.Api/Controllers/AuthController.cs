@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using BCAS.Api.Constants;
 using BCAS.Api.Exceptions;
+using BCAS.Api.Extensions;
 using BCAS.Api.Models;
 using BCAS.Api.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -117,11 +118,9 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public IActionResult Me()
     {
-        var userId = User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-
         return Ok(new UserProfileResponse
         {
-            UserId = Guid.Parse(userId!),
+            UserId = User.GetUserId(),
             Email = User.FindFirstValue(JwtRegisteredClaimNames.Email) ?? string.Empty,
             FirstName = User.FindFirstValue(ClaimTypes.GivenName) ?? string.Empty,
             LastName = User.FindFirstValue(ClaimTypes.Surname) ?? string.Empty,

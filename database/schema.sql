@@ -97,3 +97,30 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Deadlines WHERE DeadlineType = N'DocumentDeadli
 IF NOT EXISTS (SELECT 1 FROM dbo.Deadlines WHERE DeadlineType = N'EnrollmentPeriod')
     INSERT INTO dbo.Deadlines (DeadlineType, Title, DeadlineDate) VALUES (N'EnrollmentPeriod', N'Enrollment Period Opens', '2026-11-01');
 GO
+
+-- -----------------------------------------------------------------------------
+-- ApplicantProfiles
+-- One-to-one with Users (BISAASS-15). A row's existence IS "profile setup
+-- complete" - every column here is required, so there's no partial/complete
+-- flag to keep in sync. Name (FirstName/LastName) stays on dbo.Users as the
+-- single source of truth; profile save updates it there rather than
+-- duplicating it here.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.ApplicantProfiles', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ApplicantProfiles
+    (
+        UserId          UNIQUEIDENTIFIER NOT NULL CONSTRAINT PK_ApplicantProfiles PRIMARY KEY,
+        BirthDate       DATE             NOT NULL,
+        ContactNumber   NVARCHAR(30)     NOT NULL,
+        AddressLine     NVARCHAR(200)    NOT NULL,
+        City            NVARCHAR(100)    NOT NULL,
+        Province        NVARCHAR(100)    NOT NULL,
+        PostalCode      NVARCHAR(20)     NOT NULL,
+        IsBcasian       BIT              NOT NULL CONSTRAINT DF_ApplicantProfiles_IsBcasian DEFAULT (0),
+        CreatedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_ApplicantProfiles_CreatedAt DEFAULT SYSUTCDATETIME(),
+        UpdatedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_ApplicantProfiles_UpdatedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT FK_ApplicantProfiles_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId)
+    );
+END
+GO
