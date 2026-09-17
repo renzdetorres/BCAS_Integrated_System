@@ -1,0 +1,72 @@
+-- =============================================================================
+-- BCAS Integrated System - Core Auth Schema
+-- Target: Microsoft SQL Server
+-- Covers: BISAASS-8 Applicant Self-Service Registration
+-- =============================================================================
+
+IF DB_ID(N'BCAS') IS NULL
+BEGIN
+    CREATE DATABASE BCAS;
+END
+GO
+
+USE BCAS;
+GO
+
+-- -----------------------------------------------------------------------------
+-- Roles
+-- Applicant is the only role self-service registration is allowed to assign.
+-- Staff roles (Evaluator, SupportStaff, AcademicHead, Admin) are provisioned
+-- separately by an Admin (out of scope for this ticket).
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.Roles', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Roles
+    (
+        RoleId      INT             NOT NULL IDENTITY(1,1) CONSTRAINT PK_Roles PRIMARY KEY,
+        RoleName    NVARCHAR(50)    NOT NULL,
+        CONSTRAINT UQ_Roles_RoleName UNIQUE (RoleName)
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.Roles WHERE RoleName = N'Applicant')
+    INSERT INTO dbo.Roles (RoleName) VALUES (N'Applicant');
+IF NOT EXISTS (SELECT 1 FROM dbo.Roles WHERE RoleName = N'Evaluator')
+    INSERT INTO dbo.Roles (RoleName) VALUES (N'Evaluator');
+IF NOT EXISTS (SELECT 1 FROM dbo.Roles WHERE RoleName = N'SupportStaff')
+    INSERT INTO dbo.Roles (RoleName) VALUES (N'SupportStaff');
+IF NOT EXISTS (SELECT 1 FROM dbo.Roles WHERE RoleName = N'AcademicHead')
+    INSERT INTO dbo.Roles (RoleName) VALUES (N'AcademicHead');
+IF NOT EXISTS (SELECT 1 FROM dbo.Roles WHERE RoleName = N'Admin')
+    INSERT INTO dbo.Roles (RoleName) VALUES (N'Admin');
+GO
+
+-- -----------------------------------------------------------------------------
+-- Users
+-- Email is unique (case-insensitive, via the default CI_AS collation) so
+-- duplicate registrations are rejected at the database level in addition to
+-- the application-level pre-check.
+-- PasswordHash stores a BCrypt hash - the API layer never stores plaintext.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.Users', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Users
+    (
+        UserId          UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Users_UserId DEFAULT NEWID(),
+        FirstName       NVARCHAR(100)    NOT NULL,
+        LastName        NVARCHAR(100)    NOT NULL,
+        Email           NVARCHAR(256)    COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+        PasswordHash    NVARCHAR(200)    NOT NULL,
+        RoleId          INT              NOT NULL,
+        IsActive        BIT              NOT NULL CONSTRAINT DF_Users_IsActive DEFAULT (1),
+        CreatedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_Users_CreatedAt DEFAULT SYSUTCDATETIME(),
+        UpdatedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_Users_UpdatedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_Users PRIMARY KEY (UserId),
+        CONSTRAINT FK_Users_Roles FOREIGN KEY (RoleId) REFERENCES dbo.Roles (RoleId),
+        CONSTRAINT UQ_Users_Email UNIQUE (Email)
+    );
+
+    CREATE NONCLUSTERED INDEX IX_Users_Email ON dbo.Users (Email);
+END
+GO
