@@ -729,3 +729,64 @@ new password, confirm new password - client-side checked for a match and
 8-character minimum before the request is even sent, mirroring
 `RegisterPage`'s validation). The dashboard's quick link label changed
 from "My Profile" to "Settings" to match.
+
+## BISAASS-27: Admin Dashboard (Applicant Totals & Analytics)
+
+Analytics dashboard for the Admin-Registrar Portal (the `Admin` role -
+see BISAASS-11's `PORTAL_LABELS`). Scoped to admission applications
+specifically, since that's what every acceptance-criteria bullet actually
+describes ("applicants by program" only makes sense against
+`CourseAppliedFor`); scholarship analytics would be a natural follow-up
+ticket rather than something to force into the same view. No schema
+changes were needed - it's aggregate `SELECT`s over `AdmissionApplications`
+and `Users`, the same "no SQL needed" situation as BISAASS-11/13/22/25,
+except the aggregation itself (`COUNT`/`SUM(CASE WHEN ...)`/`GROUP BY`)
+is genuine new SQL, done in the database rather than pulled into C# and
+summed there, since that's what SQL is for.
+
+`AdminDashboardRepository` runs three queries: one conditional-aggregation
+query for the totals (`COUNT(*)`, `COUNT(DISTINCT UserId)`, and three
+`SUM(CASE WHEN Status IN (...) THEN 1 ELSE 0 END)` counts - `Pending`
+collapses the existing `Submitted`/`UnderReview` statuses into one bucket
+matching the ticket's three-way pending/approved/rejected split), one
+`GROUP BY CourseAppliedFor` for the by-program breakdown, and one `TOP
+(10)` joined against `Users` for recent applications (the only query here
+that needs applicant names - no other endpoint in the app exposes another
+user's name, since every other one is scoped to "my own").
+
+### API
+
+`GET /api/admin/dashboard` - requires the `bcas_auth` cookie for the
+`Admin` role. `200 OK`:
+```json
+{
+  "totalApplications": 42,
+  "totalApplicants": 37,
+  "pendingCount": 30,
+  "approvedCount": 8,
+  "rejectedCount": 4,
+  "byProgram": [{ "program": "BS Computer Science", "count": 15 }],
+  "recentApplications": [
+    {
+      "applicationId": "...",
+      "applicantName": "Jane Doe",
+      "applicationType": "NewStudent",
+      "courseAppliedFor": "BS Computer Science",
+      "status": "Submitted",
+      "submittedAt": "2026-09-10T02:14:00Z"
+    }
+  ]
+}
+```
+
+### Frontend
+
+`PortalRouter` (`/portal`) now branches three ways instead of two: an
+`Applicant` gets `ApplicantDashboardPage`, an `Admin` gets the new
+`AdminDashboardPage`, every other staff role still gets the generic
+`PortalPage`. `AdminDashboardPage` shows stat tiles (total applications,
+total applicants, pending, approved, rejected), an "Applicants by
+Program" list, and a "Recent Applications" list with status badges: it
+also absorbed the "Create Staff Account"/"Manage Accounts" links and
+Log Out button that used to live on the generic `PortalPage` (dead code
+removed from there now that `Admin` never renders it).

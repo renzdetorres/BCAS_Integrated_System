@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { useSession } from "../context/SessionContext.jsx";
 import { useLogout } from "../hooks/useLogout.js";
 import "./PortalPage.css";
@@ -7,7 +6,6 @@ const PORTAL_LABELS = {
   Evaluator: "Evaluator Portal",
   SupportStaff: "Support Staff Portal",
   AcademicHead: "Academic Head Portal",
-  Admin: "Admin-Registrar Portal",
 };
 
 export default function PortalPage() {
@@ -15,8 +13,9 @@ export default function PortalPage() {
   const handleLogout = useLogout();
 
   // RequireAuth guarantees session is set before this renders. Applicant
-  // has its own dashboard (see App.jsx) - this generic view covers staff
-  // roles, which don't have a dedicated portal yet.
+  // has its own dashboard and Admin its own analytics dashboard (see
+  // PortalRouter) - this generic view covers the remaining staff roles,
+  // which don't have a dedicated portal yet.
   const portalLabel = PORTAL_LABELS[session.role] ?? "Portal";
 
   return (
@@ -27,16 +26,6 @@ export default function PortalPage() {
         <p>
           Signed in as <strong>{session.email}</strong>.
         </p>
-        {session.role === "Admin" && (
-          <>
-            <Link className="portal-admin-link" to="/admin/staff">
-              Create Staff Account
-            </Link>
-            <Link className="portal-admin-link" to="/admin/users">
-              Manage Accounts
-            </Link>
-          </>
-        )}
         <button type="button" onClick={handleLogout}>
           Log Out
         </button>
