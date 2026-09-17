@@ -141,3 +141,98 @@ the correct portal" behavior the ticket asks for. `LoginPage` writes the
 logged-in user into the same context and navigates to `/portal` on success,
 and redirects there immediately if a valid session already exists (e.g. the
 user reloads `/login` while still signed in).
+
+## BISAASS-12: Admin Staff Provisioning (Evaluator / SupportStaff / AcademicHead / Admin)
+
+Admin-only capability to create staff accounts. These roles are never
+self-served via public registration (`POST /api/auth/register` always
+creates an `Applicant`).
+
+No SQL changes were needed - the `Roles` table already has all five roles
+seeded, and `Users` was already role-agnostic.
+
+### API
+
+`POST /api/admin/staff` - requires the `bcas_auth` cookie for a user with
+the `Admin` role (`[Authorize(Roles = "Admin")]`).
+
+Request body:
+```json
+{
+  "firstName": "Jane",
+  "lastName": "Evaluator",
+  "email": "jane.evaluator@example.com",
+  "password": "at-least-8-characters",
+  "role": "Evaluator"
+}
+```
+
+- `201 Created` with the new account (id, name, email, role). The account's
+  password is BCrypt-hashed the same way as self-service registration, and
+  it's immediately usable for login.
+- `400 Bad Request` if `role` isn't one of `Evaluator`, `SupportStaff`,
+  `AcademicHead`, `Admin` (`Applicant` included - that's registration-only).
+- `401 Unauthorized` with no valid cookie; `403 Forbidden` with a valid
+  cookie for a non-Admin role.
+- `409 Conflict` if the email is already registered.
+
+`RegisterResponse` and `LoginResponse` were consolidated into a single
+`UserProfileResponse` (same shape, used by register/login/me/provision) to
+avoid a third near-identical DTO.
+
+### Frontend
+
+`/admin/staff` is nested under both `RequireAuth` and a new `RequireRole`
+guard (`frontend/src/components/RequireRole.jsx`), so a signed-in non-Admin
+is bounced back to `/portal` - the server-side `[Authorize(Roles=...)]`
+check is what actually enforces this, the client-side guard just avoids
+showing the form to someone who can't use it. `PortalPage` links to it only
+when `session.role === "Admin"`.
+
+## BISAASS-13: Account Activation / Deactivation Toggle
+
+Admin can deactivate or reactivate any account without deleting it. No SQL
+changes were needed: `Users.IsActive` already existed (from BISAASS-8), and
+`AuthService.LoginAsync` already rejects `!user.IsActive` (from BISAASS-9) -
+so a deactivated account already couldn't log in before this ticket. What
+was missing was a way for an Admin to actually flip that flag, and to see
+the accounts to flip it on.
+
+Toggling is a plain `UPDATE ... SET IsActive = @IsActive`, never a delete,
+so no row and nothing that might later reference it (applications,
+documents, evaluations, etc., once those tables exist) is ever removed or
+orphaned.
+
+### API
+
+Both endpoints require the `bcas_auth` cookie for a user with the `Admin`
+role.
+
+`GET /api/admin/users` - `200 OK` with every account (id, name, email,
+role, `isActive`).
+
+`PATCH /api/admin/users/{userId}/status`
+
+Request body:
+```json
+{ "isActive": false }
+```
+- `200 OK` with the updated account.
+- `400 Bad Request` if `isActive` is omitted (it's required precisely so a
+  malformed request can't silently deactivate an account by defaulting to
+  `false`).
+- `404 Not Found` if no account has that id.
+
+`RegisterResponse`/`LoginResponse`'s replacement, `UserProfileResponse`,
+now also carries `isActive`. The `User` &rarr; `UserProfileResponse`
+mapping, which by this point was duplicated in four places, was pulled into
+one `ToProfileResponse()` extension
+(`backend/BCAS.Api/Mapping/UserMappingExtensions.cs`).
+
+### Frontend
+
+`/admin/users` (also gated by `RequireRole`) lists every account in a table
+with an Activate/Deactivate button per row, calling the endpoints above.
+The signed-in Admin's own row has its button disabled client-side, purely
+as a footgun guard against accidental self-lockout - the API itself doesn't
+forbid it.

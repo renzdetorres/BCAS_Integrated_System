@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { logoutUser } from "../api/authApi.js";
 import { useSession } from "../context/SessionContext.jsx";
 import "./PortalPage.css";
@@ -35,6 +35,16 @@ export default function PortalPage() {
         <p>
           Signed in as <strong>{session.email}</strong>.
         </p>
+        {session.role === "Admin" && (
+          <>
+            <Link className="portal-admin-link" to="/admin/staff">
+              Create Staff Account
+            </Link>
+            <Link className="portal-admin-link" to="/admin/users">
+              Manage Accounts
+            </Link>
+          </>
+        )}
         <button type="button" onClick={handleLogout}>
           Log Out
         </button>

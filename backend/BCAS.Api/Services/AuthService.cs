@@ -1,5 +1,6 @@
 using BCAS.Api.Data;
 using BCAS.Api.Exceptions;
+using BCAS.Api.Mapping;
 using BCAS.Api.Models;
 
 namespace BCAS.Api.Services;
@@ -23,7 +24,7 @@ public class AuthService : IAuthService
         _logger = logger;
     }
 
-    public async Task<RegisterResponse> RegisterApplicantAsync(RegisterRequest request, CancellationToken cancellationToken = default)
+    public async Task<UserProfileResponse> RegisterApplicantAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
 
@@ -45,14 +46,7 @@ public class AuthService : IAuthService
 
         _logger.LogInformation("Applicant account created for {Email}", user.Email);
 
-        return new RegisterResponse
-        {
-            UserId = user.UserId,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            Email = user.Email,
-            Role = user.RoleName,
-        };
+        return user.ToProfileResponse();
     }
 
     public async Task<LoginResult> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
@@ -79,14 +73,7 @@ public class AuthService : IAuthService
 
         return new LoginResult
         {
-            User = new LoginResponse
-            {
-                UserId = user.UserId,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Email = user.Email,
-                Role = user.RoleName,
-            },
+            User = user.ToProfileResponse(),
             Token = token,
             ExpiresAtUtc = expiresAtUtc,
         };

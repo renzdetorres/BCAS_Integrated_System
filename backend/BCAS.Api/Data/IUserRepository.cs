@@ -14,4 +14,17 @@ public interface IUserRepository
         string email,
         string passwordHash,
         CancellationToken cancellationToken = default);
+
+    Task<User> CreateStaffAsync(
+        string firstName,
+        string lastName,
+        string email,
+        string passwordHash,
+        string roleName,
+        CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<User>> GetAllAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Returns the updated account, or null if no account has that id.</summary>
+    Task<User?> SetActiveStatusAsync(Guid userId, bool isActive, CancellationToken cancellationToken = default);
 }

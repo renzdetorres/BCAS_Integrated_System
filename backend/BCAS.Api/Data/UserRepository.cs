@@ -41,31 +41,33 @@ WHERE u.Email = @Email;";
         command.Parameters.Add(new SqlParameter("@Email", System.Data.SqlDbType.NVarChar, 256) { Value = email });
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        if (!await reader.ReadAsync(cancellationToken))
-        {
-            return null;
-        }
-
-        return new User
-        {
-            UserId = reader.GetGuid(reader.GetOrdinal("UserId")),
-            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-            LastName = reader.GetString(reader.GetOrdinal("LastName")),
-            Email = reader.GetString(reader.GetOrdinal("Email")),
-            PasswordHash = reader.GetString(reader.GetOrdinal("PasswordHash")),
-            RoleId = reader.GetInt32(reader.GetOrdinal("RoleId")),
-            RoleName = reader.GetString(reader.GetOrdinal("RoleName")),
-            IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
-            CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
-        };
+        return await reader.ReadAsync(cancellationToken) ? MapUser(reader) : null;
     }
 
-    public async Task<User> CreateApplicantAsync(
+    public Task<User> CreateApplicantAsync(
         string firstName,
         string lastName,
         string email,
         string passwordHash,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        CreateUserAsync(firstName, lastName, email, passwordHash, ApplicantRoleName, cancellationToken);
+
+    public Task<User> CreateStaffAsync(
+        string firstName,
+        string lastName,
+        string email,
+        string passwordHash,
+        string roleName,
+        CancellationToken cancellationToken = default) =>
+        CreateUserAsync(firstName, lastName, email, passwordHash, roleName, cancellationToken);
+
+    private async Task<User> CreateUserAsync(
+        string firstName,
+        string lastName,
+        string email,
+        string passwordHash,
+        string roleName,
+        CancellationToken cancellationToken)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
@@ -86,7 +88,7 @@ OUTPUT
 VALUES (@FirstName, @LastName, @Email, @PasswordHash, @RoleId);";
 
         await using var command = new SqlCommand(sql, connection);
-        command.Parameters.Add(new SqlParameter("@RoleName", System.Data.SqlDbType.NVarChar, 50) { Value = ApplicantRoleName });
+        command.Parameters.Add(new SqlParameter("@RoleName", System.Data.SqlDbType.NVarChar, 50) { Value = roleName });
         command.Parameters.Add(new SqlParameter("@FirstName", System.Data.SqlDbType.NVarChar, 100) { Value = firstName });
         command.Parameters.Add(new SqlParameter("@LastName", System.Data.SqlDbType.NVarChar, 100) { Value = lastName });
         command.Parameters.Add(new SqlParameter("@Email", System.Data.SqlDbType.NVarChar, 256) { Value = email });
@@ -97,21 +99,10 @@ VALUES (@FirstName, @LastName, @Email, @PasswordHash, @RoleId);";
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
             if (!await reader.ReadAsync(cancellationToken))
             {
-                throw new InvalidOperationException("Failed to create the applicant account.");
+                throw new InvalidOperationException("Failed to create the account.");
             }
 
-            return new User
-            {
-                UserId = reader.GetGuid(reader.GetOrdinal("UserId")),
-                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
-                LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                Email = reader.GetString(reader.GetOrdinal("Email")),
-                PasswordHash = reader.GetString(reader.GetOrdinal("PasswordHash")),
-                RoleId = reader.GetInt32(reader.GetOrdinal("RoleId")),
-                RoleName = reader.GetString(reader.GetOrdinal("RoleName")),
-                IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
-                CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
-            };
+            return MapUser(reader);
         }
         catch (SqlException ex) when (IsUniqueConstraintViolation(ex))
         {
@@ -119,6 +110,71 @@ VALUES (@FirstName, @LastName, @Email, @PasswordHash, @RoleId);";
             throw new DuplicateEmailException(email);
         }
     }
+
+    public async Task<IReadOnlyList<User>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+SELECT u.UserId, u.FirstName, u.LastName, u.Email, u.PasswordHash, u.RoleId, r.RoleName, u.IsActive, u.CreatedAt
+FROM dbo.Users u
+JOIN dbo.Roles r ON r.RoleId = u.RoleId
+ORDER BY u.CreatedAt DESC;";
+
+        await using var command = new SqlCommand(sql, connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        var users = new List<User>();
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            users.Add(MapUser(reader));
+        }
+
+        return users;
+    }
+
+    public async Task<User?> SetActiveStatusAsync(Guid userId, bool isActive, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+UPDATE u
+SET u.IsActive = @IsActive,
+    u.UpdatedAt = SYSUTCDATETIME()
+OUTPUT
+    inserted.UserId,
+    inserted.FirstName,
+    inserted.LastName,
+    inserted.Email,
+    inserted.PasswordHash,
+    inserted.RoleId,
+    r.RoleName,
+    inserted.IsActive,
+    inserted.CreatedAt
+FROM dbo.Users u
+JOIN dbo.Roles r ON r.RoleId = u.RoleId
+WHERE u.UserId = @UserId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@IsActive", System.Data.SqlDbType.Bit) { Value = isActive });
+        command.Parameters.Add(new SqlParameter("@UserId", System.Data.SqlDbType.UniqueIdentifier) { Value = userId });
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        return await reader.ReadAsync(cancellationToken) ? MapUser(reader) : null;
+    }
+
+    private static User MapUser(SqlDataReader reader) => new()
+    {
+        UserId = reader.GetGuid(reader.GetOrdinal("UserId")),
+        FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+        LastName = reader.GetString(reader.GetOrdinal("LastName")),
+        Email = reader.GetString(reader.GetOrdinal("Email")),
+        PasswordHash = reader.GetString(reader.GetOrdinal("PasswordHash")),
+        RoleId = reader.GetInt32(reader.GetOrdinal("RoleId")),
+        RoleName = reader.GetString(reader.GetOrdinal("RoleName")),
+        IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
+        CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
+    };
 
     private static bool IsUniqueConstraintViolation(SqlException ex) =>
         ex.Number is 2601 or 2627;
