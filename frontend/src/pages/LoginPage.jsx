@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { loginUser, logoutUser, ApiError } from "../api/authApi.js";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { loginUser, ApiError } from "../api/authApi.js";
+import { useSession } from "../context/SessionContext.jsx";
 import "./LoginPage.css";
 
 const initialForm = { email: "", password: "" };
@@ -9,8 +10,15 @@ export default function LoginPage() {
   const [form, setForm] = useState(initialForm);
   const [errorMessage, setErrorMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [loggedInUser, setLoggedInUser] = useState(null);
+  const { session, isLoading, setSession } = useSession();
+  const navigate = useNavigate();
+
+  // Already signed in (e.g. navigated here directly) - go straight to the portal.
+  useEffect(() => {
+    if (!isLoading && session) {
+      navigate("/portal", { replace: true });
+    }
+  }, [isLoading, session, navigate]);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -24,8 +32,8 @@ export default function LoginPage() {
 
     try {
       const user = await loginUser(form);
-      setLoggedInUser(user);
-      setForm(initialForm);
+      setSession(user);
+      navigate("/portal", { replace: true });
     } catch (error) {
       // Same generic message regardless of whether the email exists,
       // mirroring the API's no-enumeration behavior.
@@ -37,30 +45,10 @@ export default function LoginPage() {
     }
   }
 
-  async function handleLogout() {
-    setIsLoggingOut(true);
-    try {
-      await logoutUser();
-    } finally {
-      // Clear local state regardless of network outcome - the server-side
-      // cookie clear is what actually ends the session.
-      setLoggedInUser(null);
-      setIsLoggingOut(false);
-    }
-  }
-
-  if (loggedInUser) {
+  if (isLoading || session) {
     return (
       <main className="login-page">
-        <div className="login-card">
-          <h1>Welcome back</h1>
-          <p>
-            Signed in as <strong>{loggedInUser.email}</strong> ({loggedInUser.role}).
-          </p>
-          <button type="button" onClick={handleLogout} disabled={isLoggingOut}>
-            {isLoggingOut ? "Logging out..." : "Log Out"}
-          </button>
-        </div>
+        <div style={{ color: "#5c6b7a" }}>Loading...</div>
       </main>
     );
   }
