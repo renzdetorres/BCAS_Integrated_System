@@ -5,7 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BCAS.Api.Controllers;
 
-[Authorize(Roles = "Admin")]
+// AcademicHead is read-only here by virtue of this controller having no
+// write endpoints - BISAASS-47 gives Academic Head read access to this
+// Admin-Registrar oversight screen "as needed for approval decisions".
+[Authorize(Roles = "Admin,AcademicHead")]
 [ApiController]
 [Route("api/admin/dashboard")]
 public class AdminDashboardController : ControllerBase
@@ -18,9 +21,9 @@ public class AdminDashboardController : ControllerBase
     }
 
     /// <summary>
-    /// Admin-only: admission application analytics - totals, pending/
-    /// approved/rejected counts, applicants by program, and the most
-    /// recently submitted applications.
+    /// Admin and Academic Head: admission application analytics - totals,
+    /// pending/approved/rejected counts, applicants by program, and the
+    /// most recently submitted applications.
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(AdminDashboardResponse), StatusCodes.Status200OK)]

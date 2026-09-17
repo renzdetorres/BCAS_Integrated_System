@@ -94,6 +94,51 @@ public class EvaluatorScholarshipApplicationService : IEvaluatorScholarshipAppli
         return await BuildResponseAsync(updated, cancellationToken);
     }
 
+    public async Task<EvaluatorScholarshipApplicationDetailResponse> RecordFinalDecisionAsync(
+        Guid applicationId,
+        Guid decidedByUserId,
+        RecordScholarshipFinalDecisionRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!ScholarshipFinalDecisionConstants.AllowedDecisions.Contains(request.Decision))
+        {
+            throw new InvalidFinalDecisionException(request.Decision);
+        }
+
+        var current = await _applicationRepository.GetDetailAsync(applicationId, cancellationToken)
+            ?? throw new ScholarshipApplicationNotFoundException(applicationId);
+
+        if (current.Status != ScholarshipWorkflowConstants.Stages[^1])
+        {
+            throw new ScholarshipApplicationNotReadyForDecisionException(applicationId, current.Status);
+        }
+
+        var remarks = string.IsNullOrWhiteSpace(request.Remarks) ? null : request.Remarks.Trim();
+
+        // A raced concurrent decision (or workflow change) between the read
+        // above and this write also surfaces as "not ready" - accurate
+        // enough without a dedicated conflict exception for what's a rare,
+        // low-stakes race here.
+        var updated = await _applicationRepository.RecordFinalDecisionAsync(applicationId, request.Decision, remarks, decidedByUserId, cancellationToken)
+            ?? throw new ScholarshipApplicationNotReadyForDecisionException(applicationId, current.Status);
+
+        _logger.LogInformation(
+            "Scholarship application {ApplicationId} decided as {Decision} by {DecidedByUserId}",
+            applicationId,
+            request.Decision,
+            decidedByUserId);
+
+        return await BuildResponseAsync(updated, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<EvaluatorQueueApplicationResponse>> GetReadyForDecisionAsync(
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        var applications = await _applicationRepository.GetReadyForDecisionAsync(take, cancellationToken);
+        return applications.Select(a => a.ToResponse()).ToList();
+    }
+
     private async Task<EvaluatorScholarshipApplicationDetailResponse> BuildResponseAsync(
         EvaluatorScholarshipApplicationDetail detail,
         CancellationToken cancellationToken)

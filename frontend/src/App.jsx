@@ -22,6 +22,7 @@ import ApplicationReceiptPage from "./pages/ApplicationReceiptPage.jsx";
 import ScholarshipScreeningPage from "./pages/ScholarshipScreeningPage.jsx";
 import ScholarshipSlotsPage from "./pages/ScholarshipSlotsPage.jsx";
 import EvaluatorSettingsPage from "./pages/EvaluatorSettingsPage.jsx";
+import AcademicHeadReviewPage from "./pages/AcademicHeadReviewPage.jsx";
 
 export default function App() {
   return (
@@ -46,6 +47,12 @@ export default function App() {
               />
               <Route path="/evaluator/scholarship-slots" element={<ScholarshipSlotsPage />} />
               <Route path="/evaluator/settings" element={<EvaluatorSettingsPage />} />
+            </Route>
+            <Route element={<RequireRole allowedRoles={["AcademicHead"]} />}>
+              <Route
+                path="/academic-head/scholarship-applications/:applicationId"
+                element={<AcademicHeadReviewPage />}
+              />
             </Route>
             <Route element={<RequireRole allowedRoles={["Applicant"]} />}>
               <Route path="/profile" element={<ApplicantProfilePage />} />
