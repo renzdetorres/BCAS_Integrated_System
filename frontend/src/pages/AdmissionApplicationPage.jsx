@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   APPLICATION_TYPES,
   getMyAdmissionApplications,
@@ -23,6 +23,7 @@ function formatDate(isoDate) {
 }
 
 export default function AdmissionApplicationPage() {
+  const navigate = useNavigate();
   const [applications, setApplications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [form, setForm] = useState(initialForm);
@@ -64,8 +65,7 @@ export default function AdmissionApplicationPage() {
 
     try {
       const created = await submitAdmissionApplication(form);
-      setApplications((prev) => [created, ...prev]);
-      setForm(initialForm);
+      navigate(`/applications/receipt/${created.applicationId}`);
     } catch (error) {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);

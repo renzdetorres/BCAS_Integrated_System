@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   getAvailableScholarships,
   getMyScholarshipApplications,
@@ -19,6 +19,7 @@ function formatDate(isoDate) {
 }
 
 export default function ScholarshipApplicationPage() {
+  const navigate = useNavigate();
   const [scholarships, setScholarships] = useState([]);
   const [applications, setApplications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,18 +70,7 @@ export default function ScholarshipApplicationPage() {
         scholarshipId: Number(form.scholarshipId),
         gradeAverage: Number(form.gradeAverage),
       });
-      setApplications((prev) => [created, ...prev]);
-      // The slot was just consumed server-side - reflect it here without a refetch.
-      setScholarships((prev) =>
-        prev
-          .map((s) =>
-            s.scholarshipId === Number(form.scholarshipId)
-              ? { ...s, remainingSlots: s.remainingSlots - 1 }
-              : s
-          )
-          .filter((s) => s.remainingSlots > 0)
-      );
-      setForm((prev) => ({ ...prev, gradeAverage: "" }));
+      navigate(`/applications/receipt/${created.applicationId}`);
     } catch (error) {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);

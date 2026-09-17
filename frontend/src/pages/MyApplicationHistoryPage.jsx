@@ -120,6 +120,13 @@ export default function MyApplicationHistoryPage() {
               {!selectedApplication && <p>Select an application to see its details.</p>}
               {selectedApplication && (
                 <div className="history-detail">
+                  <Link
+                    className="history-receipt-link"
+                    to={`/applications/receipt/${selectedApplication.applicationId}`}
+                  >
+                    View / Print Receipt &rarr;
+                  </Link>
+
                   <div className="history-detail-row">
                     <span className="history-detail-label">Category</span>
                     <span>{selectedApplication.category}</span>
