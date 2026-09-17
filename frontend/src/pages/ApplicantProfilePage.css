@@ -8,28 +8,40 @@
   padding: 24px;
 }
 
-.profile-card {
+.profile-shell {
   width: 100%;
   max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.profile-card {
+  width: 100%;
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   padding: 32px;
-  margin-top: 24px;
 }
 
 .profile-back-link {
   display: inline-block;
-  margin-bottom: 16px;
   color: #2f6fed;
   font-size: 0.85rem;
   font-weight: 600;
   text-decoration: none;
 }
 
-.profile-card h1 {
-  margin: 0 0 8px;
+.profile-page-title {
+  margin: 0;
   font-size: 1.5rem;
+  color: #1a2332;
+}
+
+.profile-card h2 {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
   color: #1a2332;
 }
 

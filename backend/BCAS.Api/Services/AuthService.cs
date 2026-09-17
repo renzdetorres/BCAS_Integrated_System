@@ -78,4 +78,20 @@ public class AuthService : IAuthService
             ExpiresAtUtc = expiresAtUtc,
         };
     }
+
+    public async Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        var user = await _userRepository.GetByIdAsync(userId, cancellationToken)
+            ?? throw new UserNotFoundException(userId);
+
+        if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
+        {
+            throw new IncorrectCurrentPasswordException();
+        }
+
+        var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword, workFactor: 12);
+        await _userRepository.UpdatePasswordHashAsync(userId, newPasswordHash, cancellationToken);
+
+        _logger.LogInformation("Password changed for {UserId}", userId);
+    }
 }
