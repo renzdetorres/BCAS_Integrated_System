@@ -1,0 +1,218 @@
+.history-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  background: #f4f6f8;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 24px;
+}
+
+.history-shell {
+  width: 100%;
+  max-width: 880px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.history-back-link {
+  color: #2f6fed;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.history-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.history-header h1 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #1a2332;
+}
+
+.history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.history-action-link {
+  color: #2f6fed;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.history-action-link:hover {
+  text-decoration: underline;
+}
+
+.form-error {
+  color: #c0392b;
+  background: #fdecea;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+}
+
+.history-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+}
+
+.history-card h2 {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+  color: #1a2332;
+}
+
+.history-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .history-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-list-item {
+  width: 100%;
+  text-align: left;
+  background: #f9fafb;
+  border: 1px solid #e5e9ef;
+  border-radius: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.history-list-item:hover {
+  border-color: #2f6fed;
+}
+
+.history-list-item-selected {
+  border-color: #2f6fed;
+  background: #eef4ff;
+}
+
+.history-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  gap: 8px;
+}
+
+.history-category {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #eef1f5;
+  color: #4a5568;
+}
+
+.history-category-admission {
+  background: #e8f0fe;
+  color: #2f6fed;
+}
+
+.history-category-scholarship {
+  background: #f2e9fb;
+  color: #7c3aed;
+}
+
+.history-status {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.status-submitted {
+  background: #e8f0fe;
+  color: #2f6fed;
+}
+
+.status-underreview {
+  background: #fff4e0;
+  color: #b3791a;
+}
+
+.status-approved {
+  background: #e9f7ef;
+  color: #1e7e34;
+}
+
+.status-rejected {
+  background: #fdecea;
+  color: #c0392b;
+}
+
+.history-title {
+  margin: 0 0 4px;
+  color: #1a2332;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.history-meta {
+  margin: 0;
+  color: #5c6b7a;
+  font-size: 0.8rem;
+}
+
+.history-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.history-detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e5e9ef;
+  font-size: 0.9rem;
+  color: #1a2332;
+}
+
+.history-detail-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.history-detail-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #5c6b7a;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
