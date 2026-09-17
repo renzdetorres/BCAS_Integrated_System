@@ -213,3 +213,51 @@ BEGIN
     CREATE NONCLUSTERED INDEX IX_ScholarshipApplications_UserId ON dbo.ScholarshipApplications (UserId);
 END
 GO
+
+-- -----------------------------------------------------------------------------
+-- vw_ApplicationHistory
+-- Unified read model for "My Application" history (BISAASS-18) - applicants
+-- browse their admission and scholarship applications together in one list,
+-- most-recent-first. Category tells the two kinds of rows apart; columns
+-- that don't apply to a row's Category come back NULL. Each row already
+-- carries every column that application's own detail view needs, so
+-- selecting an application from the history list requires no follow-up
+-- query.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.vw_ApplicationHistory', N'V') IS NOT NULL
+    DROP VIEW dbo.vw_ApplicationHistory;
+GO
+
+CREATE VIEW dbo.vw_ApplicationHistory
+AS
+    SELECT
+        a.ApplicationId,
+        a.UserId,
+        N'Admission'                   AS Category,
+        a.ApplicationType,
+        a.CourseAppliedFor,
+        a.PreviousSchool,
+        CAST(NULL AS NVARCHAR(200))    AS ScholarshipName,
+        CAST(NULL AS NVARCHAR(100))    AS ScholarshipType,
+        CAST(NULL AS DECIMAL(5,2))     AS GradeAverage,
+        a.Status,
+        a.SubmittedAt
+    FROM dbo.AdmissionApplications a
+
+    UNION ALL
+
+    SELECT
+        sa.ApplicationId,
+        sa.UserId,
+        N'Scholarship'                 AS Category,
+        CAST(NULL AS NVARCHAR(20))     AS ApplicationType,
+        CAST(NULL AS NVARCHAR(200))    AS CourseAppliedFor,
+        CAST(NULL AS NVARCHAR(200))    AS PreviousSchool,
+        sc.Name                        AS ScholarshipName,
+        sa.ScholarshipType,
+        sa.GradeAverage,
+        sa.Status,
+        sa.SubmittedAt
+    FROM dbo.ScholarshipApplications sa
+    JOIN dbo.Scholarships sc ON sc.ScholarshipId = sa.ScholarshipId;
+GO
