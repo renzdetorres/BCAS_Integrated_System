@@ -23,6 +23,7 @@ builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IStaffProvisioningService, StaffProvisioningService>();
+builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -188,3 +188,51 @@ is bounced back to `/portal` - the server-side `[Authorize(Roles=...)]`
 check is what actually enforces this, the client-side guard just avoids
 showing the form to someone who can't use it. `PortalPage` links to it only
 when `session.role === "Admin"`.
+
+## BISAASS-13: Account Activation / Deactivation Toggle
+
+Admin can deactivate or reactivate any account without deleting it. No SQL
+changes were needed: `Users.IsActive` already existed (from BISAASS-8), and
+`AuthService.LoginAsync` already rejects `!user.IsActive` (from BISAASS-9) -
+so a deactivated account already couldn't log in before this ticket. What
+was missing was a way for an Admin to actually flip that flag, and to see
+the accounts to flip it on.
+
+Toggling is a plain `UPDATE ... SET IsActive = @IsActive`, never a delete,
+so no row and nothing that might later reference it (applications,
+documents, evaluations, etc., once those tables exist) is ever removed or
+orphaned.
+
+### API
+
+Both endpoints require the `bcas_auth` cookie for a user with the `Admin`
+role.
+
+`GET /api/admin/users` - `200 OK` with every account (id, name, email,
+role, `isActive`).
+
+`PATCH /api/admin/users/{userId}/status`
+
+Request body:
+```json
+{ "isActive": false }
+```
+- `200 OK` with the updated account.
+- `400 Bad Request` if `isActive` is omitted (it's required precisely so a
+  malformed request can't silently deactivate an account by defaulting to
+  `false`).
+- `404 Not Found` if no account has that id.
+
+`RegisterResponse`/`LoginResponse`'s replacement, `UserProfileResponse`,
+now also carries `isActive`. The `User` &rarr; `UserProfileResponse`
+mapping, which by this point was duplicated in four places, was pulled into
+one `ToProfileResponse()` extension
+(`backend/BCAS.Api/Mapping/UserMappingExtensions.cs`).
+
+### Frontend
+
+`/admin/users` (also gated by `RequireRole`) lists every account in a table
+with an Activate/Deactivate button per row, calling the endpoints above.
+The signed-in Admin's own row has its button disabled client-side, purely
+as a footgun guard against accidental self-lockout - the API itself doesn't
+forbid it.

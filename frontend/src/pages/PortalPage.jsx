@@ -36,9 +36,14 @@ export default function PortalPage() {
           Signed in as <strong>{session.email}</strong>.
         </p>
         {session.role === "Admin" && (
-          <Link className="portal-admin-link" to="/admin/staff">
-            Create Staff Account
-          </Link>
+          <>
+            <Link className="portal-admin-link" to="/admin/staff">
+              Create Staff Account
+            </Link>
+            <Link className="portal-admin-link" to="/admin/users">
+              Manage Accounts
+            </Link>
+          </>
         )}
         <button type="button" onClick={handleLogout}>
           Log Out

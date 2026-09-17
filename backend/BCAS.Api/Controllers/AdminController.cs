@@ -12,10 +12,14 @@ namespace BCAS.Api.Controllers;
 public class AdminController : ControllerBase
 {
     private readonly IStaffProvisioningService _staffProvisioningService;
+    private readonly IUserManagementService _userManagementService;
 
-    public AdminController(IStaffProvisioningService staffProvisioningService)
+    public AdminController(
+        IStaffProvisioningService staffProvisioningService,
+        IUserManagementService userManagementService)
     {
         _staffProvisioningService = staffProvisioningService;
+        _userManagementService = userManagementService;
     }
 
     /// <summary>
@@ -54,6 +58,45 @@ public class AdminController : ControllerBase
                 Title = "Email already registered",
                 Detail = ex.Message,
                 Status = StatusCodes.Status409Conflict,
+            });
+        }
+    }
+
+    /// <summary>Admin-only: lists every account so one can be selected to activate/deactivate.</summary>
+    [HttpGet("users")]
+    [ProducesResponseType(typeof(IReadOnlyList<UserProfileResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<UserProfileResponse>>> ListUsers(CancellationToken cancellationToken)
+    {
+        var users = await _userManagementService.ListUsersAsync(cancellationToken);
+        return Ok(users);
+    }
+
+    /// <summary>
+    /// Admin-only: activates or deactivates an account without deleting it.
+    /// Deactivated accounts fail login (see AuthService.LoginAsync) but keep
+    /// their row and any linked records untouched.
+    /// </summary>
+    [HttpPatch("users/{userId:guid}/status")]
+    [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UserProfileResponse>> SetActiveStatus(
+        Guid userId,
+        [FromBody] SetActiveStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await _userManagementService.SetActiveStatusAsync(userId, request.IsActive!.Value, cancellationToken);
+            return Ok(response);
+        }
+        catch (UserNotFoundException ex)
+        {
+            return NotFound(new ProblemDetails
+            {
+                Title = "Account not found",
+                Detail = ex.Message,
+                Status = StatusCodes.Status404NotFound,
             });
         }
     }

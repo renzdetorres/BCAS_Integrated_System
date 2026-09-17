@@ -126,6 +126,11 @@ public class AuthController : ControllerBase
             FirstName = User.FindFirstValue(ClaimTypes.GivenName) ?? string.Empty,
             LastName = User.FindFirstValue(ClaimTypes.Surname) ?? string.Empty,
             Role = User.FindFirstValue(ClaimTypes.Role) ?? string.Empty,
+            // Always true here: login already rejects inactive accounts, so a
+            // valid JWT could only have been issued to an active one. This
+            // reflects status as of login, not a deactivation that happened
+            // since - the JWT itself isn't re-checked against the database.
+            IsActive = true,
         });
     }
 }

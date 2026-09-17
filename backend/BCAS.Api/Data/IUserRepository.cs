@@ -22,4 +22,9 @@ public interface IUserRepository
         string passwordHash,
         string roleName,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<User>> GetAllAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Returns the updated account, or null if no account has that id.</summary>
+    Task<User?> SetActiveStatusAsync(Guid userId, bool isActive, CancellationToken cancellationToken = default);
 }

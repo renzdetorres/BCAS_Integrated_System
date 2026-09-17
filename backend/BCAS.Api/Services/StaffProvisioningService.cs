@@ -1,6 +1,7 @@
 using BCAS.Api.Constants;
 using BCAS.Api.Data;
 using BCAS.Api.Exceptions;
+using BCAS.Api.Mapping;
 using BCAS.Api.Models;
 
 namespace BCAS.Api.Services;
@@ -42,13 +43,6 @@ public class StaffProvisioningService : IStaffProvisioningService
 
         _logger.LogInformation("Staff account created for {Email} with role {Role}", user.Email, user.RoleName);
 
-        return new UserProfileResponse
-        {
-            UserId = user.UserId,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            Email = user.Email,
-            Role = user.RoleName,
-        };
+        return user.ToProfileResponse();
     }
 }

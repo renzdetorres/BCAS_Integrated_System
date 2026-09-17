@@ -6,6 +6,7 @@ import RegisterPage from "./pages/RegisterPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import PortalPage from "./pages/PortalPage.jsx";
 import ProvisionStaffPage from "./pages/ProvisionStaffPage.jsx";
+import ManageUsersPage from "./pages/ManageUsersPage.jsx";
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
             <Route path="/portal" element={<PortalPage />} />
             <Route element={<RequireRole allowedRoles={["Admin"]} />}>
               <Route path="/admin/staff" element={<ProvisionStaffPage />} />
+              <Route path="/admin/users" element={<ManageUsersPage />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
