@@ -53,6 +53,14 @@ GO
 -- activate-deactivate all read and write this same table (and FK into
 -- dbo.Roles, which already seeds all five roles above) - no schema change
 -- was needed for that ticket.
+--
+-- BISAASS-46 Evaluator Settings: self-service profile edit and password
+-- change also read/write this same table (UserRepository.UpdateProfileAsync
+-- and AuthService.ChangePasswordAsync, reused from BISAASS-46 and the
+-- applicant-facing settings respectively) - again no schema change needed.
+-- UpdateProfileAsync never touches RoleId, unlike the admin-only
+-- UpdateAsync from BISAASS-38, so self-service can never grant a role
+-- change.
 -- -----------------------------------------------------------------------------
 IF OBJECT_ID(N'dbo.Users', N'U') IS NULL
 BEGIN

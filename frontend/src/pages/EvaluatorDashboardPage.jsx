@@ -62,6 +62,9 @@ export default function EvaluatorDashboardPage() {
           <Link className="evaluator-dashboard-link" to="/evaluator/scholarship-slots">
             Scholarship Slots
           </Link>
+          <Link className="evaluator-dashboard-link" to="/evaluator/settings">
+            Settings
+          </Link>
         </div>
 
         {isLoading && (

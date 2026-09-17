@@ -56,6 +56,7 @@ builder.Services.AddScoped<IEvaluatorDashboardService, EvaluatorDashboardService
 builder.Services.AddScoped<IEvaluatorScholarshipApplicationRepository, EvaluatorScholarshipApplicationRepository>();
 builder.Services.AddScoped<IEvaluatorScholarshipApplicationService, EvaluatorScholarshipApplicationService>();
 builder.Services.AddScoped<IEvaluatorScholarshipSlotsService, EvaluatorScholarshipSlotsService>();
+builder.Services.AddScoped<IEvaluatorSettingsService, EvaluatorSettingsService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
