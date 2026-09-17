@@ -397,3 +397,42 @@ BEGIN
         WHERE Status = N'Pending';
 END
 GO
+
+-- -----------------------------------------------------------------------------
+-- Announcements
+-- Admission/Scholarship announcements applicants browse (BISAASS-23). No
+-- admin-management endpoint exists yet, so rows are seeded here, the same
+-- way Deadlines and Scholarships were - IsActive is what "currently-active"
+-- filters on, toggled directly in the data until that endpoint exists.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.Announcements', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Announcements
+    (
+        AnnouncementId  INT             NOT NULL IDENTITY(1,1) CONSTRAINT PK_Announcements PRIMARY KEY,
+        Category        NVARCHAR(20)    NOT NULL,
+        Title           NVARCHAR(200)   NOT NULL,
+        Body            NVARCHAR(2000)  NOT NULL,
+        IsActive        BIT             NOT NULL CONSTRAINT DF_Announcements_IsActive DEFAULT (1),
+        PostedAt        DATETIME2(3)    NOT NULL CONSTRAINT DF_Announcements_PostedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT CK_Announcements_Category CHECK (Category IN (N'Admission', N'Scholarship'))
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.Announcements WHERE Title = N'Admission Exam Season Now Open')
+    INSERT INTO dbo.Announcements (Category, Title, Body, IsActive) VALUES
+        (N'Admission', N'Admission Exam Season Now Open', N'Entrance exam schedules for the upcoming term are now open for selection. Pick a Saturday or an offered weekday slot under Entrance Exam Schedule.', 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.Announcements WHERE Title = N'Reminder: Submit Requirements Early')
+    INSERT INTO dbo.Announcements (Category, Title, Body, IsActive) VALUES
+        (N'Admission', N'Reminder: Submit Requirements Early', N'Upload your Report Card, ID picture, and PSA as soon as possible so verification can start before the document deadline.', 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.Announcements WHERE Title = N'Scholarship Slots Filling Up')
+    INSERT INTO dbo.Announcements (Category, Title, Body, IsActive) VALUES
+        (N'Scholarship', N'Scholarship Slots Filling Up', N'Several scholarship programs have limited remaining slots. Applicants are encouraged to apply before the scholarship deadline.', 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.Announcements WHERE Title = N'New Athletic Scholarship Category')
+    INSERT INTO dbo.Announcements (Category, Title, Body, IsActive) VALUES
+        (N'Scholarship', N'New Athletic Scholarship Category', N'An Athletic Scholarship track has been added to this term''s offerings. Check the Scholarship Application page for details.', 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.Announcements WHERE Title = N'Last Term''s Enrollment Notice')
+    INSERT INTO dbo.Announcements (Category, Title, Body, IsActive) VALUES
+        (N'Admission', N'Last Term''s Enrollment Notice', N'This notice was for a previous enrollment period and is kept only to demonstrate that inactive announcements are filtered out.', 0);
+GO

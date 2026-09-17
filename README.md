@@ -621,3 +621,33 @@ every admission and scholarship application with a step "pill" tracker
 document checklist with status badges and flagged reasons - reusing the
 same status vocabulary and labels as `/documents`. Linked from the
 dashboard's quick links as "Application Tracking".
+
+## BISAASS-23: View Active Announcements (Applicant)
+
+Applicant browses Admission/Scholarship announcements posted by staff.
+Adds one table (`database/schema.sql`):
+
+- `Announcements` - `Category` (`Admission`/`Scholarship`), `Title`,
+  `Body`, and `IsActive`, which is what "currently-active" filters on.
+  No admin-management endpoint exists for it yet, so it's seeded the same
+  way `Deadlines` and `Scholarships` were - including one seeded row with
+  `IsActive = 0`, kept specifically to demonstrate that inactive
+  announcements are filtered out.
+
+### API
+
+`GET /api/announcements` - requires the `bcas_auth` cookie for the
+`Applicant` role. `200 OK` with active announcements
+(`announcementId`, `category`, `title`, `body`, `postedAt`), most
+recently posted first.
+
+### Frontend
+
+The `/announcements` route (previously a shared `ComingSoonPage`
+placeholder for every role) now branches by role through a new
+`AnnouncementsRouter`, the same pattern `PortalRouter` uses for `/portal`:
+an `Applicant` gets the real `AnnouncementsPage` (a list of announcements
+with a category badge and posted date), every other role still sees the
+placeholder until their own view exists. Already linked from the
+dashboard's quick links as "Announcements" (added in BISAASS-14, pointing
+at the placeholder until now).
