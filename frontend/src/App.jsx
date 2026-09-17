@@ -7,6 +7,7 @@ import LoginPage from "./pages/LoginPage.jsx";
 import PortalRouter from "./pages/PortalRouter.jsx";
 import ProvisionStaffPage from "./pages/ProvisionStaffPage.jsx";
 import ManageUsersPage from "./pages/ManageUsersPage.jsx";
+import NotificationSettingsPage from "./pages/NotificationSettingsPage.jsx";
 import AnnouncementsRouter from "./pages/AnnouncementsRouter.jsx";
 import ApplicantProfilePage from "./pages/ApplicantProfilePage.jsx";
 import AdmissionApplicationPage from "./pages/AdmissionApplicationPage.jsx";
@@ -31,6 +32,7 @@ export default function App() {
             <Route element={<RequireRole allowedRoles={["Admin"]} />}>
               <Route path="/admin/staff" element={<ProvisionStaffPage />} />
               <Route path="/admin/users" element={<ManageUsersPage />} />
+              <Route path="/admin/notification-settings" element={<NotificationSettingsPage />} />
             </Route>
             <Route element={<RequireRole allowedRoles={["Applicant"]} />}>
               <Route path="/profile" element={<ApplicantProfilePage />} />

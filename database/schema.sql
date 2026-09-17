@@ -441,3 +441,36 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Announcements WHERE Title = N'Last Term''s Enro
     INSERT INTO dbo.Announcements (Category, Title, Body, IsActive) VALUES
         (N'Admission', N'Last Term''s Enrollment Notice', N'This notice was for a previous enrollment period and is kept only to demonstrate that inactive announcements are filtered out.', 0);
 GO
+
+-- -----------------------------------------------------------------------------
+-- NotificationTriggerConfigs
+-- BISAASS-39 Notification Management (System-Triggered Email Config). One row
+-- per system-triggered email an Admin can turn on or off: status change
+-- alerts, document flags, and permit release. TriggerKey is the stable code
+-- the API and any future notification-sending code key off of; IsEnabled is
+-- read fresh on every check (no caching layer), so a toggle here takes
+-- effect for the very next notification event of that kind.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.NotificationTriggerConfigs', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.NotificationTriggerConfigs
+    (
+        TriggerKey      NVARCHAR(50)    NOT NULL CONSTRAINT PK_NotificationTriggerConfigs PRIMARY KEY,
+        DisplayName     NVARCHAR(100)   NOT NULL,
+        Description     NVARCHAR(300)   NOT NULL,
+        IsEnabled       BIT             NOT NULL CONSTRAINT DF_NotificationTriggerConfigs_IsEnabled DEFAULT (1),
+        UpdatedAt       DATETIME2(3)    NOT NULL CONSTRAINT DF_NotificationTriggerConfigs_UpdatedAt DEFAULT SYSUTCDATETIME()
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.NotificationTriggerConfigs WHERE TriggerKey = N'StatusChange')
+    INSERT INTO dbo.NotificationTriggerConfigs (TriggerKey, DisplayName, Description, IsEnabled) VALUES
+        (N'StatusChange', N'Application Status Change Alerts', N'Notifies an applicant by email whenever their admission or scholarship application status changes.', 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.NotificationTriggerConfigs WHERE TriggerKey = N'DocumentFlag')
+    INSERT INTO dbo.NotificationTriggerConfigs (TriggerKey, DisplayName, Description, IsEnabled) VALUES
+        (N'DocumentFlag', N'Document Flag Alerts', N'Notifies an applicant by email when a submitted document is flagged during verification.', 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.NotificationTriggerConfigs WHERE TriggerKey = N'PermitRelease')
+    INSERT INTO dbo.NotificationTriggerConfigs (TriggerKey, DisplayName, Description, IsEnabled) VALUES
+        (N'PermitRelease', N'Exam Permit Release Alerts', N'Notifies an applicant by email when their exam permit is released and ready to download.', 1);
+GO
