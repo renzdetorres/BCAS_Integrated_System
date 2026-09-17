@@ -229,6 +229,53 @@ WHERE u.UserId = @UserId;";
         }
     }
 
+    public async Task<User?> UpdateProfileAsync(
+        Guid userId,
+        string firstName,
+        string lastName,
+        string email,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+UPDATE u
+SET u.FirstName = @FirstName,
+    u.LastName = @LastName,
+    u.Email = @Email,
+    u.UpdatedAt = SYSUTCDATETIME()
+OUTPUT
+    inserted.UserId,
+    inserted.FirstName,
+    inserted.LastName,
+    inserted.Email,
+    inserted.PasswordHash,
+    inserted.RoleId,
+    r.RoleName,
+    inserted.IsActive,
+    inserted.CreatedAt
+FROM dbo.Users u
+JOIN dbo.Roles r ON r.RoleId = u.RoleId
+WHERE u.UserId = @UserId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@FirstName", System.Data.SqlDbType.NVarChar, 100) { Value = firstName });
+        command.Parameters.Add(new SqlParameter("@LastName", System.Data.SqlDbType.NVarChar, 100) { Value = lastName });
+        command.Parameters.Add(new SqlParameter("@Email", System.Data.SqlDbType.NVarChar, 256) { Value = email });
+        command.Parameters.Add(new SqlParameter("@UserId", System.Data.SqlDbType.UniqueIdentifier) { Value = userId });
+
+        try
+        {
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            return await reader.ReadAsync(cancellationToken) ? MapUser(reader) : null;
+        }
+        catch (SqlException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            // Safety net against a race between the pre-check and the update.
+            throw new DuplicateEmailException(email);
+        }
+    }
+
     public async Task UpdatePasswordHashAsync(Guid userId, string passwordHash, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);

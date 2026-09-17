@@ -42,5 +42,18 @@ public interface IUserRepository
         string roleName,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Self-service update of name and email only - unlike UpdateAsync,
+    /// never touches RoleId, so a user can never grant themselves a
+    /// different role. Returns the updated account, or null if no account
+    /// has that id.
+    /// </summary>
+    Task<User?> UpdateProfileAsync(
+        Guid userId,
+        string firstName,
+        string lastName,
+        string email,
+        CancellationToken cancellationToken = default);
+
     Task UpdatePasswordHashAsync(Guid userId, string passwordHash, CancellationToken cancellationToken = default);
 }
