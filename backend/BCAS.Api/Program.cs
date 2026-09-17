@@ -45,6 +45,8 @@ builder.Services.AddScoped<IExamPermitService, ExamPermitService>();
 builder.Services.AddScoped<IApplicationTrackingService, ApplicationTrackingService>();
 builder.Services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
 builder.Services.AddScoped<IAnnouncementService, AnnouncementService>();
+builder.Services.AddScoped<IAdminDashboardRepository, AdminDashboardRepository>();
+builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

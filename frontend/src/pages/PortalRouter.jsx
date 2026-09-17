@@ -1,11 +1,15 @@
 import { useSession } from "../context/SessionContext.jsx";
 import ApplicantDashboardPage from "./ApplicantDashboardPage.jsx";
+import AdminDashboardPage from "./AdminDashboardPage.jsx";
 import PortalPage from "./PortalPage.jsx";
 
 // RequireAuth guarantees session is set before this renders. Applicant gets
-// its own dashboard (BISAASS-14); every other role lands on the generic
-// staff portal until they have a dedicated one built.
+// its own dashboard (BISAASS-14), Admin gets its own analytics dashboard
+// (BISAASS-27); every other staff role lands on the generic staff portal
+// until they have a dedicated one built.
 export default function PortalRouter() {
   const { session } = useSession();
-  return session.role === "Applicant" ? <ApplicantDashboardPage /> : <PortalPage />;
+  if (session.role === "Applicant") return <ApplicantDashboardPage />;
+  if (session.role === "Admin") return <AdminDashboardPage />;
+  return <PortalPage />;
 }
