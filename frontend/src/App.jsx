@@ -4,9 +4,10 @@ import RequireAuth from "./components/RequireAuth.jsx";
 import RequireRole from "./components/RequireRole.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
-import PortalPage from "./pages/PortalPage.jsx";
+import PortalRouter from "./pages/PortalRouter.jsx";
 import ProvisionStaffPage from "./pages/ProvisionStaffPage.jsx";
 import ManageUsersPage from "./pages/ManageUsersPage.jsx";
+import ComingSoonPage from "./pages/ComingSoonPage.jsx";
 
 export default function App() {
   return (
@@ -16,7 +17,10 @@ export default function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route element={<RequireAuth />}>
-            <Route path="/portal" element={<PortalPage />} />
+            <Route path="/portal" element={<PortalRouter />} />
+            <Route path="/applications" element={<ComingSoonPage title="My Application" />} />
+            <Route path="/documents" element={<ComingSoonPage title="Documents" />} />
+            <Route path="/announcements" element={<ComingSoonPage title="Announcements" />} />
             <Route element={<RequireRole allowedRoles={["Admin"]} />}>
               <Route path="/admin/staff" element={<ProvisionStaffPage />} />
               <Route path="/admin/users" element={<ManageUsersPage />} />

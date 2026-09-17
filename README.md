@@ -236,3 +236,45 @@ with an Activate/Deactivate button per row, calling the endpoints above.
 The signed-in Admin's own row has its button disabled client-side, purely
 as a footgun guard against accidental self-lockout - the API itself doesn't
 forbid it.
+
+## BISAASS-14: Applicant Dashboard
+
+Landing dashboard for logged-in applicants: a personalized greeting,
+upcoming deadlines, and quick links to My Application, Documents, and
+Announcements.
+
+Added a `Deadlines` table (`database/schema.sql`) seeded with one row each
+for `ScholarshipDeadline`, `DocumentDeadline`, and `EnrollmentPeriod` - it's
+read-only for now since there's no admin-management ticket for it yet.
+
+### API
+
+`GET /api/dashboard/deadlines` - requires the `bcas_auth` cookie for any
+authenticated role (deadline info isn't role-sensitive; the dashboard
+*page* is what's Applicant-only, enforced client-side).
+
+`200 OK`:
+```json
+[
+  { "type": "ScholarshipDeadline", "title": "Scholarship Application Deadline", "date": "2026-10-15" },
+  { "type": "DocumentDeadline", "title": "Document Submission Deadline", "date": "2026-10-31" },
+  { "type": "EnrollmentPeriod", "title": "Enrollment Period Opens", "date": "2026-11-01" }
+]
+```
+Only deadlines on or after today are returned, ordered soonest first.
+
+### Frontend
+
+`/portal` now renders through `PortalRouter`
+(`frontend/src/pages/PortalRouter.jsx`): an `Applicant` gets
+`ApplicantDashboardPage`, every other role keeps seeing the existing
+generic `PortalPage` (which doesn't have a dedicated view yet). The
+greeting reuses `session.firstName` already held by `SessionContext` -
+no extra request needed for that part. The three quick links point to
+`/applications`, `/documents`, `/announcements`, which for now render a
+shared `ComingSoonPage` placeholder - those are separate, not-yet-built
+tickets (BISAASS-16 covers admission applications).
+
+The logout handler, until now copy-pasted between `LoginPage` and
+`PortalPage`, was pulled into a `useLogout()` hook
+(`frontend/src/hooks/useLogout.js`) since the dashboard needed it too.
