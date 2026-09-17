@@ -14,4 +14,12 @@ public interface IUserRepository
         string email,
         string passwordHash,
         CancellationToken cancellationToken = default);
+
+    Task<User> CreateStaffAsync(
+        string firstName,
+        string lastName,
+        string email,
+        string passwordHash,
+        string roleName,
+        CancellationToken cancellationToken = default);
 }

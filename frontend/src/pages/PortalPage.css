@@ -43,6 +43,14 @@
   font-size: 0.9rem;
 }
 
+.portal-admin-link {
+  display: block;
+  margin-bottom: 16px;
+  color: #2f6fed;
+  font-weight: 600;
+  text-decoration: none;
+}
+
 .portal-card button {
   width: 100%;
   padding: 12px;

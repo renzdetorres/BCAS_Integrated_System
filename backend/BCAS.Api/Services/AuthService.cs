@@ -23,7 +23,7 @@ public class AuthService : IAuthService
         _logger = logger;
     }
 
-    public async Task<RegisterResponse> RegisterApplicantAsync(RegisterRequest request, CancellationToken cancellationToken = default)
+    public async Task<UserProfileResponse> RegisterApplicantAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
 
@@ -45,7 +45,7 @@ public class AuthService : IAuthService
 
         _logger.LogInformation("Applicant account created for {Email}", user.Email);
 
-        return new RegisterResponse
+        return new UserProfileResponse
         {
             UserId = user.UserId,
             FirstName = user.FirstName,
@@ -79,7 +79,7 @@ public class AuthService : IAuthService
 
         return new LoginResult
         {
-            User = new LoginResponse
+            User = new UserProfileResponse
             {
                 UserId = user.UserId,
                 FirstName = user.FirstName,

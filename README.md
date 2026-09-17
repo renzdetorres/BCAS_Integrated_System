@@ -141,3 +141,50 @@ the correct portal" behavior the ticket asks for. `LoginPage` writes the
 logged-in user into the same context and navigates to `/portal` on success,
 and redirects there immediately if a valid session already exists (e.g. the
 user reloads `/login` while still signed in).
+
+## BISAASS-12: Admin Staff Provisioning (Evaluator / SupportStaff / AcademicHead / Admin)
+
+Admin-only capability to create staff accounts. These roles are never
+self-served via public registration (`POST /api/auth/register` always
+creates an `Applicant`).
+
+No SQL changes were needed - the `Roles` table already has all five roles
+seeded, and `Users` was already role-agnostic.
+
+### API
+
+`POST /api/admin/staff` - requires the `bcas_auth` cookie for a user with
+the `Admin` role (`[Authorize(Roles = "Admin")]`).
+
+Request body:
+```json
+{
+  "firstName": "Jane",
+  "lastName": "Evaluator",
+  "email": "jane.evaluator@example.com",
+  "password": "at-least-8-characters",
+  "role": "Evaluator"
+}
+```
+
+- `201 Created` with the new account (id, name, email, role). The account's
+  password is BCrypt-hashed the same way as self-service registration, and
+  it's immediately usable for login.
+- `400 Bad Request` if `role` isn't one of `Evaluator`, `SupportStaff`,
+  `AcademicHead`, `Admin` (`Applicant` included - that's registration-only).
+- `401 Unauthorized` with no valid cookie; `403 Forbidden` with a valid
+  cookie for a non-Admin role.
+- `409 Conflict` if the email is already registered.
+
+`RegisterResponse` and `LoginResponse` were consolidated into a single
+`UserProfileResponse` (same shape, used by register/login/me/provision) to
+avoid a third near-identical DTO.
+
+### Frontend
+
+`/admin/staff` is nested under both `RequireAuth` and a new `RequireRole`
+guard (`frontend/src/components/RequireRole.jsx`), so a signed-in non-Admin
+is bounced back to `/portal` - the server-side `[Authorize(Roles=...)]`
+check is what actually enforces this, the client-side guard just avoids
+showing the form to someone who can't use it. `PortalPage` links to it only
+when `session.role === "Admin"`.

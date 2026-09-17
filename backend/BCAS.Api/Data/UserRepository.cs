@@ -60,12 +60,30 @@ WHERE u.Email = @Email;";
         };
     }
 
-    public async Task<User> CreateApplicantAsync(
+    public Task<User> CreateApplicantAsync(
         string firstName,
         string lastName,
         string email,
         string passwordHash,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        CreateUserAsync(firstName, lastName, email, passwordHash, ApplicantRoleName, cancellationToken);
+
+    public Task<User> CreateStaffAsync(
+        string firstName,
+        string lastName,
+        string email,
+        string passwordHash,
+        string roleName,
+        CancellationToken cancellationToken = default) =>
+        CreateUserAsync(firstName, lastName, email, passwordHash, roleName, cancellationToken);
+
+    private async Task<User> CreateUserAsync(
+        string firstName,
+        string lastName,
+        string email,
+        string passwordHash,
+        string roleName,
+        CancellationToken cancellationToken)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
@@ -86,7 +104,7 @@ OUTPUT
 VALUES (@FirstName, @LastName, @Email, @PasswordHash, @RoleId);";
 
         await using var command = new SqlCommand(sql, connection);
-        command.Parameters.Add(new SqlParameter("@RoleName", System.Data.SqlDbType.NVarChar, 50) { Value = ApplicantRoleName });
+        command.Parameters.Add(new SqlParameter("@RoleName", System.Data.SqlDbType.NVarChar, 50) { Value = roleName });
         command.Parameters.Add(new SqlParameter("@FirstName", System.Data.SqlDbType.NVarChar, 100) { Value = firstName });
         command.Parameters.Add(new SqlParameter("@LastName", System.Data.SqlDbType.NVarChar, 100) { Value = lastName });
         command.Parameters.Add(new SqlParameter("@Email", System.Data.SqlDbType.NVarChar, 256) { Value = email });
@@ -97,7 +115,7 @@ VALUES (@FirstName, @LastName, @Email, @PasswordHash, @RoleId);";
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
             if (!await reader.ReadAsync(cancellationToken))
             {
-                throw new InvalidOperationException("Failed to create the applicant account.");
+                throw new InvalidOperationException("Failed to create the account.");
             }
 
             return new User

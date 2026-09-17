@@ -1,6 +1,10 @@
 namespace BCAS.Api.Models;
 
-public class RegisterResponse
+/// <summary>
+/// The public-facing shape of a user account, returned by registration,
+/// login, session-check (/me), and admin staff provisioning.
+/// </summary>
+public class UserProfileResponse
 {
     public Guid UserId { get; set; }
     public string FirstName { get; set; } = string.Empty;
