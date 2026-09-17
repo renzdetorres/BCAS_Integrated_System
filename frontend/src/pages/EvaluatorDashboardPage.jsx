@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { getEvaluatorDashboard } from "../api/evaluatorDashboardApi.js";
 import { ApiError } from "../api/apiClient.js";
 import { useSession } from "../context/SessionContext.jsx";
@@ -87,17 +88,22 @@ export default function EvaluatorDashboardPage() {
                 <ul className="evaluator-application-list">
                   {dashboard.queue.map((application) => (
                     <li key={application.applicationId}>
-                      <div className="evaluator-application-header">
-                        <span className="evaluator-application-name">{application.applicantName}</span>
-                        <span className={`evaluator-application-status status-${application.status.toLowerCase()}`}>
-                          {application.status}
-                        </span>
-                      </div>
-                      <p className="evaluator-application-meta">
-                        {application.scholarshipName} &middot; {application.scholarshipType} &middot; Grade
-                        Average {application.gradeAverage} &middot; Submitted{" "}
-                        {formatDate(application.submittedAt)}
-                      </p>
+                      <Link
+                        className="evaluator-application-link"
+                        to={`/evaluator/scholarship-applications/${application.applicationId}`}
+                      >
+                        <div className="evaluator-application-header">
+                          <span className="evaluator-application-name">{application.applicantName}</span>
+                          <span className={`evaluator-application-status status-${application.status.toLowerCase()}`}>
+                            {application.status}
+                          </span>
+                        </div>
+                        <p className="evaluator-application-meta">
+                          {application.scholarshipName} &middot; {application.scholarshipType} &middot; Grade
+                          Average {application.gradeAverage} &middot; Submitted{" "}
+                          {formatDate(application.submittedAt)}
+                        </p>
+                      </Link>
                     </li>
                   ))}
                 </ul>
@@ -111,17 +117,22 @@ export default function EvaluatorDashboardPage() {
                 <ul className="evaluator-application-list">
                   {dashboard.recentlyEvaluated.map((application) => (
                     <li key={application.applicationId}>
-                      <div className="evaluator-application-header">
-                        <span className="evaluator-application-name">{application.applicantName}</span>
-                        <span className={`evaluator-application-status status-${application.status.toLowerCase()}`}>
-                          {application.status}
-                        </span>
-                      </div>
-                      <p className="evaluator-application-meta">
-                        {application.scholarshipName} &middot; {application.scholarshipType} &middot; Grade
-                        Average {application.gradeAverage} &middot; Submitted{" "}
-                        {formatDate(application.submittedAt)}
-                      </p>
+                      <Link
+                        className="evaluator-application-link"
+                        to={`/evaluator/scholarship-applications/${application.applicationId}`}
+                      >
+                        <div className="evaluator-application-header">
+                          <span className="evaluator-application-name">{application.applicantName}</span>
+                          <span className={`evaluator-application-status status-${application.status.toLowerCase()}`}>
+                            {application.status}
+                          </span>
+                        </div>
+                        <p className="evaluator-application-meta">
+                          {application.scholarshipName} &middot; {application.scholarshipType} &middot; Grade
+                          Average {application.gradeAverage} &middot; Submitted{" "}
+                          {formatDate(application.submittedAt)}
+                        </p>
+                      </Link>
                     </li>
                   ))}
                 </ul>
