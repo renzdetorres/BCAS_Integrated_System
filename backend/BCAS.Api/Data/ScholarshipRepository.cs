@@ -41,4 +41,33 @@ ORDER BY Name ASC;";
 
         return scholarships;
     }
+
+    public async Task<IReadOnlyList<Scholarship>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+SELECT ScholarshipId, Name, ScholarshipType, TotalSlots, RemainingSlots, IsActive
+FROM dbo.Scholarships
+ORDER BY Name ASC;";
+
+        await using var command = new SqlCommand(sql, connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        var scholarships = new List<Scholarship>();
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            scholarships.Add(new Scholarship
+            {
+                ScholarshipId = reader.GetInt32(reader.GetOrdinal("ScholarshipId")),
+                Name = reader.GetString(reader.GetOrdinal("Name")),
+                ScholarshipType = reader.GetString(reader.GetOrdinal("ScholarshipType")),
+                TotalSlots = reader.GetInt32(reader.GetOrdinal("TotalSlots")),
+                RemainingSlots = reader.GetInt32(reader.GetOrdinal("RemainingSlots")),
+                IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
+            });
+        }
+
+        return scholarships;
+    }
 }

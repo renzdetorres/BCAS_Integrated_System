@@ -12,6 +12,17 @@ public static class ScholarshipMappingExtensions
         RemainingSlots = scholarship.RemainingSlots,
     };
 
+    public static EvaluatorScholarshipSlotsResponse ToEvaluatorSlotsResponse(this Scholarship scholarship) => new()
+    {
+        ScholarshipId = scholarship.ScholarshipId,
+        Name = scholarship.Name,
+        ScholarshipType = scholarship.ScholarshipType,
+        TotalSlots = scholarship.TotalSlots,
+        RemainingSlots = scholarship.RemainingSlots,
+        OccupiedSlots = scholarship.TotalSlots - scholarship.RemainingSlots,
+        IsActive = scholarship.IsActive,
+    };
+
     public static ScholarshipApplicationResponse ToResponse(this ScholarshipApplication application) => new()
     {
         ApplicationId = application.ApplicationId,

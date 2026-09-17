@@ -167,6 +167,11 @@ GO
 -- application (see ScholarshipApplicationRepository) - the CHECK constraint
 -- is a belt-and-suspenders backstop against it ever going negative or above
 -- TotalSlots.
+--
+-- BISAASS-45 Scholarship Slots Read-Only View (Evaluator) reads TotalSlots/
+-- RemainingSlots straight off this table (Occupied = TotalSlots -
+-- RemainingSlots, computed in ScholarshipMappingExtensions) - no schema
+-- change was needed for that ticket, and it exposes no write endpoint.
 -- -----------------------------------------------------------------------------
 IF OBJECT_ID(N'dbo.Scholarships', N'U') IS NULL
 BEGIN
