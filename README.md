@@ -122,3 +122,22 @@ curl -c cookies.txt -b cookies.txt -k -X POST https://localhost:7100/api/auth/lo
 
 curl -b cookies.txt -k https://localhost:7100/api/auth/me   # 401 Unauthorized
 ```
+
+## BISAASS-11: Session Check Endpoint (Current User Email & Role)
+
+Backend-wise this ticket is already satisfied by `GET /api/auth/me` (added
+while building BISAASS-10): it returns `401` with no valid `bcas_auth`
+cookie, and the signed-in user's email + role when there is one. No new
+backend or SQL work was needed.
+
+The new work is on the frontend: on app load, `SessionProvider`
+(`frontend/src/context/SessionContext.jsx`) calls `GET /api/auth/me` once
+and holds the result (or `null`) in React context. `RequireAuth`
+(`frontend/src/components/RequireAuth.jsx`) guards the `/portal` route,
+redirecting to `/login` while unauthenticated. `PortalPage` reads the
+session's `role` and renders the matching portal label (Applicant,
+Evaluator, Support Staff, Academic Head, or Admin-Registrar) - the "route to
+the correct portal" behavior the ticket asks for. `LoginPage` writes the
+logged-in user into the same context and navigates to `/portal` on success,
+and redirects there immediately if a valid session already exists (e.g. the
+user reloads `/login` while still signed in).

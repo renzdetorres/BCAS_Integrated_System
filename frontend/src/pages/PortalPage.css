@@ -1,0 +1,56 @@
+.portal-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f6f8;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 24px;
+}
+
+.portal-card {
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  padding: 32px;
+  text-align: center;
+}
+
+.portal-badge {
+  display: inline-block;
+  background: #e8f0fe;
+  color: #2f6fed;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+}
+
+.portal-card h1 {
+  margin: 0 0 8px;
+  font-size: 1.5rem;
+  color: #1a2332;
+}
+
+.portal-card p {
+  margin: 0 0 24px;
+  color: #5c6b7a;
+  font-size: 0.9rem;
+}
+
+.portal-card button {
+  width: 100%;
+  padding: 12px;
+  background: #2f6fed;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}

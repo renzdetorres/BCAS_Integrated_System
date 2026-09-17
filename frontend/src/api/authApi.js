@@ -56,6 +56,27 @@ export async function logoutUser() {
   }
 }
 
+/**
+ * Checks the current session against the auth cookie.
+ * Returns the signed-in user's profile, or null when unauthenticated.
+ */
+export async function getSession() {
+  const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (response.status === 401) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new ApiError("Failed to check session.", response.status);
+  }
+
+  return response.json();
+}
+
 function extractErrorMessage(problemDetails) {
   if (!problemDetails) return null;
   if (problemDetails.detail) return problemDetails.detail;
