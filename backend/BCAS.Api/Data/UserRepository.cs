@@ -1,0 +1,92 @@
+using BCAS.Api.Exceptions;
+using BCAS.Api.Models;
+using Microsoft.Data.SqlClient;
+
+namespace BCAS.Api.Data;
+
+public class UserRepository : IUserRepository
+{
+    private const string ApplicantRoleName = "Applicant";
+
+    private readonly IDbConnectionFactory _connectionFactory;
+
+    public UserRepository(IDbConnectionFactory connectionFactory)
+    {
+        _connectionFactory = connectionFactory;
+    }
+
+    public async Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = "SELECT 1 FROM dbo.Users WHERE Email = @Email;";
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@Email", System.Data.SqlDbType.NVarChar, 256) { Value = email });
+
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return result is not null;
+    }
+
+    public async Task<User> CreateApplicantAsync(
+        string firstName,
+        string lastName,
+        string email,
+        string passwordHash,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+DECLARE @RoleId INT = (SELECT RoleId FROM dbo.Roles WHERE RoleName = @RoleName);
+
+INSERT INTO dbo.Users (FirstName, LastName, Email, PasswordHash, RoleId)
+OUTPUT
+    inserted.UserId,
+    inserted.FirstName,
+    inserted.LastName,
+    inserted.Email,
+    inserted.PasswordHash,
+    inserted.RoleId,
+    @RoleName AS RoleName,
+    inserted.IsActive,
+    inserted.CreatedAt
+VALUES (@FirstName, @LastName, @Email, @PasswordHash, @RoleId);";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@RoleName", System.Data.SqlDbType.NVarChar, 50) { Value = ApplicantRoleName });
+        command.Parameters.Add(new SqlParameter("@FirstName", System.Data.SqlDbType.NVarChar, 100) { Value = firstName });
+        command.Parameters.Add(new SqlParameter("@LastName", System.Data.SqlDbType.NVarChar, 100) { Value = lastName });
+        command.Parameters.Add(new SqlParameter("@Email", System.Data.SqlDbType.NVarChar, 256) { Value = email });
+        command.Parameters.Add(new SqlParameter("@PasswordHash", System.Data.SqlDbType.NVarChar, 200) { Value = passwordHash });
+
+        try
+        {
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (!await reader.ReadAsync(cancellationToken))
+            {
+                throw new InvalidOperationException("Failed to create the applicant account.");
+            }
+
+            return new User
+            {
+                UserId = reader.GetGuid(reader.GetOrdinal("UserId")),
+                FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                Email = reader.GetString(reader.GetOrdinal("Email")),
+                PasswordHash = reader.GetString(reader.GetOrdinal("PasswordHash")),
+                RoleId = reader.GetInt32(reader.GetOrdinal("RoleId")),
+                RoleName = reader.GetString(reader.GetOrdinal("RoleName")),
+                IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
+                CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
+            };
+        }
+        catch (SqlException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            // Safety net against a race between the pre-check and the insert.
+            throw new DuplicateEmailException(email);
+        }
+    }
+
+    private static bool IsUniqueConstraintViolation(SqlException ex) =>
+        ex.Number is 2601 or 2627;
+}
