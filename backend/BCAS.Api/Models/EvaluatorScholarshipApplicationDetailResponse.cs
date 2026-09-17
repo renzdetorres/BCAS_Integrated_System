@@ -26,4 +26,10 @@ public class EvaluatorScholarshipApplicationDetailResponse
     public bool CanAdvance { get; set; }
 
     public ScholarshipEligibilityRulesResponse EligibilityRules { get; set; } = new();
+
+    /// <summary>Null until an Academic Head confirms Approved/Rejected.</summary>
+    public ScholarshipFinalDecisionResponse? FinalDecision { get; set; }
+
+    /// <summary>True if Status is "Result" - i.e. an Academic Head can confirm a final decision.</summary>
+    public bool CanConfirmDecision { get; set; }
 }

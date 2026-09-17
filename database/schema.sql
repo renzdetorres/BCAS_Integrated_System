@@ -653,3 +653,34 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Scholarships WHERE Name = N'Top 1 Scholarship')
     INSERT INTO dbo.Scholarships (Name, ScholarshipType, TotalSlots, RemainingSlots, MinimumGradeAverage, IsTopOne) VALUES
         (N'Top 1 Scholarship', N'TopOne', 3, 3, 95.00, 1);
 GO
+
+-- -----------------------------------------------------------------------------
+-- ScholarshipFinalDecisions
+-- BISAASS-47 Scholarship Evaluation, Approval & Records Review (Academic
+-- Head). One row per application - the Academic Head's Approved/Rejected
+-- decision plus optional remarks, parallel to (but distinct from) the
+-- Evaluator's Qualified/NotQualified screening verdict in
+-- ScholarshipEligibilityScreenings. Recording a decision also moves
+-- ScholarshipApplications.Status to that same Approved/Rejected value -
+-- both already allowed by its CHECK constraint since BISAASS-43 - but only
+-- from Status = 'Result' (see
+-- EvaluatorScholarshipApplicationRepository.RecordFinalDecisionAsync,
+-- which does both writes in one transaction), so a decision can't be
+-- confirmed before the guided workflow has actually reached its last
+-- stage.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.ScholarshipFinalDecisions', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ScholarshipFinalDecisions
+    (
+        ApplicationId   UNIQUEIDENTIFIER NOT NULL CONSTRAINT PK_ScholarshipFinalDecisions PRIMARY KEY,
+        Decision        NVARCHAR(20)     NOT NULL,
+        Remarks         NVARCHAR(1000)   NULL,
+        DecidedByUserId UNIQUEIDENTIFIER NOT NULL,
+        DecidedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_ScholarshipFinalDecisions_DecidedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT FK_ScholarshipFinalDecisions_Applications FOREIGN KEY (ApplicationId) REFERENCES dbo.ScholarshipApplications (ApplicationId),
+        CONSTRAINT FK_ScholarshipFinalDecisions_DecidedBy FOREIGN KEY (DecidedByUserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT CK_ScholarshipFinalDecisions_Decision CHECK (Decision IN (N'Approved', N'Rejected'))
+    );
+END
+GO

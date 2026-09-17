@@ -31,13 +31,17 @@ SELECT
         AS EntranceExamScheduled,
     sa.Status, sa.SubmittedAt, sa.UpdatedAt,
     ses.Verdict, ses.Remarks, ses.EvaluatedAt,
-    eu.FirstName AS EvaluatorFirstName, eu.LastName AS EvaluatorLastName
+    eu.FirstName AS EvaluatorFirstName, eu.LastName AS EvaluatorLastName,
+    fd.Decision, fd.Remarks AS DecisionRemarks, fd.DecidedAt,
+    du.FirstName AS DeciderFirstName, du.LastName AS DeciderLastName
 FROM dbo.ScholarshipApplications sa
 JOIN dbo.Users u ON u.UserId = sa.UserId
 JOIN dbo.Scholarships sc ON sc.ScholarshipId = sa.ScholarshipId
 LEFT JOIN dbo.ApplicantProfiles ap ON ap.UserId = sa.UserId
 LEFT JOIN dbo.ScholarshipEligibilityScreenings ses ON ses.ApplicationId = sa.ApplicationId
 LEFT JOIN dbo.Users eu ON eu.UserId = ses.EvaluatedByUserId
+LEFT JOIN dbo.ScholarshipFinalDecisions fd ON fd.ApplicationId = sa.ApplicationId
+LEFT JOIN dbo.Users du ON du.UserId = fd.DecidedByUserId
 WHERE sa.ApplicationId = @ApplicationId;";
 
         await using (var command = new SqlCommand(sql, connection))
@@ -186,6 +190,114 @@ WHERE ApplicationId = @ApplicationId AND Status = @FromStatus;";
         return await GetDetailAsync(applicationId, cancellationToken);
     }
 
+    public async Task<EvaluatorScholarshipApplicationDetail?> RecordFinalDecisionAsync(
+        Guid applicationId,
+        string decision,
+        string? remarks,
+        Guid decidedByUserId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+        var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            // Only from Status = 'Result' - the guided workflow (BISAASS-43)
+            // must have actually reached its last stage before a decision
+            // can be confirmed. Conditional on the WHERE clause the same way
+            // AdvanceStatusAsync is, so a concurrent decision (or workflow
+            // change) can't race this into an inconsistent state.
+            const string updateStatusSql = @"
+UPDATE dbo.ScholarshipApplications
+SET Status = @Decision, UpdatedAt = SYSUTCDATETIME()
+WHERE ApplicationId = @ApplicationId AND Status = N'Result';";
+
+            await using (var updateCommand = new SqlCommand(updateStatusSql, connection, transaction))
+            {
+                updateCommand.Parameters.Add(new SqlParameter("@Decision", SqlDbType.NVarChar, 20) { Value = decision });
+                updateCommand.Parameters.Add(new SqlParameter("@ApplicationId", SqlDbType.UniqueIdentifier) { Value = applicationId });
+
+                var rowsAffected = await updateCommand.ExecuteNonQueryAsync(cancellationToken);
+                if (rowsAffected == 0)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return null;
+                }
+            }
+
+            const string mergeDecisionSql = @"
+MERGE dbo.ScholarshipFinalDecisions AS target
+USING (SELECT @ApplicationId AS ApplicationId) AS source
+ON target.ApplicationId = source.ApplicationId
+WHEN MATCHED THEN
+    UPDATE SET Decision = @Decision, Remarks = @Remarks, DecidedByUserId = @DecidedByUserId, DecidedAt = SYSUTCDATETIME()
+WHEN NOT MATCHED THEN
+    INSERT (ApplicationId, Decision, Remarks, DecidedByUserId)
+    VALUES (@ApplicationId, @Decision, @Remarks, @DecidedByUserId);";
+
+            await using (var mergeCommand = new SqlCommand(mergeDecisionSql, connection, transaction))
+            {
+                mergeCommand.Parameters.Add(new SqlParameter("@ApplicationId", SqlDbType.UniqueIdentifier) { Value = applicationId });
+                mergeCommand.Parameters.Add(new SqlParameter("@Decision", SqlDbType.NVarChar, 20) { Value = decision });
+                mergeCommand.Parameters.Add(new SqlParameter("@Remarks", SqlDbType.NVarChar, 1000) { Value = (object?)remarks ?? DBNull.Value });
+                mergeCommand.Parameters.Add(new SqlParameter("@DecidedByUserId", SqlDbType.UniqueIdentifier) { Value = decidedByUserId });
+                await mergeCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+        finally
+        {
+            await transaction.DisposeAsync();
+        }
+
+        return await GetDetailAsync(applicationId, cancellationToken);
+    }
+
+    /// <summary>Applications that have reached the final workflow stage (Result) and are awaiting an Academic Head's decision, oldest first.</summary>
+    public async Task<IReadOnlyList<EvaluatorQueueApplication>> GetReadyForDecisionAsync(
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+SELECT TOP (@Take)
+    sa.ApplicationId, u.FirstName, u.LastName, sc.Name AS ScholarshipName, sa.ScholarshipType, sa.GradeAverage, sa.Status, sa.SubmittedAt
+FROM dbo.ScholarshipApplications sa
+JOIN dbo.Users u ON u.UserId = sa.UserId
+JOIN dbo.Scholarships sc ON sc.ScholarshipId = sa.ScholarshipId
+WHERE sa.Status = N'Result'
+ORDER BY sa.UpdatedAt ASC;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@Take", SqlDbType.Int) { Value = take });
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        var applications = new List<EvaluatorQueueApplication>();
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            applications.Add(new EvaluatorQueueApplication
+            {
+                ApplicationId = reader.GetGuid(reader.GetOrdinal("ApplicationId")),
+                ApplicantName = $"{reader.GetString(reader.GetOrdinal("FirstName"))} {reader.GetString(reader.GetOrdinal("LastName"))}",
+                ScholarshipName = reader.GetString(reader.GetOrdinal("ScholarshipName")),
+                ScholarshipType = reader.GetString(reader.GetOrdinal("ScholarshipType")),
+                GradeAverage = reader.GetDecimal(reader.GetOrdinal("GradeAverage")),
+                Status = reader.GetString(reader.GetOrdinal("Status")),
+                SubmittedAt = reader.GetDateTime(reader.GetOrdinal("SubmittedAt")),
+            });
+        }
+
+        return applications;
+    }
+
     private static EvaluatorScholarshipApplicationDetail MapDetail(SqlDataReader reader)
     {
         var detail = new EvaluatorScholarshipApplicationDetail
@@ -231,6 +343,18 @@ WHERE ApplicationId = @ApplicationId AND Status = @FromStatus;";
                 Remarks = reader.IsDBNull(reader.GetOrdinal("Remarks")) ? null : reader.GetString(reader.GetOrdinal("Remarks")),
                 EvaluatedByName = $"{reader.GetString(reader.GetOrdinal("EvaluatorFirstName"))} {reader.GetString(reader.GetOrdinal("EvaluatorLastName"))}",
                 EvaluatedAt = reader.GetDateTime(reader.GetOrdinal("EvaluatedAt")),
+            };
+        }
+
+        if (!reader.IsDBNull(reader.GetOrdinal("Decision")))
+        {
+            detail.FinalDecision = new ScholarshipFinalDecision
+            {
+                ApplicationId = detail.ApplicationId,
+                Decision = reader.GetString(reader.GetOrdinal("Decision")),
+                Remarks = reader.IsDBNull(reader.GetOrdinal("DecisionRemarks")) ? null : reader.GetString(reader.GetOrdinal("DecisionRemarks")),
+                DecidedByName = $"{reader.GetString(reader.GetOrdinal("DeciderFirstName"))} {reader.GetString(reader.GetOrdinal("DeciderLastName"))}",
+                DecidedAt = reader.GetDateTime(reader.GetOrdinal("DecidedAt")),
             };
         }
 

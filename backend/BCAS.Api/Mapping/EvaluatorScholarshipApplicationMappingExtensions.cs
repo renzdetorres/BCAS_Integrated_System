@@ -29,6 +29,16 @@ public static class EvaluatorScholarshipApplicationMappingExtensions
         CanAdvance = ScholarshipWorkflowConstants.Stages.Contains(detail.Status)
             && detail.Status != ScholarshipWorkflowConstants.Stages[^1],
         EligibilityRules = detail.EligibilityRules.ToResponse(),
+        FinalDecision = detail.FinalDecision?.ToResponse(),
+        CanConfirmDecision = detail.Status == ScholarshipWorkflowConstants.Stages[^1],
+    };
+
+    public static ScholarshipFinalDecisionResponse ToResponse(this ScholarshipFinalDecision decision) => new()
+    {
+        Decision = decision.Decision,
+        Remarks = decision.Remarks,
+        DecidedByName = decision.DecidedByName,
+        DecidedAt = decision.DecidedAt,
     };
 
     public static ScholarshipScreeningResponse ToResponse(this ScholarshipEligibilityScreening screening) => new()

@@ -28,4 +28,7 @@ public class EvaluatorScholarshipApplicationDetail
     public ScholarshipEligibilityScreening? Screening { get; set; }
 
     public ScholarshipEligibilityRules EligibilityRules { get; set; } = new();
+
+    /// <summary>Null until an Academic Head confirms Approved/Rejected (BISAASS-47).</summary>
+    public ScholarshipFinalDecision? FinalDecision { get; set; }
 }
