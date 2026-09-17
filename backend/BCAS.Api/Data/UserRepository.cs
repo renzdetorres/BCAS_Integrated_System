@@ -180,6 +180,55 @@ WHERE u.UserId = @UserId;";
         return await reader.ReadAsync(cancellationToken) ? MapUser(reader) : null;
     }
 
+    public async Task<User?> UpdateAsync(
+        Guid userId,
+        string firstName,
+        string lastName,
+        string email,
+        string roleName,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+UPDATE u
+SET u.FirstName = @FirstName,
+    u.LastName = @LastName,
+    u.Email = @Email,
+    u.RoleId = (SELECT RoleId FROM dbo.Roles WHERE RoleName = @RoleName),
+    u.UpdatedAt = SYSUTCDATETIME()
+OUTPUT
+    inserted.UserId,
+    inserted.FirstName,
+    inserted.LastName,
+    inserted.Email,
+    inserted.PasswordHash,
+    inserted.RoleId,
+    @RoleName AS RoleName,
+    inserted.IsActive,
+    inserted.CreatedAt
+FROM dbo.Users u
+WHERE u.UserId = @UserId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@FirstName", System.Data.SqlDbType.NVarChar, 100) { Value = firstName });
+        command.Parameters.Add(new SqlParameter("@LastName", System.Data.SqlDbType.NVarChar, 100) { Value = lastName });
+        command.Parameters.Add(new SqlParameter("@Email", System.Data.SqlDbType.NVarChar, 256) { Value = email });
+        command.Parameters.Add(new SqlParameter("@RoleName", System.Data.SqlDbType.NVarChar, 50) { Value = roleName });
+        command.Parameters.Add(new SqlParameter("@UserId", System.Data.SqlDbType.UniqueIdentifier) { Value = userId });
+
+        try
+        {
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            return await reader.ReadAsync(cancellationToken) ? MapUser(reader) : null;
+        }
+        catch (SqlException ex) when (IsUniqueConstraintViolation(ex))
+        {
+            // Safety net against a race between the pre-check and the update.
+            throw new DuplicateEmailException(email);
+        }
+    }
+
     public async Task UpdatePasswordHashAsync(Guid userId, string passwordHash, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);

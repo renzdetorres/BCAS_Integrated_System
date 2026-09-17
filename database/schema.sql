@@ -48,6 +48,11 @@ GO
 -- duplicate registrations are rejected at the database level in addition to
 -- the application-level pre-check.
 -- PasswordHash stores a BCrypt hash - the API layer never stores plaintext.
+--
+-- BISAASS-38 Account Management (All Roles): admin create/list/edit/
+-- activate-deactivate all read and write this same table (and FK into
+-- dbo.Roles, which already seeds all five roles above) - no schema change
+-- was needed for that ticket.
 -- -----------------------------------------------------------------------------
 IF OBJECT_ID(N'dbo.Users', N'U') IS NULL
 BEGIN

@@ -100,4 +100,55 @@ public class AdminController : ControllerBase
             });
         }
     }
+
+    /// <summary>
+    /// Admin-only: edits an existing account's name, email, and role. Works
+    /// across all five roles (Applicant included), unlike staff provisioning
+    /// which only ever creates staff accounts.
+    /// </summary>
+    [HttpPut("users/{userId:guid}")]
+    [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<UserProfileResponse>> UpdateUser(
+        Guid userId,
+        [FromBody] UpdateUserRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await _userManagementService.UpdateUserAsync(userId, request, cancellationToken);
+            return Ok(response);
+        }
+        catch (InvalidRoleException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Invalid role",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (UserNotFoundException ex)
+        {
+            return NotFound(new ProblemDetails
+            {
+                Title = "Account not found",
+                Detail = ex.Message,
+                Status = StatusCodes.Status404NotFound,
+            });
+        }
+        catch (DuplicateEmailException ex)
+        {
+            return Conflict(new ProblemDetails
+            {
+                Title = "Email already registered",
+                Detail = ex.Message,
+                Status = StatusCodes.Status409Conflict,
+            });
+        }
+    }
 }

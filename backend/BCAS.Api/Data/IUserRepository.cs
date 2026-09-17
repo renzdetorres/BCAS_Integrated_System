@@ -30,5 +30,17 @@ public interface IUserRepository
     /// <summary>Returns the updated account, or null if no account has that id.</summary>
     Task<User?> SetActiveStatusAsync(Guid userId, bool isActive, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Updates profile fields and role for an existing account. Returns the
+    /// updated account, or null if no account has that id.
+    /// </summary>
+    Task<User?> UpdateAsync(
+        Guid userId,
+        string firstName,
+        string lastName,
+        string email,
+        string roleName,
+        CancellationToken cancellationToken = default);
+
     Task UpdatePasswordHashAsync(Guid userId, string passwordHash, CancellationToken cancellationToken = default);
 }
