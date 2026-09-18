@@ -25,6 +25,7 @@ import EvaluatorSettingsPage from "./pages/EvaluatorSettingsPage.jsx";
 import AcademicHeadReviewPage from "./pages/AcademicHeadReviewPage.jsx";
 import AdminApplicationsPage from "./pages/AdminApplicationsPage.jsx";
 import AdminApplicationDetailPage from "./pages/AdminApplicationDetailPage.jsx";
+import AdminExamSchedulesPage from "./pages/AdminExamSchedulesPage.jsx";
 
 export default function App() {
   return (
@@ -43,6 +44,7 @@ export default function App() {
               <Route path="/admin/settings" element={<AdminSettingsPage />} />
               <Route path="/admin/applications" element={<AdminApplicationsPage />} />
               <Route path="/admin/applications/:applicationId" element={<AdminApplicationDetailPage />} />
+              <Route path="/admin/exam-schedules" element={<AdminExamSchedulesPage />} />
             </Route>
             <Route element={<RequireRole allowedRoles={["Evaluator"]} />}>
               <Route

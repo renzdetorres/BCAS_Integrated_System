@@ -21,4 +21,22 @@ public static class ExamScheduleMappingExtensions
         ExamTime = selection.ExamTime,
         SelectedAt = selection.SelectedAt,
     };
+
+    public static AdminExamScheduleResponse ToAdminResponse(this AdminExamSchedule schedule) => new()
+    {
+        ExamScheduleId = schedule.ExamScheduleId,
+        DayType = schedule.DayType,
+        ExamDate = schedule.ExamDate,
+        ExamTime = schedule.ExamTime,
+        Venue = schedule.Venue,
+        IsOffered = schedule.IsOffered,
+        AssignedApplicants = schedule.AssignedApplicants.Select(a => a.ToResponse()).ToList(),
+    };
+
+    public static AssignedApplicantResponse ToResponse(this AssignedApplicant applicant) => new()
+    {
+        ApplicantName = applicant.ApplicantName,
+        ApplicantEmail = applicant.ApplicantEmail,
+        SelectedAt = applicant.SelectedAt,
+    };
 }
