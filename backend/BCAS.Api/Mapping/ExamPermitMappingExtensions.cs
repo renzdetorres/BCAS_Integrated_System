@@ -14,7 +14,8 @@ public static class ExamPermitMappingExtensions
         ExamDate = selection.ExamDate,
         ExamTime = selection.ExamTime,
         Venue = selection.Venue,
-        IssuedAt = selection.SelectedAt,
+        // Guaranteed non-null - the caller only reaches this once the permit is released.
+        IssuedAt = selection.PermitReleasedAt!.Value,
     };
 
     public static ExamRescheduleRequestResponse ToResponse(this ExamRescheduleRequest request) => new()

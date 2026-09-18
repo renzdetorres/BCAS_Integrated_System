@@ -42,6 +42,7 @@ builder.Services.AddScoped<IExamScheduleRepository, ExamScheduleRepository>();
 builder.Services.AddScoped<IExamScheduleService, ExamScheduleService>();
 builder.Services.AddScoped<IExamRescheduleRequestRepository, ExamRescheduleRequestRepository>();
 builder.Services.AddScoped<IExamPermitService, ExamPermitService>();
+builder.Services.AddScoped<IAdminExamPermitService, AdminExamPermitService>();
 builder.Services.AddScoped<IApplicationTrackingService, ApplicationTrackingService>();
 builder.Services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
 builder.Services.AddScoped<IAnnouncementService, AnnouncementService>();
