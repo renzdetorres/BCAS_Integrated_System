@@ -338,10 +338,16 @@ GO
 -- rows are always selectable regardless of IsOffered; IsOffered only gates
 -- Weekday rows, toggled by Admin-Registrar based on teacher availability -
 -- enforced in the query (see ExamScheduleRepository), not by ever forcing
--- Saturday's IsOffered to 1. No admin-management endpoint exists yet, so
--- rows are seeded here, the same way Deadlines and Scholarships were.
+-- Saturday's IsOffered to 1.
 -- Venue was added in BISAASS-21 - the exam permit shows it alongside the
 -- date/time, so it lives on the slot rather than the selection.
+--
+-- BISAASS-29 Exam Schedule Management (Saturday/Weekday) adds the
+-- Admin-Registrar management endpoints this table was seeded without -
+-- create (either DayType) and toggle IsOffered - plus a view of every
+-- schedule's assigned applicants (joins dbo.ExamScheduleSelections). No
+-- schema change was needed; IsOffered already modeled exactly the
+-- teacher-availability toggle this ticket's AC describes.
 -- -----------------------------------------------------------------------------
 IF OBJECT_ID(N'dbo.ExamSchedules', N'U') IS NULL
 BEGIN

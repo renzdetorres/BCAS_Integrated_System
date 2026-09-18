@@ -121,6 +121,120 @@ WHEN NOT MATCHED THEN
         }
     }
 
+    public async Task<ExamSchedule> CreateAsync(
+        string dayType,
+        DateOnly examDate,
+        TimeOnly examTime,
+        string venue,
+        bool isOffered,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+INSERT INTO dbo.ExamSchedules (DayType, ExamDate, ExamTime, Venue, IsOffered)
+OUTPUT inserted.ExamScheduleId, inserted.DayType, inserted.ExamDate, inserted.ExamTime, inserted.Venue, inserted.IsOffered
+VALUES (@DayType, @ExamDate, @ExamTime, @Venue, @IsOffered);";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@DayType", SqlDbType.NVarChar, 10) { Value = dayType });
+        command.Parameters.Add(new SqlParameter("@ExamDate", SqlDbType.Date) { Value = examDate.ToDateTime(TimeOnly.MinValue) });
+        command.Parameters.Add(new SqlParameter("@ExamTime", SqlDbType.Time) { Value = examTime.ToTimeSpan() });
+        command.Parameters.Add(new SqlParameter("@Venue", SqlDbType.NVarChar, 200) { Value = venue });
+        command.Parameters.Add(new SqlParameter("@IsOffered", SqlDbType.Bit) { Value = isOffered });
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        await reader.ReadAsync(cancellationToken);
+        return MapSchedule(reader);
+    }
+
+    public async Task<ExamSchedule?> SetOfferedAsync(int examScheduleId, bool isOffered, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+UPDATE dbo.ExamSchedules
+SET IsOffered = @IsOffered
+OUTPUT inserted.ExamScheduleId, inserted.DayType, inserted.ExamDate, inserted.ExamTime, inserted.Venue, inserted.IsOffered
+WHERE ExamScheduleId = @ExamScheduleId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@IsOffered", SqlDbType.Bit) { Value = isOffered });
+        command.Parameters.Add(new SqlParameter("@ExamScheduleId", SqlDbType.Int) { Value = examScheduleId });
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        return await reader.ReadAsync(cancellationToken) ? MapSchedule(reader) : null;
+    }
+
+    public async Task<IReadOnlyList<AdminExamSchedule>> GetAllWithApplicantsAsync(CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        var schedules = new Dictionary<int, AdminExamSchedule>();
+        var applicantsBySchedule = new Dictionary<int, List<AssignedApplicant>>();
+
+        const string schedulesSql = @"
+SELECT ExamScheduleId, DayType, ExamDate, ExamTime, Venue, IsOffered
+FROM dbo.ExamSchedules
+ORDER BY ExamDate ASC, ExamTime ASC;";
+
+        await using (var command = new SqlCommand(schedulesSql, connection))
+        await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
+        {
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var schedule = MapSchedule(reader);
+                schedules[schedule.ExamScheduleId] = new AdminExamSchedule
+                {
+                    ExamScheduleId = schedule.ExamScheduleId,
+                    DayType = schedule.DayType,
+                    ExamDate = schedule.ExamDate,
+                    ExamTime = schedule.ExamTime,
+                    Venue = schedule.Venue,
+                    IsOffered = schedule.IsOffered,
+                };
+                applicantsBySchedule[schedule.ExamScheduleId] = new List<AssignedApplicant>();
+            }
+        }
+
+        const string applicantsSql = @"
+SELECT sel.ExamScheduleId, sel.UserId, u.FirstName, u.LastName, u.Email, sel.SelectedAt
+FROM dbo.ExamScheduleSelections sel
+JOIN dbo.Users u ON u.UserId = sel.UserId
+ORDER BY sel.SelectedAt ASC;";
+
+        await using (var command = new SqlCommand(applicantsSql, connection))
+        await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
+        {
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var examScheduleId = reader.GetInt32(reader.GetOrdinal("ExamScheduleId"));
+                if (!applicantsBySchedule.TryGetValue(examScheduleId, out var applicants))
+                {
+                    continue;
+                }
+
+                applicants.Add(new AssignedApplicant
+                {
+                    UserId = reader.GetGuid(reader.GetOrdinal("UserId")),
+                    ApplicantName = $"{reader.GetString(reader.GetOrdinal("FirstName"))} {reader.GetString(reader.GetOrdinal("LastName"))}",
+                    ApplicantEmail = reader.GetString(reader.GetOrdinal("Email")),
+                    SelectedAt = reader.GetDateTime(reader.GetOrdinal("SelectedAt")),
+                });
+            }
+        }
+
+        foreach (var (examScheduleId, applicants) in applicantsBySchedule)
+        {
+            schedules[examScheduleId].AssignedApplicants = applicants;
+        }
+
+        return schedules.Values
+            .OrderBy(s => s.ExamDate)
+            .ThenBy(s => s.ExamTime)
+            .ToList();
+    }
+
     private static ExamSchedule MapSchedule(SqlDataReader reader) => new()
     {
         ExamScheduleId = reader.GetInt32(reader.GetOrdinal("ExamScheduleId")),
