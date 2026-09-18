@@ -864,3 +864,61 @@ not yet released (a new message pointing to the Documents checklist),
 told apart by matching on the API error message the same way
 `AdmissionApplicationPage`/`ScholarshipApplicationPage` already
 distinguish a profile-incomplete error.
+
+## BISAASS-31: Application Status Workflow Oversight & Update
+
+Full visibility into, and direct control over, any application's guided
+workflow for authorized staff (Admin-Registrar) - on top of the read-only,
+"my own applications" view BISAASS-22 already built, and the Evaluator's
+own forward-only scholarship workflow (BISAASS-43).
+
+No status column needed widening: `AdmissionApplications.Status` already
+allowed `Submitted`/`UnderReview`/`Approved`/`Rejected` (BISAASS-16 widened
+it up front, anticipating exactly this), and `ScholarshipApplications.Status`
+already allowed its full seven-value range (BISAASS-43/47). What was
+missing was a way for staff to actually set either one directly, and
+somewhere to put an optional remark. Adds `Remarks` to both tables plus
+`UpdatedAt` to `AdmissionApplications` (`ScholarshipApplications` already
+had one from BISAASS-43) via `database/schema.sql`, and re-creates
+`vw_ApplicationHistory` to surface both. Like
+`ScholarshipEligibilityScreenings`/`ScholarshipFinalDecisions`, `Remarks`
+holds only the latest remark, not a history.
+
+The six-step Admission view and five-step Scholarship view (BISAASS-22)
+were pulled out of `ApplicationTrackingService` into a shared static
+`ApplicationWorkflowSteps` class so `AdminApplicationsService` could reuse
+the exact same derivation for *any* application, not just the signed-in
+applicant's own - the two can never drift apart.
+
+### API
+
+`PATCH /api/admin/applications/{applicationId}/status` - requires the
+`bcas_auth` cookie for the `Admin` role.
+
+Request body:
+```json
+{ "category": "Admission", "status": "UnderReview", "remarks": "Documents look complete, moving to review." }
+```
+- `200 OK` with the updated application - same shape as
+  `GET /api/admin/applications`' list items, now also carrying `remarks`,
+  `updatedAt`, and `steps` (the workflow step-pill view).
+- `400 Bad Request` if `category` isn't `Admission`/`Scholarship`, or if
+  `status` isn't one of that category's allowed values.
+- `404 Not Found` if no application with that id exists in the given
+  category.
+
+`GET /api/admin/applications` (BISAASS-28) now also returns `remarks`,
+`updatedAt`, and `steps` on every item, computed the same way for a
+system-wide list as `GET /api/application-tracking` computes it for an
+applicant's own (documents-signal calls are cached per applicant within
+one request, since the same applicant can have more than one application).
+
+### Frontend
+
+`AdminApplicationDetailPage` (`/admin/applications/:applicationId`) gained
+two new sections: a read-only "Workflow Status" card showing the same
+step-pill tracker applicants see on `/application-tracking` (extracted
+into a shared `WorkflowStepper` component so the two views can't diverge)
+plus any existing remark, and an "Update Status" form - a dropdown scoped
+to the application's own category's allowed statuses, an optional remarks
+textarea, and a save button hitting the endpoint above.

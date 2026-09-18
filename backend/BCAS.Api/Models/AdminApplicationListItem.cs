@@ -9,7 +9,9 @@ public class AdminApplicationListItem
     public string ApplicantEmail { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public string? Remarks { get; set; }
     public DateTime SubmittedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 
     // Admission-specific - null when Category is "Scholarship".
     public string? ApplicationType { get; set; }

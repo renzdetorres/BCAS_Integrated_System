@@ -1,4 +1,3 @@
-using BCAS.Api.Constants;
 using BCAS.Api.Data;
 using BCAS.Api.Exceptions;
 using BCAS.Api.Models;
@@ -19,9 +18,6 @@ namespace BCAS.Api.Services;
 /// </summary>
 public class ApplicationTrackingService : IApplicationTrackingService
 {
-    private static readonly IReadOnlySet<string> DecidedStatuses = new HashSet<string>(StringComparer.Ordinal) { "Approved", "Rejected" };
-    private static readonly IReadOnlySet<string> ReviewingOrDecidedStatuses = new HashSet<string>(StringComparer.Ordinal) { "UnderReview", "Approved", "Rejected" };
-
     private readonly IAdmissionApplicationRepository _admissionApplicationRepository;
     private readonly IScholarshipApplicationRepository _scholarshipApplicationRepository;
     private readonly IExamScheduleRepository _examScheduleRepository;
@@ -58,7 +54,7 @@ public class ApplicationTrackingService : IApplicationTrackingService
                     ApplicationType = a.ApplicationType,
                     CourseAppliedFor = a.CourseAppliedFor,
                     Status = a.Status,
-                    Steps = BuildAdmissionSteps(a.Status, documentsReceived, examSelection is not null),
+                    Steps = ApplicationWorkflowSteps.BuildAdmissionSteps(a.Status, documentsReceived, examSelection is not null),
                     SubmittedAt = a.SubmittedAt,
                 })
                 .ToList(),
@@ -68,7 +64,7 @@ public class ApplicationTrackingService : IApplicationTrackingService
                     ApplicationId = s.ApplicationId,
                     ScholarshipName = s.ScholarshipName,
                     Status = s.Status,
-                    Steps = BuildScholarshipSteps(s.Status, documentsVerified),
+                    Steps = ApplicationWorkflowSteps.BuildScholarshipSteps(s.Status, documentsVerified),
                     SubmittedAt = s.SubmittedAt,
                 })
                 .ToList(),
@@ -87,45 +83,4 @@ public class ApplicationTrackingService : IApplicationTrackingService
             return null;
         }
     }
-
-    private static IReadOnlyList<TrackingStepResponse> BuildAdmissionSteps(
-        string status, bool documentsReceived, bool examScheduled)
-    {
-        var decided = DecidedStatuses.Contains(status);
-        var underReview = ReviewingOrDecidedStatuses.Contains(status);
-
-        // Highest-indexed signal that's true wins - see the class remarks
-        // for why some of these (UnderReview, ExamCompleted) currently
-        // never fire on real data.
-        var currentIndex = 0;
-        if (documentsReceived) currentIndex = 1;
-        if (underReview) currentIndex = 2;
-        if (examScheduled) currentIndex = 3;
-        if (decided) currentIndex = 5; // ExamCompleted (4) and DecisionReleased (5) both follow from a decision being out.
-
-        return BuildSteps(ApplicationTrackingConstants.AdmissionSteps, currentIndex);
-    }
-
-    private static IReadOnlyList<TrackingStepResponse> BuildScholarshipSteps(string status, bool documentsVerified)
-    {
-        var decided = DecidedStatuses.Contains(status);
-        var underReview = ReviewingOrDecidedStatuses.Contains(status);
-
-        var currentIndex = 0;
-        if (documentsVerified) currentIndex = 1;
-        if (underReview) currentIndex = 2;
-        if (decided) currentIndex = 4; // Evaluation (3) and Result (4) both follow from a decision being out.
-
-        return BuildSteps(ApplicationTrackingConstants.ScholarshipSteps, currentIndex);
-    }
-
-    private static IReadOnlyList<TrackingStepResponse> BuildSteps(IReadOnlyList<string> steps, int currentIndex) =>
-        steps
-            .Select((step, index) => new TrackingStepResponse
-            {
-                Step = step,
-                IsComplete = index < currentIndex || index == steps.Count - 1 && index == currentIndex,
-                IsCurrent = index == currentIndex,
-            })
-            .ToList();
 }

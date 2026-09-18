@@ -7,7 +7,12 @@ public class AdminApplicationListItemResponse
     public string ApplicantEmail { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public string? Remarks { get; set; }
     public DateTime SubmittedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
+
+    /// <summary>The application's workflow step view (BISAASS-22), computed the same way for any application.</summary>
+    public IReadOnlyList<TrackingStepResponse> Steps { get; set; } = Array.Empty<TrackingStepResponse>();
 
     public string? ApplicationType { get; set; }
     public string? CourseAppliedFor { get; set; }

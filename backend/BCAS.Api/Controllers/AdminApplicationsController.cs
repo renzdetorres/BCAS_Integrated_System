@@ -1,3 +1,4 @@
+using BCAS.Api.Exceptions;
 using BCAS.Api.Models;
 using BCAS.Api.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -37,5 +38,53 @@ public class AdminApplicationsController : ControllerBase
     {
         var applications = await _applicationsService.SearchAsync(search, status, category, program, cancellationToken);
         return Ok(applications);
+    }
+
+    /// <summary>
+    /// Admin-only (BISAASS-31): sets an admission or scholarship
+    /// application's status, with optional remarks. Category must match
+    /// the application's own category (Admission or Scholarship).
+    /// </summary>
+    [HttpPatch("{applicationId:guid}/status")]
+    [ProducesResponseType(typeof(AdminApplicationListItemResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AdminApplicationListItemResponse>> UpdateStatus(
+        Guid applicationId,
+        [FromBody] UpdateApplicationStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var updated = await _applicationsService.UpdateStatusAsync(applicationId, request, cancellationToken);
+            return Ok(updated);
+        }
+        catch (InvalidApplicationCategoryException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Invalid category",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (InvalidApplicationStatusException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Invalid status",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (ApplicationNotFoundException ex)
+        {
+            return NotFound(new ProblemDetails
+            {
+                Title = "Application not found",
+                Detail = ex.Message,
+                Status = StatusCodes.Status404NotFound,
+            });
+        }
     }
 }

@@ -750,3 +750,92 @@ BEGIN
     );
 END
 GO
+
+-- -----------------------------------------------------------------------------
+-- AdmissionApplications.Remarks / UpdatedAt, ScholarshipApplications.Remarks
+-- BISAASS-31 Application Status Workflow Oversight & Update. Gives
+-- authorized staff (Admin-Registrar) a general override on top of the
+-- Evaluator's own forward-only scholarship workflow (BISAASS-43) and the
+-- Academic Head's final decision (BISAASS-47): AdminApplicationsService
+-- can set either application's Status to any value already allowed by its
+-- own CHECK constraint (AdmissionApplications' was widened up front by
+-- BISAASS-16 in anticipation of exactly this; ScholarshipApplications' by
+-- BISAASS-43/47), with an optional remark. Remarks holds only the latest
+-- remark, not a history, the same "latest state, no history" convention
+-- ScholarshipEligibilityScreenings/ScholarshipFinalDecisions already use.
+-- AdmissionApplications.UpdatedAt is new (ScholarshipApplications already
+-- has one from BISAASS-43) so both categories can show "last updated" the
+-- same way; ALTER rather than a column on the CREATE TABLE above since
+-- both tables already exist in earlier-provisioned databases.
+-- -----------------------------------------------------------------------------
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.AdmissionApplications') AND name = N'Remarks'
+)
+BEGIN
+    ALTER TABLE dbo.AdmissionApplications ADD Remarks NVARCHAR(1000) NULL;
+END
+GO
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.AdmissionApplications') AND name = N'UpdatedAt'
+)
+BEGIN
+    ALTER TABLE dbo.AdmissionApplications
+        ADD UpdatedAt DATETIME2(3) NOT NULL CONSTRAINT DF_AdmissionApplications_UpdatedAt DEFAULT SYSUTCDATETIME();
+END
+GO
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.ScholarshipApplications') AND name = N'Remarks'
+)
+BEGIN
+    ALTER TABLE dbo.ScholarshipApplications ADD Remarks NVARCHAR(1000) NULL;
+END
+GO
+
+-- Re-create vw_ApplicationHistory (defined earlier in this file) to surface
+-- Remarks/UpdatedAt for both categories - AdminApplicationsRepository
+-- (BISAASS-28/31) reads both through it, same as every other column here.
+DROP VIEW dbo.vw_ApplicationHistory;
+GO
+
+CREATE VIEW dbo.vw_ApplicationHistory
+AS
+    SELECT
+        a.ApplicationId,
+        a.UserId,
+        N'Admission'                   AS Category,
+        a.ApplicationType,
+        a.CourseAppliedFor,
+        a.PreviousSchool,
+        CAST(NULL AS NVARCHAR(200))    AS ScholarshipName,
+        CAST(NULL AS NVARCHAR(100))    AS ScholarshipType,
+        CAST(NULL AS DECIMAL(5,2))     AS GradeAverage,
+        a.Status,
+        a.Remarks,
+        a.SubmittedAt,
+        a.UpdatedAt
+    FROM dbo.AdmissionApplications a
+
+    UNION ALL
+
+    SELECT
+        sa.ApplicationId,
+        sa.UserId,
+        N'Scholarship'                 AS Category,
+        CAST(NULL AS NVARCHAR(20))     AS ApplicationType,
+        CAST(NULL AS NVARCHAR(200))    AS CourseAppliedFor,
+        CAST(NULL AS NVARCHAR(200))    AS PreviousSchool,
+        sc.Name                        AS ScholarshipName,
+        sa.ScholarshipType,
+        sa.GradeAverage,
+        sa.Status,
+        sa.Remarks,
+        sa.SubmittedAt,
+        sa.UpdatedAt
+    FROM dbo.ScholarshipApplications sa
+    JOIN dbo.Scholarships sc ON sc.ScholarshipId = sa.ScholarshipId;
+GO

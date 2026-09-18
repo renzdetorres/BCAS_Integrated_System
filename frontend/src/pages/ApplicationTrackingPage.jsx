@@ -3,24 +3,8 @@ import { Link } from "react-router-dom";
 import { getMyApplicationTracking } from "../api/applicationTrackingApi.js";
 import { DOCUMENT_TYPE_LABELS } from "../api/documentApi.js";
 import { ApiError } from "../api/apiClient.js";
+import WorkflowStepper, { ADMISSION_STEP_LABELS, SCHOLARSHIP_STEP_LABELS } from "../components/WorkflowStepper.jsx";
 import "./ApplicationTrackingPage.css";
-
-const ADMISSION_STEP_LABELS = {
-  Submitted: "Submitted",
-  DocumentsReceived: "Documents Received",
-  UnderReview: "Under Review",
-  ExamScheduled: "Exam Scheduled",
-  ExamCompleted: "Exam Completed",
-  DecisionReleased: "Decision Released",
-};
-
-const SCHOLARSHIP_STEP_LABELS = {
-  Submitted: "Submitted",
-  DocumentsVerified: "Documents Verified",
-  EligibilityScreening: "Eligibility Screening",
-  Evaluation: "Evaluation",
-  Result: "Result",
-};
 
 const DOCUMENT_STATUS_LABELS = {
   NotSubmitted: "Not submitted",
@@ -36,26 +20,6 @@ function formatDate(isoDate) {
     month: "long",
     day: "numeric",
   });
-}
-
-function Stepper({ steps, labels }) {
-  return (
-    <ol className="tracking-stepper">
-      {steps.map((step) => (
-        <li
-          key={step.step}
-          className={
-            "tracking-step" +
-            (step.isComplete ? " tracking-step-complete" : "") +
-            (step.isCurrent ? " tracking-step-current" : "")
-          }
-        >
-          <span className="tracking-step-dot" aria-hidden="true" />
-          <span className="tracking-step-label">{labels[step.step] ?? step.step}</span>
-        </li>
-      ))}
-    </ol>
-  );
 }
 
 export default function ApplicationTrackingPage() {
@@ -118,7 +82,7 @@ export default function ApplicationTrackingPage() {
                       Submitted {formatDate(application.submittedAt)}
                     </span>
                   </div>
-                  <Stepper steps={application.steps} labels={ADMISSION_STEP_LABELS} />
+                  <WorkflowStepper steps={application.steps} labels={ADMISSION_STEP_LABELS} />
                 </div>
               ))}
 
@@ -132,7 +96,7 @@ export default function ApplicationTrackingPage() {
                       Submitted {formatDate(application.submittedAt)}
                     </span>
                   </div>
-                  <Stepper steps={application.steps} labels={SCHOLARSHIP_STEP_LABELS} />
+                  <WorkflowStepper steps={application.steps} labels={SCHOLARSHIP_STEP_LABELS} />
                 </div>
               ))}
             </>
