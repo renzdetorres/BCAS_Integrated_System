@@ -28,4 +28,12 @@ public class ProvisionStaffRequest
     /// </summary>
     [Required]
     public string Role { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Free-text department/program name (BISAASS-49), only meaningful when
+    /// Role is AcademicHead - it scopes which admission reports that
+    /// Academic Head can see. Optional; can be set later via UpdateUserRequest.
+    /// </summary>
+    [StringLength(100)]
+    public string? Department { get; set; }
 }

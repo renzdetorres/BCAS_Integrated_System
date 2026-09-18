@@ -3,14 +3,14 @@ import { API_BASE_URL, ApiError, extractErrorMessage } from "./apiClient.js";
 export const STAFF_ROLES = ["Evaluator", "SupportStaff", "AcademicHead", "Admin"];
 export const ALL_ROLES = ["Applicant", ...STAFF_ROLES];
 
-export async function provisionStaff({ firstName, lastName, email, password, role }) {
+export async function provisionStaff({ firstName, lastName, email, password, role, department }) {
   const response = await fetch(`${API_BASE_URL}/api/admin/staff`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     // Required so the browser sends the HttpOnly auth cookie for the
     // server-side Admin role check.
     credentials: "include",
-    body: JSON.stringify({ firstName, lastName, email, password, role }),
+    body: JSON.stringify({ firstName, lastName, email, password, role, department: department || null }),
   });
 
   const data = await response.json().catch(() => null);
@@ -36,12 +36,12 @@ export async function listUsers() {
   return response.json();
 }
 
-export async function updateUser(userId, { firstName, lastName, email, role }) {
+export async function updateUser(userId, { firstName, lastName, email, role, department }) {
   const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ firstName, lastName, email, role }),
+    body: JSON.stringify({ firstName, lastName, email, role, department: department || null }),
   });
 
   const data = await response.json().catch(() => null);

@@ -23,9 +23,9 @@ public class AdminReportsService : IAdminReportsService
         return items.Select(i => i.ToResponse()).ToList();
     }
 
-    public async Task<EnrollmentSummaryResponse> GetEnrollmentSummaryAsync(CancellationToken cancellationToken = default)
+    public async Task<EnrollmentSummaryResponse> GetEnrollmentSummaryAsync(string? program = null, CancellationToken cancellationToken = default)
     {
-        var enrolled = await _reportsRepository.GetEnrollmentListAsync(null, null, cancellationToken);
+        var enrolled = await _reportsRepository.GetEnrollmentListAsync(program, null, cancellationToken);
 
         var byProgram = enrolled
             .GroupBy(e => e.CourseAppliedFor, StringComparer.Ordinal)
@@ -49,9 +49,9 @@ public class AdminReportsService : IAdminReportsService
         };
     }
 
-    public async Task<IReadOnlyList<SectionFileResponse>> GetSectionFilesAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<SectionFileResponse>> GetSectionFilesAsync(string? program = null, CancellationToken cancellationToken = default)
     {
-        var enrolled = await _reportsRepository.GetEnrollmentListAsync(null, null, cancellationToken);
+        var enrolled = await _reportsRepository.GetEnrollmentListAsync(program, null, cancellationToken);
 
         return enrolled
             .GroupBy(e => e.CourseAppliedFor, StringComparer.Ordinal)
@@ -85,9 +85,9 @@ public class AdminReportsService : IAdminReportsService
         return XlsxWriter.Write("Enrollment List", headers, rows);
     }
 
-    public async Task<byte[]> ExportEnrollmentSummaryAsync(CancellationToken cancellationToken = default)
+    public async Task<byte[]> ExportEnrollmentSummaryAsync(string? program = null, CancellationToken cancellationToken = default)
     {
-        var summary = await GetEnrollmentSummaryAsync(cancellationToken);
+        var summary = await GetEnrollmentSummaryAsync(program, cancellationToken);
 
         var headers = new List<string> { "Summary of Enrollment" };
         var rows = new List<IReadOnlyList<string>>
@@ -106,9 +106,9 @@ public class AdminReportsService : IAdminReportsService
         return XlsxWriter.Write("Enrollment Summary", headers, rows);
     }
 
-    public async Task<byte[]> ExportSectionFilesAsync(CancellationToken cancellationToken = default)
+    public async Task<byte[]> ExportSectionFilesAsync(string? program = null, CancellationToken cancellationToken = default)
     {
-        var sections = await GetSectionFilesAsync(cancellationToken);
+        var sections = await GetSectionFilesAsync(program, cancellationToken);
 
         var headers = new List<string> { "File per Section" };
         var rows = new List<IReadOnlyList<string>>();

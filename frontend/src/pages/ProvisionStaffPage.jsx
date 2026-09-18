@@ -10,6 +10,7 @@ const initialForm = {
   email: "",
   password: "",
   role: STAFF_ROLES[0],
+  department: "",
 };
 
 export default function ProvisionStaffPage() {
@@ -126,6 +127,20 @@ export default function ProvisionStaffPage() {
               ))}
             </select>
           </div>
+
+          {form.role === "AcademicHead" && (
+            <div className="form-row">
+              <label htmlFor="department">Department</label>
+              <input
+                id="department"
+                name="department"
+                type="text"
+                placeholder="e.g. BSIT"
+                value={form.department}
+                onChange={handleChange}
+              />
+            </div>
+          )}
 
           {errorMessage && (
             <p className="form-error" role="alert">

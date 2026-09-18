@@ -46,7 +46,7 @@ public class AdminReportsController : ControllerBase
     [ProducesResponseType(typeof(EnrollmentSummaryResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<EnrollmentSummaryResponse>> GetEnrollmentSummary(CancellationToken cancellationToken)
     {
-        var summary = await _reportsService.GetEnrollmentSummaryAsync(cancellationToken);
+        var summary = await _reportsService.GetEnrollmentSummaryAsync(cancellationToken: cancellationToken);
         return Ok(summary);
     }
 
@@ -55,7 +55,7 @@ public class AdminReportsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> ExportEnrollmentSummary(CancellationToken cancellationToken)
     {
-        var file = await _reportsService.ExportEnrollmentSummaryAsync(cancellationToken);
+        var file = await _reportsService.ExportEnrollmentSummaryAsync(cancellationToken: cancellationToken);
         return File(file, XlsxContentType, "enrollment-summary.xlsx");
     }
 
@@ -64,7 +64,7 @@ public class AdminReportsController : ControllerBase
     [ProducesResponseType(typeof(IReadOnlyList<SectionFileResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<SectionFileResponse>>> GetSectionFiles(CancellationToken cancellationToken)
     {
-        var sections = await _reportsService.GetSectionFilesAsync(cancellationToken);
+        var sections = await _reportsService.GetSectionFilesAsync(cancellationToken: cancellationToken);
         return Ok(sections);
     }
 
@@ -73,7 +73,7 @@ public class AdminReportsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> ExportSectionFiles(CancellationToken cancellationToken)
     {
-        var file = await _reportsService.ExportSectionFilesAsync(cancellationToken);
+        var file = await _reportsService.ExportSectionFilesAsync(cancellationToken: cancellationToken);
         return File(file, XlsxContentType, "file-per-section.xlsx");
     }
 

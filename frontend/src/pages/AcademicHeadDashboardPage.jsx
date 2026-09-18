@@ -77,6 +77,18 @@ export default function AcademicHeadDashboardPage() {
           </div>
         </section>
 
+        <section className="ah-dashboard-card">
+          <h2>Reports</h2>
+          <p className="ah-management-subtitle">
+            Admission reports are scoped to your assigned department; scholarship reports are school-wide.
+          </p>
+          <div className="ah-management-links">
+            <Link className="ah-management-link" to="/academic-head/reports">
+              View Reports
+            </Link>
+          </div>
+        </section>
+
         {isLoading && (
           <section className="ah-dashboard-card">
             <p>Loading...</p>
