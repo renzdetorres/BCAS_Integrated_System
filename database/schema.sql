@@ -1025,3 +1025,19 @@ AS
     FROM dbo.ScholarshipApplications sa
     JOIN dbo.Scholarships sc ON sc.ScholarshipId = sa.ScholarshipId;
 GO
+
+-- -----------------------------------------------------------------------------
+-- BISAASS-36 Announcements Management (Create/Post/Deactivate)
+-- No schema change - dbo.Announcements (defined above) already has every
+-- column this ticket needs (Category, Title, Body, IsActive, PostedAt).
+-- AdminAnnouncementService.CreateAsync now fills that table directly
+-- instead of the seed-data-only inserts above, inserting a new row with
+-- IsActive = 0 (a draft, not yet visible to applicants) rather than
+-- relying on DF_Announcements_IsActive's default of 1 - Create and Post
+-- are deliberately separate actions, matching this ticket's title.
+-- AdminAnnouncementService.SetActiveStatusAsync then flips IsActive to
+-- post (activate) or deactivate it. IAnnouncementRepository.GetActiveAsync
+-- (BISAASS-23) already filters on IsActive = 1, so a deactivated
+-- announcement stops appearing to applicants immediately - no further
+-- change was needed for that.
+-- -----------------------------------------------------------------------------

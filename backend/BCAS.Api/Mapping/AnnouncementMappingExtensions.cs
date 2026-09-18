@@ -12,4 +12,14 @@ public static class AnnouncementMappingExtensions
         Body = announcement.Body,
         PostedAt = announcement.PostedAt,
     };
+
+    public static AdminAnnouncementResponse ToAdminResponse(this Announcement announcement) => new()
+    {
+        AnnouncementId = announcement.AnnouncementId,
+        Category = announcement.Category,
+        Title = announcement.Title,
+        Body = announcement.Body,
+        IsActive = announcement.IsActive,
+        PostedAt = announcement.PostedAt,
+    };
 }

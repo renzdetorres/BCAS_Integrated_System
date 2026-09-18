@@ -47,6 +47,7 @@ builder.Services.AddScoped<IAdminExamPermitService, AdminExamPermitService>();
 builder.Services.AddScoped<IApplicationTrackingService, ApplicationTrackingService>();
 builder.Services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
 builder.Services.AddScoped<IAnnouncementService, AnnouncementService>();
+builder.Services.AddScoped<IAdminAnnouncementService, AdminAnnouncementService>();
 builder.Services.AddScoped<IAdminDashboardRepository, AdminDashboardRepository>();
 builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
 builder.Services.AddScoped<INotificationSettingsRepository, NotificationSettingsRepository>();
