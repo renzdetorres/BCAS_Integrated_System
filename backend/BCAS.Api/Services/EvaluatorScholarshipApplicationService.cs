@@ -45,7 +45,7 @@ public class EvaluatorScholarshipApplicationService : IEvaluatorScholarshipAppli
 
         var remarks = string.IsNullOrWhiteSpace(request.Remarks) ? null : request.Remarks.Trim();
 
-        await _applicationRepository.UpsertScreeningAsync(applicationId, request.Verdict, remarks, evaluatorUserId, cancellationToken)
+        _ = await _applicationRepository.UpsertScreeningAsync(applicationId, request.Verdict, remarks, evaluatorUserId, cancellationToken)
             ?? throw new ScholarshipApplicationNotFoundException(applicationId);
 
         _logger.LogInformation(
