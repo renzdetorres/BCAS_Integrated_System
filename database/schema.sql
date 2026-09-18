@@ -908,3 +908,120 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ApplicantDocuments_St
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ApplicantDocuments_DocumentType' AND object_id = OBJECT_ID(N'dbo.ApplicantDocuments'))
     CREATE NONCLUSTERED INDEX IX_ApplicantDocuments_DocumentType ON dbo.ApplicantDocuments (DocumentType);
 GO
+
+-- -----------------------------------------------------------------------------
+-- BISAASS-35 Records Archive (5-Year Retention)
+-- Archiving flags a completed/inactive (Approved or Rejected -
+-- AdminApplicationsService/ArchiveConstants) application in place; nothing
+-- is ever deleted, so archived records stay fully retrievable, supporting
+-- the school's 5-year retention practice, while the archived flag lets the
+-- school's document disposal process tell "done with, can be physically
+-- disposed of later" apart from "still active" without erasing the
+-- electronic record. ArchivedByUserId/ArchivedAt/ArchiveReason mirror the
+-- Remarks/UpdatedAt audit columns BISAASS-31 already added. Documents have
+-- no ApplicationId of their own (ApplicantDocuments is keyed by
+-- (UserId, DocumentType) - BISAASS-19), so archiving an Admission
+-- application cascades a matching IsArchived flag onto that applicant's
+-- whole document set (see ApplicantDocumentRepository.ArchiveByUserIdAsync)
+-- rather than trying to scope it per-application.
+-- AdminApplicationsRepository.SearchAsync treats archived as just another
+-- optional filter alongside status/category/program (ignored when
+-- omitted), so this never changes BISAASS-28's original "every
+-- application" list behavior - the new Admin-Registrar "Records Archive"
+-- view is the same endpoint called with archived=true.
+-- -----------------------------------------------------------------------------
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.AdmissionApplications') AND name = N'IsArchived'
+)
+BEGIN
+    ALTER TABLE dbo.AdmissionApplications ADD
+        IsArchived       BIT              NOT NULL CONSTRAINT DF_AdmissionApplications_IsArchived DEFAULT (0),
+        ArchivedAt       DATETIME2(3)     NULL,
+        ArchivedByUserId UNIQUEIDENTIFIER NULL,
+        ArchiveReason    NVARCHAR(500)    NULL,
+        CONSTRAINT FK_AdmissionApplications_ArchivedBy FOREIGN KEY (ArchivedByUserId) REFERENCES dbo.Users (UserId);
+END
+GO
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.ScholarshipApplications') AND name = N'IsArchived'
+)
+BEGIN
+    ALTER TABLE dbo.ScholarshipApplications ADD
+        IsArchived       BIT              NOT NULL CONSTRAINT DF_ScholarshipApplications_IsArchived DEFAULT (0),
+        ArchivedAt       DATETIME2(3)     NULL,
+        ArchivedByUserId UNIQUEIDENTIFIER NULL,
+        ArchiveReason    NVARCHAR(500)    NULL,
+        CONSTRAINT FK_ScholarshipApplications_ArchivedBy FOREIGN KEY (ArchivedByUserId) REFERENCES dbo.Users (UserId);
+END
+GO
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.ApplicantDocuments') AND name = N'IsArchived'
+)
+BEGIN
+    ALTER TABLE dbo.ApplicantDocuments ADD IsArchived BIT NOT NULL CONSTRAINT DF_ApplicantDocuments_IsArchived DEFAULT (0);
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_AdmissionApplications_IsArchived' AND object_id = OBJECT_ID(N'dbo.AdmissionApplications'))
+    CREATE NONCLUSTERED INDEX IX_AdmissionApplications_IsArchived ON dbo.AdmissionApplications (IsArchived);
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ScholarshipApplications_IsArchived' AND object_id = OBJECT_ID(N'dbo.ScholarshipApplications'))
+    CREATE NONCLUSTERED INDEX IX_ScholarshipApplications_IsArchived ON dbo.ScholarshipApplications (IsArchived);
+GO
+
+-- Re-create vw_ApplicationHistory (defined earlier in this file) to surface
+-- the new archive columns for both categories - AdminApplicationsRepository
+-- (BISAASS-28/31/35) reads them all through it, same as every other column here.
+DROP VIEW dbo.vw_ApplicationHistory;
+GO
+
+CREATE VIEW dbo.vw_ApplicationHistory
+AS
+    SELECT
+        a.ApplicationId,
+        a.UserId,
+        N'Admission'                   AS Category,
+        a.ApplicationType,
+        a.CourseAppliedFor,
+        a.PreviousSchool,
+        CAST(NULL AS NVARCHAR(200))    AS ScholarshipName,
+        CAST(NULL AS NVARCHAR(100))    AS ScholarshipType,
+        CAST(NULL AS DECIMAL(5,2))     AS GradeAverage,
+        a.Status,
+        a.Remarks,
+        a.SubmittedAt,
+        a.UpdatedAt,
+        a.IsArchived,
+        a.ArchivedAt,
+        a.ArchivedByUserId,
+        a.ArchiveReason
+    FROM dbo.AdmissionApplications a
+
+    UNION ALL
+
+    SELECT
+        sa.ApplicationId,
+        sa.UserId,
+        N'Scholarship'                 AS Category,
+        CAST(NULL AS NVARCHAR(20))     AS ApplicationType,
+        CAST(NULL AS NVARCHAR(200))    AS CourseAppliedFor,
+        CAST(NULL AS NVARCHAR(200))    AS PreviousSchool,
+        sc.Name                        AS ScholarshipName,
+        sa.ScholarshipType,
+        sa.GradeAverage,
+        sa.Status,
+        sa.Remarks,
+        sa.SubmittedAt,
+        sa.UpdatedAt,
+        sa.IsArchived,
+        sa.ArchivedAt,
+        sa.ArchivedByUserId,
+        sa.ArchiveReason
+    FROM dbo.ScholarshipApplications sa
+    JOIN dbo.Scholarships sc ON sc.ScholarshipId = sa.ScholarshipId;
+GO

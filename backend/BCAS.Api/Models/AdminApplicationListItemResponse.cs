@@ -14,6 +14,12 @@ public class AdminApplicationListItemResponse
     /// <summary>The application's workflow step view (BISAASS-22), computed the same way for any application.</summary>
     public IReadOnlyList<TrackingStepResponse> Steps { get; set; } = Array.Empty<TrackingStepResponse>();
 
+    // Archive metadata (BISAASS-35) - Archived* stay null while IsArchived is false.
+    public bool IsArchived { get; set; }
+    public DateTime? ArchivedAt { get; set; }
+    public Guid? ArchivedByUserId { get; set; }
+    public string? ArchiveReason { get; set; }
+
     public string? ApplicationType { get; set; }
     public string? CourseAppliedFor { get; set; }
     public string? PreviousSchool { get; set; }

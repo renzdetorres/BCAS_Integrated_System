@@ -27,9 +27,10 @@ public class AdminApplicationsService : IAdminApplicationsService
         string? status,
         string? category,
         string? program,
+        bool? archived = null,
         CancellationToken cancellationToken = default)
     {
-        var items = await _applicationsRepository.SearchAsync(search, status, category, program, cancellationToken);
+        var items = await _applicationsRepository.SearchAsync(search, status, category, program, archived, cancellationToken);
 
         // Cached per applicant (UserId) rather than per application, since
         // the same applicant can have more than one application and these
@@ -73,6 +74,47 @@ public class AdminApplicationsService : IAdminApplicationsService
         var steps = await BuildStepsAsync(
             updated, new Dictionary<Guid, DocumentChecklistResponse?>(), new Dictionary<Guid, bool>(), cancellationToken);
         return updated.ToResponse(steps);
+    }
+
+    public async Task<AdminApplicationListItemResponse> ArchiveAsync(
+        Guid applicationId,
+        ArchiveApplicationRequest request,
+        Guid archivedByUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var category = request.Category!;
+        if (category != "Admission" && category != "Scholarship")
+        {
+            throw new InvalidApplicationCategoryException(category);
+        }
+
+        var existing = await _applicationsRepository.GetByIdAsync(applicationId, cancellationToken);
+        if (existing is null || existing.Category != category)
+        {
+            throw new ApplicationNotFoundException(applicationId);
+        }
+
+        if (existing.IsArchived)
+        {
+            throw new ApplicationAlreadyArchivedException(applicationId);
+        }
+
+        if (!ArchiveConstants.ArchivableStatuses.Contains(existing.Status))
+        {
+            throw new ApplicationNotArchivableException(existing.Status);
+        }
+
+        var archived = await _applicationsRepository.ArchiveAsync(applicationId, category, request.Reason, archivedByUserId, cancellationToken)
+            ?? throw new ApplicationNotFoundException(applicationId);
+
+        if (category == "Admission")
+        {
+            await _documentService.ArchiveDocumentsAsync(existing.UserId, cancellationToken);
+        }
+
+        var steps = await BuildStepsAsync(
+            archived, new Dictionary<Guid, DocumentChecklistResponse?>(), new Dictionary<Guid, bool>(), cancellationToken);
+        return archived.ToResponse(steps);
     }
 
     /// <summary>

@@ -19,6 +19,7 @@ public class AdminApplicationsRepository : IAdminApplicationsRepository
         string? status,
         string? category,
         string? program,
+        bool? archived = null,
         CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
@@ -30,6 +31,7 @@ WHERE (@Search IS NULL OR u.FirstName LIKE '%' + @Search + '%' OR u.LastName LIK
   AND (@Status IS NULL OR h.Status = @Status)
   AND (@Category IS NULL OR h.Category = @Category)
   AND (@Program IS NULL OR h.CourseAppliedFor LIKE '%' + @Program + '%' OR h.ScholarshipName LIKE '%' + @Program + '%')
+  AND (@Archived IS NULL OR h.IsArchived = @Archived)
 ORDER BY h.SubmittedAt DESC;";
 
         await using var command = new SqlCommand(sql, connection);
@@ -37,6 +39,7 @@ ORDER BY h.SubmittedAt DESC;";
         command.Parameters.Add(new SqlParameter("@Status", SqlDbType.NVarChar, 30) { Value = (object?)NullIfEmpty(status) ?? DBNull.Value });
         command.Parameters.Add(new SqlParameter("@Category", SqlDbType.NVarChar, 20) { Value = (object?)NullIfEmpty(category) ?? DBNull.Value });
         command.Parameters.Add(new SqlParameter("@Program", SqlDbType.NVarChar, 200) { Value = (object?)NullIfEmpty(program) ?? DBNull.Value });
+        command.Parameters.Add(new SqlParameter("@Archived", SqlDbType.Bit) { Value = (object?)archived ?? DBNull.Value });
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
@@ -107,11 +110,53 @@ WHERE ApplicationId = @ApplicationId;";
         return await GetByIdAsync(applicationId, cancellationToken);
     }
 
+    public async Task<AdminApplicationListItem?> ArchiveAsync(
+        Guid applicationId,
+        string category,
+        string? reason,
+        Guid archivedByUserId,
+        CancellationToken cancellationToken = default)
+    {
+        // Same table-selection guard as UpdateStatusAsync above - category
+        // is validated by the caller against a fixed allowed set before
+        // reaching here, and `table` can only ever be one of these two
+        // literals, never the raw category value.
+        var table = category switch
+        {
+            "Admission" => "dbo.AdmissionApplications",
+            "Scholarship" => "dbo.ScholarshipApplications",
+            _ => throw new InvalidApplicationCategoryException(category),
+        };
+
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        var updateSql = $@"
+UPDATE {table}
+SET IsArchived = 1, ArchivedAt = SYSUTCDATETIME(), ArchivedByUserId = @ArchivedByUserId, ArchiveReason = @Reason
+WHERE ApplicationId = @ApplicationId;";
+
+        await using (var command = new SqlCommand(updateSql, connection))
+        {
+            command.Parameters.Add(new SqlParameter("@ArchivedByUserId", SqlDbType.UniqueIdentifier) { Value = archivedByUserId });
+            command.Parameters.Add(new SqlParameter("@Reason", SqlDbType.NVarChar, 500) { Value = (object?)NullIfEmpty(reason) ?? DBNull.Value });
+            command.Parameters.Add(new SqlParameter("@ApplicationId", SqlDbType.UniqueIdentifier) { Value = applicationId });
+
+            var rowsAffected = await command.ExecuteNonQueryAsync(cancellationToken);
+            if (rowsAffected == 0)
+            {
+                return null;
+            }
+        }
+
+        return await GetByIdAsync(applicationId, cancellationToken);
+    }
+
     private const string SelectColumns = @"
 SELECT
     h.ApplicationId, h.UserId, u.FirstName, u.LastName, u.Email,
     h.Category, h.ApplicationType, h.CourseAppliedFor, h.PreviousSchool,
-    h.ScholarshipName, h.ScholarshipType, h.GradeAverage, h.Status, h.Remarks, h.SubmittedAt, h.UpdatedAt";
+    h.ScholarshipName, h.ScholarshipType, h.GradeAverage, h.Status, h.Remarks, h.SubmittedAt, h.UpdatedAt,
+    h.IsArchived, h.ArchivedAt, h.ArchivedByUserId, h.ArchiveReason";
 
     private static AdminApplicationListItem MapItem(SqlDataReader reader) => new()
     {
@@ -130,6 +175,10 @@ SELECT
         Remarks = reader.IsDBNull(reader.GetOrdinal("Remarks")) ? null : reader.GetString(reader.GetOrdinal("Remarks")),
         SubmittedAt = reader.GetDateTime(reader.GetOrdinal("SubmittedAt")),
         UpdatedAt = reader.GetDateTime(reader.GetOrdinal("UpdatedAt")),
+        IsArchived = reader.GetBoolean(reader.GetOrdinal("IsArchived")),
+        ArchivedAt = reader.IsDBNull(reader.GetOrdinal("ArchivedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("ArchivedAt")),
+        ArchivedByUserId = reader.IsDBNull(reader.GetOrdinal("ArchivedByUserId")) ? null : reader.GetGuid(reader.GetOrdinal("ArchivedByUserId")),
+        ArchiveReason = reader.IsDBNull(reader.GetOrdinal("ArchiveReason")) ? null : reader.GetString(reader.GetOrdinal("ArchiveReason")),
     };
 
     private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

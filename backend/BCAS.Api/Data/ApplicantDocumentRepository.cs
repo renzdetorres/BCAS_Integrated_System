@@ -85,6 +85,20 @@ WHERE UserId = @UserId AND DocumentType = @DocumentType;";
         return MapDocument(reader);
     }
 
+    public async Task ArchiveByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+UPDATE dbo.ApplicantDocuments
+SET IsArchived = 1, UpdatedAt = SYSUTCDATETIME()
+WHERE UserId = @UserId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@UserId", SqlDbType.UniqueIdentifier) { Value = userId });
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     private static ApplicantDocument MapDocument(SqlDataReader reader) => new()
     {
         DocumentId = reader.GetGuid(reader.GetOrdinal("DocumentId")),

@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   ADMISSION_STATUSES,
+  ARCHIVABLE_STATUSES,
   SCHOLARSHIP_STATUSES,
+  archiveApplication,
   searchApplications,
   updateApplicationStatus,
 } from "../api/adminApplicationsApi.js";
@@ -30,6 +32,10 @@ export default function AdminApplicationDetailPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
   const [savedMessage, setSavedMessage] = useState(null);
+
+  const [archiveReason, setArchiveReason] = useState("");
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [archiveError, setArchiveError] = useState(null);
 
   const loadApplication = useCallback(() => {
     let cancelled = false;
@@ -82,8 +88,28 @@ export default function AdminApplicationDetailPage() {
     }
   }
 
+  async function handleArchiveSubmit(event) {
+    event.preventDefault();
+    setArchiveError(null);
+    setIsArchiving(true);
+
+    try {
+      const archived = await archiveApplication(applicationId, {
+        category: application.category,
+        reason: archiveReason.trim() === "" ? null : archiveReason,
+      });
+      setApplication(archived);
+      setArchiveReason("");
+    } catch (error) {
+      setArchiveError(error instanceof ApiError ? error.message : "Failed to archive this application.");
+    } finally {
+      setIsArchiving(false);
+    }
+  }
+
   const statusOptions = application?.category === "Admission" ? ADMISSION_STATUSES : SCHOLARSHIP_STATUSES;
   const stepLabels = application?.category === "Admission" ? ADMISSION_STEP_LABELS : SCHOLARSHIP_STEP_LABELS;
+  const canArchive = application && !application.isArchived && ARCHIVABLE_STATUSES.includes(application.status);
 
   return (
     <main className="admin-app-detail-page">
@@ -120,6 +146,7 @@ export default function AdminApplicationDetailPage() {
                 <span className={`status-badge status-${application.status.toLowerCase()}`}>
                   {application.status}
                 </span>
+                {application.isArchived && <span className="archived-badge">Archived</span>}
               </div>
               <h1>{application.applicantName}</h1>
               <p className="admin-app-detail-email">{application.applicantEmail}</p>
@@ -230,6 +257,58 @@ export default function AdminApplicationDetailPage() {
                   {isSaving ? "Saving..." : "Update Status"}
                 </button>
               </form>
+            </div>
+
+            <div className="admin-app-detail-card">
+              <h2>Records Archive</h2>
+              {application.isArchived ? (
+                <>
+                  <p className="admin-app-detail-subtitle">
+                    Archived {formatDateTime(application.archivedAt)}. The record and its documents remain
+                    retrievable and are not deleted, supporting the school's 5-year retention practice.
+                  </p>
+                  {application.archiveReason && (
+                    <p className="admin-app-detail-remarks">
+                      <strong>Reason:</strong> {application.archiveReason}
+                    </p>
+                  )}
+                </>
+              ) : canArchive ? (
+                <>
+                  <p className="admin-app-detail-subtitle">
+                    Archive this completed application to support the school's document disposal process.
+                    Archiving never deletes the record - it stays retrievable for the 5-year retention practice.
+                  </p>
+
+                  {archiveError && (
+                    <p className="form-error" role="alert">
+                      {archiveError}
+                    </p>
+                  )}
+
+                  <form onSubmit={handleArchiveSubmit} noValidate>
+                    <div className="form-row">
+                      <label htmlFor="archiveReason">Reason (optional)</label>
+                      <textarea
+                        id="archiveReason"
+                        name="archiveReason"
+                        rows={2}
+                        maxLength={500}
+                        value={archiveReason}
+                        onChange={(event) => setArchiveReason(event.target.value)}
+                      />
+                    </div>
+
+                    <button type="submit" disabled={isArchiving}>
+                      {isArchiving ? "Archiving..." : "Archive Application"}
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <p className="admin-app-detail-subtitle">
+                  Only completed applications (Approved or Rejected) can be archived.
+                </p>
+              )}
             </div>
           </>
         )}

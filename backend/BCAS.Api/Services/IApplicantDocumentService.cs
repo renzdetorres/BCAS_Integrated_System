@@ -24,4 +24,11 @@ public interface IApplicantDocumentService
         string contentType,
         byte[] fileBytes,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Marks every document belonging to this user as archived (BISAASS-35).
+    /// Metadata-only flag - files are never deleted, keeping them
+    /// retrievable for the school's 5-year retention practice.
+    /// </summary>
+    Task ArchiveDocumentsAsync(Guid userId, CancellationToken cancellationToken = default);
 }
