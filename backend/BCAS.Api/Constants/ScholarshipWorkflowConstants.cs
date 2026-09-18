@@ -16,4 +16,23 @@ public static class ScholarshipWorkflowConstants
         "Evaluation",
         "Result",
     };
+
+    /// <summary>
+    /// The full range ScholarshipApplications.Status can hold - Stages plus
+    /// the final Approved/Rejected decision (BISAASS-47) - matching
+    /// CK_ScholarshipApplications_Status. Used by BISAASS-31's
+    /// Admin-Registrar status override, which (unlike the Evaluator's
+    /// forward-only AdvanceWorkflowAsync) can set an application to any of
+    /// these.
+    /// </summary>
+    public static readonly IReadOnlySet<string> AllowedStatuses = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "Submitted",
+        "DocumentsVerified",
+        "EligibilityScreening",
+        "Evaluation",
+        "Result",
+        "Approved",
+        "Rejected",
+    };
 }

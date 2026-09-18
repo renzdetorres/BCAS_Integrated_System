@@ -16,4 +16,20 @@ public interface IAdminApplicationsRepository
         string? category,
         string? program,
         CancellationToken cancellationToken = default);
+
+    /// <summary>A single application (admission or scholarship) by id, or null if none exists.</summary>
+    Task<AdminApplicationListItem?> GetByIdAsync(Guid applicationId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Admin-only: sets an application's Status (and optional Remarks).
+    /// category must be "Admission" or "Scholarship" - it picks which
+    /// underlying table is written. Returns null if no application with
+    /// that id exists in the given category.
+    /// </summary>
+    Task<AdminApplicationListItem?> UpdateStatusAsync(
+        Guid applicationId,
+        string category,
+        string status,
+        string? remarks,
+        CancellationToken cancellationToken = default);
 }
