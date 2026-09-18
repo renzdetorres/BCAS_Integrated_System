@@ -23,6 +23,11 @@ public class ExamPermitService : IExamPermitService
         var selection = await _examScheduleRepository.GetSelectionByUserIdAsync(userId, cancellationToken)
             ?? throw new NoExamScheduleSelectedException();
 
+        if (!selection.IsPermitReleased)
+        {
+            throw new PermitNotReleasedException();
+        }
+
         return selection.ToPermitResponse();
     }
 

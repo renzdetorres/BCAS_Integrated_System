@@ -42,7 +42,7 @@ ORDER BY ExamDate ASC, ExamTime ASC;";
 
         const string sql = @"
 SELECT sel.ExamScheduleSelectionId, sel.UserId, sel.ExamScheduleId, sch.DayType, sch.ExamDate, sch.ExamTime,
-       sch.Venue, sel.SelectedAt
+       sch.Venue, sel.SelectedAt, sel.IsPermitReleased, sel.PermitReleasedAt
 FROM dbo.ExamScheduleSelections sel
 JOIN dbo.ExamSchedules sch ON sch.ExamScheduleId = sel.ExamScheduleId
 WHERE sel.UserId = @UserId;";
@@ -255,5 +255,90 @@ ORDER BY sel.SelectedAt ASC;";
         ExamTime = TimeOnly.FromTimeSpan(reader.GetTimeSpan(reader.GetOrdinal("ExamTime"))),
         Venue = reader.GetString(reader.GetOrdinal("Venue")),
         SelectedAt = reader.GetDateTime(reader.GetOrdinal("SelectedAt")),
+        IsPermitReleased = reader.GetBoolean(reader.GetOrdinal("IsPermitReleased")),
+        PermitReleasedAt = reader.IsDBNull(reader.GetOrdinal("PermitReleasedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("PermitReleasedAt")),
+    };
+
+    public async Task<IReadOnlyList<AdminExamPermitCandidate>> GetAllSelectionsWithApplicantsAsync(CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+SELECT sel.ExamScheduleSelectionId, sel.UserId, u.FirstName, u.LastName, u.Email,
+       sel.ExamScheduleId, sch.DayType, sch.ExamDate, sch.ExamTime, sch.Venue,
+       sel.SelectedAt, sel.IsPermitReleased, sel.PermitReleasedAt
+FROM dbo.ExamScheduleSelections sel
+JOIN dbo.ExamSchedules sch ON sch.ExamScheduleId = sel.ExamScheduleId
+JOIN dbo.Users u ON u.UserId = sel.UserId
+ORDER BY sel.SelectedAt ASC;";
+
+        await using var command = new SqlCommand(sql, connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        var candidates = new List<AdminExamPermitCandidate>();
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            candidates.Add(MapCandidate(reader));
+        }
+
+        return candidates;
+    }
+
+    public async Task<AdminExamPermitCandidate?> GetPermitCandidateByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+SELECT sel.ExamScheduleSelectionId, sel.UserId, u.FirstName, u.LastName, u.Email,
+       sel.ExamScheduleId, sch.DayType, sch.ExamDate, sch.ExamTime, sch.Venue,
+       sel.SelectedAt, sel.IsPermitReleased, sel.PermitReleasedAt
+FROM dbo.ExamScheduleSelections sel
+JOIN dbo.ExamSchedules sch ON sch.ExamScheduleId = sel.ExamScheduleId
+JOIN dbo.Users u ON u.UserId = sel.UserId
+WHERE sel.UserId = @UserId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@UserId", SqlDbType.UniqueIdentifier) { Value = userId });
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        return await reader.ReadAsync(cancellationToken) ? MapCandidate(reader) : null;
+    }
+
+    public async Task<AdminExamPermitCandidate?> ReleasePermitAsync(Guid userId, Guid releasedByUserId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        // A no-op UPDATE (0 rows) when there's no selection, or when the
+        // permit is already released - either way the read below reports
+        // the current state.
+        const string updateSql = @"
+UPDATE dbo.ExamScheduleSelections
+SET IsPermitReleased = 1, PermitReleasedAt = SYSUTCDATETIME(), PermitReleasedByUserId = @ReleasedByUserId
+WHERE UserId = @UserId AND IsPermitReleased = 0;";
+
+        await using (var command = new SqlCommand(updateSql, connection))
+        {
+            command.Parameters.Add(new SqlParameter("@UserId", SqlDbType.UniqueIdentifier) { Value = userId });
+            command.Parameters.Add(new SqlParameter("@ReleasedByUserId", SqlDbType.UniqueIdentifier) { Value = releasedByUserId });
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        return await GetPermitCandidateByUserIdAsync(userId, cancellationToken);
+    }
+
+    private static AdminExamPermitCandidate MapCandidate(SqlDataReader reader) => new()
+    {
+        ExamScheduleSelectionId = reader.GetInt32(reader.GetOrdinal("ExamScheduleSelectionId")),
+        UserId = reader.GetGuid(reader.GetOrdinal("UserId")),
+        ApplicantName = $"{reader.GetString(reader.GetOrdinal("FirstName"))} {reader.GetString(reader.GetOrdinal("LastName"))}",
+        ApplicantEmail = reader.GetString(reader.GetOrdinal("Email")),
+        ExamScheduleId = reader.GetInt32(reader.GetOrdinal("ExamScheduleId")),
+        DayType = reader.GetString(reader.GetOrdinal("DayType")),
+        ExamDate = DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("ExamDate"))),
+        ExamTime = TimeOnly.FromTimeSpan(reader.GetTimeSpan(reader.GetOrdinal("ExamTime"))),
+        Venue = reader.GetString(reader.GetOrdinal("Venue")),
+        SelectedAt = reader.GetDateTime(reader.GetOrdinal("SelectedAt")),
+        IsPermitReleased = reader.GetBoolean(reader.GetOrdinal("IsPermitReleased")),
+        PermitReleasedAt = reader.IsDBNull(reader.GetOrdinal("PermitReleasedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("PermitReleasedAt")),
     };
 }

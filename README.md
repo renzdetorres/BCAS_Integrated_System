@@ -790,3 +790,77 @@ Program" list, and a "Recent Applications" list with status badges: it
 also absorbed the "Create Staff Account"/"Manage Accounts" links and
 Log Out button that used to live on the generic `PortalPage` (dead code
 removed from there now that `Admin` never renders it).
+
+## BISAASS-30: Exam Permit Generation & Release
+
+Before this ticket, an applicant's confirmed entrance-exam schedule
+(BISAASS-20) *was* their issued permit - visible and printable the moment
+they selected a slot (BISAASS-21). This ticket adds an explicit
+Admin-Registrar release gate: permit generation is now blocked until the
+applicant's required documents are all verified, and the permit stays
+hidden from the applicant until an Admin releases it.
+
+Adds three columns to `ExamScheduleSelections` (`database/schema.sql`):
+`IsPermitReleased` (defaults to `0`, so every existing selection starts
+hidden again), `PermitReleasedAt`, and `PermitReleasedByUserId`. The
+"documents verified" bar reuses the exact same check
+`ApplicationTrackingService` already used for its `DocumentsVerified` step -
+every required document type (from `DocumentConstants`, based on the
+applicant's admission application type) has status `Verified` - via
+`IApplicantDocumentService.GetMyChecklistAsync`, so no new document logic
+was needed.
+
+Releasing is idempotent: calling release again on an already-released
+permit is a no-op rather than an error, since there's no "unrelease"
+action in this ticket's acceptance criteria.
+
+### API
+
+`GET /api/admin/exam-permits` - requires the `bcas_auth` cookie for the
+`Admin` role. `200 OK` with every applicant who has selected an exam
+schedule, each with their document-verification status and release state:
+
+```json
+[
+  {
+    "userId": "...",
+    "applicantName": "Jane Doe",
+    "applicantEmail": "jane.doe@example.com",
+    "permitNumber": "EP-000001",
+    "dayType": "Saturday",
+    "examDate": "2026-10-03",
+    "examTime": "08:00:00",
+    "venue": "BCAS Main Campus - Gymnasium",
+    "documentsVerified": true,
+    "isReleased": false,
+    "releasedAt": null
+  }
+]
+```
+
+`POST /api/admin/exam-permits/{userId}/release` - Admin-only.
+
+- `200 OK` with the released permit (`isReleased: true`, `releasedAt` set).
+- `400 Bad Request` if the applicant has no exam schedule selected, or if
+  their required documents aren't all verified yet.
+
+`GET /api/exam-permit` (the existing applicant-facing endpoint, BISAASS-21)
+now also returns `400 Bad Request` - with a distinct message the frontend
+matches on - when a schedule is selected but its permit hasn't been
+released yet, instead of always succeeding once a schedule was picked.
+
+### Frontend
+
+`/admin/exam-permits` (gated by `RequireRole(["Admin"])`, linked from the
+Admin Dashboard as "Exam Permits") lists applicants in two sections -
+Pending Release and Released - with a document-verification badge and a
+"Generate & Release Permit" button that's disabled until documents are
+verified.
+
+`/exam-permit` (`ExamPermitPage`) now distinguishes two states that
+previously looked identical: no schedule selected yet (prompts to pick
+one, unchanged from BISAASS-21) versus a schedule selected but the permit
+not yet released (a new message pointing to the Documents checklist),
+told apart by matching on the API error message the same way
+`AdmissionApplicationPage`/`ScholarshipApplicationPage` already
+distinguish a profile-incomplete error.

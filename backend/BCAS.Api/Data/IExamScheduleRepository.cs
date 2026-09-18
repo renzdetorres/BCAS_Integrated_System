@@ -35,4 +35,17 @@ public interface IExamScheduleRepository
 
     /// <summary>Admin-only: every exam schedule (offered or not), each with the applicants who selected it.</summary>
     Task<IReadOnlyList<AdminExamSchedule>> GetAllWithApplicantsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Admin-only: every applicant who has selected an exam schedule, with permit release status.</summary>
+    Task<IReadOnlyList<AdminExamPermitCandidate>> GetAllSelectionsWithApplicantsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Admin-only: a single applicant's exam schedule selection with permit release status, or null if none.</summary>
+    Task<AdminExamPermitCandidate?> GetPermitCandidateByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Admin-only: marks the applicant's permit released (idempotent - a
+    /// no-op if already released). Returns null if the applicant has no
+    /// exam schedule selected.
+    /// </summary>
+    Task<AdminExamPermitCandidate?> ReleasePermitAsync(Guid userId, Guid releasedByUserId, CancellationToken cancellationToken = default);
 }

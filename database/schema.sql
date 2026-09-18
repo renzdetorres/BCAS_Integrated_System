@@ -404,6 +404,59 @@ END
 GO
 
 -- -----------------------------------------------------------------------------
+-- ExamScheduleSelections.IsPermitReleased / PermitReleasedAt / PermitReleasedByUserId
+-- BISAASS-30 Exam Permit Generation & Release. Before this ticket, a
+-- confirmed schedule selection *was* the issued permit (BISAASS-21) -
+-- visible to the applicant the moment they selected one. This ticket adds
+-- an explicit Admin-Registrar release step gated on document verification:
+-- IsPermitReleased defaults to 0, so every selection (existing or new)
+-- starts hidden from the applicant-facing GET /api/exam-permit until an
+-- Admin releases it (see AdminExamPermitService.ReleaseAsync, which reuses
+-- ApplicationTrackingService's "every required document type is Verified"
+-- bar via IApplicantDocumentService.GetMyChecklistAsync - no schema change
+-- was needed for that check either). PermitReleasedByUserId is nullable
+-- since it's only ever set once, by the release action; ALTER rather than
+-- a column on the CREATE TABLE above since ExamScheduleSelections already
+-- exists in earlier-provisioned databases, same pattern as
+-- Scholarships.MinimumGradeAverage/IsTopOne further down this file.
+-- -----------------------------------------------------------------------------
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.ExamScheduleSelections') AND name = N'IsPermitReleased'
+)
+BEGIN
+    ALTER TABLE dbo.ExamScheduleSelections ADD IsPermitReleased BIT NOT NULL CONSTRAINT DF_ExamScheduleSelections_IsPermitReleased DEFAULT (0);
+END
+GO
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.ExamScheduleSelections') AND name = N'PermitReleasedAt'
+)
+BEGIN
+    ALTER TABLE dbo.ExamScheduleSelections ADD PermitReleasedAt DATETIME2(3) NULL;
+END
+GO
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.ExamScheduleSelections') AND name = N'PermitReleasedByUserId'
+)
+BEGIN
+    ALTER TABLE dbo.ExamScheduleSelections ADD PermitReleasedByUserId UNIQUEIDENTIFIER NULL;
+END
+GO
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_ExamScheduleSelections_PermitReleasedByUserId'
+)
+BEGIN
+    ALTER TABLE dbo.ExamScheduleSelections
+        ADD CONSTRAINT FK_ExamScheduleSelections_PermitReleasedByUserId FOREIGN KEY (PermitReleasedByUserId) REFERENCES dbo.Users (UserId);
+END
+GO
+
+-- -----------------------------------------------------------------------------
 -- ExamRescheduleRequests
 -- An applicant's request to move off their confirmed exam schedule
 -- (BISAASS-21). The filtered unique index keeps at most one Pending request

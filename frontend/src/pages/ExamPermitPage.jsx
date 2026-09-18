@@ -27,6 +27,7 @@ export default function ExamPermitPage() {
   const [reason, setReason] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [noPermitYet, setNoPermitYet] = useState(false);
+  const [permitPending, setPermitPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [rescheduleError, setRescheduleError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,7 +44,11 @@ export default function ExamPermitPage() {
       .catch((error) => {
         if (cancelled) return;
         if (error instanceof ApiError && error.status === 400) {
-          setNoPermitYet(true);
+          if (error.message.toLowerCase().includes("released")) {
+            setPermitPending(true);
+          } else {
+            setNoPermitYet(true);
+          }
         } else {
           setErrorMessage(error instanceof ApiError ? error.message : "Failed to load your exam permit.");
         }
@@ -95,6 +100,25 @@ export default function ExamPermitPage() {
             <p>
               You haven&apos;t selected an entrance exam schedule yet.{" "}
               <Link to="/exam-schedule">Choose a schedule</Link> to have your permit issued.
+            </p>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
+  if (permitPending) {
+    return (
+      <main className="exam-permit-page">
+        <div className="exam-permit-shell">
+          <Link className="exam-permit-back-link no-print" to="/portal">
+            &larr; Back to dashboard
+          </Link>
+          <section className="exam-permit-card">
+            <h1>Exam Permit</h1>
+            <p>
+              Your exam permit hasn&apos;t been released yet. The registrar releases it once all of your required
+              documents have been verified - check your <Link to="/documents">Documents</Link> checklist for status.
             </p>
           </section>
         </div>

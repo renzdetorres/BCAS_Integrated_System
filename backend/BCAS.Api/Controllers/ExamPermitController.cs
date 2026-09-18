@@ -39,6 +39,15 @@ public class ExamPermitController : ControllerBase
                 Status = StatusCodes.Status400BadRequest,
             });
         }
+        catch (PermitNotReleasedException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Permit not released",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
     }
 
     /// <summary>The signed-in applicant's most recently submitted reschedule request, if any.</summary>
