@@ -89,6 +89,15 @@ export default function AcademicHeadDashboardPage() {
           </div>
         </section>
 
+        <section className="ah-dashboard-card">
+          <h2>Settings</h2>
+          <div className="ah-management-links">
+            <Link className="ah-management-link" to="/academic-head/settings">
+              Profile &amp; Password
+            </Link>
+          </div>
+        </section>
+
         {isLoading && (
           <section className="ah-dashboard-card">
             <p>Loading...</p>

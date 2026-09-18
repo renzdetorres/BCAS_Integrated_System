@@ -26,6 +26,7 @@ import AcademicHeadReviewPage from "./pages/AcademicHeadReviewPage.jsx";
 import AcademicHeadScholarshipsPage from "./pages/AcademicHeadScholarshipsPage.jsx";
 import AcademicHeadAnnouncementsPage from "./pages/AcademicHeadAnnouncementsPage.jsx";
 import AcademicHeadReportsPage from "./pages/AcademicHeadReportsPage.jsx";
+import AcademicHeadSettingsPage from "./pages/AcademicHeadSettingsPage.jsx";
 import AdminApplicationsPage from "./pages/AdminApplicationsPage.jsx";
 import AdminApplicationDetailPage from "./pages/AdminApplicationDetailPage.jsx";
 import AdminDocumentsPage from "./pages/AdminDocumentsPage.jsx";
@@ -81,6 +82,7 @@ export default function App() {
               <Route path="/academic-head/scholarships" element={<AcademicHeadScholarshipsPage />} />
               <Route path="/academic-head/announcements" element={<AcademicHeadAnnouncementsPage />} />
               <Route path="/academic-head/reports" element={<AcademicHeadReportsPage />} />
+              <Route path="/academic-head/settings" element={<AcademicHeadSettingsPage />} />
             </Route>
             <Route element={<RequireRole allowedRoles={["Applicant"]} />}>
               <Route path="/profile" element={<ApplicantProfilePage />} />
