@@ -11,4 +11,10 @@ public class User
     public string RoleName { get; set; } = string.Empty;
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
+
+    /// <summary>
+    /// Free-text department/program name (BISAASS-49). Only meaningful for
+    /// AcademicHead accounts - null for every other role until set.
+    /// </summary>
+    public string? Department { get; set; }
 }

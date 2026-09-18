@@ -23,6 +23,7 @@ public interface IUserRepository
         string email,
         string passwordHash,
         string roleName,
+        string? department,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<User>> GetAllAsync(CancellationToken cancellationToken = default);
@@ -40,6 +41,7 @@ public interface IUserRepository
         string lastName,
         string email,
         string roleName,
+        string? department,
         CancellationToken cancellationToken = default);
 
     /// <summary>

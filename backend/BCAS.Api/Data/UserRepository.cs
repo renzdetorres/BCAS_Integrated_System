@@ -32,7 +32,7 @@ public class UserRepository : IUserRepository
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
-SELECT u.UserId, u.FirstName, u.LastName, u.Email, u.PasswordHash, u.RoleId, r.RoleName, u.IsActive, u.CreatedAt
+SELECT u.UserId, u.FirstName, u.LastName, u.Email, u.PasswordHash, u.RoleId, r.RoleName, u.IsActive, u.CreatedAt, u.Department
 FROM dbo.Users u
 JOIN dbo.Roles r ON r.RoleId = u.RoleId
 WHERE u.Email = @Email;";
@@ -49,7 +49,7 @@ WHERE u.Email = @Email;";
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
-SELECT u.UserId, u.FirstName, u.LastName, u.Email, u.PasswordHash, u.RoleId, r.RoleName, u.IsActive, u.CreatedAt
+SELECT u.UserId, u.FirstName, u.LastName, u.Email, u.PasswordHash, u.RoleId, r.RoleName, u.IsActive, u.CreatedAt, u.Department
 FROM dbo.Users u
 JOIN dbo.Roles r ON r.RoleId = u.RoleId
 WHERE u.UserId = @UserId;";
@@ -67,7 +67,7 @@ WHERE u.UserId = @UserId;";
         string email,
         string passwordHash,
         CancellationToken cancellationToken = default) =>
-        CreateUserAsync(firstName, lastName, email, passwordHash, ApplicantRoleName, cancellationToken);
+        CreateUserAsync(firstName, lastName, email, passwordHash, ApplicantRoleName, department: null, cancellationToken);
 
     public Task<User> CreateStaffAsync(
         string firstName,
@@ -75,8 +75,9 @@ WHERE u.UserId = @UserId;";
         string email,
         string passwordHash,
         string roleName,
+        string? department,
         CancellationToken cancellationToken = default) =>
-        CreateUserAsync(firstName, lastName, email, passwordHash, roleName, cancellationToken);
+        CreateUserAsync(firstName, lastName, email, passwordHash, roleName, department, cancellationToken);
 
     private async Task<User> CreateUserAsync(
         string firstName,
@@ -84,6 +85,7 @@ WHERE u.UserId = @UserId;";
         string email,
         string passwordHash,
         string roleName,
+        string? department,
         CancellationToken cancellationToken)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
@@ -91,7 +93,7 @@ WHERE u.UserId = @UserId;";
         const string sql = @"
 DECLARE @RoleId INT = (SELECT RoleId FROM dbo.Roles WHERE RoleName = @RoleName);
 
-INSERT INTO dbo.Users (FirstName, LastName, Email, PasswordHash, RoleId)
+INSERT INTO dbo.Users (FirstName, LastName, Email, PasswordHash, RoleId, Department)
 OUTPUT
     inserted.UserId,
     inserted.FirstName,
@@ -101,8 +103,9 @@ OUTPUT
     inserted.RoleId,
     @RoleName AS RoleName,
     inserted.IsActive,
-    inserted.CreatedAt
-VALUES (@FirstName, @LastName, @Email, @PasswordHash, @RoleId);";
+    inserted.CreatedAt,
+    inserted.Department
+VALUES (@FirstName, @LastName, @Email, @PasswordHash, @RoleId, @Department);";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.Add(new SqlParameter("@RoleName", System.Data.SqlDbType.NVarChar, 50) { Value = roleName });
@@ -110,6 +113,7 @@ VALUES (@FirstName, @LastName, @Email, @PasswordHash, @RoleId);";
         command.Parameters.Add(new SqlParameter("@LastName", System.Data.SqlDbType.NVarChar, 100) { Value = lastName });
         command.Parameters.Add(new SqlParameter("@Email", System.Data.SqlDbType.NVarChar, 256) { Value = email });
         command.Parameters.Add(new SqlParameter("@PasswordHash", System.Data.SqlDbType.NVarChar, 200) { Value = passwordHash });
+        command.Parameters.Add(new SqlParameter("@Department", System.Data.SqlDbType.NVarChar, 100) { Value = (object?)department ?? DBNull.Value });
 
         try
         {
@@ -133,7 +137,7 @@ VALUES (@FirstName, @LastName, @Email, @PasswordHash, @RoleId);";
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
-SELECT u.UserId, u.FirstName, u.LastName, u.Email, u.PasswordHash, u.RoleId, r.RoleName, u.IsActive, u.CreatedAt
+SELECT u.UserId, u.FirstName, u.LastName, u.Email, u.PasswordHash, u.RoleId, r.RoleName, u.IsActive, u.CreatedAt, u.Department
 FROM dbo.Users u
 JOIN dbo.Roles r ON r.RoleId = u.RoleId
 ORDER BY u.CreatedAt DESC;";
@@ -167,7 +171,8 @@ OUTPUT
     inserted.RoleId,
     r.RoleName,
     inserted.IsActive,
-    inserted.CreatedAt
+    inserted.CreatedAt,
+    inserted.Department
 FROM dbo.Users u
 JOIN dbo.Roles r ON r.RoleId = u.RoleId
 WHERE u.UserId = @UserId;";
@@ -186,6 +191,7 @@ WHERE u.UserId = @UserId;";
         string lastName,
         string email,
         string roleName,
+        string? department,
         CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
@@ -196,6 +202,7 @@ SET u.FirstName = @FirstName,
     u.LastName = @LastName,
     u.Email = @Email,
     u.RoleId = (SELECT RoleId FROM dbo.Roles WHERE RoleName = @RoleName),
+    u.Department = @Department,
     u.UpdatedAt = SYSUTCDATETIME()
 OUTPUT
     inserted.UserId,
@@ -206,7 +213,8 @@ OUTPUT
     inserted.RoleId,
     @RoleName AS RoleName,
     inserted.IsActive,
-    inserted.CreatedAt
+    inserted.CreatedAt,
+    inserted.Department
 FROM dbo.Users u
 WHERE u.UserId = @UserId;";
 
@@ -215,6 +223,7 @@ WHERE u.UserId = @UserId;";
         command.Parameters.Add(new SqlParameter("@LastName", System.Data.SqlDbType.NVarChar, 100) { Value = lastName });
         command.Parameters.Add(new SqlParameter("@Email", System.Data.SqlDbType.NVarChar, 256) { Value = email });
         command.Parameters.Add(new SqlParameter("@RoleName", System.Data.SqlDbType.NVarChar, 50) { Value = roleName });
+        command.Parameters.Add(new SqlParameter("@Department", System.Data.SqlDbType.NVarChar, 100) { Value = (object?)department ?? DBNull.Value });
         command.Parameters.Add(new SqlParameter("@UserId", System.Data.SqlDbType.UniqueIdentifier) { Value = userId });
 
         try
@@ -253,7 +262,8 @@ OUTPUT
     inserted.RoleId,
     r.RoleName,
     inserted.IsActive,
-    inserted.CreatedAt
+    inserted.CreatedAt,
+    inserted.Department
 FROM dbo.Users u
 JOIN dbo.Roles r ON r.RoleId = u.RoleId
 WHERE u.UserId = @UserId;";
@@ -302,6 +312,7 @@ WHERE UserId = @UserId;";
         RoleName = reader.GetString(reader.GetOrdinal("RoleName")),
         IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
         CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
+        Department = reader.IsDBNull(reader.GetOrdinal("Department")) ? null : reader.GetString(reader.GetOrdinal("Department")),
     };
 
     private static bool IsUniqueConstraintViolation(SqlException ex) =>

@@ -25,4 +25,12 @@ public class UpdateUserRequest
 
     [Required]
     public string Role { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Free-text department/program name (BISAASS-49), only meaningful for
+    /// an AcademicHead account - it scopes which admission reports that
+    /// Academic Head can see. Optional for every other role.
+    /// </summary>
+    [StringLength(100)]
+    public string? Department { get; set; }
 }

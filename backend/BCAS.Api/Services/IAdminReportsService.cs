@@ -8,17 +8,26 @@ public interface IAdminReportsService
     Task<IReadOnlyList<EnrollmentListItemResponse>> GetEnrollmentListAsync(
         string? program, string? applicationType, CancellationToken cancellationToken = default);
 
-    /// <summary>Total enrolled plus counts by program and by application type, derived from the same Enrollment List.</summary>
-    Task<EnrollmentSummaryResponse> GetEnrollmentSummaryAsync(CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Total enrolled plus counts by program and by application type,
+    /// derived from the same Enrollment List, optionally narrowed by
+    /// program (course, partial match - BISAASS-49 passes an Academic
+    /// Head's Department here to scope the summary to it).
+    /// </summary>
+    Task<EnrollmentSummaryResponse> GetEnrollmentSummaryAsync(string? program = null, CancellationToken cancellationToken = default);
 
-    /// <summary>Enrolled applicants grouped by section (their applied-for course - see SectionFileResponse).</summary>
-    Task<IReadOnlyList<SectionFileResponse>> GetSectionFilesAsync(CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Enrolled applicants grouped by section (their applied-for course -
+    /// see SectionFileResponse), optionally narrowed by program (course,
+    /// partial match - BISAASS-49 passes an Academic Head's Department here).
+    /// </summary>
+    Task<IReadOnlyList<SectionFileResponse>> GetSectionFilesAsync(string? program = null, CancellationToken cancellationToken = default);
 
     Task<byte[]> ExportEnrollmentListAsync(string? program, string? applicationType, CancellationToken cancellationToken = default);
 
-    Task<byte[]> ExportEnrollmentSummaryAsync(CancellationToken cancellationToken = default);
+    Task<byte[]> ExportEnrollmentSummaryAsync(string? program = null, CancellationToken cancellationToken = default);
 
-    Task<byte[]> ExportSectionFilesAsync(CancellationToken cancellationToken = default);
+    Task<byte[]> ExportSectionFilesAsync(string? program = null, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<ScholarshipApplicantListItemResponse>> GetScholarshipApplicantListAsync(
         string? scholarshipName, string? status, CancellationToken cancellationToken = default);

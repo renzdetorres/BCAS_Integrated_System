@@ -5,7 +5,7 @@ import { ApiError } from "../api/apiClient.js";
 import { useSession } from "../context/SessionContext.jsx";
 import "./ManageUsersPage.css";
 
-const emptyEditForm = { firstName: "", lastName: "", email: "", role: ALL_ROLES[0] };
+const emptyEditForm = { firstName: "", lastName: "", email: "", role: ALL_ROLES[0], department: "" };
 
 export default function ManageUsersPage() {
   const { session } = useSession();
@@ -55,6 +55,7 @@ export default function ManageUsersPage() {
       lastName: user.lastName,
       email: user.email,
       role: user.role,
+      department: user.department ?? "",
     });
   }
 
@@ -110,6 +111,7 @@ export default function ManageUsersPage() {
                 <th>Name</th>
                 <th>Email</th>
                 <th>Role</th>
+                <th>Department</th>
                 <th>Status</th>
                 <th aria-hidden="true"></th>
               </tr>
@@ -165,6 +167,20 @@ export default function ManageUsersPage() {
                       </select>
                     </td>
                     <td>
+                      {editForm.role === "AcademicHead" ? (
+                        <input
+                          className="edit-input"
+                          name="department"
+                          value={editForm.department}
+                          onChange={handleEditChange}
+                          aria-label="Department"
+                          placeholder="e.g. BSIT"
+                        />
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td>
                       <span className={user.isActive ? "status-active" : "status-inactive"}>
                         {user.isActive ? "Active" : "Deactivated"}
                       </span>
@@ -190,6 +206,7 @@ export default function ManageUsersPage() {
                     </td>
                     <td>{user.email}</td>
                     <td>{user.role}</td>
+                    <td>{user.department ?? "—"}</td>
                     <td>
                       <span className={user.isActive ? "status-active" : "status-inactive"}>
                         {user.isActive ? "Active" : "Deactivated"}

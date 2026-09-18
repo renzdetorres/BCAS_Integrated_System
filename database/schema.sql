@@ -1093,3 +1093,30 @@ IF NOT EXISTS (SELECT 1 FROM dbo.SystemSettings WHERE SettingKey = N'AcademicHea
         (N'AcademicHeadAnnouncementManagementAuthorized', N'Academic Head: Announcement Management',
          N'When on, the Academic Head role can create, post, and deactivate Admission/Scholarship announcements (the same management screen an Admin-Registrar uses). Off by default.', 0);
 GO
+
+-- -----------------------------------------------------------------------------
+-- BISAASS-49 Department-Scoped Reports (Academic Head)
+-- Adds a free-text Department column to dbo.Users, nullable - it's only
+-- meaningful for an AcademicHead account, and every other role leaves it
+-- null. Deliberately free text rather than a new Departments lookup table:
+-- dbo.AdmissionApplications.CourseAppliedFor is already stored as free
+-- text (BISAASS-8), and an Academic Head's Department is expected to be
+-- set to the same course/program name used there, so
+-- AcademicHeadReportsService can reuse AdminReportsRepository's existing
+-- @Program LIKE filter (BISAASS-37) to scope the three Admission reports
+-- (Enrollment List, Summary of Enrollment, File per Section) to it.
+-- Set via ProvisionStaffRequest.Department at staff creation or
+-- UpdateUserRequest.Department via Manage Accounts (both Admin-only).
+-- Scholarships/ScholarshipApplications have no department dimension of
+-- their own (scholarships are school-wide, not tied to any course or
+-- department), so the four Scholarship reports stay unscoped for an
+-- Academic Head, same as an Admin-Registrar sees them.
+-- -----------------------------------------------------------------------------
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.Users') AND name = N'Department'
+)
+BEGIN
+    ALTER TABLE dbo.Users ADD Department NVARCHAR(100) NULL;
+END
+GO
