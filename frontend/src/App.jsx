@@ -28,6 +28,7 @@ import AdminApplicationDetailPage from "./pages/AdminApplicationDetailPage.jsx";
 import AdminExamSchedulesPage from "./pages/AdminExamSchedulesPage.jsx";
 import AdminExamPermitsPage from "./pages/AdminExamPermitsPage.jsx";
 import AdminScholarshipsPage from "./pages/AdminScholarshipsPage.jsx";
+import AdminReservationsPage from "./pages/AdminReservationsPage.jsx";
 
 export default function App() {
   return (
@@ -49,6 +50,7 @@ export default function App() {
               <Route path="/admin/exam-schedules" element={<AdminExamSchedulesPage />} />
               <Route path="/admin/exam-permits" element={<AdminExamPermitsPage />} />
               <Route path="/admin/scholarships" element={<AdminScholarshipsPage />} />
+              <Route path="/admin/reservations" element={<AdminReservationsPage />} />
             </Route>
             <Route element={<RequireRole allowedRoles={["Evaluator"]} />}>
               <Route

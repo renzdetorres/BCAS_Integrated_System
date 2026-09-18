@@ -76,6 +76,9 @@ export default function AdminDashboardPage() {
           <Link className="admin-dashboard-link" to="/admin/scholarships">
             Scholarship Slots
           </Link>
+          <Link className="admin-dashboard-link" to="/admin/reservations">
+            Reservations
+          </Link>
           <Link className="admin-dashboard-link" to="/admin/staff">
             Create Staff Account
           </Link>
