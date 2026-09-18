@@ -72,6 +72,7 @@ builder.Services.AddScoped<IAdminReportsService, AdminReportsService>();
 builder.Services.AddScoped<IAcademicHeadScholarshipsService, AcademicHeadScholarshipsService>();
 builder.Services.AddScoped<IAcademicHeadAnnouncementService, AcademicHeadAnnouncementService>();
 builder.Services.AddScoped<IAcademicHeadReportsService, AcademicHeadReportsService>();
+builder.Services.AddScoped<IAcademicHeadSettingsService, AcademicHeadSettingsService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
