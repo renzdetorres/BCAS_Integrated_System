@@ -1064,3 +1064,32 @@ GO
 -- frontend as a print-ready page, not a server-generated PDF) for any
 -- Approved scholarship application - no new column was needed for either.
 -- -----------------------------------------------------------------------------
+
+-- -----------------------------------------------------------------------------
+-- BISAASS-48 Scholarship Slot & Announcement Management (Academic Head, if
+-- Authorized)
+-- No new table - reuses dbo.SystemSettings (BISAASS-40) as the
+-- authorization toggle, the same mechanism AdmissionApplicationService and
+-- ScholarshipApplicationService already gate submissions on. Two new
+-- rows, each defaulting OFF (0): unlike AdmissionsApplicationsOpen and
+-- ScholarshipApplicationsOpen above, granting an entire role write access
+-- to slot/announcement management must fail closed, not open, so (like
+-- ReservationOnlinePaymentRequired) both rows are inserted explicitly
+-- rather than relying on ISystemSettingsRepository's fail-open "missing
+-- row = enabled" behavior. An Admin-Registrar turns either on via the
+-- existing SystemSettingsController (BISAASS-40); AcademicHeadScholarshipsService
+-- and AcademicHeadAnnouncementService then read the corresponding row on
+-- every call before delegating to the same IAdminScholarshipsService
+-- (BISAASS-32) / IAdminAnnouncementService (BISAASS-36) an Admin-Registrar
+-- uses, so once authorized, Academic Head functionality matches those
+-- tickets exactly.
+-- -----------------------------------------------------------------------------
+IF NOT EXISTS (SELECT 1 FROM dbo.SystemSettings WHERE SettingKey = N'AcademicHeadScholarshipSlotManagementAuthorized')
+    INSERT INTO dbo.SystemSettings (SettingKey, DisplayName, Description, IsEnabled) VALUES
+        (N'AcademicHeadScholarshipSlotManagementAuthorized', N'Academic Head: Scholarship Slot Management',
+         N'When on, the Academic Head role can create, update, and deactivate scholarship slots (the same management screen an Admin-Registrar uses). Off by default.', 0);
+IF NOT EXISTS (SELECT 1 FROM dbo.SystemSettings WHERE SettingKey = N'AcademicHeadAnnouncementManagementAuthorized')
+    INSERT INTO dbo.SystemSettings (SettingKey, DisplayName, Description, IsEnabled) VALUES
+        (N'AcademicHeadAnnouncementManagementAuthorized', N'Academic Head: Announcement Management',
+         N'When on, the Academic Head role can create, post, and deactivate Admission/Scholarship announcements (the same management screen an Admin-Registrar uses). Off by default.', 0);
+GO
