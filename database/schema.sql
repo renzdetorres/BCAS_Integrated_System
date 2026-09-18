@@ -892,3 +892,19 @@ IF NOT EXISTS (SELECT 1 FROM dbo.SystemSettings WHERE SettingKey = N'Reservation
         (N'ReservationOnlinePaymentRequired', N'Require Online Payment for Reservations',
          N'When on, the ₱2,500 reservation fee must be paid online and staff cannot record a reservation manually. When off (default), staff record reservation status directly after receiving payment through the school''s existing (offline) process.', 0);
 GO
+
+-- -----------------------------------------------------------------------------
+-- BISAASS-34 Documents Oversight View (Admin-Registrar)
+-- No new table - dbo.ApplicantDocuments (defined above) already carries
+-- everything the oversight view needs (Status, FlaggedReason). Admin now
+-- lists/filters that table system-wide (across every applicant) instead of
+-- per-user, so add the indexes that cross-applicant filtering needs:
+-- IX_ApplicantDocuments_UserId (above) only serves the per-applicant lookup
+-- ApplicantDocumentRepository already did.
+-- -----------------------------------------------------------------------------
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ApplicantDocuments_Status' AND object_id = OBJECT_ID(N'dbo.ApplicantDocuments'))
+    CREATE NONCLUSTERED INDEX IX_ApplicantDocuments_Status ON dbo.ApplicantDocuments (Status);
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ApplicantDocuments_DocumentType' AND object_id = OBJECT_ID(N'dbo.ApplicantDocuments'))
+    CREATE NONCLUSTERED INDEX IX_ApplicantDocuments_DocumentType ON dbo.ApplicantDocuments (DocumentType);
+GO
