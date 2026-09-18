@@ -1,0 +1,127 @@
+.admin-app-detail-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  background: #f4f6f8;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 24px;
+}
+
+.admin-app-detail-card {
+  width: 100%;
+  max-width: 640px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  padding: 32px;
+  margin-top: 24px;
+}
+
+.admin-app-detail-back-link {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: #2f6fed;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.admin-app-detail-header {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.admin-app-detail-card h1 {
+  margin: 0 0 4px;
+  font-size: 1.4rem;
+  color: #1a2332;
+}
+
+.admin-app-detail-email {
+  margin: 0 0 24px;
+  color: #5c6b7a;
+  font-size: 0.9rem;
+}
+
+.admin-app-detail-list {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px 24px;
+}
+
+.admin-app-detail-list dt {
+  font-size: 0.75rem;
+  color: #5c6b7a;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 2px;
+}
+
+.admin-app-detail-list dd {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #1a2332;
+  font-weight: 600;
+}
+
+.form-error {
+  color: #c0392b;
+  background: #fdecea;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+}
+
+.category-badge,
+.status-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.category-admission {
+  background: #e8f0fe;
+  color: #2f6fed;
+}
+
+.category-scholarship {
+  background: #f3e8fe;
+  color: #7c3fed;
+}
+
+.status-badge {
+  background: #f0f2f5;
+  color: #5c6b7a;
+}
+
+.status-approved,
+.status-result {
+  background: #e9f7ef;
+  color: #1e7e34;
+}
+
+.status-rejected {
+  background: #fdecea;
+  color: #c0392b;
+}
+
+.status-submitted {
+  background: #e8f0fe;
+  color: #2f6fed;
+}
+
+.status-underreview,
+.status-documentsverified,
+.status-eligibilityscreening,
+.status-evaluation {
+  background: #fff4e0;
+  color: #b3791a;
+}
