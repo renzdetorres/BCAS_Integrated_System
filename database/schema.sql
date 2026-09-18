@@ -1041,3 +1041,26 @@ GO
 -- announcement stops appearing to applicants immediately - no further
 -- change was needed for that.
 -- -----------------------------------------------------------------------------
+
+-- -----------------------------------------------------------------------------
+-- BISAASS-37 Reports (Admission & Scholarship, Excel Export)
+-- No schema change - every report reads existing tables:
+--   Admission (Enrollment List / Summary of Enrollment / File per Section):
+--     dbo.AdmissionApplications (Status = 'Approved') joined to
+--     dbo.AdmissionReservations (IsReserved = 1, BISAASS-33) - "enrolled"
+--     means approved AND reservation-confirmed, not Approved alone. File
+--     per Section groups this same set by CourseAppliedFor - there is no
+--     separate class-section entity in this system, so the applied-for
+--     course stands in for "section" (see SectionFileResponse).
+--   Scholarship (Applicant List / Qualified-Not Qualified / Results / Slot
+--     Report): dbo.ScholarshipApplications, dbo.ScholarshipEligibilityScreenings
+--     (BISAASS-44), dbo.ScholarshipFinalDecisions (BISAASS-47), and
+--     dbo.Scholarships (BISAASS-17/BISAASS-32) respectively - the Slot
+--     Report reuses IScholarshipRepository.GetAllAsync verbatim, the same
+--     query AdminScholarshipsController (BISAASS-32) already serves.
+-- AdminReportsService generates the three Admission reports' Excel exports
+-- itself (XlsxWriter - a minimal hand-rolled .xlsx writer, not a new NuGet
+-- dependency) and a printable Scholarship Contract (rendered by the
+-- frontend as a print-ready page, not a server-generated PDF) for any
+-- Approved scholarship application - no new column was needed for either.
+-- -----------------------------------------------------------------------------
