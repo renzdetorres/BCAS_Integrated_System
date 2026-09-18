@@ -80,6 +80,9 @@ public class ApplicantDocumentService : IApplicantDocumentService
         return document.ToResponse();
     }
 
+    public Task ArchiveDocumentsAsync(Guid userId, CancellationToken cancellationToken = default) =>
+        _documentRepository.ArchiveByUserIdAsync(userId, cancellationToken);
+
     private async Task<string> GetLatestApplicationTypeAsync(Guid userId, CancellationToken cancellationToken)
     {
         var applications = await _admissionApplicationRepository.GetByUserIdAsync(userId, cancellationToken);

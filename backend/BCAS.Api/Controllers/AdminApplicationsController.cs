@@ -1,4 +1,5 @@
 using BCAS.Api.Exceptions;
+using BCAS.Api.Extensions;
 using BCAS.Api.Models;
 using BCAS.Api.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -23,9 +24,12 @@ public class AdminApplicationsController : ControllerBase
     /// Admin-only: every admission and scholarship application, most recent
     /// first. All filters are optional and combine with AND; search matches
     /// the applicant's name or email, program matches the admission course
-    /// or scholarship name. Each item already carries its own full detail
-    /// (applicant, type-specific fields, status), so selecting one from the
-    /// list needs no follow-up call.
+    /// or scholarship name; archived (BISAASS-35) narrows to only archived
+    /// (true) or only non-archived (false) applications - omitted, this
+    /// list is unfiltered by archive state, unchanged since BISAASS-28.
+    /// Each item already carries its own full detail (applicant,
+    /// type-specific fields, status), so selecting one from the list needs
+    /// no follow-up call.
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<AdminApplicationListItemResponse>), StatusCodes.Status200OK)]
@@ -34,9 +38,10 @@ public class AdminApplicationsController : ControllerBase
         [FromQuery] string? status,
         [FromQuery] string? category,
         [FromQuery] string? program,
+        [FromQuery] bool? archived,
         CancellationToken cancellationToken)
     {
-        var applications = await _applicationsService.SearchAsync(search, status, category, program, cancellationToken);
+        var applications = await _applicationsService.SearchAsync(search, status, category, program, archived, cancellationToken);
         return Ok(applications);
     }
 
@@ -73,6 +78,65 @@ public class AdminApplicationsController : ControllerBase
             return BadRequest(new ProblemDetails
             {
                 Title = "Invalid status",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (ApplicationNotFoundException ex)
+        {
+            return NotFound(new ProblemDetails
+            {
+                Title = "Application not found",
+                Detail = ex.Message,
+                Status = StatusCodes.Status404NotFound,
+            });
+        }
+    }
+
+    /// <summary>
+    /// Admin-only (BISAASS-35): archives a completed/inactive (Approved or
+    /// Rejected) admission or scholarship application, with an optional
+    /// reason. Metadata-only - the record (and, for an Admission
+    /// application, the applicant's documents) is flagged, never deleted,
+    /// keeping it retrievable for the school's 5-year retention practice.
+    /// </summary>
+    [HttpPost("{applicationId:guid}/archive")]
+    [ProducesResponseType(typeof(AdminApplicationListItemResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AdminApplicationListItemResponse>> Archive(
+        Guid applicationId,
+        [FromBody] ArchiveApplicationRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var archived = await _applicationsService.ArchiveAsync(applicationId, request, User.GetUserId(), cancellationToken);
+            return Ok(archived);
+        }
+        catch (InvalidApplicationCategoryException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Invalid category",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (ApplicationNotArchivableException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Application not archivable",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (ApplicationAlreadyArchivedException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Already archived",
                 Detail = ex.Message,
                 Status = StatusCodes.Status400BadRequest,
             });

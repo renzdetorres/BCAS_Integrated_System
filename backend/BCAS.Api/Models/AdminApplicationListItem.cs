@@ -13,6 +13,12 @@ public class AdminApplicationListItem
     public DateTime SubmittedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
+    // Archive metadata (BISAASS-35) - Archived* stay null while IsArchived is false.
+    public bool IsArchived { get; set; }
+    public DateTime? ArchivedAt { get; set; }
+    public Guid? ArchivedByUserId { get; set; }
+    public string? ArchiveReason { get; set; }
+
     // Admission-specific - null when Category is "Scholarship".
     public string? ApplicationType { get; set; }
     public string? CourseAppliedFor { get; set; }
