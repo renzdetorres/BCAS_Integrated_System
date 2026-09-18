@@ -11,4 +11,16 @@ public interface ISupportStaffDocumentsRepository
     /// quick link - approve/reject/flag actions land with BISAASS-52.
     /// </summary>
     Task<IReadOnlyList<AdminDocumentListItem>> GetPendingAndFlaggedAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Approves (Verified), rejects, or flags a document, recording who
+    /// reviewed it and when. Returns the updated document, or null if no
+    /// document with that id exists.
+    /// </summary>
+    Task<AdminDocumentListItem?> ReviewAsync(
+        Guid documentId,
+        string status,
+        string? reason,
+        Guid reviewedByUserId,
+        CancellationToken cancellationToken = default);
 }

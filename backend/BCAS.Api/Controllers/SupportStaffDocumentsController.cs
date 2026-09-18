@@ -1,3 +1,5 @@
+using BCAS.Api.Exceptions;
+using BCAS.Api.Extensions;
 using BCAS.Api.Models;
 using BCAS.Api.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -5,11 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BCAS.Api.Controllers;
 
-/// <summary>
-/// Support Staff's Document Verification screen (BISAASS-51 quick link).
-/// Currently a read-only stub - approve/reject/flag actions, required
-/// reasons, and reviewer tracking land with BISAASS-52.
-/// </summary>
+/// <summary>Support Staff's Document Verification screen (BISAASS-51 quick link; approve/reject/flag added by BISAASS-52).</summary>
 [Authorize(Roles = "SupportStaff")]
 [ApiController]
 [Route("api/support-staff/documents")]
@@ -29,5 +27,55 @@ public class SupportStaffDocumentsController : ControllerBase
     {
         var documents = await _documentsService.GetPendingAndFlaggedAsync(cancellationToken);
         return Ok(documents);
+    }
+
+    /// <summary>
+    /// Support Staff-only: approves (Verified), rejects, or flags a
+    /// document. Rejecting or flagging requires a Reason. Records the
+    /// signed-in Support Staff account as the reviewer. The applicant can
+    /// re-upload a corrected document afterward, which resets it to
+    /// Pending for re-review (ApplicantDocumentRepository.UpsertAsync).
+    /// </summary>
+    [HttpPost("{documentId:guid}/review")]
+    [ProducesResponseType(typeof(AdminDocumentListItemResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AdminDocumentListItemResponse>> ReviewDocument(
+        Guid documentId,
+        [FromBody] ReviewDocumentRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var updated = await _documentsService.ReviewDocumentAsync(documentId, User.GetUserId(), request, cancellationToken);
+            return Ok(updated);
+        }
+        catch (InvalidDocumentReviewStatusException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Invalid review status",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (DocumentReviewReasonRequiredException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Reason required",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (DocumentNotFoundException ex)
+        {
+            return NotFound(new ProblemDetails
+            {
+                Title = "Document not found",
+                Detail = ex.Message,
+                Status = StatusCodes.Status404NotFound,
+            });
+        }
     }
 }

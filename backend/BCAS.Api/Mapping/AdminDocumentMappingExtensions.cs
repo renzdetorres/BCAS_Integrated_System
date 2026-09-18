@@ -16,5 +16,7 @@ public static class AdminDocumentMappingExtensions
         FlaggedReason = item.FlaggedReason,
         UploadedAt = item.UploadedAt,
         UpdatedAt = item.UpdatedAt,
+        ReviewedByName = item.ReviewedByName,
+        ReviewedAt = item.ReviewedAt,
     };
 }

@@ -1,4 +1,6 @@
+using BCAS.Api.Constants;
 using BCAS.Api.Data;
+using BCAS.Api.Exceptions;
 using BCAS.Api.Mapping;
 using BCAS.Api.Models;
 
@@ -17,5 +19,29 @@ public class SupportStaffDocumentsService : ISupportStaffDocumentsService
     {
         var items = await _documentsRepository.GetPendingAndFlaggedAsync(cancellationToken);
         return items.Select(item => item.ToResponse()).ToList();
+    }
+
+    public async Task<AdminDocumentListItemResponse> ReviewDocumentAsync(
+        Guid documentId,
+        Guid reviewedByUserId,
+        ReviewDocumentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!DocumentReviewConstants.AllowedStatuses.Contains(request.Status))
+        {
+            throw new InvalidDocumentReviewStatusException(request.Status);
+        }
+
+        var reason = string.IsNullOrWhiteSpace(request.Reason) ? null : request.Reason.Trim();
+
+        if (DocumentReviewConstants.ReasonRequiredStatuses.Contains(request.Status) && reason is null)
+        {
+            throw new DocumentReviewReasonRequiredException(request.Status);
+        }
+
+        var updated = await _documentsRepository.ReviewAsync(documentId, request.Status, reason, reviewedByUserId, cancellationToken)
+            ?? throw new DocumentNotFoundException(documentId);
+
+        return updated.ToResponse();
     }
 }

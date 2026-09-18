@@ -15,3 +15,21 @@ export async function listPendingAndFlaggedDocuments() {
 
   return data;
 }
+
+export async function reviewDocument(documentId, { status, reason }) {
+  const response = await fetch(`${API_BASE_URL}/api/support-staff/documents/${documentId}/review`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ status, reason: reason || null }),
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const message = extractErrorMessage(data) ?? "Failed to review the document. Please try again.";
+    throw new ApiError(message, response.status);
+  }
+
+  return data;
+}

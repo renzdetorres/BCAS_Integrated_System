@@ -24,9 +24,11 @@ public class AdminDocumentsRepository : IAdminDocumentsRepository
         const string sql = @"
 SELECT
     d.DocumentId, d.UserId, u.FirstName, u.LastName, u.Email,
-    d.DocumentType, d.FileName, d.Status, d.FlaggedReason, d.UploadedAt, d.UpdatedAt
+    d.DocumentType, d.FileName, d.Status, d.FlaggedReason, d.UploadedAt, d.UpdatedAt,
+    d.ReviewedAt, ru.FirstName AS ReviewedByFirstName, ru.LastName AS ReviewedByLastName
 FROM dbo.ApplicantDocuments d
 JOIN dbo.Users u ON u.UserId = d.UserId
+LEFT JOIN dbo.Users ru ON ru.UserId = d.ReviewedByUserId
 WHERE (@Search IS NULL OR u.FirstName LIKE '%' + @Search + '%' OR u.LastName LIKE '%' + @Search + '%' OR u.Email LIKE '%' + @Search + '%')
   AND (@Status IS NULL OR d.Status = @Status)
   AND (@DocumentType IS NULL OR d.DocumentType = @DocumentType)
@@ -48,19 +50,28 @@ ORDER BY d.UploadedAt DESC;";
         return items;
     }
 
-    private static AdminDocumentListItem MapItem(SqlDataReader reader) => new()
+    private static AdminDocumentListItem MapItem(SqlDataReader reader)
     {
-        DocumentId = reader.GetGuid(reader.GetOrdinal("DocumentId")),
-        UserId = reader.GetGuid(reader.GetOrdinal("UserId")),
-        ApplicantName = $"{reader.GetString(reader.GetOrdinal("FirstName"))} {reader.GetString(reader.GetOrdinal("LastName"))}",
-        ApplicantEmail = reader.GetString(reader.GetOrdinal("Email")),
-        DocumentType = reader.GetString(reader.GetOrdinal("DocumentType")),
-        FileName = reader.GetString(reader.GetOrdinal("FileName")),
-        Status = reader.GetString(reader.GetOrdinal("Status")),
-        FlaggedReason = reader.IsDBNull(reader.GetOrdinal("FlaggedReason")) ? null : reader.GetString(reader.GetOrdinal("FlaggedReason")),
-        UploadedAt = reader.GetDateTime(reader.GetOrdinal("UploadedAt")),
-        UpdatedAt = reader.GetDateTime(reader.GetOrdinal("UpdatedAt")),
-    };
+        var reviewedByFirstNameOrdinal = reader.GetOrdinal("ReviewedByFirstName");
+
+        return new AdminDocumentListItem
+        {
+            DocumentId = reader.GetGuid(reader.GetOrdinal("DocumentId")),
+            UserId = reader.GetGuid(reader.GetOrdinal("UserId")),
+            ApplicantName = $"{reader.GetString(reader.GetOrdinal("FirstName"))} {reader.GetString(reader.GetOrdinal("LastName"))}",
+            ApplicantEmail = reader.GetString(reader.GetOrdinal("Email")),
+            DocumentType = reader.GetString(reader.GetOrdinal("DocumentType")),
+            FileName = reader.GetString(reader.GetOrdinal("FileName")),
+            Status = reader.GetString(reader.GetOrdinal("Status")),
+            FlaggedReason = reader.IsDBNull(reader.GetOrdinal("FlaggedReason")) ? null : reader.GetString(reader.GetOrdinal("FlaggedReason")),
+            UploadedAt = reader.GetDateTime(reader.GetOrdinal("UploadedAt")),
+            UpdatedAt = reader.GetDateTime(reader.GetOrdinal("UpdatedAt")),
+            ReviewedAt = reader.IsDBNull(reader.GetOrdinal("ReviewedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("ReviewedAt")),
+            ReviewedByName = reader.IsDBNull(reviewedByFirstNameOrdinal)
+                ? null
+                : $"{reader.GetString(reviewedByFirstNameOrdinal)} {reader.GetString(reader.GetOrdinal("ReviewedByLastName"))}",
+        };
+    }
 
     private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

@@ -94,3 +94,85 @@
   color: #c0392b;
   font-weight: 600;
 }
+
+.ss-documents-reason,
+.ss-documents-reviewed-by {
+  display: block;
+  color: #5c6b7a;
+  font-size: 0.75rem;
+  margin-top: 2px;
+}
+
+.ss-documents-actions-cell {
+  min-width: 220px;
+}
+
+.row-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-approve,
+.action-reject,
+.action-flag,
+.reason-submit,
+.reason-cancel {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.action-approve,
+.reason-submit {
+  background: #e9f7ef;
+  color: #1e7e34;
+}
+
+.action-reject {
+  background: #fdecea;
+  color: #c0392b;
+}
+
+.action-flag {
+  background: #fff4e0;
+  color: #b3791a;
+}
+
+.reason-cancel {
+  background: #f0f2f5;
+  color: #5c6b7a;
+}
+
+.action-approve:disabled,
+.action-reject:disabled,
+.action-flag:disabled,
+.reason-submit:disabled,
+.reason-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ss-documents-reason-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 220px;
+}
+
+.ss-documents-reason-form textarea {
+  padding: 8px 10px;
+  border: 1px solid #cdd5df;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.ss-documents-reason-error {
+  margin: 0;
+}

@@ -1120,3 +1120,31 @@ BEGIN
     ALTER TABLE dbo.Users ADD Department NVARCHAR(100) NULL;
 END
 GO
+
+-- -----------------------------------------------------------------------------
+-- BISAASS-52 Document Verification (Approve/Reject/Flag)
+-- Adds reviewer tracking to dbo.ApplicantDocuments, nullable since most
+-- rows (everything still Pending, and every row before this ticket) have
+-- never been reviewed - same nullable-FK-plus-timestamp idiom already used
+-- for ArchivedByUserId/ArchivedAt on AdmissionApplications/
+-- ScholarshipApplications above. No new table: Status already covers
+-- Verified/Rejected/Flagged (BISAASS-19) and FlaggedReason already covers
+-- the required reason for a Flagged document - this ticket's addition is
+-- reusing FlaggedReason for a Rejected document's reason too (both require
+-- one; only Verified doesn't) and reviewer identity/timestamp.
+-- ApplicantDocumentRepository.UpsertAsync (BISAASS-19) already resets
+-- Status to Pending and clears FlaggedReason on re-upload - it now also
+-- clears ReviewedByUserId/ReviewedAt, so a corrected re-upload always
+-- starts a fresh, unreviewed record.
+-- -----------------------------------------------------------------------------
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.ApplicantDocuments') AND name = N'ReviewedByUserId'
+)
+BEGIN
+    ALTER TABLE dbo.ApplicantDocuments ADD
+        ReviewedByUserId UNIQUEIDENTIFIER NULL,
+        ReviewedAt       DATETIME2(3)     NULL,
+        CONSTRAINT FK_ApplicantDocuments_ReviewedBy FOREIGN KEY (ReviewedByUserId) REFERENCES dbo.Users (UserId);
+END
+GO

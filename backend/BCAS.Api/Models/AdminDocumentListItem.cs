@@ -12,4 +12,8 @@ public class AdminDocumentListItem
     public string? FlaggedReason { get; set; }
     public DateTime UploadedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+
+    /// <summary>Name of the staff member who last reviewed this document (BISAASS-52); null if never reviewed.</summary>
+    public string? ReviewedByName { get; set; }
+    public DateTime? ReviewedAt { get; set; }
 }

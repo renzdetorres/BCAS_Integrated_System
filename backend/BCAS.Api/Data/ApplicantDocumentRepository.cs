@@ -55,7 +55,8 @@ USING (SELECT @UserId AS UserId, @DocumentType AS DocumentType) AS source
 ON target.UserId = source.UserId AND target.DocumentType = source.DocumentType
 WHEN MATCHED THEN
     UPDATE SET FileName = @FileName, ContentType = @ContentType, FileSizeBytes = @FileSizeBytes,
-               FileData = @FileData, Status = N'Pending', FlaggedReason = NULL, UpdatedAt = SYSUTCDATETIME()
+               FileData = @FileData, Status = N'Pending', FlaggedReason = NULL,
+               ReviewedByUserId = NULL, ReviewedAt = NULL, UpdatedAt = SYSUTCDATETIME()
 WHEN NOT MATCHED THEN
     INSERT (UserId, DocumentType, FileName, ContentType, FileSizeBytes, FileData)
     VALUES (@UserId, @DocumentType, @FileName, @ContentType, @FileSizeBytes, @FileData);";
