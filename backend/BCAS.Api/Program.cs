@@ -69,6 +69,8 @@ builder.Services.AddScoped<IAdminDocumentsRepository, AdminDocumentsRepository>(
 builder.Services.AddScoped<IAdminDocumentsService, AdminDocumentsService>();
 builder.Services.AddScoped<IAdminReportsRepository, AdminReportsRepository>();
 builder.Services.AddScoped<IAdminReportsService, AdminReportsService>();
+builder.Services.AddScoped<IAcademicHeadScholarshipsService, AcademicHeadScholarshipsService>();
+builder.Services.AddScoped<IAcademicHeadAnnouncementService, AcademicHeadAnnouncementService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

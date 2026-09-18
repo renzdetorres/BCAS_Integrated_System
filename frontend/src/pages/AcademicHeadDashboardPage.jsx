@@ -62,6 +62,21 @@ export default function AcademicHeadDashboardPage() {
           </button>
         </header>
 
+        <section className="ah-dashboard-card">
+          <h2>Management</h2>
+          <p className="ah-management-subtitle">
+            Available if an Admin-Registrar has authorized the Academic Head role for each area.
+          </p>
+          <div className="ah-management-links">
+            <Link className="ah-management-link" to="/academic-head/scholarships">
+              Scholarship Slots
+            </Link>
+            <Link className="ah-management-link" to="/academic-head/announcements">
+              Announcements
+            </Link>
+          </div>
+        </section>
+
         {isLoading && (
           <section className="ah-dashboard-card">
             <p>Loading...</p>
