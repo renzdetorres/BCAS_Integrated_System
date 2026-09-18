@@ -32,6 +32,7 @@ builder.Services.AddScoped<IAdmissionApplicationRepository, AdmissionApplication
 builder.Services.AddScoped<IAdmissionApplicationService, AdmissionApplicationService>();
 builder.Services.AddScoped<IScholarshipRepository, ScholarshipRepository>();
 builder.Services.AddScoped<IScholarshipService, ScholarshipService>();
+builder.Services.AddScoped<IAdminScholarshipsService, AdminScholarshipsService>();
 builder.Services.AddScoped<IScholarshipApplicationRepository, ScholarshipApplicationRepository>();
 builder.Services.AddScoped<IScholarshipApplicationService, ScholarshipApplicationService>();
 builder.Services.AddScoped<IApplicantDocumentRepository, ApplicantDocumentRepository>();

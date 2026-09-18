@@ -922,3 +922,90 @@ into a shared `WorkflowStepper` component so the two views can't diverge)
 plus any existing remark, and an "Update Status" form - a dropdown scoped
 to the application's own category's allowed statuses, an optional remarks
 textarea, and a save button hitting the endpoint above.
+
+## BISAASS-32: Scholarship Slot Management
+
+Admin-Registrar create/update/deactivate for the `Scholarships` catalog
+(BISAASS-17), which until now was seed-data only - no admin endpoint
+existed, matching BISAASS-45's read-only Evaluator slots view ("slot
+management stays wherever an Admin-facing catalog endpoint eventually
+lands"). This is that endpoint. No schema changes were needed:
+`TotalSlots`/`RemainingSlots`/`IsActive` (BISAASS-17) and
+`MinimumGradeAverage`/`IsTopOne` (BISAASS-42/44) already existed - the
+`Scholarship` model just hadn't mapped the latter two yet.
+
+"Deactivated slots are no longer selectable during scholarship
+application submission" needed no new code either:
+`IScholarshipRepository.GetAvailableAsync` (the applicant-facing catalog)
+already filters `IsActive = 1`, and `ScholarshipApplicationService`
+already rejects submissions against an inactive scholarship - both from
+BISAASS-17.
+
+Editing `TotalSlots` preserves however many slots are currently occupied
+(`TotalSlots - RemainingSlots`) rather than resetting `RemainingSlots`:
+`ScholarshipRepository.UpdateAsync` shifts `RemainingSlots` by the same
+delta as `TotalSlots` in one atomic `UPDATE`, and
+`AdminScholarshipsService.UpdateAsync` rejects (`400`) a `TotalSlots`
+below the current occupied count before that update ever runs, so it can
+never go negative for a normal single-admin edit - the same
+belt-and-suspenders relationship BISAASS-32's own `CK_Scholarships_RemainingSlots`
+check has always provided as a backstop.
+
+### API
+
+All endpoints require the `bcas_auth` cookie for the `Admin` role.
+
+`GET /api/admin/scholarships` - `200 OK` with every scholarship regardless
+of active status:
+```json
+[
+  {
+    "scholarshipId": 1,
+    "name": "Academic Excellence Scholarship",
+    "scholarshipType": "Academic",
+    "totalSlots": 20,
+    "remainingSlots": 18,
+    "occupiedSlots": 2,
+    "isActive": true,
+    "minimumGradeAverage": 90.00,
+    "isTopOne": false,
+    "createdAt": "2026-09-01T00:00:00Z"
+  }
+]
+```
+
+`POST /api/admin/scholarships`
+
+Request body:
+```json
+{ "name": "STEM Grant", "scholarshipType": "Academic", "totalSlots": 10, "minimumGradeAverage": 85.0 }
+```
+- `201 Created` with the new scholarship (`remainingSlots` equal to
+  `totalSlots`, `isActive: true`).
+- `400 Bad Request` for missing/invalid fields (`totalSlots` must be at
+  least 1).
+
+`PUT /api/admin/scholarships/{scholarshipId}` - same request body as
+create.
+- `200 OK` with the updated scholarship.
+- `400 Bad Request` if `totalSlots` would fall below the number of slots
+  already occupied.
+- `404 Not Found` if no scholarship has that id.
+
+`PATCH /api/admin/scholarships/{scholarshipId}/status`
+
+Request body:
+```json
+{ "isActive": false }
+```
+- `200 OK` with the updated scholarship. `404 Not Found` if no
+  scholarship has that id.
+
+### Frontend
+
+`/admin/scholarships` (gated by `RequireRole(["Admin"])`, linked from the
+Admin Dashboard as "Scholarship Slots") has a create form plus a table of
+every scholarship - total/remaining/occupied slots, minimum grade, and
+status - with inline Edit (name/type/total slots/minimum grade, mirroring
+`ManageUsersPage`'s inline-edit row pattern) and an Activate/Deactivate
+toggle per row.

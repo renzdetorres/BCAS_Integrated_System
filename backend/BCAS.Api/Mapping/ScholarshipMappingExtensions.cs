@@ -23,6 +23,20 @@ public static class ScholarshipMappingExtensions
         IsActive = scholarship.IsActive,
     };
 
+    public static AdminScholarshipResponse ToAdminResponse(this Scholarship scholarship) => new()
+    {
+        ScholarshipId = scholarship.ScholarshipId,
+        Name = scholarship.Name,
+        ScholarshipType = scholarship.ScholarshipType,
+        TotalSlots = scholarship.TotalSlots,
+        RemainingSlots = scholarship.RemainingSlots,
+        OccupiedSlots = scholarship.TotalSlots - scholarship.RemainingSlots,
+        IsActive = scholarship.IsActive,
+        MinimumGradeAverage = scholarship.MinimumGradeAverage,
+        IsTopOne = scholarship.IsTopOne,
+        CreatedAt = scholarship.CreatedAt,
+    };
+
     public static ScholarshipApplicationResponse ToResponse(this ScholarshipApplication application) => new()
     {
         ApplicationId = application.ApplicationId,
