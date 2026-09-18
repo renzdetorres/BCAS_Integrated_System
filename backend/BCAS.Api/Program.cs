@@ -64,6 +64,8 @@ builder.Services.AddScoped<IAdminApplicationsService, AdminApplicationsService>(
 builder.Services.AddScoped<IAdminExamScheduleService, AdminExamScheduleService>();
 builder.Services.AddScoped<IAdminReservationRepository, AdminReservationRepository>();
 builder.Services.AddScoped<IAdminReservationsService, AdminReservationsService>();
+builder.Services.AddScoped<IAdminDocumentsRepository, AdminDocumentsRepository>();
+builder.Services.AddScoped<IAdminDocumentsService, AdminDocumentsService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

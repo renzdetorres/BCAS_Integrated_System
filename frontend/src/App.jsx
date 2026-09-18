@@ -25,6 +25,7 @@ import EvaluatorSettingsPage from "./pages/EvaluatorSettingsPage.jsx";
 import AcademicHeadReviewPage from "./pages/AcademicHeadReviewPage.jsx";
 import AdminApplicationsPage from "./pages/AdminApplicationsPage.jsx";
 import AdminApplicationDetailPage from "./pages/AdminApplicationDetailPage.jsx";
+import AdminDocumentsPage from "./pages/AdminDocumentsPage.jsx";
 import AdminExamSchedulesPage from "./pages/AdminExamSchedulesPage.jsx";
 import AdminExamPermitsPage from "./pages/AdminExamPermitsPage.jsx";
 import AdminScholarshipsPage from "./pages/AdminScholarshipsPage.jsx";
@@ -47,6 +48,7 @@ export default function App() {
               <Route path="/admin/settings" element={<AdminSettingsPage />} />
               <Route path="/admin/applications" element={<AdminApplicationsPage />} />
               <Route path="/admin/applications/:applicationId" element={<AdminApplicationDetailPage />} />
+              <Route path="/admin/documents" element={<AdminDocumentsPage />} />
               <Route path="/admin/exam-schedules" element={<AdminExamSchedulesPage />} />
               <Route path="/admin/exam-permits" element={<AdminExamPermitsPage />} />
               <Route path="/admin/scholarships" element={<AdminScholarshipsPage />} />
