@@ -73,6 +73,12 @@ export default function AdminDashboardPage() {
           <Link className="admin-dashboard-link" to="/admin/archive">
             Records Archive
           </Link>
+          <Link className="admin-dashboard-link" to="/admin/announcements">
+            Announcements
+          </Link>
+          <Link className="admin-dashboard-link" to="/admin/reports">
+            Reports
+          </Link>
           <Link className="admin-dashboard-link" to="/admin/exam-schedules">
             Exam Schedules
           </Link>

@@ -47,6 +47,7 @@ builder.Services.AddScoped<IAdminExamPermitService, AdminExamPermitService>();
 builder.Services.AddScoped<IApplicationTrackingService, ApplicationTrackingService>();
 builder.Services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
 builder.Services.AddScoped<IAnnouncementService, AnnouncementService>();
+builder.Services.AddScoped<IAdminAnnouncementService, AdminAnnouncementService>();
 builder.Services.AddScoped<IAdminDashboardRepository, AdminDashboardRepository>();
 builder.Services.AddScoped<IAdminDashboardService, AdminDashboardService>();
 builder.Services.AddScoped<INotificationSettingsRepository, NotificationSettingsRepository>();
@@ -66,6 +67,8 @@ builder.Services.AddScoped<IAdminReservationRepository, AdminReservationReposito
 builder.Services.AddScoped<IAdminReservationsService, AdminReservationsService>();
 builder.Services.AddScoped<IAdminDocumentsRepository, AdminDocumentsRepository>();
 builder.Services.AddScoped<IAdminDocumentsService, AdminDocumentsService>();
+builder.Services.AddScoped<IAdminReportsRepository, AdminReportsRepository>();
+builder.Services.AddScoped<IAdminReportsService, AdminReportsService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
