@@ -1009,3 +1009,79 @@ every scholarship - total/remaining/occupied slots, minimum grade, and
 status - with inline Edit (name/type/total slots/minimum grade, mirroring
 `ManageUsersPage`'s inline-edit row pattern) and an Activate/Deactivate
 toggle per row.
+
+## BISAASS-33: Reservation Management
+
+Admin-Registrar records whether an Approved admission applicant has
+reserved their slot (the school's ₱2,500 reservation fee), and monitors
+reserved vs. unreserved applicants. Adds one table (`database/schema.sql`):
+
+- `AdmissionReservations` - one row per admission application (`IsReserved`,
+  `ReservationFee`, `Remarks`, who recorded it, when). Like
+  `ScholarshipEligibilityScreenings`, re-recording (a correction, or an
+  applicant who reserved later cancels) replaces the row in place via
+  `MERGE` rather than accumulating history.
+
+Reservations only apply to `Approved` admission applications -
+`AdminReservationsService.RecordAsync` rejects (`400`) any other status.
+
+The acceptance criteria's guarantee - "the system does not process the
+₱2,500 payment unless online payment is specifically required/enabled" -
+is backed by a new `SystemSettings` row, `ReservationOnlinePaymentRequired`
+(seeded `IsEnabled = 0`, the only setting so far that defaults *off*, so
+unlike `AdmissionsApplicationsOpen`/`ScholarshipApplicationsOpen` it needs
+an explicit row rather than relying on `ISystemSettingsRepository`'s
+fail-open "missing row = enabled" behavior). While it's off, staff record
+a reservation manually with no payment step - this system has no online
+payment gateway anywhere, so there's nothing for the setting to actually
+turn on yet; turning it on simply blocks manual recording
+(`OnlinePaymentRequiredException`) until an online-payment integration
+exists to satisfy it, which this ticket deliberately doesn't build. The
+setting shows up automatically on the existing `/admin/settings` page
+(BISAASS-40) alongside the other two - that page already renders whatever
+`GET /api/admin/system-settings` returns, so no frontend change was needed
+for it.
+
+### API
+
+Both endpoints require the `bcas_auth` cookie for the `Admin` role.
+
+`GET /api/admin/reservations` - `200 OK` with every `Approved` admission
+application, most recently submitted first, reserved and unreserved alike:
+```json
+[
+  {
+    "applicationId": "...",
+    "applicantName": "Jane Doe",
+    "applicantEmail": "jane.doe@example.com",
+    "applicationType": "NewStudent",
+    "courseAppliedFor": "BS Computer Science",
+    "submittedAt": "2026-09-10T02:14:00Z",
+    "isReserved": false,
+    "reservationFee": null,
+    "remarks": null,
+    "recordedAt": null,
+    "recordedByName": null
+  }
+]
+```
+
+`PUT /api/admin/reservations/{applicationId}`
+
+Request body:
+```json
+{ "isReserved": true, "remarks": "Paid via bank deposit, receipt #1234" }
+```
+- `200 OK` with the recorded reservation (`reservationFee` set to the
+  school's standard ₱2,500, `recordedAt`/`recordedByName` set to now/the
+  signed-in Admin).
+- `400 Bad Request` if the admission application isn't `Approved`, or if
+  `ReservationOnlinePaymentRequired` is on.
+- `404 Not Found` if no admission application has that id.
+
+### Frontend
+
+`/admin/reservations` (gated by `RequireRole(["Admin"])`, linked from the
+Admin Dashboard as "Reservations") lists Approved applicants split into
+Unreserved/Reserved sections; each row has a Reserved/Unreserved toggle,
+an optional remarks field, and a Save button hitting the endpoint above.

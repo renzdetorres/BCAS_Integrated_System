@@ -839,3 +839,56 @@ AS
     FROM dbo.ScholarshipApplications sa
     JOIN dbo.Scholarships sc ON sc.ScholarshipId = sa.ScholarshipId;
 GO
+
+-- -----------------------------------------------------------------------------
+-- AdmissionReservations
+-- BISAASS-33 Reservation Management. Records whether an Approved admission
+-- applicant has reserved their slot (the school's cash/bank-deposited
+-- ₱2,500 reservation fee is recorded here, not collected by this system -
+-- see SystemSettings.ReservationOnlinePaymentRequired below). One row per
+-- application - re-recording (staff corrects a mistake, or an applicant
+-- who reserved later cancels) replaces the row in place via MERGE, the
+-- same "latest state, no history" convention ScholarshipEligibilityScreenings
+-- already uses, rather than accumulating a payment history this system has
+-- no other use for. ReservationFee is stored per row (not just assumed to
+-- always be the current standard fee) so a past reservation's recorded
+-- amount stays accurate even if the standard fee changes later.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.AdmissionReservations', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.AdmissionReservations
+    (
+        ApplicationId       UNIQUEIDENTIFIER NOT NULL CONSTRAINT PK_AdmissionReservations PRIMARY KEY,
+        IsReserved          BIT              NOT NULL,
+        ReservationFee      DECIMAL(10,2)    NOT NULL CONSTRAINT DF_AdmissionReservations_ReservationFee DEFAULT (2500.00),
+        Remarks             NVARCHAR(500)    NULL,
+        RecordedByUserId    UNIQUEIDENTIFIER NOT NULL,
+        RecordedAt          DATETIME2(3)     NOT NULL CONSTRAINT DF_AdmissionReservations_RecordedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT FK_AdmissionReservations_Applications FOREIGN KEY (ApplicationId) REFERENCES dbo.AdmissionApplications (ApplicationId),
+        CONSTRAINT FK_AdmissionReservations_RecordedBy FOREIGN KEY (RecordedByUserId) REFERENCES dbo.Users (UserId)
+    );
+END
+GO
+
+-- -----------------------------------------------------------------------------
+-- SystemSettings.ReservationOnlinePaymentRequired
+-- BISAASS-33's own acceptance criteria: "the system does not process the
+-- ₱2,500 payment unless online payment is specifically required/enabled."
+-- This system has no online payment gateway anywhere, so there is nothing
+-- for this flag to actually turn on yet - it exists so that guarantee is
+-- an explicit, auditable, toggle-able setting rather than an unstated
+-- assumption. While off (the default - unlike AdmissionsApplicationsOpen/
+-- ScholarshipApplicationsOpen above, this setting defaults OFF, so unlike
+-- those it needs an explicit row rather than relying on
+-- ISystemSettingsRepository's fail-open "missing row = enabled" behavior),
+-- AdminReservationsService lets staff record a reservation manually with
+-- no payment step. If ever turned on, recording is blocked
+-- (OnlinePaymentRequiredException) until an actual online-payment
+-- integration exists to satisfy it - this ticket deliberately does not
+-- build one.
+-- -----------------------------------------------------------------------------
+IF NOT EXISTS (SELECT 1 FROM dbo.SystemSettings WHERE SettingKey = N'ReservationOnlinePaymentRequired')
+    INSERT INTO dbo.SystemSettings (SettingKey, DisplayName, Description, IsEnabled) VALUES
+        (N'ReservationOnlinePaymentRequired', N'Require Online Payment for Reservations',
+         N'When on, the ₱2,500 reservation fee must be paid online and staff cannot record a reservation manually. When off (default), staff record reservation status directly after receiving payment through the school''s existing (offline) process.', 0);
+GO

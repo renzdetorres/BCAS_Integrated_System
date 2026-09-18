@@ -8,4 +8,5 @@ public static class SystemSettingKeys
 {
     public const string AdmissionsApplicationsOpen = "AdmissionsApplicationsOpen";
     public const string ScholarshipApplicationsOpen = "ScholarshipApplicationsOpen";
+    public const string ReservationOnlinePaymentRequired = "ReservationOnlinePaymentRequired";
 }
