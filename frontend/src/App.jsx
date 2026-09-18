@@ -23,6 +23,8 @@ import ScholarshipScreeningPage from "./pages/ScholarshipScreeningPage.jsx";
 import ScholarshipSlotsPage from "./pages/ScholarshipSlotsPage.jsx";
 import EvaluatorSettingsPage from "./pages/EvaluatorSettingsPage.jsx";
 import AcademicHeadReviewPage from "./pages/AcademicHeadReviewPage.jsx";
+import AdminApplicationsPage from "./pages/AdminApplicationsPage.jsx";
+import AdminApplicationDetailPage from "./pages/AdminApplicationDetailPage.jsx";
 
 export default function App() {
   return (
@@ -39,6 +41,8 @@ export default function App() {
               <Route path="/admin/users" element={<ManageUsersPage />} />
               <Route path="/admin/notification-settings" element={<NotificationSettingsPage />} />
               <Route path="/admin/settings" element={<AdminSettingsPage />} />
+              <Route path="/admin/applications" element={<AdminApplicationsPage />} />
+              <Route path="/admin/applications/:applicationId" element={<AdminApplicationDetailPage />} />
             </Route>
             <Route element={<RequireRole allowedRoles={["Evaluator"]} />}>
               <Route

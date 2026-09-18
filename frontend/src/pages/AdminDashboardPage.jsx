@@ -64,6 +64,9 @@ export default function AdminDashboardPage() {
         </header>
 
         <div className="admin-dashboard-links">
+          <Link className="admin-dashboard-link" to="/admin/applications">
+            Applications
+          </Link>
           <Link className="admin-dashboard-link" to="/admin/staff">
             Create Staff Account
           </Link>

@@ -249,6 +249,13 @@ GO
 -- carries every column that application's own detail view needs, so
 -- selecting an application from the history list requires no follow-up
 -- query.
+--
+-- BISAASS-28 Application List Management (Search & Filter) reuses this same
+-- view for the Admin-Registrar's system-wide list (AdminApplicationsRepository),
+-- just without the WHERE UserId = @UserId filter and joined to dbo.Users for
+-- the applicant's name/email - no schema change needed for that ticket
+-- either, and "selecting an application opens its full detail view" holds
+-- the same way: every row already carries its own full detail.
 -- -----------------------------------------------------------------------------
 IF OBJECT_ID(N'dbo.vw_ApplicationHistory', N'V') IS NOT NULL
     DROP VIEW dbo.vw_ApplicationHistory;
