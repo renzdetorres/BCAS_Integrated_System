@@ -73,6 +73,11 @@ builder.Services.AddScoped<IAcademicHeadScholarshipsService, AcademicHeadScholar
 builder.Services.AddScoped<IAcademicHeadAnnouncementService, AcademicHeadAnnouncementService>();
 builder.Services.AddScoped<IAcademicHeadReportsService, AcademicHeadReportsService>();
 builder.Services.AddScoped<IAcademicHeadSettingsService, AcademicHeadSettingsService>();
+builder.Services.AddScoped<ISupportStaffDashboardRepository, SupportStaffDashboardRepository>();
+builder.Services.AddScoped<ISupportStaffDashboardService, SupportStaffDashboardService>();
+builder.Services.AddScoped<ISupportStaffDocumentsRepository, SupportStaffDocumentsRepository>();
+builder.Services.AddScoped<ISupportStaffDocumentsService, SupportStaffDocumentsService>();
+builder.Services.AddScoped<ISupportStaffApplicantsService, SupportStaffApplicantsService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
