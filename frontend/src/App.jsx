@@ -4,7 +4,6 @@ import RequireAuth from "./components/RequireAuth.jsx";
 import RequireRole from "./components/RequireRole.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
-import StaffPortalPage from "./pages/StaffPortalPage.jsx";
 import PortalRouter from "./pages/PortalRouter.jsx";
 import ProvisionStaffPage from "./pages/ProvisionStaffPage.jsx";
 import ManageUsersPage from "./pages/ManageUsersPage.jsx";
@@ -53,7 +52,6 @@ export default function App() {
         <Routes>
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/staff-portal" element={<StaffPortalPage />} />
           <Route element={<RequireAuth />}>
             <Route path="/portal" element={<PortalRouter />} />
             <Route path="/settings" element={<SettingsPage />} />

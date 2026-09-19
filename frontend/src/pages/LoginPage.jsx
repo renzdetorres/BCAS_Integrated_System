@@ -116,14 +116,6 @@ export default function LoginPage() {
           Register here
         </Link>
       </p>
-
-      <div className="my-5 border-t border-slate-100" />
-
-      <p className="text-center text-sm">
-        <Link to="/staff-portal" className="font-semibold text-forest hover:underline">
-          Staff Portal →
-        </Link>
-      </p>
     </AuthShell>
   );
 }
