@@ -29,6 +29,7 @@ import AcademicHeadReportsPage from "./pages/AcademicHeadReportsPage.jsx";
 import AcademicHeadSettingsPage from "./pages/AcademicHeadSettingsPage.jsx";
 import SupportStaffDocumentsPage from "./pages/SupportStaffDocumentsPage.jsx";
 import SupportStaffApplicantsPage from "./pages/SupportStaffApplicantsPage.jsx";
+import SupportStaffDocumentArchivePage from "./pages/SupportStaffDocumentArchivePage.jsx";
 import AdminApplicationsPage from "./pages/AdminApplicationsPage.jsx";
 import AdminApplicationDetailPage from "./pages/AdminApplicationDetailPage.jsx";
 import AdminDocumentsPage from "./pages/AdminDocumentsPage.jsx";
@@ -88,6 +89,7 @@ export default function App() {
             </Route>
             <Route element={<RequireRole allowedRoles={["SupportStaff"]} />}>
               <Route path="/support-staff/documents" element={<SupportStaffDocumentsPage />} />
+              <Route path="/support-staff/documents/archive" element={<SupportStaffDocumentArchivePage />} />
               <Route path="/support-staff/applicants" element={<SupportStaffApplicantsPage />} />
             </Route>
             <Route element={<RequireRole allowedRoles={["Applicant"]} />}>

@@ -1,5 +1,7 @@
 import { API_BASE_URL, ApiError, extractErrorMessage } from "./apiClient.js";
 
+export const DOCUMENT_TYPES = ["ReportCard", "IdPicture", "PSA", "TOR", "SF10"];
+
 export async function listPendingAndFlaggedDocuments() {
   const response = await fetch(`${API_BASE_URL}/api/support-staff/documents`, {
     method: "GET",
@@ -29,6 +31,27 @@ export async function listDocumentsForApplicant(applicantUserId) {
 
   if (!response.ok) {
     const message = extractErrorMessage(data) ?? "Failed to load documents.";
+    throw new ApiError(message, response.status);
+  }
+
+  return data;
+}
+
+export async function searchArchivedDocuments({ search, documentType } = {}) {
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  if (documentType) params.set("documentType", documentType);
+  const query = params.toString();
+
+  const response = await fetch(`${API_BASE_URL}/api/support-staff/documents/archive${query ? `?${query}` : ""}`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const message = extractErrorMessage(data) ?? "Failed to load the document archive.";
     throw new ApiError(message, response.status);
   }
 

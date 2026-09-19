@@ -126,7 +126,11 @@ export default function SupportStaffDocumentsPage() {
         ) : (
           <p className="ss-documents-subtitle">
             Documents awaiting review or currently flagged. Rejecting or flagging a document requires a reason; the
-            applicant can re-upload a corrected document afterward.
+            applicant can re-upload a corrected document afterward.{" "}
+            <Link className="ss-documents-queue-link" to="/support-staff/documents/archive">
+              View the document archive
+            </Link>
+            .
           </p>
         )}
 

@@ -87,4 +87,20 @@ public class SupportStaffDocumentsController : ControllerBase
             });
         }
     }
+
+    /// <summary>
+    /// Support Staff-only: the Document Archive (BISAASS-54) - every
+    /// archived document, most recently updated first, optionally narrowed
+    /// by search (applicant name/email) and/or documentType. Kept separate
+    /// from the active verification queue above so archived documents
+    /// never clutter it.
+    /// </summary>
+    [HttpGet("archive")]
+    [ProducesResponseType(typeof(IReadOnlyList<AdminDocumentListItemResponse>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<AdminDocumentListItemResponse>>> SearchArchived(
+        [FromQuery] string? search, [FromQuery] string? documentType, CancellationToken cancellationToken)
+    {
+        var documents = await _documentsService.SearchArchivedAsync(search, documentType, cancellationToken);
+        return Ok(documents);
+    }
 }

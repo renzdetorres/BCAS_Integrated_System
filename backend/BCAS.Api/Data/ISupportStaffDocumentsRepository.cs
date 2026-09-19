@@ -31,4 +31,13 @@ public interface ISupportStaffDocumentsRepository
         string? reason,
         Guid reviewedByUserId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Every archived document (IsArchived = 1), most recently updated
+    /// first, optionally narrowed by search (applicant name/email) and/or
+    /// documentType - the Document Archive browse screen (BISAASS-54),
+    /// kept separate from the active verification queue above.
+    /// </summary>
+    Task<IReadOnlyList<AdminDocumentListItem>> SearchArchivedAsync(
+        string? search, string? documentType, CancellationToken cancellationToken = default);
 }

@@ -27,4 +27,8 @@ public interface ISupportStaffDocumentsService
         Guid reviewedByUserId,
         ReviewDocumentRequest request,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Document Archive browse screen (BISAASS-54) - every archived document, most recently updated first, optionally narrowed by search and/or documentType.</summary>
+    Task<IReadOnlyList<AdminDocumentListItemResponse>> SearchArchivedAsync(
+        string? search, string? documentType, CancellationToken cancellationToken = default);
 }
