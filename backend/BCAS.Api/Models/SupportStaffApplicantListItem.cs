@@ -2,11 +2,11 @@ namespace BCAS.Api.Models;
 
 /// <summary>
 /// An Applicant account plus their latest admission application info, for
-/// Support Staff's Applicant Records screen (BISAASS-53). ApplicationType,
+/// Support Staff's Applicant Records search (BISAASS-53). ApplicationType,
 /// CourseAppliedFor, ApplicationStatus, and SubmittedAt are null if the
 /// applicant hasn't submitted an admission application yet.
 /// </summary>
-public class SupportStaffApplicantListItemResponse
+public class SupportStaffApplicantListItem
 {
     public Guid UserId { get; set; }
     public string FirstName { get; set; } = string.Empty;

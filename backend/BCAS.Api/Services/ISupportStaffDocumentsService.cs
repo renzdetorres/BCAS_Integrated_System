@@ -8,6 +8,14 @@ public interface ISupportStaffDocumentsService
     Task<IReadOnlyList<AdminDocumentListItemResponse>> GetPendingAndFlaggedAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Every non-archived document belonging to one applicant, regardless
+    /// of status - used when navigating directly into Document
+    /// Verification for a specific applicant from Applicant Records
+    /// (BISAASS-53).
+    /// </summary>
+    Task<IReadOnlyList<AdminDocumentListItemResponse>> GetByApplicantAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Approves, rejects, or flags a document (BISAASS-52). Throws
     /// InvalidDocumentReviewStatusException if request.Status isn't
     /// Verified/Rejected/Flagged, DocumentReviewReasonRequiredException if

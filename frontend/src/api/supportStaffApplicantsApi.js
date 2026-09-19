@@ -1,7 +1,11 @@
 import { API_BASE_URL, ApiError, extractErrorMessage } from "./apiClient.js";
 
-export async function listApplicants() {
-  const response = await fetch(`${API_BASE_URL}/api/support-staff/applicants`, {
+export async function searchApplicants({ search } = {}) {
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  const query = params.toString();
+
+  const response = await fetch(`${API_BASE_URL}/api/support-staff/applicants${query ? `?${query}` : ""}`, {
     method: "GET",
     credentials: "include",
   });

@@ -20,12 +20,21 @@ public class SupportStaffDocumentsController : ControllerBase
         _documentsService = documentsService;
     }
 
-    /// <summary>Support Staff-only: every non-archived document awaiting review or currently flagged, most recently uploaded first.</summary>
+    /// <summary>
+    /// Support Staff-only: with no userId, every non-archived document
+    /// awaiting review or currently flagged, most recently uploaded first.
+    /// With userId (set when navigating here from Applicant Records -
+    /// BISAASS-53), every non-archived document belonging to that one
+    /// applicant instead, regardless of status.
+    /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<AdminDocumentListItemResponse>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<AdminDocumentListItemResponse>>> GetPendingAndFlagged(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<AdminDocumentListItemResponse>>> GetDocuments(
+        [FromQuery] Guid? userId, CancellationToken cancellationToken)
     {
-        var documents = await _documentsService.GetPendingAndFlaggedAsync(cancellationToken);
+        var documents = userId.HasValue
+            ? await _documentsService.GetByApplicantAsync(userId.Value, cancellationToken)
+            : await _documentsService.GetPendingAndFlaggedAsync(cancellationToken);
         return Ok(documents);
     }
 

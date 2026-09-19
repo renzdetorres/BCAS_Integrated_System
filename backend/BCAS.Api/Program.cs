@@ -77,6 +77,7 @@ builder.Services.AddScoped<ISupportStaffDashboardRepository, SupportStaffDashboa
 builder.Services.AddScoped<ISupportStaffDashboardService, SupportStaffDashboardService>();
 builder.Services.AddScoped<ISupportStaffDocumentsRepository, SupportStaffDocumentsRepository>();
 builder.Services.AddScoped<ISupportStaffDocumentsService, SupportStaffDocumentsService>();
+builder.Services.AddScoped<ISupportStaffApplicantsRepository, SupportStaffApplicantsRepository>();
 builder.Services.AddScoped<ISupportStaffApplicantsService, SupportStaffApplicantsService>();
 
 builder.Services

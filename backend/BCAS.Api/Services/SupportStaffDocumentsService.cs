@@ -21,6 +21,12 @@ public class SupportStaffDocumentsService : ISupportStaffDocumentsService
         return items.Select(item => item.ToResponse()).ToList();
     }
 
+    public async Task<IReadOnlyList<AdminDocumentListItemResponse>> GetByApplicantAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var items = await _documentsRepository.GetByUserIdAsync(userId, cancellationToken);
+        return items.Select(item => item.ToResponse()).ToList();
+    }
+
     public async Task<AdminDocumentListItemResponse> ReviewDocumentAsync(
         Guid documentId,
         Guid reviewedByUserId,
