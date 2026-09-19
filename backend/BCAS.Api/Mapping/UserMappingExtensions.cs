@@ -14,13 +14,4 @@ public static class UserMappingExtensions
         IsActive = user.IsActive,
         Department = user.Department,
     };
-
-    public static SupportStaffApplicantListItemResponse ToSupportStaffApplicantResponse(this User user) => new()
-    {
-        UserId = user.UserId,
-        FirstName = user.FirstName,
-        LastName = user.LastName,
-        Email = user.Email,
-        CreatedAt = user.CreatedAt,
-    };
 }

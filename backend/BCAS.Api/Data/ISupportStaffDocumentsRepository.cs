@@ -13,6 +13,14 @@ public interface ISupportStaffDocumentsRepository
     Task<IReadOnlyList<AdminDocumentListItem>> GetPendingAndFlaggedAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Every non-archived document belonging to one applicant, regardless
+    /// of status, most recently uploaded first - used when Support Staff
+    /// navigates directly into Document Verification for a specific
+    /// applicant from Applicant Records (BISAASS-53).
+    /// </summary>
+    Task<IReadOnlyList<AdminDocumentListItem>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Approves (Verified), rejects, or flags a document, recording who
     /// reviewed it and when. Returns the updated document, or null if no
     /// document with that id exists.

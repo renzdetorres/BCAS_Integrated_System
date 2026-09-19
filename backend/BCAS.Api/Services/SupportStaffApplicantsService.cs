@@ -6,21 +6,17 @@ namespace BCAS.Api.Services;
 
 public class SupportStaffApplicantsService : ISupportStaffApplicantsService
 {
-    private const string ApplicantRoleName = "Applicant";
+    private readonly ISupportStaffApplicantsRepository _applicantsRepository;
 
-    private readonly IUserRepository _userRepository;
-
-    public SupportStaffApplicantsService(IUserRepository userRepository)
+    public SupportStaffApplicantsService(ISupportStaffApplicantsRepository applicantsRepository)
     {
-        _userRepository = userRepository;
+        _applicantsRepository = applicantsRepository;
     }
 
-    public async Task<IReadOnlyList<SupportStaffApplicantListItemResponse>> GetApplicantsAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<SupportStaffApplicantListItemResponse>> SearchApplicantsAsync(
+        string? search, CancellationToken cancellationToken = default)
     {
-        var users = await _userRepository.GetAllAsync(cancellationToken);
-        return users
-            .Where(u => u.RoleName == ApplicantRoleName)
-            .Select(u => u.ToSupportStaffApplicantResponse())
-            .ToList();
+        var items = await _applicantsRepository.SearchAsync(search, cancellationToken);
+        return items.Select(item => item.ToResponse()).ToList();
     }
 }

@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { listPendingAndFlaggedDocuments, reviewDocument } from "../api/supportStaffDocumentsApi.js";
+import { Link, useSearchParams } from "react-router-dom";
+import {
+  listDocumentsForApplicant,
+  listPendingAndFlaggedDocuments,
+  reviewDocument,
+} from "../api/supportStaffDocumentsApi.js";
 import { ApiError } from "../api/apiClient.js";
 import "./SupportStaffDocumentsPage.css";
 
@@ -14,7 +18,12 @@ function formatDateTime(isoDateTime) {
   });
 }
 
+const REVIEWABLE_STATUSES = new Set(["Pending", "Flagged"]);
+
 export default function SupportStaffDocumentsPage() {
+  const [searchParams] = useSearchParams();
+  const applicantId = searchParams.get("applicantId");
+
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -28,7 +37,9 @@ export default function SupportStaffDocumentsPage() {
   const loadDocuments = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await listPendingAndFlaggedDocuments();
+      const data = applicantId
+        ? await listDocumentsForApplicant(applicantId)
+        : await listPendingAndFlaggedDocuments();
       setDocuments(data);
       setErrorMessage(null);
     } catch (error) {
@@ -36,7 +47,7 @@ export default function SupportStaffDocumentsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [applicantId]);
 
   useEffect(() => {
     loadDocuments();
@@ -88,17 +99,36 @@ export default function SupportStaffDocumentsPage() {
     }
   }
 
+  const applicantName = documents[0]?.applicantName;
+
   return (
     <main className="ss-documents-page">
       <div className="ss-documents-shell">
-        <Link className="ss-documents-back-link" to="/portal">
-          &larr; Back to dashboard
+        <Link className="ss-documents-back-link" to={applicantId ? "/support-staff/applicants" : "/portal"}>
+          &larr; {applicantId ? "Back to Applicant Records" : "Back to dashboard"}
         </Link>
         <h1>Document Verification</h1>
-        <p className="ss-documents-subtitle">
-          Documents awaiting review or currently flagged. Rejecting or flagging a document requires a reason; the
-          applicant can re-upload a corrected document afterward.
-        </p>
+
+        {applicantId ? (
+          <p className="ss-documents-subtitle">
+            {applicantName ? (
+              <>
+                Showing every document for <strong>{applicantName}</strong>, any status.
+              </>
+            ) : (
+              "Showing every document for this applicant, any status."
+            )}{" "}
+            <Link className="ss-documents-queue-link" to="/support-staff/documents">
+              View the full verification queue
+            </Link>
+            {" instead."}
+          </p>
+        ) : (
+          <p className="ss-documents-subtitle">
+            Documents awaiting review or currently flagged. Rejecting or flagging a document requires a reason; the
+            applicant can re-upload a corrected document afterward.
+          </p>
+        )}
 
         <section className="ss-documents-card">
           {errorMessage && (
@@ -110,7 +140,11 @@ export default function SupportStaffDocumentsPage() {
           {isLoading ? (
             <p>Loading...</p>
           ) : documents.length === 0 ? (
-            <p>No documents are awaiting review or flagged right now.</p>
+            <p>
+              {applicantId
+                ? "This applicant hasn't uploaded any documents yet."
+                : "No documents are awaiting review or flagged right now."}
+            </p>
           ) : (
             <table className="ss-documents-table">
               <thead>
@@ -131,9 +165,7 @@ export default function SupportStaffDocumentsPage() {
                     </td>
                     <td>{document.documentType}</td>
                     <td>
-                      <span className={document.status === "Flagged" ? "status-flagged" : "status-pending"}>
-                        {document.status}
-                      </span>
+                      <span className={`status-${document.status.toLowerCase()}`}>{document.status}</span>
                       {document.flaggedReason && (
                         <span className="ss-documents-reason">Reason: {document.flaggedReason}</span>
                       )}
@@ -145,7 +177,7 @@ export default function SupportStaffDocumentsPage() {
                     </td>
                     <td>{formatDateTime(document.uploadedAt)}</td>
                     <td className="ss-documents-actions-cell">
-                      {reasonPromptId === document.documentId ? (
+                      {!REVIEWABLE_STATUSES.has(document.status) ? null : reasonPromptId === document.documentId ? (
                         <div className="ss-documents-reason-form">
                           <textarea
                             rows={2}

@@ -95,6 +95,26 @@
   font-weight: 600;
 }
 
+.status-verified {
+  color: #1e7e34;
+  font-weight: 600;
+}
+
+.status-rejected {
+  color: #c0392b;
+  font-weight: 600;
+}
+
+.ss-documents-queue-link {
+  color: #2f6fed;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ss-documents-queue-link:hover {
+  text-decoration: underline;
+}
+
 .ss-documents-reason,
 .ss-documents-reviewed-by {
   display: block;

@@ -16,6 +16,25 @@ export async function listPendingAndFlaggedDocuments() {
   return data;
 }
 
+export async function listDocumentsForApplicant(applicantUserId) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/support-staff/documents?userId=${encodeURIComponent(applicantUserId)}`,
+    {
+      method: "GET",
+      credentials: "include",
+    },
+  );
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const message = extractErrorMessage(data) ?? "Failed to load documents.";
+    throw new ApiError(message, response.status);
+  }
+
+  return data;
+}
+
 export async function reviewDocument(documentId, { status, reason }) {
   const response = await fetch(`${API_BASE_URL}/api/support-staff/documents/${documentId}/review`, {
     method: "POST",
