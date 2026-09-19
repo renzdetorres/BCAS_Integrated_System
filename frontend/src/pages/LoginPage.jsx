@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Mail, Lock } from "lucide-react";
 import { loginUser, ApiError } from "../api/authApi.js";
 import { useSession } from "../context/SessionContext.jsx";
-import "./LoginPage.css";
+import AuthShell from "../components/auth/AuthShell.jsx";
+import AuthField from "../components/auth/AuthField.jsx";
 
 const initialForm = { email: "", password: "" };
 
@@ -13,7 +15,6 @@ export default function LoginPage() {
   const { session, isLoading, setSession } = useSession();
   const navigate = useNavigate();
 
-  // Already signed in (e.g. navigated here directly) - go straight to the portal.
   useEffect(() => {
     if (!isLoading && session) {
       navigate("/portal", { replace: true });
@@ -35,8 +36,6 @@ export default function LoginPage() {
       setSession(user);
       navigate("/portal", { replace: true });
     } catch (error) {
-      // Same generic message regardless of whether the email exists,
-      // mirroring the API's no-enumeration behavior.
       setErrorMessage(
         error instanceof ApiError ? error.message : "Something went wrong. Please try again."
       );
@@ -47,60 +46,76 @@ export default function LoginPage() {
 
   if (isLoading || session) {
     return (
-      <main className="login-page">
-        <div style={{ color: "#5c6b7a" }}>Loading...</div>
-      </main>
+      <div className="flex min-h-screen items-center justify-center bg-page text-slate-400">
+        Loading...
+      </div>
     );
   }
 
   return (
-    <main className="login-page">
-      <div className="login-card">
-        <h1>Log In</h1>
-        <p className="login-subtitle">Sign in to continue to your application.</p>
+    <AuthShell>
+      <h1 className="text-2xl font-extrabold text-slate-900">Welcome Back!</h1>
+      <p className="mt-1 text-sm text-slate-500">Please log in to your applicant account</p>
 
-        <form onSubmit={handleSubmit} noValidate>
-          <div className="form-row">
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={form.email}
-              onChange={handleChange}
-            />
+      <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-4">
+        <div>
+          <label htmlFor="email" className="mb-1 block text-sm font-medium text-slate-700">
+            Email Address
+          </label>
+          <AuthField
+            icon={Mail}
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={form.email}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div>
+          <div className="mb-1 flex items-center justify-between">
+            <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+              Password
+            </label>
+            <Link to="/forgot-password" className="text-xs font-semibold text-forest hover:underline">
+              Forgot Password?
+            </Link>
           </div>
+          <AuthField
+            icon={Lock}
+            isPassword
+            id="password"
+            name="password"
+            autoComplete="current-password"
+            required
+            value={form.password}
+            onChange={handleChange}
+          />
+        </div>
 
-          <div className="form-row">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={form.password}
-              onChange={handleChange}
-            />
-          </div>
+        {errorMessage && (
+          <p className="text-sm font-medium text-status-red" role="alert">
+            {errorMessage}
+          </p>
+        )}
 
-          {errorMessage && (
-            <p className="form-error" role="alert">
-              {errorMessage}
-            </p>
-          )}
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full rounded-lg bg-forest py-2.5 text-sm font-semibold text-white transition-colors hover:bg-forest-dark disabled:opacity-60"
+        >
+          {isSubmitting ? "Logging in..." : "Login"}
+        </button>
+      </form>
 
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Signing in..." : "Log In"}
-          </button>
-        </form>
-
-        <Link className="login-link" to="/register">
-          Need an account? Register
+      <p className="mt-4 text-center text-sm text-slate-500">
+        Don't have an account?{" "}
+        <Link to="/register" className="font-semibold text-forest hover:underline">
+          Register here
         </Link>
-      </div>
-    </main>
+      </p>
+    </AuthShell>
   );
 }
