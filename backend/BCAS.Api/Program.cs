@@ -79,6 +79,7 @@ builder.Services.AddScoped<ISupportStaffDocumentsRepository, SupportStaffDocumen
 builder.Services.AddScoped<ISupportStaffDocumentsService, SupportStaffDocumentsService>();
 builder.Services.AddScoped<ISupportStaffApplicantsRepository, SupportStaffApplicantsRepository>();
 builder.Services.AddScoped<ISupportStaffApplicantsService, SupportStaffApplicantsService>();
+builder.Services.AddScoped<ISupportStaffSettingsService, SupportStaffSettingsService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

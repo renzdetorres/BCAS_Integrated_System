@@ -60,6 +60,9 @@ export default function SupportStaffDashboardPage() {
           <Link className="ss-dashboard-link" to="/support-staff/documents/archive">
             Document Archive
           </Link>
+          <Link className="ss-dashboard-link" to="/support-staff/settings">
+            Settings
+          </Link>
         </div>
 
         {isLoading && (
