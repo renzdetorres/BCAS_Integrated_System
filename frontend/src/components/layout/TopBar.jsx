@@ -53,7 +53,7 @@ export default function TopBar({ onMenuClick, rolePill, notificationCount = 0, s
               <span className="block text-sm font-semibold leading-tight text-slate-800">
                 {session?.firstName} {session?.lastName}
               </span>
-              <span className="block text-xs leading-tight text-slate-400">{session?.role}</span>
+              <span className="block text-xs leading-tight text-slate-400">{rolePill}</span>
             </span>
             <ChevronDown size={16} className="text-slate-400" />
           </button>

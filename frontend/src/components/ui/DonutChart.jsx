@@ -9,7 +9,8 @@ const HEX = {
 
 /** `data`: [{ label, value, color }] where color is a key of HEX. */
 export default function DonutChart({ data }) {
-  const total = data.reduce((sum, d) => sum + d.value, 0) || 1;
+  const rawTotal = data.reduce((sum, d) => sum + d.value, 0);
+  const total = rawTotal || 1; // avoid divide-by-zero in the angle math below
   let cumulative = 0;
   const stops = data
     .map((d) => {
@@ -24,11 +25,11 @@ export default function DonutChart({ data }) {
     <div className="flex items-center gap-6">
       <div
         className="h-36 w-36 shrink-0 rounded-full"
-        style={{ background: total > 0 ? `conic-gradient(${stops})` : "#E2E8F0" }}
+        style={{ background: rawTotal > 0 ? `conic-gradient(${stops})` : "#E2E8F0" }}
       >
         <div className="flex h-full w-full items-center justify-center">
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white text-lg font-extrabold text-slate-800">
-            {total}
+            {rawTotal}
           </div>
         </div>
       </div>
