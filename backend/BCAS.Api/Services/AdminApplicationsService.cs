@@ -12,17 +12,20 @@ public class AdminApplicationsService : IAdminApplicationsService
     private readonly IExamScheduleRepository _examScheduleRepository;
     private readonly IApplicantDocumentService _documentService;
     private readonly IApplicationStatusHistoryRepository _statusHistoryRepository;
+    private readonly INotificationDispatchService _notificationDispatchService;
 
     public AdminApplicationsService(
         IAdminApplicationsRepository applicationsRepository,
         IExamScheduleRepository examScheduleRepository,
         IApplicantDocumentService documentService,
-        IApplicationStatusHistoryRepository statusHistoryRepository)
+        IApplicationStatusHistoryRepository statusHistoryRepository,
+        INotificationDispatchService notificationDispatchService)
     {
         _applicationsRepository = applicationsRepository;
         _examScheduleRepository = examScheduleRepository;
         _documentService = documentService;
         _statusHistoryRepository = statusHistoryRepository;
+        _notificationDispatchService = notificationDispatchService;
     }
 
     public async Task<IReadOnlyList<AdminApplicationListItemResponse>> SearchAsync(
@@ -99,6 +102,23 @@ public class AdminApplicationsService : IAdminApplicationsService
 
         await _statusHistoryRepository.InsertAsync(
             applicationId, category, existing.Status, status, request.Remarks, changedByUserId, cancellationToken);
+
+        // Application/Scholarship Result notification (BISAASS-59) - only
+        // for an actual decision, not every intermediate status change.
+        if (status is "Approved" or "Rejected")
+        {
+            var applicantFirstName = updated.ApplicantName.Split(' ', 2)[0];
+            if (category == "Admission")
+            {
+                await _notificationDispatchService.NotifyApplicationResultAsync(
+                    updated.UserId, updated.ApplicantEmail, applicantFirstName, status, updated.CourseAppliedFor ?? "your program", cancellationToken);
+            }
+            else
+            {
+                await _notificationDispatchService.NotifyScholarshipResultAsync(
+                    updated.UserId, updated.ApplicantEmail, applicantFirstName, status, updated.ScholarshipName ?? "the scholarship", cancellationToken);
+            }
+        }
 
         var steps = await BuildStepsAsync(
             updated, new Dictionary<Guid, DocumentChecklistResponse?>(), new Dictionary<Guid, bool>(), cancellationToken);

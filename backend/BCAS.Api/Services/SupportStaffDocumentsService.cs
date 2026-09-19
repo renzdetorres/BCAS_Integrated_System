@@ -9,10 +9,13 @@ namespace BCAS.Api.Services;
 public class SupportStaffDocumentsService : ISupportStaffDocumentsService
 {
     private readonly ISupportStaffDocumentsRepository _documentsRepository;
+    private readonly INotificationDispatchService _notificationDispatchService;
 
-    public SupportStaffDocumentsService(ISupportStaffDocumentsRepository documentsRepository)
+    public SupportStaffDocumentsService(
+        ISupportStaffDocumentsRepository documentsRepository, INotificationDispatchService notificationDispatchService)
     {
         _documentsRepository = documentsRepository;
+        _notificationDispatchService = notificationDispatchService;
     }
 
     public async Task<IReadOnlyList<AdminDocumentListItemResponse>> GetPendingAndFlaggedAsync(CancellationToken cancellationToken = default)
@@ -64,6 +67,14 @@ public class SupportStaffDocumentsService : ISupportStaffDocumentsService
         // low-stakes race here.
         var updated = await _documentsRepository.ReviewAsync(documentId, request.Status, reason, reviewedByUserId, cancellationToken)
             ?? throw new DocumentAlreadyReviewedException(documentId, existing.Status);
+
+        // Document Flagged/Rejected notification (BISAASS-59) - Verified isn't part of this event.
+        if (request.Status is "Flagged" or "Rejected")
+        {
+            var applicantFirstName = updated.ApplicantName.Split(' ', 2)[0];
+            await _notificationDispatchService.NotifyDocumentReviewedAsync(
+                updated.UserId, updated.ApplicantEmail, applicantFirstName, updated.DocumentType, request.Status, reason!, cancellationToken);
+        }
 
         return updated.ToResponse();
     }

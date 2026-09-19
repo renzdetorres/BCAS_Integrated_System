@@ -10,9 +10,12 @@ public interface IAdminExamPermitService
 
     /// <summary>
     /// Generates and releases the applicant's exam permit - idempotent if
-    /// already released. Throws NoExamScheduleSelectedException if the
-    /// applicant hasn't selected a schedule, or DocumentsNotVerifiedException
-    /// if their required documents aren't all verified yet.
+    /// already released (a repeat call never re-emails). The first release
+    /// emails the applicant (Exam Permit Available, BISAASS-59), subject to
+    /// their own notification preference. Throws
+    /// NoExamScheduleSelectedException if the applicant hasn't selected a
+    /// schedule, or DocumentsNotVerifiedException if their required
+    /// documents aren't all verified yet.
     /// </summary>
     Task<AdminExamPermitListItemResponse> ReleaseAsync(Guid userId, Guid releasedByUserId, CancellationToken cancellationToken = default);
 }

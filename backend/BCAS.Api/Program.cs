@@ -17,6 +17,7 @@ builder.Services.AddSwaggerGen();
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("Jwt configuration section is missing.");
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection(SmtpOptions.SectionName));
 
 builder.Services.AddSingleton<IDbConnectionFactory, SqlConnectionFactory>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
@@ -81,6 +82,10 @@ builder.Services.AddScoped<ISupportStaffApplicantsRepository, SupportStaffApplic
 builder.Services.AddScoped<ISupportStaffApplicantsService, SupportStaffApplicantsService>();
 builder.Services.AddScoped<ISupportStaffSettingsService, SupportStaffSettingsService>();
 builder.Services.AddScoped<IApplicationStatusHistoryRepository, ApplicationStatusHistoryRepository>();
+builder.Services.AddScoped<INotificationPreferenceRepository, NotificationPreferenceRepository>();
+builder.Services.AddScoped<INotificationPreferenceService, NotificationPreferenceService>();
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+builder.Services.AddScoped<INotificationDispatchService, NotificationDispatchService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
