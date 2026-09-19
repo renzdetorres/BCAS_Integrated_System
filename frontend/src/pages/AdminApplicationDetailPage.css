@@ -213,6 +213,42 @@
   color: #b3791a;
 }
 
+.admin-app-status-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-app-status-history li {
+  padding: 10px 12px;
+  background: #f9fbff;
+  border-radius: 8px;
+}
+
+.admin-app-status-history-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 0.9rem;
+  color: #1a2332;
+}
+
+.admin-app-status-history-line span {
+  font-size: 0.75rem;
+  color: #5c6b7a;
+  white-space: nowrap;
+}
+
+.admin-app-status-history-meta {
+  margin-top: 4px;
+  font-size: 0.8rem;
+  color: #5c6b7a;
+}
+
 .tracking-stepper {
   list-style: none;
   margin: 0;

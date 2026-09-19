@@ -80,6 +80,7 @@ builder.Services.AddScoped<ISupportStaffDocumentsService, SupportStaffDocumentsS
 builder.Services.AddScoped<ISupportStaffApplicantsRepository, SupportStaffApplicantsRepository>();
 builder.Services.AddScoped<ISupportStaffApplicantsService, SupportStaffApplicantsService>();
 builder.Services.AddScoped<ISupportStaffSettingsService, SupportStaffSettingsService>();
+builder.Services.AddScoped<IApplicationStatusHistoryRepository, ApplicationStatusHistoryRepository>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

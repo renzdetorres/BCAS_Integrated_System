@@ -48,7 +48,10 @@ public class AdminApplicationsController : ControllerBase
     /// <summary>
     /// Admin-only (BISAASS-31): sets an admission or scholarship
     /// application's status, with optional remarks. Category must match
-    /// the application's own category (Admission or Scholarship).
+    /// the application's own category (Admission or Scholarship). For an
+    /// Admission application, the new status must be a forward move
+    /// through the ordered workflow (BISAASS-56); every change is recorded
+    /// in the status-history audit trail regardless of category.
     /// </summary>
     [HttpPatch("{applicationId:guid}/status")]
     [ProducesResponseType(typeof(AdminApplicationListItemResponse), StatusCodes.Status200OK)]
@@ -61,7 +64,7 @@ public class AdminApplicationsController : ControllerBase
     {
         try
         {
-            var updated = await _applicationsService.UpdateStatusAsync(applicationId, request, cancellationToken);
+            var updated = await _applicationsService.UpdateStatusAsync(applicationId, request, User.GetUserId(), cancellationToken);
             return Ok(updated);
         }
         catch (InvalidApplicationCategoryException ex)
@@ -81,6 +84,45 @@ public class AdminApplicationsController : ControllerBase
                 Detail = ex.Message,
                 Status = StatusCodes.Status400BadRequest,
             });
+        }
+        catch (InvalidStatusTransitionException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Invalid status transition",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (ApplicationNotFoundException ex)
+        {
+            return NotFound(new ProblemDetails
+            {
+                Title = "Application not found",
+                Detail = ex.Message,
+                Status = StatusCodes.Status404NotFound,
+            });
+        }
+    }
+
+    /// <summary>
+    /// Admin-only (BISAASS-56): the full status-change audit trail for one
+    /// application, oldest first - who changed it, when, and any remarks
+    /// given at the time. Category must match the application's own
+    /// category (Admission or Scholarship).
+    /// </summary>
+    [HttpGet("{applicationId:guid}/status-history")]
+    [ProducesResponseType(typeof(IReadOnlyList<ApplicationStatusHistoryEntryResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyList<ApplicationStatusHistoryEntryResponse>>> GetStatusHistory(
+        Guid applicationId,
+        [FromQuery] string category,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var history = await _applicationsService.GetStatusHistoryAsync(applicationId, category, cancellationToken);
+            return Ok(history);
         }
         catch (ApplicationNotFoundException ex)
         {

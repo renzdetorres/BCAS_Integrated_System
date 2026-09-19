@@ -14,15 +14,31 @@ public interface IAdminApplicationsService
 
     /// <summary>
     /// Admin-only (BISAASS-31): sets an application's Status, with optional
-    /// remarks. Throws InvalidApplicationCategoryException if
+    /// remarks, and records the change in the status-history audit trail
+    /// (BISAASS-56). Throws InvalidApplicationCategoryException if
     /// request.Category isn't Admission/Scholarship,
     /// InvalidApplicationStatusException if request.Status isn't allowed
-    /// for that category, or ApplicationNotFoundException if no
-    /// application with that id exists in the given category.
+    /// for that category, InvalidStatusTransitionException if an Admission
+    /// application's status wouldn't move forward through the ordered
+    /// workflow (Submitted -> UnderReview -> Approved|Rejected), or
+    /// ApplicationNotFoundException if no application with that id exists
+    /// in the given category.
     /// </summary>
     Task<AdminApplicationListItemResponse> UpdateStatusAsync(
         Guid applicationId,
         UpdateApplicationStatusRequest request,
+        Guid changedByUserId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Admin-only (BISAASS-56): every recorded status change for one
+    /// application, oldest first, plus who made each change (null for the
+    /// initial submission). Throws ApplicationNotFoundException if no
+    /// application with that id exists in the given category.
+    /// </summary>
+    Task<IReadOnlyList<ApplicationStatusHistoryEntryResponse>> GetStatusHistoryAsync(
+        Guid applicationId,
+        string category,
         CancellationToken cancellationToken = default);
 
     /// <summary>

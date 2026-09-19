@@ -1148,3 +1148,43 @@ BEGIN
         CONSTRAINT FK_ApplicantDocuments_ReviewedBy FOREIGN KEY (ReviewedByUserId) REFERENCES dbo.Users (UserId);
 END
 GO
+
+-- -----------------------------------------------------------------------------
+-- BISAASS-56 Admission Status Workflow Engine
+-- Until now, an application's Status changes (BISAASS-31) only ever
+-- overwrote AdmissionApplications.Remarks/UpdatedAt in place - the previous
+-- status and who made the change were never kept. This table is the
+-- missing audit trail: one row per status change, oldest first, shared by
+-- both categories (Category same convention as vw_ApplicationHistory)
+-- since Admin-Registrar updates both through the same
+-- AdminApplicationsService.UpdateStatusAsync endpoint. ChangedByUserId is
+-- nullable to also record an application's initial Submitted row, logged
+-- by the applicant themselves at creation (AdmissionApplicationService.
+-- SubmitAsync) rather than by staff. FromStatus is nullable for that same
+-- initial row (nothing to transition from). AdminApplicationsService
+-- additionally enforces that a Status change for an Admission application
+-- can only move forward through Submitted -> UnderReview -> Approved|
+-- Rejected, and never once Approved/Rejected is reached (see
+-- AdmissionWorkflowConstants) - the ordered-workflow half of this
+-- ticket's acceptance criteria; this table is the auditable half.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.ApplicationStatusHistory', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ApplicationStatusHistory
+    (
+        HistoryId       UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_ApplicationStatusHistory_HistoryId DEFAULT NEWID(),
+        ApplicationId   UNIQUEIDENTIFIER NOT NULL,
+        Category        NVARCHAR(20)     NOT NULL,
+        FromStatus      NVARCHAR(30)     NULL,
+        ToStatus        NVARCHAR(30)     NOT NULL,
+        Remarks         NVARCHAR(1000)   NULL,
+        ChangedByUserId UNIQUEIDENTIFIER NULL,
+        ChangedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_ApplicationStatusHistory_ChangedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_ApplicationStatusHistory PRIMARY KEY (HistoryId),
+        CONSTRAINT FK_ApplicationStatusHistory_ChangedBy FOREIGN KEY (ChangedByUserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT CK_ApplicationStatusHistory_Category CHECK (Category IN (N'Admission', N'Scholarship'))
+    );
+
+    CREATE NONCLUSTERED INDEX IX_ApplicationStatusHistory_Application ON dbo.ApplicationStatusHistory (ApplicationId, Category, ChangedAt);
+END
+GO

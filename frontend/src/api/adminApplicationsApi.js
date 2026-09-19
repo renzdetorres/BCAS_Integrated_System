@@ -16,6 +16,22 @@ export const SCHOLARSHIP_STATUSES = [
 // sync with the backend's ArchiveConstants.ArchivableStatuses.
 export const ARCHIVABLE_STATUSES = ["Approved", "Rejected"];
 
+// Admission's ordered workflow (BISAASS-56) - kept in sync with the
+// backend's AdmissionWorkflowConstants. Approved and Rejected share a rank
+// (both terminal, neither leads anywhere else). Scholarship's Admin
+// override deliberately stays free-form (any ADMISSION_STATUSES-style
+// pick), so it has no equivalent list.
+const ADMISSION_STAGE_RANK = { Submitted: 0, UnderReview: 1, Approved: 2, Rejected: 2 };
+
+// Every Admission status that's a valid forward move from currentStatus -
+// empty once a decision (Approved/Rejected) has been recorded, since the
+// workflow never changes after that.
+export function getValidNextAdmissionStatuses(currentStatus) {
+  const currentRank = ADMISSION_STAGE_RANK[currentStatus] ?? 0;
+  if (currentRank >= 2) return [];
+  return ADMISSION_STATUSES.filter((status) => ADMISSION_STAGE_RANK[status] > currentRank);
+}
+
 export async function searchApplications({ search, status, category, program, archived } = {}) {
   const params = new URLSearchParams();
   if (search) params.set("search", search);
@@ -53,6 +69,20 @@ export async function updateApplicationStatus(applicationId, { category, status,
   }
 
   return data;
+}
+
+export async function getApplicationStatusHistory(applicationId, category) {
+  const params = new URLSearchParams({ category });
+  const response = await fetch(`${API_BASE_URL}/api/admin/applications/${applicationId}/status-history?${params}`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new ApiError("Failed to load this application's status history.", response.status);
+  }
+
+  return response.json();
 }
 
 export async function archiveApplication(applicationId, { category, reason }) {
