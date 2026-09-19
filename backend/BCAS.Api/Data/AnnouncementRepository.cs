@@ -74,15 +74,21 @@ VALUES (@Category, @Title, @Body, 0);";
         return MapAnnouncement(reader);
     }
 
-    public async Task<Announcement?> SetActiveStatusAsync(
+    public async Task<(Announcement? Announcement, bool WasActive)> SetActiveStatusAsync(
         int announcementId, bool isActive, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
+        // WasActive (the pre-update value, via the OUTPUT clause's deleted
+        // pseudo-table) rides along on the same atomic UPDATE, rather than
+        // a separate SELECT beforehand - the only way to tell "newly
+        // posted" from "already active" without a race between two
+        // concurrent calls (e.g. a double-clicked Post button) both seeing
+        // "not yet active" and both broadcasting the announcement email.
         const string sql = @"
 UPDATE dbo.Announcements
 SET IsActive = @IsActive
-" + OutputColumns + @"
+OUTPUT deleted.IsActive AS WasActive, inserted.AnnouncementId, inserted.Category, inserted.Title, inserted.Body, inserted.IsActive, inserted.PostedAt
 WHERE AnnouncementId = @AnnouncementId;";
 
         await using var command = new SqlCommand(sql, connection);
@@ -90,7 +96,13 @@ WHERE AnnouncementId = @AnnouncementId;";
         command.Parameters.Add(new SqlParameter("@AnnouncementId", SqlDbType.Int) { Value = announcementId });
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        return await reader.ReadAsync(cancellationToken) ? MapAnnouncement(reader) : null;
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return (null, false);
+        }
+
+        var wasActive = reader.GetBoolean(reader.GetOrdinal("WasActive"));
+        return (MapAnnouncement(reader), wasActive);
     }
 
     private const string SelectColumns = "SELECT AnnouncementId, Category, Title, Body, IsActive, PostedAt";

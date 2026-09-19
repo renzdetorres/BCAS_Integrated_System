@@ -40,7 +40,7 @@ public class NotificationPreferencesController : ControllerBase
     {
         try
         {
-            var updated = await _preferenceService.SetMyPreferenceAsync(User.GetUserId(), notificationType, request.IsEnabled, cancellationToken);
+            var updated = await _preferenceService.SetMyPreferenceAsync(User.GetUserId(), notificationType, request.IsEnabled!.Value, cancellationToken);
             return Ok(updated);
         }
         catch (InvalidNotificationTypeException ex)
