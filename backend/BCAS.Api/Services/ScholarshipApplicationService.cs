@@ -12,6 +12,8 @@ public class ScholarshipApplicationService : IScholarshipApplicationService
     private readonly IApplicantProfileRepository _profileRepository;
     private readonly ISystemSettingsRepository _systemSettingsRepository;
     private readonly IApplicationStatusHistoryRepository _statusHistoryRepository;
+    private readonly IUserRepository _userRepository;
+    private readonly INotificationDispatchService _notificationDispatchService;
     private readonly ILogger<ScholarshipApplicationService> _logger;
 
     public ScholarshipApplicationService(
@@ -19,12 +21,16 @@ public class ScholarshipApplicationService : IScholarshipApplicationService
         IApplicantProfileRepository profileRepository,
         ISystemSettingsRepository systemSettingsRepository,
         IApplicationStatusHistoryRepository statusHistoryRepository,
+        IUserRepository userRepository,
+        INotificationDispatchService notificationDispatchService,
         ILogger<ScholarshipApplicationService> logger)
     {
         _applicationRepository = applicationRepository;
         _profileRepository = profileRepository;
         _systemSettingsRepository = systemSettingsRepository;
         _statusHistoryRepository = statusHistoryRepository;
+        _userRepository = userRepository;
+        _notificationDispatchService = notificationDispatchService;
         _logger = logger;
     }
 
@@ -54,6 +60,14 @@ public class ScholarshipApplicationService : IScholarshipApplicationService
         // no prior status and this is the applicant's own action, not staff's.
         await _statusHistoryRepository.InsertAsync(
             application.ApplicationId, "Scholarship", fromStatus: null, toStatus: application.Status, remarks: null, changedByUserId: null, cancellationToken);
+
+        // Application Received notification (BISAASS-59).
+        var applicant = await _userRepository.GetByIdAsync(userId, cancellationToken);
+        if (applicant is not null)
+        {
+            await _notificationDispatchService.NotifyApplicationReceivedAsync(
+                userId, applicant.Email, applicant.FirstName, "Scholarship", application.ScholarshipName, cancellationToken);
+        }
 
         _logger.LogInformation(
             "Scholarship application {ApplicationId} submitted by {UserId} for scholarship {ScholarshipId}",

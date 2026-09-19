@@ -20,8 +20,10 @@ public interface ISupportStaffDocumentsService
     /// ordered document lifecycle (BISAASS-58): only a document currently
     /// Pending or Flagged can be reviewed - Verified/Rejected are terminal,
     /// and re-upload is what reopens one of those for another review, by
-    /// resetting it back to Pending. Throws
-    /// InvalidDocumentReviewStatusException if request.Status isn't
+    /// resetting it back to Pending. A Rejected or Flagged outcome also
+    /// emails the applicant (Document Flagged/Rejected, BISAASS-59),
+    /// subject to their own notification preference - Verified doesn't.
+    /// Throws InvalidDocumentReviewStatusException if request.Status isn't
     /// Verified/Rejected/Flagged, DocumentReviewReasonRequiredException if
     /// Rejected/Flagged is missing a reason, DocumentNotFoundException if
     /// no document with that id exists, or DocumentAlreadyReviewedException

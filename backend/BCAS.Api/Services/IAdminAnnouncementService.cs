@@ -20,7 +20,11 @@ public interface IAdminAnnouncementService
     /// Posts (activates) or deactivates an announcement. A deactivated
     /// announcement immediately stops appearing to applicants
     /// (IAnnouncementRepository.GetActiveAsync already filters on
-    /// IsActive) - no further change was needed for that. Throws
+    /// IsActive) - no further change was needed for that. Posting one for
+    /// the first time (inactive -> active) also emails every Applicant
+    /// account, subject to their own notification preference
+    /// (Announcement, BISAASS-59) - toggling an already-active
+    /// announcement, or deactivating one, never re-sends. Throws
     /// AnnouncementNotFoundException if no announcement with that id exists.
     /// </summary>
     Task<AdminAnnouncementResponse> SetActiveStatusAsync(int announcementId, bool isActive, CancellationToken cancellationToken = default);

@@ -7,10 +7,17 @@ namespace BCAS.Api.Services;
 public class ExamScheduleService : IExamScheduleService
 {
     private readonly IExamScheduleRepository _examScheduleRepository;
+    private readonly IUserRepository _userRepository;
+    private readonly INotificationDispatchService _notificationDispatchService;
 
-    public ExamScheduleService(IExamScheduleRepository examScheduleRepository)
+    public ExamScheduleService(
+        IExamScheduleRepository examScheduleRepository,
+        IUserRepository userRepository,
+        INotificationDispatchService notificationDispatchService)
     {
         _examScheduleRepository = examScheduleRepository;
+        _userRepository = userRepository;
+        _notificationDispatchService = notificationDispatchService;
     }
 
     public async Task<IReadOnlyList<ExamScheduleResponse>> GetAvailableAsync(CancellationToken cancellationToken = default)
@@ -31,6 +38,15 @@ public class ExamScheduleService : IExamScheduleService
         CancellationToken cancellationToken = default)
     {
         var selection = await _examScheduleRepository.SelectAsync(userId, request.ExamScheduleId!.Value, cancellationToken);
+
+        // Exam Schedule notification (BISAASS-59).
+        var applicant = await _userRepository.GetByIdAsync(userId, cancellationToken);
+        if (applicant is not null)
+        {
+            await _notificationDispatchService.NotifyExamScheduleAsync(
+                userId, applicant.Email, applicant.FirstName, selection.ExamDate, selection.ExamTime, selection.Venue, cancellationToken);
+        }
+
         return selection.ToResponse();
     }
 }

@@ -40,7 +40,9 @@ public interface IEvaluatorScholarshipApplicationService
 
     /// <summary>
     /// Academic Head only in practice (enforced by the caller's
-    /// controller): confirms the final Approved/Rejected decision. Throws
+    /// controller): confirms the final Approved/Rejected decision, and
+    /// emails the applicant the result (Scholarship Result, BISAASS-59),
+    /// subject to their own notification preference. Throws
     /// InvalidFinalDecisionException for an unrecognized decision,
     /// ScholarshipApplicationNotFoundException if no application has that
     /// id, or ScholarshipApplicationNotReadyForDecisionException if it

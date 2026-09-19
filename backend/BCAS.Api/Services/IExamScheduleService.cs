@@ -8,6 +8,7 @@ public interface IExamScheduleService
 
     Task<ExamScheduleSelectionResponse?> GetMySelectionAsync(Guid userId, CancellationToken cancellationToken = default);
 
+    /// <summary>Records the applicant's chosen exam schedule and emails them a confirmation (Exam Schedule, BISAASS-59), subject to their own notification preference.</summary>
     Task<ExamScheduleSelectionResponse> SelectAsync(
         Guid userId,
         SelectExamScheduleRequest request,

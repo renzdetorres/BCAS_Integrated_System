@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { changeMyPassword, getMyProfile, saveMyProfile } from "../api/profileApi.js";
+import { getMyNotificationPreferences, setMyNotificationPreference } from "../api/notificationPreferencesApi.js";
 import { ApiError } from "../api/apiClient.js";
 import { useSession } from "../context/SessionContext.jsx";
 import "./ApplicantProfilePage.css";
@@ -48,6 +49,45 @@ export default function ApplicantProfilePage() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordError, setPasswordError] = useState(null);
   const [passwordSaved, setPasswordSaved] = useState(null);
+
+  const [preferences, setPreferences] = useState([]);
+  const [isLoadingPreferences, setIsLoadingPreferences] = useState(true);
+  const [preferencesError, setPreferencesError] = useState(null);
+  const [pendingPreferenceType, setPendingPreferenceType] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getMyNotificationPreferences()
+      .then((data) => {
+        if (!cancelled) setPreferences(data);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setPreferencesError(error instanceof ApiError ? error.message : "Failed to load notification preferences.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingPreferences(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function handlePreferenceToggle(preference) {
+    setPendingPreferenceType(preference.notificationType);
+    setPreferencesError(null);
+    try {
+      const updated = await setMyNotificationPreference(preference.notificationType, !preference.isEnabled);
+      setPreferences((prev) => prev.map((p) => (p.notificationType === updated.notificationType ? updated : p)));
+    } catch (error) {
+      setPreferencesError(error instanceof ApiError ? error.message : "Failed to update notification preference.");
+    } finally {
+      setPendingPreferenceType(null);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -324,6 +364,46 @@ export default function ApplicantProfilePage() {
               {isChangingPassword ? "Changing password..." : "Change Password"}
             </button>
           </form>
+        </section>
+
+        <section className="profile-card">
+          <h2>Notification Preferences</h2>
+          <p className="profile-subtitle">
+            Choose which updates you'd like emailed to you. Turning one off stops just that type of email - you can
+            turn it back on anytime.
+          </p>
+
+          {preferencesError && (
+            <p className="form-error" role="alert">
+              {preferencesError}
+            </p>
+          )}
+
+          {isLoadingPreferences ? (
+            <p>Loading...</p>
+          ) : (
+            <ul className="notification-preference-list">
+              {preferences.map((preference) => (
+                <li key={preference.notificationType} className="notification-preference-row">
+                  <span className="notification-preference-name">{preference.displayName}</span>
+                  <button
+                    type="button"
+                    className={preference.isEnabled ? "preference-toggle-on" : "preference-toggle-off"}
+                    onClick={() => handlePreferenceToggle(preference)}
+                    disabled={pendingPreferenceType === preference.notificationType}
+                    role="switch"
+                    aria-checked={preference.isEnabled}
+                  >
+                    {pendingPreferenceType === preference.notificationType
+                      ? "Saving..."
+                      : preference.isEnabled
+                        ? "On"
+                        : "Off"}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       </div>
     </main>

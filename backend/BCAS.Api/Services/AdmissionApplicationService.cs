@@ -12,6 +12,8 @@ public class AdmissionApplicationService : IAdmissionApplicationService
     private readonly IApplicantProfileRepository _profileRepository;
     private readonly ISystemSettingsRepository _systemSettingsRepository;
     private readonly IApplicationStatusHistoryRepository _statusHistoryRepository;
+    private readonly IUserRepository _userRepository;
+    private readonly INotificationDispatchService _notificationDispatchService;
     private readonly ILogger<AdmissionApplicationService> _logger;
 
     public AdmissionApplicationService(
@@ -19,12 +21,16 @@ public class AdmissionApplicationService : IAdmissionApplicationService
         IApplicantProfileRepository profileRepository,
         ISystemSettingsRepository systemSettingsRepository,
         IApplicationStatusHistoryRepository statusHistoryRepository,
+        IUserRepository userRepository,
+        INotificationDispatchService notificationDispatchService,
         ILogger<AdmissionApplicationService> logger)
     {
         _applicationRepository = applicationRepository;
         _profileRepository = profileRepository;
         _systemSettingsRepository = systemSettingsRepository;
         _statusHistoryRepository = statusHistoryRepository;
+        _userRepository = userRepository;
+        _notificationDispatchService = notificationDispatchService;
         _logger = logger;
     }
 
@@ -55,6 +61,14 @@ public class AdmissionApplicationService : IAdmissionApplicationService
         // no prior status and this is the applicant's own action, not staff's.
         await _statusHistoryRepository.InsertAsync(
             application.ApplicationId, "Admission", fromStatus: null, toStatus: application.Status, remarks: null, changedByUserId: null, cancellationToken);
+
+        // Application Received notification (BISAASS-59).
+        var applicant = await _userRepository.GetByIdAsync(userId, cancellationToken);
+        if (applicant is not null)
+        {
+            await _notificationDispatchService.NotifyApplicationReceivedAsync(
+                userId, applicant.Email, applicant.FirstName, "Admission", application.CourseAppliedFor, cancellationToken);
+        }
 
         _logger.LogInformation(
             "Admission application {ApplicationId} submitted by {UserId}",

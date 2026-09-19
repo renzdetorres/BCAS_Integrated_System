@@ -9,11 +9,19 @@ public class AdminExamPermitService : IAdminExamPermitService
 {
     private readonly IExamScheduleRepository _examScheduleRepository;
     private readonly IApplicantDocumentService _documentService;
+    private readonly IUserRepository _userRepository;
+    private readonly INotificationDispatchService _notificationDispatchService;
 
-    public AdminExamPermitService(IExamScheduleRepository examScheduleRepository, IApplicantDocumentService documentService)
+    public AdminExamPermitService(
+        IExamScheduleRepository examScheduleRepository,
+        IApplicantDocumentService documentService,
+        IUserRepository userRepository,
+        INotificationDispatchService notificationDispatchService)
     {
         _examScheduleRepository = examScheduleRepository;
         _documentService = documentService;
+        _userRepository = userRepository;
+        _notificationDispatchService = notificationDispatchService;
     }
 
     public async Task<IReadOnlyList<AdminExamPermitListItemResponse>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -41,7 +49,22 @@ public class AdminExamPermitService : IAdminExamPermitService
             throw new DocumentsNotVerifiedException();
         }
 
+        var wasAlreadyReleased = candidate.IsPermitReleased;
         var released = await _examScheduleRepository.ReleasePermitAsync(userId, releasedByUserId, cancellationToken);
+
+        // Exam Permit Available notification (BISAASS-59) - only for an
+        // actual release, not a repeat call on an already-released permit
+        // (ReleasePermitAsync's UPDATE is a no-op in that case).
+        if (!wasAlreadyReleased)
+        {
+            var applicant = await _userRepository.GetByIdAsync(userId, cancellationToken);
+            if (applicant is not null)
+            {
+                await _notificationDispatchService.NotifyExamPermitAvailableAsync(
+                    userId, applicant.Email, applicant.FirstName, cancellationToken);
+            }
+        }
+
         return released!.ToAdminListItemResponse(documentsVerified);
     }
 
