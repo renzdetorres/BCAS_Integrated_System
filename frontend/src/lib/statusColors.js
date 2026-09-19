@@ -8,6 +8,8 @@ const STATUS_COLOR_MAP = {
   active: "green",
   open: "green",
   qualified: "green",
+  reserved: "green",
+  offered: "green",
 
   rejected: "red",
   flagged: "red",

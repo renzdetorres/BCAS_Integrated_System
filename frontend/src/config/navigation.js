@@ -12,6 +12,11 @@ import {
   Users,
   ShieldCheck,
   FileSearch,
+  Archive,
+  Calendar,
+  Ticket,
+  Bookmark,
+  SlidersHorizontal,
 } from "lucide-react";
 
 // Nav config per role for the shared AppShell/Sidebar. `badgeKey` looks up a
@@ -41,7 +46,12 @@ export const PORTAL_NAV = {
       { label: "Announcements", to: "/announcements", icon: Megaphone },
       { label: "Reports", to: "/admin/reports", icon: BarChart3 },
       { label: "Slot Management", to: "/admin/scholarships", icon: Layers },
+      { label: "Exam Schedules", to: "/admin/exam-schedules", icon: Calendar },
+      { label: "Exam Permits", to: "/admin/exam-permits", icon: Ticket },
+      { label: "Reservations", to: "/admin/reservations", icon: Bookmark },
+      { label: "Records Archive", to: "/admin/archive", icon: Archive },
       { label: "Account Management", to: "/admin/users", icon: Users },
+      { label: "System Settings", to: "/admin/settings", icon: SlidersHorizontal },
       { label: "Settings", to: "/settings", icon: Settings },
     ],
   },
