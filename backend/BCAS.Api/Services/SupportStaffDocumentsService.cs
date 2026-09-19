@@ -50,4 +50,11 @@ public class SupportStaffDocumentsService : ISupportStaffDocumentsService
 
         return updated.ToResponse();
     }
+
+    public async Task<IReadOnlyList<AdminDocumentListItemResponse>> SearchArchivedAsync(
+        string? search, string? documentType, CancellationToken cancellationToken = default)
+    {
+        var items = await _documentsRepository.SearchArchivedAsync(search, documentType, cancellationToken);
+        return items.Select(item => item.ToResponse()).ToList();
+    }
 }

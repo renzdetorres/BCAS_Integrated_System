@@ -113,6 +113,36 @@ WHERE d.DocumentId = @DocumentId;";
         return await reader.ReadAsync(cancellationToken) ? MapItem(reader) : null;
     }
 
+    public async Task<IReadOnlyList<AdminDocumentListItem>> SearchArchivedAsync(
+        string? search, string? documentType, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        var sql = $@"
+SELECT {SelectColumns}
+{FromClause}
+WHERE d.IsArchived = 1
+  AND (@Search IS NULL OR u.FirstName LIKE '%' + @Search + '%' OR u.LastName LIKE '%' + @Search + '%' OR u.Email LIKE '%' + @Search + '%')
+  AND (@DocumentType IS NULL OR d.DocumentType = @DocumentType)
+ORDER BY d.UpdatedAt DESC;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@Search", SqlDbType.NVarChar, 256) { Value = (object?)NullIfEmpty(search) ?? DBNull.Value });
+        command.Parameters.Add(new SqlParameter("@DocumentType", SqlDbType.NVarChar, 30) { Value = (object?)NullIfEmpty(documentType) ?? DBNull.Value });
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        var items = new List<AdminDocumentListItem>();
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            items.Add(MapItem(reader));
+        }
+
+        return items;
+    }
+
+    private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
     private static AdminDocumentListItem MapItem(SqlDataReader reader)
     {
         var reviewedByFirstNameOrdinal = reader.GetOrdinal("ReviewedByFirstName");
