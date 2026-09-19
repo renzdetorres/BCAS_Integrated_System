@@ -69,6 +69,22 @@ ORDER BY d.UploadedAt DESC;";
         return items;
     }
 
+    public async Task<AdminDocumentListItem?> GetByIdAsync(Guid documentId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        var sql = $@"
+SELECT {SelectColumns}
+{FromClause}
+WHERE d.DocumentId = @DocumentId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@DocumentId", SqlDbType.UniqueIdentifier) { Value = documentId });
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        return await reader.ReadAsync(cancellationToken) ? MapItem(reader) : null;
+    }
+
     public async Task<AdminDocumentListItem?> ReviewAsync(
         Guid documentId,
         string status,
@@ -78,6 +94,10 @@ ORDER BY d.UploadedAt DESC;";
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
+        // The ordered document lifecycle (BISAASS-58) only reviews a
+        // document that's still Pending or Flagged (never a terminal
+        // Verified/Rejected) - this guard is a concurrency backstop for the
+        // service's own check via GetByIdAsync.
         const string updateSql = @"
 UPDATE dbo.ApplicantDocuments
 SET Status = @Status,
@@ -85,7 +105,7 @@ SET Status = @Status,
     ReviewedByUserId = @ReviewedByUserId,
     ReviewedAt = SYSUTCDATETIME(),
     UpdatedAt = SYSUTCDATETIME()
-WHERE DocumentId = @DocumentId;";
+WHERE DocumentId = @DocumentId AND Status IN (N'Pending', N'Flagged');";
 
         await using (var command = new SqlCommand(updateSql, connection))
         {

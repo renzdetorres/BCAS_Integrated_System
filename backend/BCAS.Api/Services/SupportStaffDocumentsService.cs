@@ -45,8 +45,25 @@ public class SupportStaffDocumentsService : ISupportStaffDocumentsService
             throw new DocumentReviewReasonRequiredException(request.Status);
         }
 
-        var updated = await _documentsRepository.ReviewAsync(documentId, request.Status, reason, reviewedByUserId, cancellationToken)
+        var existing = await _documentsRepository.GetByIdAsync(documentId, cancellationToken)
             ?? throw new DocumentNotFoundException(documentId);
+
+        // The ordered document lifecycle (BISAASS-58): Pending ->
+        // Verified/Flagged/Rejected, where Verified/Rejected are terminal
+        // but Flagged stays reviewable (DocumentReviewConstants.
+        // ReviewableStatuses) - only a fresh upload reopens a
+        // Verified/Rejected document for another review.
+        if (!DocumentReviewConstants.ReviewableStatuses.Contains(existing.Status))
+        {
+            throw new DocumentAlreadyReviewedException(documentId, existing.Status);
+        }
+
+        // A raced concurrent review (someone else reviewed it between the
+        // GetByIdAsync above and this write) surfaces the same way - accurate
+        // enough without a dedicated conflict exception for what's a rare,
+        // low-stakes race here.
+        var updated = await _documentsRepository.ReviewAsync(documentId, request.Status, reason, reviewedByUserId, cancellationToken)
+            ?? throw new DocumentAlreadyReviewedException(documentId, existing.Status);
 
         return updated.ToResponse();
     }

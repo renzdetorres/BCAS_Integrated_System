@@ -40,10 +40,12 @@ public class SupportStaffDocumentsController : ControllerBase
 
     /// <summary>
     /// Support Staff-only: approves (Verified), rejects, or flags a
-    /// document. Rejecting or flagging requires a Reason. Records the
-    /// signed-in Support Staff account as the reviewer. The applicant can
-    /// re-upload a corrected document afterward, which resets it to
-    /// Pending for re-review (ApplicantDocumentRepository.UpsertAsync).
+    /// document. Only works while the document is still Pending or Flagged
+    /// (BISAASS-58) - Verified/Rejected are terminal. Rejecting or flagging
+    /// requires a Reason. Records the signed-in Support Staff account as
+    /// the reviewer. The applicant can re-upload a corrected document
+    /// afterward, which resets it to Pending for re-review
+    /// (ApplicantDocumentRepository.UpsertAsync).
     /// </summary>
     [HttpPost("{documentId:guid}/review")]
     [ProducesResponseType(typeof(AdminDocumentListItemResponse), StatusCodes.Status200OK)]
@@ -73,6 +75,15 @@ public class SupportStaffDocumentsController : ControllerBase
             return BadRequest(new ProblemDetails
             {
                 Title = "Reason required",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (DocumentAlreadyReviewedException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Already reviewed",
                 Detail = ex.Message,
                 Status = StatusCodes.Status400BadRequest,
             });
