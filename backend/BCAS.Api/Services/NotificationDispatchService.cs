@@ -115,33 +115,47 @@ public class NotificationDispatchService : INotificationDispatchService
             return;
         }
 
-        var optedOut = await _preferenceRepository.GetOptedOutUserIdsAsync(
-            recipients.Select(r => r.UserId).ToList(), NotificationEventTypes.Announcement, cancellationToken);
+        // The batched opted-out lookup below is itself a query that can
+        // fail (a transient DB hiccup) - it must be inside the same
+        // try/catch as the sends, not just each individual send, or a
+        // failure here would propagate out of this method entirely and
+        // fail the admin's SetActiveStatusAsync request even though the
+        // announcement was already successfully posted. Every path through
+        // this class only ever logs a failure, per the interface contract.
+        try
+        {
+            var optedOut = await _preferenceRepository.GetOptedOutUserIdsAsync(
+                recipients.Select(r => r.UserId).ToList(), NotificationEventTypes.Announcement, cancellationToken);
 
-        var subject = $"Announcement: {title}";
+            var subject = $"Announcement: {title}";
 
-        // CancellationToken.None rather than the caller's token: we're
-        // still safely inside the admin's HTTP request's async call chain
-        // either way (its DI scope, and everything scoped within it like
-        // the DB connection factory and SmtpClient, stays alive until this
-        // method returns), but a slow broadcast to many recipients
-        // shouldn't be cut short mid-flight just because that request's
-        // own timeout fired.
-        await Parallel.ForEachAsync(
-            recipients.Where(r => !optedOut.Contains(r.UserId)),
-            new ParallelOptions { MaxDegreeOfParallelism = 10 },
-            async (recipient, _) =>
-            {
-                try
+            // CancellationToken.None rather than the caller's token: we're
+            // still safely inside the admin's HTTP request's async call
+            // chain either way (its DI scope, and everything scoped within
+            // it like the DB connection factory and SmtpClient, stays
+            // alive until this method returns), but a slow broadcast to
+            // many recipients shouldn't be cut short mid-flight just
+            // because that request's own timeout fired.
+            await Parallel.ForEachAsync(
+                recipients.Where(r => !optedOut.Contains(r.UserId)),
+                new ParallelOptions { MaxDegreeOfParallelism = 10 },
+                async (recipient, _) =>
                 {
-                    await _emailSender.SendAsync(recipient.Email, subject, $"Hi {recipient.FirstName},\n\n{body}", CancellationToken.None);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(
-                        ex, "Failed to send {NotificationType} email to {UserId}", NotificationEventTypes.Announcement, recipient.UserId);
-                }
-            });
+                    try
+                    {
+                        await _emailSender.SendAsync(recipient.Email, subject, $"Hi {recipient.FirstName},\n\n{body}", CancellationToken.None);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(
+                            ex, "Failed to send {NotificationType} email to {UserId}", NotificationEventTypes.Announcement, recipient.UserId);
+                    }
+                });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to broadcast {NotificationType} email to {RecipientCount} recipients", NotificationEventTypes.Announcement, recipients.Count);
+        }
     }
 
     /// <summary>
