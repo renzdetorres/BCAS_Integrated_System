@@ -20,10 +20,18 @@ public interface ISupportStaffDocumentsRepository
     /// </summary>
     Task<IReadOnlyList<AdminDocumentListItem>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
 
+    /// <summary>One document by id regardless of status, or null if none exists - used to check its current status before reviewing it (BISAASS-58).</summary>
+    Task<AdminDocumentListItem?> GetByIdAsync(Guid documentId, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Approves (Verified), rejects, or flags a document, recording who
-    /// reviewed it and when. Returns the updated document, or null if no
-    /// document with that id exists.
+    /// reviewed it and when. Only applies while the document's status is
+    /// still Pending or Flagged (BISAASS-58's ordered lifecycle - Verified/
+    /// Rejected are terminal) - the caller checks this first via
+    /// GetByIdAsync so it can report a clear DocumentAlreadyReviewedException,
+    /// but the UPDATE itself also guards against a concurrent double-review.
+    /// Returns the updated document, or null if no Pending/Flagged document
+    /// with that id exists.
     /// </summary>
     Task<AdminDocumentListItem?> ReviewAsync(
         Guid documentId,

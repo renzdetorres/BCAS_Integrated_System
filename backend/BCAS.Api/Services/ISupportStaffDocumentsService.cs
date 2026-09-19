@@ -16,11 +16,16 @@ public interface ISupportStaffDocumentsService
     Task<IReadOnlyList<AdminDocumentListItemResponse>> GetByApplicantAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Approves, rejects, or flags a document (BISAASS-52). Throws
+    /// Approves, rejects, or flags a document (BISAASS-52), enforcing the
+    /// ordered document lifecycle (BISAASS-58): only a document currently
+    /// Pending or Flagged can be reviewed - Verified/Rejected are terminal,
+    /// and re-upload is what reopens one of those for another review, by
+    /// resetting it back to Pending. Throws
     /// InvalidDocumentReviewStatusException if request.Status isn't
     /// Verified/Rejected/Flagged, DocumentReviewReasonRequiredException if
-    /// Rejected/Flagged is missing a reason, or DocumentNotFoundException if
-    /// no document with that id exists.
+    /// Rejected/Flagged is missing a reason, DocumentNotFoundException if
+    /// no document with that id exists, or DocumentAlreadyReviewedException
+    /// if it's already Verified or Rejected.
     /// </summary>
     Task<AdminDocumentListItemResponse> ReviewDocumentAsync(
         Guid documentId,
