@@ -102,7 +102,7 @@ public class EvaluatorScholarshipApplicationsController : ControllerBase
     {
         try
         {
-            var detail = await _applicationService.AdvanceWorkflowAsync(applicationId, cancellationToken);
+            var detail = await _applicationService.AdvanceWorkflowAsync(applicationId, User.GetUserId(), cancellationToken);
             return Ok(detail);
         }
         catch (ScholarshipWorkflowCannotAdvanceException ex)

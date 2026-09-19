@@ -78,13 +78,20 @@ public class AdminApplicationsService : IAdminApplicationsService
             throw new ApplicationNotFoundException(applicationId);
         }
 
-        // Only Admission has an ordered workflow to enforce (BISAASS-56) -
-        // Scholarship's Admin override deliberately stays free-form
-        // (ScholarshipWorkflowConstants' own docs), since Evaluator's
-        // forward-only AdvanceWorkflowAsync already enforces order there.
-        if (category == "Admission" && !AdmissionWorkflowConstants.IsForwardTransition(existing.Status, status))
+        // Both categories now enforce their ordered workflow on the Admin
+        // override too (BISAASS-56 for Admission, BISAASS-57 for
+        // Scholarship) - previously this endpoint could set either
+        // category to any allowed status regardless of the current one.
+        var isForwardTransition = category switch
         {
-            throw new InvalidStatusTransitionException(applicationId, existing.Status, status);
+            "Admission" => AdmissionWorkflowConstants.IsForwardTransition(existing.Status, status),
+            "Scholarship" => ScholarshipWorkflowConstants.IsForwardTransition(existing.Status, status),
+            _ => throw new InvalidApplicationCategoryException(category),
+        };
+
+        if (!isForwardTransition)
+        {
+            throw new InvalidStatusTransitionException(applicationId, category, existing.Status, status);
         }
 
         var updated = await _applicationsRepository.UpdateStatusAsync(applicationId, category, status, request.Remarks, cancellationToken)

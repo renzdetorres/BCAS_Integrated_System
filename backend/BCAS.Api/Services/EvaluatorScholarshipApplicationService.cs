@@ -10,15 +10,18 @@ public class EvaluatorScholarshipApplicationService : IEvaluatorScholarshipAppli
 {
     private readonly IEvaluatorScholarshipApplicationRepository _applicationRepository;
     private readonly IApplicantDocumentRepository _documentRepository;
+    private readonly IApplicationStatusHistoryRepository _statusHistoryRepository;
     private readonly ILogger<EvaluatorScholarshipApplicationService> _logger;
 
     public EvaluatorScholarshipApplicationService(
         IEvaluatorScholarshipApplicationRepository applicationRepository,
         IApplicantDocumentRepository documentRepository,
+        IApplicationStatusHistoryRepository statusHistoryRepository,
         ILogger<EvaluatorScholarshipApplicationService> logger)
     {
         _applicationRepository = applicationRepository;
         _documentRepository = documentRepository;
+        _statusHistoryRepository = statusHistoryRepository;
         _logger = logger;
     }
 
@@ -65,6 +68,7 @@ public class EvaluatorScholarshipApplicationService : IEvaluatorScholarshipAppli
 
     public async Task<EvaluatorScholarshipApplicationDetailResponse> AdvanceWorkflowAsync(
         Guid applicationId,
+        Guid evaluatorUserId,
         CancellationToken cancellationToken = default)
     {
         var current = await _applicationRepository.GetDetailAsync(applicationId, cancellationToken)
@@ -84,6 +88,12 @@ public class EvaluatorScholarshipApplicationService : IEvaluatorScholarshipAppli
         // conflict exception for what's a rare, low-stakes race here.
         var updated = await _applicationRepository.AdvanceStatusAsync(applicationId, current.Status, nextStatus, cancellationToken)
             ?? throw new ScholarshipWorkflowCannotAdvanceException(applicationId, current.Status);
+
+        // Status-history audit trail (BISAASS-57) - the counterpart to
+        // AdminApplicationsService.UpdateStatusAsync's own insert, so every
+        // way a Scholarship application's status can change is recorded.
+        await _statusHistoryRepository.InsertAsync(
+            applicationId, "Scholarship", current.Status, nextStatus, remarks: null, evaluatorUserId, cancellationToken);
 
         _logger.LogInformation(
             "Scholarship application {ApplicationId} advanced from {From} to {To}",
@@ -121,6 +131,10 @@ public class EvaluatorScholarshipApplicationService : IEvaluatorScholarshipAppli
         // low-stakes race here.
         var updated = await _applicationRepository.RecordFinalDecisionAsync(applicationId, request.Decision, remarks, decidedByUserId, cancellationToken)
             ?? throw new ScholarshipApplicationNotReadyForDecisionException(applicationId, current.Status);
+
+        // Status-history audit trail (BISAASS-57) - see AdvanceWorkflowAsync.
+        await _statusHistoryRepository.InsertAsync(
+            applicationId, "Scholarship", current.Status, request.Decision, remarks, decidedByUserId, cancellationToken);
 
         _logger.LogInformation(
             "Scholarship application {ApplicationId} decided as {Decision} by {DecidedByUserId}",
