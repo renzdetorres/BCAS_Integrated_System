@@ -11,17 +11,20 @@ public class ScholarshipApplicationService : IScholarshipApplicationService
     private readonly IScholarshipApplicationRepository _applicationRepository;
     private readonly IApplicantProfileRepository _profileRepository;
     private readonly ISystemSettingsRepository _systemSettingsRepository;
+    private readonly IApplicationStatusHistoryRepository _statusHistoryRepository;
     private readonly ILogger<ScholarshipApplicationService> _logger;
 
     public ScholarshipApplicationService(
         IScholarshipApplicationRepository applicationRepository,
         IApplicantProfileRepository profileRepository,
         ISystemSettingsRepository systemSettingsRepository,
+        IApplicationStatusHistoryRepository statusHistoryRepository,
         ILogger<ScholarshipApplicationService> logger)
     {
         _applicationRepository = applicationRepository;
         _profileRepository = profileRepository;
         _systemSettingsRepository = systemSettingsRepository;
+        _statusHistoryRepository = statusHistoryRepository;
         _logger = logger;
     }
 
@@ -45,6 +48,12 @@ public class ScholarshipApplicationService : IScholarshipApplicationService
             request.ScholarshipId!.Value,
             request.GradeAverage!.Value,
             cancellationToken);
+
+        // The opening row of this application's status-history audit trail
+        // (BISAASS-57) - FromStatus/changedByUserId both null since there's
+        // no prior status and this is the applicant's own action, not staff's.
+        await _statusHistoryRepository.InsertAsync(
+            application.ApplicationId, "Scholarship", fromStatus: null, toStatus: application.Status, remarks: null, changedByUserId: null, cancellationToken);
 
         _logger.LogInformation(
             "Scholarship application {ApplicationId} submitted by {UserId} for scholarship {ScholarshipId}",

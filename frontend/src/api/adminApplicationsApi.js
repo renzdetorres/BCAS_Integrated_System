@@ -18,9 +18,7 @@ export const ARCHIVABLE_STATUSES = ["Approved", "Rejected"];
 
 // Admission's ordered workflow (BISAASS-56) - kept in sync with the
 // backend's AdmissionWorkflowConstants. Approved and Rejected share a rank
-// (both terminal, neither leads anywhere else). Scholarship's Admin
-// override deliberately stays free-form (any ADMISSION_STATUSES-style
-// pick), so it has no equivalent list.
+// (both terminal, neither leads anywhere else).
 const ADMISSION_STAGE_RANK = { Submitted: 0, UnderReview: 1, Approved: 2, Rejected: 2 };
 
 // Every Admission status that's a valid forward move from currentStatus -
@@ -30,6 +28,28 @@ export function getValidNextAdmissionStatuses(currentStatus) {
   const currentRank = ADMISSION_STAGE_RANK[currentStatus] ?? 0;
   if (currentRank >= 2) return [];
   return ADMISSION_STATUSES.filter((status) => ADMISSION_STAGE_RANK[status] > currentRank);
+}
+
+// Scholarship's ordered workflow (BISAASS-57) - kept in sync with the
+// backend's ScholarshipWorkflowConstants. Approved and Rejected share a
+// rank (both terminal, neither leads anywhere else).
+const SCHOLARSHIP_STAGE_RANK = {
+  Submitted: 0,
+  DocumentsVerified: 1,
+  EligibilityScreening: 2,
+  Evaluation: 3,
+  Result: 4,
+  Approved: 5,
+  Rejected: 5,
+};
+
+// Every Scholarship status that's a valid forward move from currentStatus -
+// empty once a decision (Approved/Rejected) has been recorded, since the
+// workflow never changes after that.
+export function getValidNextScholarshipStatuses(currentStatus) {
+  const currentRank = SCHOLARSHIP_STAGE_RANK[currentStatus] ?? 0;
+  if (currentRank >= 5) return [];
+  return SCHOLARSHIP_STATUSES.filter((status) => SCHOLARSHIP_STAGE_RANK[status] > currentRank);
 }
 
 export async function searchApplications({ search, status, category, program, archived } = {}) {

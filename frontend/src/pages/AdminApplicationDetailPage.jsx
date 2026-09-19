@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   ARCHIVABLE_STATUSES,
-  SCHOLARSHIP_STATUSES,
   archiveApplication,
   getApplicationStatusHistory,
   getValidNextAdmissionStatuses,
+  getValidNextScholarshipStatuses,
   searchApplications,
   updateApplicationStatus,
 } from "../api/adminApplicationsApi.js";
@@ -144,14 +144,17 @@ export default function AdminApplicationDetailPage() {
     }
   }
 
-  // Admission's Update Status dropdown only offers the current status
-  // (so it stays visible/selected) plus valid forward moves through the
-  // ordered workflow (BISAASS-56) - Scholarship's Admin override stays
-  // free-form, offering every status regardless of the current one.
-  const statusOptions =
-    application?.category === "Admission"
-      ? [application.status, ...getValidNextAdmissionStatuses(application.status)]
-      : SCHOLARSHIP_STATUSES;
+  // The Update Status dropdown only offers the current status (so it stays
+  // visible/selected) plus valid forward moves through that category's
+  // ordered workflow (BISAASS-56 Admission, BISAASS-57 Scholarship).
+  const statusOptions = application
+    ? [
+        application.status,
+        ...(application.category === "Admission"
+          ? getValidNextAdmissionStatuses(application.status)
+          : getValidNextScholarshipStatuses(application.status)),
+      ]
+    : [];
   const stepLabels = application?.category === "Admission" ? ADMISSION_STEP_LABELS : SCHOLARSHIP_STEP_LABELS;
   const canArchive = application && !application.isArchived && ARCHIVABLE_STATUSES.includes(application.status);
 

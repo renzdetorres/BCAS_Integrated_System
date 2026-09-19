@@ -26,14 +26,16 @@ public interface IEvaluatorScholarshipApplicationService
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Moves the application to the next workflow stage. Throws
-    /// ScholarshipApplicationNotFoundException if no application has that
-    /// id, or ScholarshipWorkflowCannotAdvanceException if it's already at
-    /// the final stage (or isn't in a workflow stage at all, e.g. already
-    /// decided).
+    /// Moves the application to the next workflow stage, recording the
+    /// change (evaluatorUserId, BISAASS-57) in the status-history audit
+    /// trail. Throws ScholarshipApplicationNotFoundException if no
+    /// application has that id, or ScholarshipWorkflowCannotAdvanceException
+    /// if it's already at the final stage (or isn't in a workflow stage at
+    /// all, e.g. already decided).
     /// </summary>
     Task<EvaluatorScholarshipApplicationDetailResponse> AdvanceWorkflowAsync(
         Guid applicationId,
+        Guid evaluatorUserId,
         CancellationToken cancellationToken = default);
 
     /// <summary>

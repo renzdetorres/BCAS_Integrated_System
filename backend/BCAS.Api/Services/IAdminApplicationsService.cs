@@ -15,12 +15,14 @@ public interface IAdminApplicationsService
     /// <summary>
     /// Admin-only (BISAASS-31): sets an application's Status, with optional
     /// remarks, and records the change in the status-history audit trail
-    /// (BISAASS-56). Throws InvalidApplicationCategoryException if
+    /// (BISAASS-56/57). Throws InvalidApplicationCategoryException if
     /// request.Category isn't Admission/Scholarship,
     /// InvalidApplicationStatusException if request.Status isn't allowed
-    /// for that category, InvalidStatusTransitionException if an Admission
-    /// application's status wouldn't move forward through the ordered
-    /// workflow (Submitted -> UnderReview -> Approved|Rejected), or
+    /// for that category, InvalidStatusTransitionException if the status
+    /// wouldn't move forward through that category's ordered workflow
+    /// (Admission: Submitted -> UnderReview -> Approved|Rejected;
+    /// Scholarship: Submitted -> DocumentsVerified -> EligibilityScreening
+    /// -> Evaluation -> Result -> Approved|Rejected), or
     /// ApplicationNotFoundException if no application with that id exists
     /// in the given category.
     /// </summary>

@@ -48,10 +48,10 @@ public class AdminApplicationsController : ControllerBase
     /// <summary>
     /// Admin-only (BISAASS-31): sets an admission or scholarship
     /// application's status, with optional remarks. Category must match
-    /// the application's own category (Admission or Scholarship). For an
-    /// Admission application, the new status must be a forward move
-    /// through the ordered workflow (BISAASS-56); every change is recorded
-    /// in the status-history audit trail regardless of category.
+    /// the application's own category (Admission or Scholarship). The new
+    /// status must be a forward move through that category's ordered
+    /// workflow (BISAASS-56/57); every change is recorded in the
+    /// status-history audit trail.
     /// </summary>
     [HttpPatch("{applicationId:guid}/status")]
     [ProducesResponseType(typeof(AdminApplicationListItemResponse), StatusCodes.Status200OK)]
