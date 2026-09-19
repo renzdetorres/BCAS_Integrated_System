@@ -17,6 +17,7 @@ import {
   Ticket,
   Bookmark,
   SlidersHorizontal,
+  Bell,
 } from "lucide-react";
 
 // Nav config per role for the shared AppShell/Sidebar. `badgeKey` looks up a
@@ -52,6 +53,7 @@ export const PORTAL_NAV = {
       { label: "Records Archive", to: "/admin/archive", icon: Archive },
       { label: "Account Management", to: "/admin/users", icon: Users },
       { label: "System Settings", to: "/admin/settings", icon: SlidersHorizontal },
+      { label: "Notification Settings", to: "/admin/notification-settings", icon: Bell },
       { label: "Settings", to: "/settings", icon: Settings },
     ],
   },
@@ -84,7 +86,7 @@ export const PORTAL_NAV = {
       { label: "Overview", to: "/portal", icon: LayoutDashboard },
       { label: "Document Verification", to: "/support-staff/documents", icon: FileSearch, badgeKey: "documents" },
       { label: "Applications", to: "/support-staff/applicants", icon: ClipboardList },
-      { label: "Settings", to: "/settings", icon: Settings },
+      { label: "Settings", to: "/support-staff/settings", icon: Settings },
     ],
   },
 };

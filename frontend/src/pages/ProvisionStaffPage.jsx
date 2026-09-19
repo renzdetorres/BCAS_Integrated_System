@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import AppShell from "../components/layout/AppShell.jsx";
+import Card from "../components/ui/Card.jsx";
+import { inputClasses, labelClasses, primaryButtonClasses } from "../lib/formStyles.js";
 import { provisionStaff, STAFF_ROLES } from "../api/adminApi.js";
 import { ApiError } from "../api/apiClient.js";
-import "./ProvisionStaffPage.css";
 
 const initialForm = {
   firstName: "",
@@ -39,72 +40,79 @@ export default function ProvisionStaffPage() {
       setCreatedAccount(result);
       setForm(initialForm);
     } catch (error) {
-      setErrorMessage(
-        error instanceof ApiError ? error.message : "Something went wrong. Please try again."
-      );
+      setErrorMessage(error instanceof ApiError ? error.message : "Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <main className="provision-page">
-      <div className="provision-card">
-        <Link className="provision-back-link" to="/portal">
-          &larr; Back to portal
-        </Link>
-        <h1>Create Staff Account</h1>
-        <p className="provision-subtitle">
-          Admin-only. Applicant accounts are never created here - applicants self-register.
-        </p>
+    <AppShell>
+      <h1 className="text-2xl font-extrabold text-slate-900">Create Staff Account</h1>
+      <p className="mt-1 text-sm text-slate-500">
+        Admin-only. Applicant accounts are never created here — applicants self-register.
+      </p>
 
+      <Card className="mt-6 max-w-xl">
         {createdAccount && (
-          <p className="form-success" role="status">
-            Created <strong>{createdAccount.email}</strong> as {createdAccount.role}. They can log in
-            immediately.
+          <p className="mb-4 text-sm font-medium text-status-green" role="status">
+            Created <strong className="font-semibold">{createdAccount.email}</strong> as {createdAccount.role}. They
+            can log in immediately.
           </p>
         )}
 
-        <form onSubmit={handleSubmit} noValidate>
-          <div className="form-row">
-            <label htmlFor="firstName">First name</label>
-            <input
-              id="firstName"
-              name="firstName"
-              type="text"
-              required
-              value={form.firstName}
-              onChange={handleChange}
-            />
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className={labelClasses} htmlFor="firstName">
+                First name
+              </label>
+              <input
+                id="firstName"
+                name="firstName"
+                type="text"
+                required
+                className={inputClasses}
+                value={form.firstName}
+                onChange={handleChange}
+              />
+            </div>
+            <div>
+              <label className={labelClasses} htmlFor="lastName">
+                Last name
+              </label>
+              <input
+                id="lastName"
+                name="lastName"
+                type="text"
+                required
+                className={inputClasses}
+                value={form.lastName}
+                onChange={handleChange}
+              />
+            </div>
           </div>
 
-          <div className="form-row">
-            <label htmlFor="lastName">Last name</label>
-            <input
-              id="lastName"
-              name="lastName"
-              type="text"
-              required
-              value={form.lastName}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="form-row">
-            <label htmlFor="email">Email</label>
+          <div>
+            <label className={labelClasses} htmlFor="email">
+              Email
+            </label>
             <input
               id="email"
               name="email"
               type="email"
               autoComplete="off"
               required
+              className={inputClasses}
               value={form.email}
               onChange={handleChange}
             />
           </div>
 
-          <div className="form-row">
-            <label htmlFor="password">Temporary password</label>
+          <div>
+            <label className={labelClasses} htmlFor="password">
+              Temporary password
+            </label>
             <input
               id="password"
               name="password"
@@ -112,14 +120,17 @@ export default function ProvisionStaffPage() {
               autoComplete="new-password"
               minLength={8}
               required
+              className={inputClasses}
               value={form.password}
               onChange={handleChange}
             />
           </div>
 
-          <div className="form-row">
-            <label htmlFor="role">Role</label>
-            <select id="role" name="role" value={form.role} onChange={handleChange}>
+          <div>
+            <label className={labelClasses} htmlFor="role">
+              Role
+            </label>
+            <select id="role" name="role" className={inputClasses} value={form.role} onChange={handleChange}>
               {STAFF_ROLES.map((role) => (
                 <option key={role} value={role}>
                   {role}
@@ -129,13 +140,16 @@ export default function ProvisionStaffPage() {
           </div>
 
           {form.role === "AcademicHead" && (
-            <div className="form-row">
-              <label htmlFor="department">Department</label>
+            <div>
+              <label className={labelClasses} htmlFor="department">
+                Department
+              </label>
               <input
                 id="department"
                 name="department"
                 type="text"
                 placeholder="e.g. BSIT"
+                className={inputClasses}
                 value={form.department}
                 onChange={handleChange}
               />
@@ -143,16 +157,16 @@ export default function ProvisionStaffPage() {
           )}
 
           {errorMessage && (
-            <p className="form-error" role="alert">
+            <p className="text-sm font-medium text-status-red" role="alert">
               {errorMessage}
             </p>
           )}
 
-          <button type="submit" disabled={isSubmitting}>
+          <button type="submit" disabled={isSubmitting} className={primaryButtonClasses}>
             {isSubmitting ? "Creating account..." : "Create Account"}
           </button>
         </form>
-      </div>
-    </main>
+      </Card>
+    </AppShell>
   );
 }

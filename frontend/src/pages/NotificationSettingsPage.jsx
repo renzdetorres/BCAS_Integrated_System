@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import AppShell from "../components/layout/AppShell.jsx";
+import Card from "../components/ui/Card.jsx";
+import Toggle from "../components/ui/Toggle.jsx";
 import { listNotificationTriggers, setNotificationTriggerEnabled } from "../api/notificationSettingsApi.js";
 import { ApiError } from "../api/apiClient.js";
-import "./NotificationSettingsPage.css";
 
 function formatDateTime(isoDateTime) {
   return new Date(isoDateTime).toLocaleString(undefined, {
@@ -51,51 +52,39 @@ export default function NotificationSettingsPage() {
   }
 
   return (
-    <main className="notification-settings-page">
-      <div className="notification-settings-card">
-        <Link className="notification-settings-back-link" to="/portal">
-          &larr; Back to portal
-        </Link>
-        <h1>Notification Settings</h1>
-        <p className="notification-settings-subtitle">
-          Turn system-triggered email notifications on or off. A change here applies starting with the
-          next notification event of that kind.
+    <AppShell>
+      <h1 className="text-2xl font-extrabold text-slate-900">Notification Settings</h1>
+      <p className="mt-1 text-sm text-slate-500">
+        Turn system-triggered email notifications on or off. A change here applies starting with the next
+        notification event of that kind.
+      </p>
+
+      {errorMessage && (
+        <p className="mt-4 text-sm font-medium text-status-red" role="alert">
+          {errorMessage}
         </p>
+      )}
 
-        {errorMessage && (
-          <p className="form-error" role="alert">
-            {errorMessage}
-          </p>
-        )}
-
+      <Card className="mt-6">
         {isLoading ? (
-          <p>Loading...</p>
+          <p className="text-sm text-slate-400">Loading...</p>
         ) : (
-          <ul className="notification-trigger-list">
+          <div className="divide-y divide-slate-100">
             {triggers.map((trigger) => (
-              <li key={trigger.triggerKey} className="notification-trigger-row">
-                <div className="notification-trigger-info">
-                  <span className="notification-trigger-name">{trigger.displayName}</span>
-                  <p className="notification-trigger-description">{trigger.description}</p>
-                  <span className="notification-trigger-updated">
-                    Last updated {formatDateTime(trigger.updatedAt)}
-                  </span>
+              <div key={trigger.triggerKey} className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0">
+                <div className="min-w-0">
+                  <p className="font-semibold text-slate-800">{trigger.displayName}</p>
+                  <p className="mt-0.5 text-sm text-slate-500">{trigger.description}</p>
+                  <p className="mt-1 text-xs text-slate-400">Last updated {formatDateTime(trigger.updatedAt)}</p>
                 </div>
-                <button
-                  type="button"
-                  className={trigger.isEnabled ? "trigger-toggle-on" : "trigger-toggle-off"}
-                  onClick={() => handleToggle(trigger)}
-                  disabled={pendingTriggerKey === trigger.triggerKey}
-                  role="switch"
-                  aria-checked={trigger.isEnabled}
-                >
-                  {pendingTriggerKey === trigger.triggerKey ? "Saving..." : trigger.isEnabled ? "On" : "Off"}
-                </button>
-              </li>
+                <div className={pendingTriggerKey === trigger.triggerKey ? "pointer-events-none opacity-60" : ""}>
+                  <Toggle checked={trigger.isEnabled} onChange={() => handleToggle(trigger)} label="" />
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
-      </div>
-    </main>
+      </Card>
+    </AppShell>
   );
 }
