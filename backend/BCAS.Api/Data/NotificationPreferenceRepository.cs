@@ -52,6 +52,46 @@ WHERE UserId = @UserId AND NotificationType = @NotificationType;";
         return result is null || (bool)result;
     }
 
+    // Comfortably under SQL Server's 2100-parameter-per-query limit
+    // (1 for @NotificationType, up to this many for @UserId0..N-1).
+    private const int OptedOutBatchSize = 2000;
+
+    public async Task<IReadOnlySet<Guid>> GetOptedOutUserIdsAsync(
+        IReadOnlyList<Guid> userIds, string notificationType, CancellationToken cancellationToken = default)
+    {
+        var optedOut = new HashSet<Guid>();
+        if (userIds.Count == 0)
+        {
+            return optedOut;
+        }
+
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        foreach (var batch in userIds.Chunk(OptedOutBatchSize))
+        {
+            var parameterNames = batch.Select((_, i) => $"@UserId{i}").ToList();
+            var sql = $@"
+SELECT UserId
+FROM dbo.NotificationPreferences
+WHERE NotificationType = @NotificationType AND IsEnabled = 0 AND UserId IN ({string.Join(", ", parameterNames)});";
+
+            await using var command = new SqlCommand(sql, connection);
+            command.Parameters.Add(new SqlParameter("@NotificationType", SqlDbType.NVarChar, 30) { Value = notificationType });
+            for (var i = 0; i < batch.Length; i++)
+            {
+                command.Parameters.Add(new SqlParameter(parameterNames[i], SqlDbType.UniqueIdentifier) { Value = batch[i] });
+            }
+
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                optedOut.Add(reader.GetGuid(reader.GetOrdinal("UserId")));
+            }
+        }
+
+        return optedOut;
+    }
+
     public async Task SetEnabledAsync(Guid userId, string notificationType, bool isEnabled, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);

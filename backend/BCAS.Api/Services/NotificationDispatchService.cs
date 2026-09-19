@@ -94,22 +94,54 @@ public class NotificationDispatchService : INotificationDispatchService
             "Log in to your applicant portal for the full details.",
             cancellationToken);
 
+    /// <summary>
+    /// Bypasses DispatchAsync's per-recipient checks (they'd be an N+1
+    /// query against NotificationPreferences for a large recipient list)
+    /// in favor of one batched opted-out lookup, then sends with bounded
+    /// parallelism so a large announcement doesn't serialize into one
+    /// send-latency per recipient. Announcement has no Admin-level
+    /// system-wide switch to check (NotificationEventTypes.
+    /// AdminTriggerKeyByEventType[Announcement] is null) - the applicant's
+    /// own preference is the only gate.
+    /// </summary>
     public async Task NotifyAnnouncementAsync(
         IReadOnlyList<(Guid UserId, string Email, string FirstName)> recipients,
         string title,
         string body,
         CancellationToken cancellationToken = default)
     {
-        foreach (var recipient in recipients)
+        if (recipients.Count == 0)
         {
-            await DispatchAsync(
-                recipient.UserId,
-                recipient.Email,
-                NotificationEventTypes.Announcement,
-                $"Announcement: {title}",
-                $"Hi {recipient.FirstName},\n\n{body}",
-                cancellationToken);
+            return;
         }
+
+        var optedOut = await _preferenceRepository.GetOptedOutUserIdsAsync(
+            recipients.Select(r => r.UserId).ToList(), NotificationEventTypes.Announcement, cancellationToken);
+
+        var subject = $"Announcement: {title}";
+
+        // CancellationToken.None rather than the caller's token: we're
+        // still safely inside the admin's HTTP request's async call chain
+        // either way (its DI scope, and everything scoped within it like
+        // the DB connection factory and SmtpClient, stays alive until this
+        // method returns), but a slow broadcast to many recipients
+        // shouldn't be cut short mid-flight just because that request's
+        // own timeout fired.
+        await Parallel.ForEachAsync(
+            recipients.Where(r => !optedOut.Contains(r.UserId)),
+            new ParallelOptions { MaxDegreeOfParallelism = 10 },
+            async (recipient, _) =>
+            {
+                try
+                {
+                    await _emailSender.SendAsync(recipient.Email, subject, $"Hi {recipient.FirstName},\n\n{body}", CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(
+                        ex, "Failed to send {NotificationType} email to {UserId}", NotificationEventTypes.Announcement, recipient.UserId);
+                }
+            });
     }
 
     /// <summary>

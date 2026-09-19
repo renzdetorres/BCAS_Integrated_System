@@ -42,11 +42,11 @@ public class AdminAnnouncementService : IAdminAnnouncementService
 
     public async Task<AdminAnnouncementResponse> SetActiveStatusAsync(int announcementId, bool isActive, CancellationToken cancellationToken = default)
     {
-        var existing = await _announcementRepository.GetAllAsync(cancellationToken);
-        var wasActive = existing.FirstOrDefault(a => a.AnnouncementId == announcementId)?.IsActive ?? false;
-
-        var updated = await _announcementRepository.SetActiveStatusAsync(announcementId, isActive, cancellationToken)
-            ?? throw new AnnouncementNotFoundException(announcementId);
+        var (updated, wasActive) = await _announcementRepository.SetActiveStatusAsync(announcementId, isActive, cancellationToken);
+        if (updated is null)
+        {
+            throw new AnnouncementNotFoundException(announcementId);
+        }
 
         // Important Announcements notification (BISAASS-59) - only when an
         // announcement is newly posted (going from inactive to active), not

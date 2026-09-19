@@ -19,7 +19,12 @@ public interface IAnnouncementRepository
 
     /// <summary>
     /// Admin-only: posts (activates) or deactivates an announcement without
-    /// deleting it. Returns null if no announcement with that id exists.
+    /// deleting it. WasActive is the value IsActive held immediately
+    /// before this call (read atomically as part of the same UPDATE, so
+    /// two concurrent calls can never both observe "not yet active") - the
+    /// caller uses it to tell an announcement's first posting apart from a
+    /// no-op re-toggle. Announcement is null if no announcement with that
+    /// id exists, in which case WasActive is meaningless (always false).
     /// </summary>
-    Task<Announcement?> SetActiveStatusAsync(int announcementId, bool isActive, CancellationToken cancellationToken = default);
+    Task<(Announcement? Announcement, bool WasActive)> SetActiveStatusAsync(int announcementId, bool isActive, CancellationToken cancellationToken = default);
 }
