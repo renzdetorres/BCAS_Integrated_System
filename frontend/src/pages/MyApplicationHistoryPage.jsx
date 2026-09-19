@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import AppShell from "../components/layout/AppShell.jsx";
+import Card from "../components/ui/Card.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import { getMyApplicationHistory } from "../api/applicationHistoryApi.js";
 import { APPLICATION_TYPES } from "../api/admissionApi.js";
 import { ApiError } from "../api/apiClient.js";
-import "./MyApplicationHistoryPage.css";
 
 function formatDate(isoDate) {
   return new Date(isoDate).toLocaleDateString(undefined, {
@@ -53,134 +55,130 @@ export default function MyApplicationHistoryPage() {
   const selectedApplication = applications.find((a) => a.applicationId === selectedId) ?? null;
 
   return (
-    <main className="history-page">
-      <div className="history-shell">
-        <Link className="history-back-link" to="/portal">
-          &larr; Back to dashboard
+    <AppShell>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-2xl font-extrabold text-slate-900">My Application</h1>
+        <Link
+          to="/app/my-application"
+          className="inline-flex items-center gap-2 rounded-lg bg-forest px-4 py-2.5 text-sm font-semibold text-white hover:bg-forest-dark"
+        >
+          Submit New Application
         </Link>
+      </div>
 
-        <header className="history-header">
-          <h1>My Application</h1>
-          <div className="history-actions">
-            <Link className="history-action-link" to="/applications">
-              Submit Admission Application
-            </Link>
-            <Link className="history-action-link" to="/scholarships">
-              Submit Scholarship Application
-            </Link>
-          </div>
-        </header>
+      {errorMessage && (
+        <p className="mt-4 text-sm font-medium text-status-red" role="alert">
+          {errorMessage}
+        </p>
+      )}
 
-        {errorMessage && (
-          <p className="form-error" role="alert">
-            {errorMessage}
-          </p>
-        )}
+      {isLoading && <p className="mt-6 text-sm text-slate-400">Loading...</p>}
 
-        {isLoading && <p>Loading...</p>}
+      {!isLoading && !errorMessage && applications.length === 0 && (
+        <Card className="mt-6">
+          <p className="text-sm text-slate-400">No applications submitted yet.</p>
+        </Card>
+      )}
 
-        {!isLoading && !errorMessage && applications.length === 0 && (
-          <section className="history-card">
-            <p>No applications submitted yet.</p>
-          </section>
-        )}
-
-        {!isLoading && applications.length > 0 && (
-          <div className="history-layout">
-            <section className="history-card history-list-card">
-              <h2>All Applications</h2>
-              <ul className="history-list">
-                {applications.map((application) => (
-                  <li key={application.applicationId}>
-                    <button
-                      type="button"
-                      className={`history-list-item${
-                        application.applicationId === selectedId ? " history-list-item-selected" : ""
-                      }`}
-                      onClick={() => setSelectedId(application.applicationId)}
-                    >
-                      <div className="history-list-header">
-                        <span className={`history-category history-category-${application.category.toLowerCase()}`}>
-                          {application.category}
-                        </span>
-                        <span className={`history-status status-${application.status.toLowerCase()}`}>
-                          {application.status}
-                        </span>
-                      </div>
-                      <p className="history-title">{applicationTitle(application)}</p>
-                      <p className="history-meta">Submitted {formatDate(application.submittedAt)}</p>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            <section className="history-card history-detail-card">
-              <h2>Application Details</h2>
-              {!selectedApplication && <p>Select an application to see its details.</p>}
-              {selectedApplication && (
-                <div className="history-detail">
-                  <Link
-                    className="history-receipt-link"
-                    to={`/applications/receipt/${selectedApplication.applicationId}`}
+      {!isLoading && applications.length > 0 && (
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_2fr]">
+          <Card>
+            <h2 className="font-bold text-slate-900">All Applications</h2>
+            <ul className="mt-4 space-y-2">
+              {applications.map((application) => (
+                <li key={application.applicationId}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(application.applicationId)}
+                    className={`w-full rounded-lg border p-3 text-left transition-colors ${
+                      application.applicationId === selectedId
+                        ? "border-forest bg-forest/5"
+                        : "border-slate-100 hover:bg-slate-50"
+                    }`}
                   >
-                    View / Print Receipt &rarr;
-                  </Link>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500">
+                        {application.category}
+                      </span>
+                      <StatusBadge status={application.status} />
+                    </div>
+                    <p className="mt-1.5 font-semibold text-slate-800">{applicationTitle(application)}</p>
+                    <p className="text-xs text-slate-400">Submitted {formatDate(application.submittedAt)}</p>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </Card>
 
-                  <div className="history-detail-row">
-                    <span className="history-detail-label">Category</span>
-                    <span>{selectedApplication.category}</span>
+          <Card>
+            <h2 className="font-bold text-slate-900">Application Details</h2>
+            {!selectedApplication && <p className="mt-2 text-sm text-slate-400">Select an application to see its details.</p>}
+            {selectedApplication && (
+              <div className="mt-4">
+                <Link
+                  to={`/applications/receipt/${selectedApplication.applicationId}`}
+                  className="text-sm font-semibold text-forest hover:underline"
+                >
+                  View / Print Receipt →
+                </Link>
+
+                <dl className="mt-4 divide-y divide-slate-100">
+                  <div className="flex items-center justify-between py-2">
+                    <dt className="text-sm text-slate-500">Category</dt>
+                    <dd className="text-sm font-medium text-slate-800">{selectedApplication.category}</dd>
                   </div>
-                  <div className="history-detail-row">
-                    <span className="history-detail-label">Status</span>
-                    <span className={`history-status status-${selectedApplication.status.toLowerCase()}`}>
-                      {selectedApplication.status}
-                    </span>
+                  <div className="flex items-center justify-between py-2">
+                    <dt className="text-sm text-slate-500">Status</dt>
+                    <dd>
+                      <StatusBadge status={selectedApplication.status} />
+                    </dd>
                   </div>
-                  <div className="history-detail-row">
-                    <span className="history-detail-label">Submitted</span>
-                    <span>{formatDate(selectedApplication.submittedAt)}</span>
+                  <div className="flex items-center justify-between py-2">
+                    <dt className="text-sm text-slate-500">Submitted</dt>
+                    <dd className="text-sm font-medium text-slate-800">{formatDate(selectedApplication.submittedAt)}</dd>
                   </div>
 
                   {selectedApplication.category === "Admission" && (
                     <>
-                      <div className="history-detail-row">
-                        <span className="history-detail-label">Application type</span>
-                        <span>{admissionTypeLabel(selectedApplication.applicationType)}</span>
+                      <div className="flex items-center justify-between py-2">
+                        <dt className="text-sm text-slate-500">Application type</dt>
+                        <dd className="text-sm font-medium text-slate-800">
+                          {admissionTypeLabel(selectedApplication.applicationType)}
+                        </dd>
                       </div>
-                      <div className="history-detail-row">
-                        <span className="history-detail-label">Course applied for</span>
-                        <span>{selectedApplication.courseAppliedFor}</span>
+                      <div className="flex items-center justify-between py-2">
+                        <dt className="text-sm text-slate-500">Course applied for</dt>
+                        <dd className="text-sm font-medium text-slate-800">{selectedApplication.courseAppliedFor}</dd>
                       </div>
-                      <div className="history-detail-row">
-                        <span className="history-detail-label">Previous school</span>
-                        <span>{selectedApplication.previousSchool}</span>
+                      <div className="flex items-center justify-between py-2">
+                        <dt className="text-sm text-slate-500">Previous school</dt>
+                        <dd className="text-sm font-medium text-slate-800">{selectedApplication.previousSchool}</dd>
                       </div>
                     </>
                   )}
 
                   {selectedApplication.category === "Scholarship" && (
                     <>
-                      <div className="history-detail-row">
-                        <span className="history-detail-label">Scholarship</span>
-                        <span>{selectedApplication.scholarshipName}</span>
+                      <div className="flex items-center justify-between py-2">
+                        <dt className="text-sm text-slate-500">Scholarship</dt>
+                        <dd className="text-sm font-medium text-slate-800">{selectedApplication.scholarshipName}</dd>
                       </div>
-                      <div className="history-detail-row">
-                        <span className="history-detail-label">Scholarship type</span>
-                        <span>{selectedApplication.scholarshipType}</span>
+                      <div className="flex items-center justify-between py-2">
+                        <dt className="text-sm text-slate-500">Scholarship type</dt>
+                        <dd className="text-sm font-medium text-slate-800">{selectedApplication.scholarshipType}</dd>
                       </div>
-                      <div className="history-detail-row">
-                        <span className="history-detail-label">Grade average</span>
-                        <span>{selectedApplication.gradeAverage}</span>
+                      <div className="flex items-center justify-between py-2">
+                        <dt className="text-sm text-slate-500">Grade average</dt>
+                        <dd className="text-sm font-medium text-slate-800">{selectedApplication.gradeAverage}</dd>
                       </div>
                     </>
                   )}
-                </div>
-              )}
-            </section>
-          </div>
-        )}
-      </div>
-    </main>
+                </dl>
+              </div>
+            )}
+          </Card>
+        </div>
+      )}
+    </AppShell>
   );
 }

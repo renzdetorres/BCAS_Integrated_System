@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { FileSearch, CheckCircle2, AlertTriangle, Users, ChevronRight } from "lucide-react";
+import AppShell from "../components/layout/AppShell.jsx";
+import Card from "../components/ui/Card.jsx";
+import StatCard from "../components/ui/StatCard.jsx";
 import { getSupportStaffDashboard } from "../api/supportStaffDashboardApi.js";
 import { ApiError } from "../api/apiClient.js";
-import { useSession } from "../context/SessionContext.jsx";
-import { useLogout } from "../hooks/useLogout.js";
-import "./SupportStaffDashboardPage.css";
 
 export default function SupportStaffDashboardPage() {
-  const { session } = useSession();
-  const handleLogout = useLogout();
   const [dashboard, setDashboard] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -35,71 +34,50 @@ export default function SupportStaffDashboardPage() {
   }, []);
 
   return (
-    <main className="ss-dashboard-page">
-      <div className="ss-dashboard-shell">
-        <header className="ss-dashboard-header">
-          <div>
-            <span className="ss-dashboard-badge">Support Staff</span>
-            <h1>Support Staff Dashboard</h1>
-            <p>
-              Signed in as <strong>{session.email}</strong>.
-            </p>
+    <AppShell badges={{ documents: dashboard?.pendingVerificationCount || undefined }}>
+      <h1 className="text-2xl font-extrabold text-slate-900">Support Staff Dashboard</h1>
+      <p className="mt-1 text-sm text-slate-500">Document verification and applicant record management.</p>
+
+      {isLoading && <p className="mt-6 text-sm text-slate-400">Loading...</p>}
+      {errorMessage && (
+        <p className="mt-6 text-sm font-medium text-status-red" role="alert">
+          {errorMessage}
+        </p>
+      )}
+
+      {!isLoading && !errorMessage && dashboard && (
+        <>
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard icon={FileSearch} label="Pending Verification" value={dashboard.pendingVerificationCount} />
+            <StatCard icon={CheckCircle2} label="Verified Today" value={dashboard.verifiedTodayCount} />
+            <StatCard icon={AlertTriangle} label="Flagged Docs" value={dashboard.flaggedDocsCount} />
+            <StatCard icon={Users} label="Total Applicants" value={dashboard.totalApplicants} />
           </div>
-          <button type="button" onClick={handleLogout}>
-            Log Out
-          </button>
-        </header>
 
-        <div className="ss-dashboard-links">
-          <Link className="ss-dashboard-link" to="/support-staff/documents">
-            Document Verification
-          </Link>
-          <Link className="ss-dashboard-link" to="/support-staff/applicants">
-            Applicant Records
-          </Link>
-          <Link className="ss-dashboard-link" to="/support-staff/documents/archive">
-            Document Archive
-          </Link>
-          <Link className="ss-dashboard-link" to="/support-staff/settings">
-            Settings
-          </Link>
-        </div>
-
-        {isLoading && (
-          <section className="ss-dashboard-card">
-            <p>Loading...</p>
-          </section>
-        )}
-
-        {errorMessage && (
-          <section className="ss-dashboard-card">
-            <p className="form-error" role="alert">
-              {errorMessage}
-            </p>
-          </section>
-        )}
-
-        {!isLoading && !errorMessage && dashboard && (
-          <section className="ss-stat-grid">
-            <div className="ss-stat-tile ss-stat-pending">
-              <span className="ss-stat-value">{dashboard.pendingVerificationCount}</span>
-              <span className="ss-stat-label">Pending Verification</span>
-            </div>
-            <div className="ss-stat-tile ss-stat-verified">
-              <span className="ss-stat-value">{dashboard.verifiedTodayCount}</span>
-              <span className="ss-stat-label">Verified Today</span>
-            </div>
-            <div className="ss-stat-tile ss-stat-flagged">
-              <span className="ss-stat-value">{dashboard.flaggedDocsCount}</span>
-              <span className="ss-stat-label">Flagged Documents</span>
-            </div>
-            <div className="ss-stat-tile">
-              <span className="ss-stat-value">{dashboard.totalApplicants}</span>
-              <span className="ss-stat-label">Total Applicants</span>
-            </div>
-          </section>
-        )}
-      </div>
-    </main>
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Link to="/support/applications">
+              <Card className="flex h-full items-center justify-between transition-shadow hover:shadow-lg">
+                <div>
+                  <p className="font-bold text-slate-900">Applicant Records</p>
+                  <p className="text-sm text-slate-500">Browse and look up applicant information →</p>
+                </div>
+                <ChevronRight size={18} className="text-slate-300" />
+              </Card>
+            </Link>
+            <Link to="/support/documents">
+              <Card className="flex h-full items-center justify-between transition-shadow hover:shadow-lg">
+                <div>
+                  <p className="font-bold text-slate-900">Document Verification</p>
+                  <p className="text-sm text-slate-500">
+                    {dashboard.pendingVerificationCount} documents awaiting verification →
+                  </p>
+                </div>
+                <ChevronRight size={18} className="text-slate-300" />
+              </Card>
+            </Link>
+          </div>
+        </>
+      )}
+    </AppShell>
   );
 }

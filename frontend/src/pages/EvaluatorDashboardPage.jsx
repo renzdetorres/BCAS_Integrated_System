@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { ListChecks, CheckCircle2, XCircle, ClipboardCheck, ChevronRight } from "lucide-react";
+import AppShell from "../components/layout/AppShell.jsx";
+import Card from "../components/ui/Card.jsx";
+import StatCard from "../components/ui/StatCard.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import { getEvaluatorDashboard } from "../api/evaluatorDashboardApi.js";
 import { ApiError } from "../api/apiClient.js";
-import { useSession } from "../context/SessionContext.jsx";
-import { useLogout } from "../hooks/useLogout.js";
-import "./EvaluatorDashboardPage.css";
 
 function formatDate(isoDateTime) {
   return new Date(isoDateTime).toLocaleDateString(undefined, {
@@ -15,8 +17,6 @@ function formatDate(isoDateTime) {
 }
 
 export default function EvaluatorDashboardPage() {
-  const { session } = useSession();
-  const handleLogout = useLogout();
   const [dashboard, setDashboard] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -43,113 +43,110 @@ export default function EvaluatorDashboardPage() {
   }, []);
 
   return (
-    <main className="evaluator-dashboard-page">
-      <div className="evaluator-dashboard-shell">
-        <header className="evaluator-dashboard-header">
-          <div>
-            <span className="evaluator-dashboard-badge">Evaluator</span>
-            <h1>Evaluator Dashboard</h1>
-            <p>
-              Signed in as <strong>{session.email}</strong>.
-            </p>
-          </div>
-          <button type="button" onClick={handleLogout}>
-            Log Out
-          </button>
-        </header>
-
-        <div className="evaluator-dashboard-links">
-          <Link className="evaluator-dashboard-link" to="/evaluator/scholarship-slots">
-            Scholarship Slots
-          </Link>
-          <Link className="evaluator-dashboard-link" to="/evaluator/settings">
-            Settings
-          </Link>
+    <AppShell badges={{ screening: dashboard?.pendingEvaluationsCount || undefined }}>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-900">Evaluator Dashboard</h1>
+          <p className="mt-1 text-sm text-slate-500">Scholarship eligibility screening — SY 2025-2026</p>
         </div>
-
-        {isLoading && (
-          <section className="evaluator-dashboard-card">
-            <p>Loading...</p>
-          </section>
-        )}
-
-        {errorMessage && (
-          <section className="evaluator-dashboard-card">
-            <p className="form-error" role="alert">
-              {errorMessage}
-            </p>
-          </section>
-        )}
-
-        {!isLoading && !errorMessage && dashboard && (
-          <>
-            <section className="evaluator-stat-grid">
-              <div className="evaluator-stat-tile evaluator-stat-pending">
-                <span className="evaluator-stat-value">{dashboard.pendingEvaluationsCount}</span>
-                <span className="evaluator-stat-label">Pending Evaluations</span>
-              </div>
-            </section>
-
-            <section className="evaluator-dashboard-card">
-              <h2>Scholarship Application Queue</h2>
-              {dashboard.queue.length === 0 && <p>No scholarship applications awaiting evaluation.</p>}
-              {dashboard.queue.length > 0 && (
-                <ul className="evaluator-application-list">
-                  {dashboard.queue.map((application) => (
-                    <li key={application.applicationId}>
-                      <Link
-                        className="evaluator-application-link"
-                        to={`/evaluator/scholarship-applications/${application.applicationId}`}
-                      >
-                        <div className="evaluator-application-header">
-                          <span className="evaluator-application-name">{application.applicantName}</span>
-                          <span className={`evaluator-application-status status-${application.status.toLowerCase()}`}>
-                            {application.status}
-                          </span>
-                        </div>
-                        <p className="evaluator-application-meta">
-                          {application.scholarshipName} &middot; {application.scholarshipType} &middot; Grade
-                          Average {application.gradeAverage} &middot; Submitted{" "}
-                          {formatDate(application.submittedAt)}
-                        </p>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-
-            <section className="evaluator-dashboard-card">
-              <h2>Recently Evaluated</h2>
-              {dashboard.recentlyEvaluated.length === 0 && <p>No scholarship applications evaluated yet.</p>}
-              {dashboard.recentlyEvaluated.length > 0 && (
-                <ul className="evaluator-application-list">
-                  {dashboard.recentlyEvaluated.map((application) => (
-                    <li key={application.applicationId}>
-                      <Link
-                        className="evaluator-application-link"
-                        to={`/evaluator/scholarship-applications/${application.applicationId}`}
-                      >
-                        <div className="evaluator-application-header">
-                          <span className="evaluator-application-name">{application.applicantName}</span>
-                          <span className={`evaluator-application-status status-${application.status.toLowerCase()}`}>
-                            {application.status}
-                          </span>
-                        </div>
-                        <p className="evaluator-application-meta">
-                          {application.scholarshipName} &middot; {application.scholarshipType} &middot; Grade
-                          Average {application.gradeAverage} &middot; Submitted{" "}
-                          {formatDate(application.submittedAt)}
-                        </p>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          </>
-        )}
+        <Link
+          to="/evaluator/screening"
+          className="inline-flex items-center gap-2 rounded-lg bg-forest px-4 py-2.5 text-sm font-semibold text-white hover:bg-forest-dark"
+        >
+          Open Queue
+        </Link>
       </div>
-    </main>
+
+      {isLoading && <p className="mt-6 text-sm text-slate-400">Loading...</p>}
+      {errorMessage && (
+        <p className="mt-6 text-sm font-medium text-status-red" role="alert">
+          {errorMessage}
+        </p>
+      )}
+
+      {!isLoading && !errorMessage && dashboard && (
+        <>
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard icon={ListChecks} label="In Queue" value={dashboard.pendingEvaluationsCount} />
+            <StatCard icon={ClipboardCheck} label="Screened Today" value={dashboard.recentlyEvaluated.length} />
+            <StatCard icon={CheckCircle2} label="Eligible" value="—" />
+            <StatCard icon={XCircle} label="Not Eligible" value="—" />
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Link to="/evaluator/screening">
+              <Card className="flex h-full items-center justify-between transition-shadow hover:shadow-lg">
+                <div>
+                  <p className="font-bold text-slate-900">Scholarship Queue</p>
+                  <p className="text-sm text-slate-500">
+                    {dashboard.pendingEvaluationsCount} applications pending review →
+                  </p>
+                </div>
+                <ChevronRight size={18} className="text-slate-300" />
+              </Card>
+            </Link>
+            <Link to={dashboard.queue[0] ? `/evaluator/scholarship-applications/${dashboard.queue[0].applicationId}` : "#"}>
+              <Card className="flex h-full items-center justify-between transition-shadow hover:shadow-lg">
+                <div>
+                  <p className="font-bold text-slate-900">Eligibility Screening</p>
+                  <p className="text-sm text-slate-500">Evaluate current applicant →</p>
+                </div>
+                <ChevronRight size={18} className="text-slate-300" />
+              </Card>
+            </Link>
+          </div>
+
+          <Card className="mt-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-slate-900">Recently Screened</h2>
+              <Link to="/evaluator/scholarship-applications" className="text-sm font-semibold text-forest hover:underline">
+                View All →
+              </Link>
+            </div>
+            <div className="mt-4 overflow-x-auto">
+              {dashboard.recentlyEvaluated.length === 0 ? (
+                <p className="text-sm text-slate-400">No scholarship applications evaluated yet.</p>
+              ) : (
+                <table className="w-full min-w-max border-collapse text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      <th className="px-3 py-2">Applicant</th>
+                      <th className="px-3 py-2">Ref. No.</th>
+                      <th className="px-3 py-2">Program</th>
+                      <th className="px-3 py-2">GWA</th>
+                      <th className="px-3 py-2">Status</th>
+                      <th className="px-3 py-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {dashboard.recentlyEvaluated.map((application) => (
+                      <tr key={application.applicationId} className="border-b border-slate-50 last:border-0">
+                        <td className="px-3 py-3 font-medium text-slate-800">{application.applicantName}</td>
+                        <td className="px-3 py-3 text-slate-500">
+                          {application.applicationId.slice(0, 8).toUpperCase()}
+                        </td>
+                        <td className="px-3 py-3 text-slate-500">{application.scholarshipName}</td>
+                        <td className="px-3 py-3 text-slate-500">{application.gradeAverage}</td>
+                        <td className="px-3 py-3">
+                          <StatusBadge status={application.status} />
+                        </td>
+                        <td className="px-3 py-3">
+                          <Link
+                            to={`/evaluator/scholarship-applications/${application.applicationId}`}
+                            className="font-semibold text-forest hover:underline"
+                          >
+                            View
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          </Card>
+        </>
+      )}
+    </AppShell>
   );
 }

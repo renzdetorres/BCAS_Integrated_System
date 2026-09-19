@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import AppShell from "../components/layout/AppShell.jsx";
+import Card from "../components/ui/Card.jsx";
+import Toggle from "../components/ui/Toggle.jsx";
+import { inputClasses, labelClasses, primaryButtonClasses } from "../lib/formStyles.js";
 import { changeMyPassword, getMyProfile, saveMyProfile } from "../api/profileApi.js";
 import { getMyNotificationPreferences, setMyNotificationPreference } from "../api/notificationPreferencesApi.js";
 import { ApiError } from "../api/apiClient.js";
 import { useSession } from "../context/SessionContext.jsx";
-import "./ApplicantProfilePage.css";
 
 const initialPasswordForm = { currentPassword: "", newPassword: "", confirmNewPassword: "" };
 
@@ -181,231 +183,273 @@ export default function ApplicantProfilePage() {
     }
   }
 
-  if (isLoading) {
-    return (
-      <main className="profile-page">
-        <div className="profile-shell">
-          <div className="profile-card">Loading...</div>
-        </div>
-      </main>
-    );
-  }
-
   return (
-    <main className="profile-page">
-      <div className="profile-shell">
-        <Link className="profile-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1 className="profile-page-title">Settings</h1>
+    <AppShell>
+      <h1 className="text-2xl font-extrabold text-slate-900">Settings</h1>
+      <p className="mt-1 text-sm text-slate-500">Manage your profile, password, and notification preferences.</p>
 
-        <section className="profile-card">
-          <h2>Profile</h2>
-          <p className="profile-subtitle">
-            {hasExistingProfile
-              ? "You can update your profile at any time."
-              : "Complete your profile before submitting an application."}
-          </p>
-
-          {savedMessage && (
-            <p className="form-success" role="status">
-              {savedMessage}
+      {isLoading ? (
+        <p className="mt-6 text-sm text-slate-400">Loading...</p>
+      ) : (
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <Card>
+            <h2 className="text-lg font-bold text-slate-900">Profile</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              {hasExistingProfile
+                ? "You can update your profile at any time."
+                : "Complete your profile before submitting an application."}
             </p>
-          )}
-          {errorMessage && (
-            <p className="form-error" role="alert">
-              {errorMessage}
-            </p>
-          )}
 
-          <form onSubmit={handleSubmit} noValidate>
-            <div className="form-row-group">
-              <div className="form-row">
-                <label htmlFor="firstName">First name</label>
-                <input id="firstName" name="firstName" type="text" required value={form.firstName} onChange={handleChange} />
+            <form onSubmit={handleSubmit} noValidate className="mt-4 space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className={labelClasses} htmlFor="firstName">
+                    First name
+                  </label>
+                  <input
+                    id="firstName"
+                    name="firstName"
+                    type="text"
+                    required
+                    className={inputClasses}
+                    value={form.firstName}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div>
+                  <label className={labelClasses} htmlFor="lastName">
+                    Last name
+                  </label>
+                  <input
+                    id="lastName"
+                    name="lastName"
+                    type="text"
+                    required
+                    className={inputClasses}
+                    value={form.lastName}
+                    onChange={handleChange}
+                  />
+                </div>
               </div>
-              <div className="form-row">
-                <label htmlFor="lastName">Last name</label>
-                <input id="lastName" name="lastName" type="text" required value={form.lastName} onChange={handleChange} />
-              </div>
-            </div>
 
-            <div className="form-row">
-              <label htmlFor="birthDate">Birth date</label>
-              <input
-                id="birthDate"
-                name="birthDate"
-                type="date"
-                required
-                value={form.birthDate}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-row">
-              <label htmlFor="contactNumber">Contact number</label>
-              <input
-                id="contactNumber"
-                name="contactNumber"
-                type="tel"
-                required
-                value={form.contactNumber}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-row">
-              <label htmlFor="addressLine">Address</label>
-              <input
-                id="addressLine"
-                name="addressLine"
-                type="text"
-                placeholder="Street, barangay"
-                required
-                value={form.addressLine}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-row-group">
-              <div className="form-row">
-                <label htmlFor="city">City</label>
-                <input id="city" name="city" type="text" required value={form.city} onChange={handleChange} />
-              </div>
-              <div className="form-row">
-                <label htmlFor="province">Province</label>
-                <input id="province" name="province" type="text" required value={form.province} onChange={handleChange} />
-              </div>
-              <div className="form-row">
-                <label htmlFor="postalCode">Postal code</label>
+              <div>
+                <label className={labelClasses} htmlFor="birthDate">
+                  Birth date
+                </label>
                 <input
-                  id="postalCode"
-                  name="postalCode"
-                  type="text"
+                  id="birthDate"
+                  name="birthDate"
+                  type="date"
                   required
-                  value={form.postalCode}
+                  className={inputClasses}
+                  value={form.birthDate}
                   onChange={handleChange}
                 />
               </div>
-            </div>
 
-            <div className="form-row">
-              <label htmlFor="isBcasian">BCASian status</label>
-              <select id="isBcasian" name="isBcasian" value={form.isBcasian} onChange={handleChange}>
-                <option value="no">Not a BCASian</option>
-                <option value="yes">BCASian</option>
-              </select>
-            </div>
+              <div>
+                <label className={labelClasses} htmlFor="contactNumber">
+                  Contact number
+                </label>
+                <input
+                  id="contactNumber"
+                  name="contactNumber"
+                  type="tel"
+                  required
+                  className={inputClasses}
+                  value={form.contactNumber}
+                  onChange={handleChange}
+                />
+              </div>
 
-            <button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save Profile"}
-            </button>
-          </form>
-        </section>
+              <div>
+                <label className={labelClasses} htmlFor="addressLine">
+                  Address
+                </label>
+                <input
+                  id="addressLine"
+                  name="addressLine"
+                  type="text"
+                  placeholder="Street, barangay"
+                  required
+                  className={inputClasses}
+                  value={form.addressLine}
+                  onChange={handleChange}
+                />
+              </div>
 
-        <section className="profile-card">
-          <h2>Change Password</h2>
-          <p className="profile-subtitle">Enter your current password and choose a new one.</p>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <label className={labelClasses} htmlFor="city">
+                    City
+                  </label>
+                  <input id="city" name="city" type="text" required className={inputClasses} value={form.city} onChange={handleChange} />
+                </div>
+                <div>
+                  <label className={labelClasses} htmlFor="province">
+                    Province
+                  </label>
+                  <input
+                    id="province"
+                    name="province"
+                    type="text"
+                    required
+                    className={inputClasses}
+                    value={form.province}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div>
+                  <label className={labelClasses} htmlFor="postalCode">
+                    Postal code
+                  </label>
+                  <input
+                    id="postalCode"
+                    name="postalCode"
+                    type="text"
+                    required
+                    className={inputClasses}
+                    value={form.postalCode}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
 
-          {passwordSaved && (
-            <p className="form-success" role="status">
-              {passwordSaved}
-            </p>
-          )}
-          {passwordError && (
-            <p className="form-error" role="alert">
-              {passwordError}
-            </p>
-          )}
+              <div>
+                <label className={labelClasses} htmlFor="isBcasian">
+                  BCASian status
+                </label>
+                <select id="isBcasian" name="isBcasian" className={inputClasses} value={form.isBcasian} onChange={handleChange}>
+                  <option value="no">Not a BCASian</option>
+                  <option value="yes">BCASian</option>
+                </select>
+              </div>
 
-          <form onSubmit={handlePasswordSubmit} noValidate>
-            <div className="form-row">
-              <label htmlFor="currentPassword">Current password</label>
-              <input
-                id="currentPassword"
-                name="currentPassword"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={passwordForm.currentPassword}
-                onChange={handlePasswordChange}
-              />
-            </div>
+              {savedMessage && (
+                <p className="text-sm font-medium text-status-green" role="status">
+                  {savedMessage}
+                </p>
+              )}
+              {errorMessage && (
+                <p className="text-sm font-medium text-status-red" role="alert">
+                  {errorMessage}
+                </p>
+              )}
 
-            <div className="form-row">
-              <label htmlFor="newPassword">New password</label>
-              <input
-                id="newPassword"
-                name="newPassword"
-                type="password"
-                autoComplete="new-password"
-                minLength={8}
-                required
-                value={passwordForm.newPassword}
-                onChange={handlePasswordChange}
-              />
-            </div>
+              <button type="submit" disabled={isSubmitting} className={primaryButtonClasses}>
+                {isSubmitting ? "Saving..." : "Save Profile"}
+              </button>
+            </form>
+          </Card>
 
-            <div className="form-row">
-              <label htmlFor="confirmNewPassword">Confirm new password</label>
-              <input
-                id="confirmNewPassword"
-                name="confirmNewPassword"
-                type="password"
-                autoComplete="new-password"
-                minLength={8}
-                required
-                value={passwordForm.confirmNewPassword}
-                onChange={handlePasswordChange}
-              />
-            </div>
+          <div className="space-y-6">
+            <Card>
+              <h2 className="text-lg font-bold text-slate-900">Change Password</h2>
+              <p className="mt-1 text-sm text-slate-500">Enter your current password and choose a new one.</p>
 
-            <button type="submit" disabled={isChangingPassword}>
-              {isChangingPassword ? "Changing password..." : "Change Password"}
-            </button>
-          </form>
-        </section>
+              <form onSubmit={handlePasswordSubmit} noValidate className="mt-4 space-y-4">
+                <div>
+                  <label className={labelClasses} htmlFor="currentPassword">
+                    Current password
+                  </label>
+                  <input
+                    id="currentPassword"
+                    name="currentPassword"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    className={inputClasses}
+                    value={passwordForm.currentPassword}
+                    onChange={handlePasswordChange}
+                  />
+                </div>
 
-        <section className="profile-card">
-          <h2>Notification Preferences</h2>
-          <p className="profile-subtitle">
-            Choose which updates you'd like emailed to you. Turning one off stops just that type of email - you can
-            turn it back on anytime.
-          </p>
+                <div>
+                  <label className={labelClasses} htmlFor="newPassword">
+                    New password
+                  </label>
+                  <input
+                    id="newPassword"
+                    name="newPassword"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={8}
+                    required
+                    className={inputClasses}
+                    value={passwordForm.newPassword}
+                    onChange={handlePasswordChange}
+                  />
+                </div>
 
-          {preferencesError && (
-            <p className="form-error" role="alert">
-              {preferencesError}
-            </p>
-          )}
+                <div>
+                  <label className={labelClasses} htmlFor="confirmNewPassword">
+                    Confirm new password
+                  </label>
+                  <input
+                    id="confirmNewPassword"
+                    name="confirmNewPassword"
+                    type="password"
+                    autoComplete="new-password"
+                    minLength={8}
+                    required
+                    className={inputClasses}
+                    value={passwordForm.confirmNewPassword}
+                    onChange={handlePasswordChange}
+                  />
+                </div>
 
-          {isLoadingPreferences ? (
-            <p>Loading...</p>
-          ) : (
-            <ul className="notification-preference-list">
-              {preferences.map((preference) => (
-                <li key={preference.notificationType} className="notification-preference-row">
-                  <span className="notification-preference-name">{preference.displayName}</span>
-                  <button
-                    type="button"
-                    className={preference.isEnabled ? "preference-toggle-on" : "preference-toggle-off"}
-                    onClick={() => handlePreferenceToggle(preference)}
-                    disabled={pendingPreferenceType === preference.notificationType}
-                    role="switch"
-                    aria-checked={preference.isEnabled}
-                  >
-                    {pendingPreferenceType === preference.notificationType
-                      ? "Saving..."
-                      : preference.isEnabled
-                        ? "On"
-                        : "Off"}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
-    </main>
+                {passwordSaved && (
+                  <p className="text-sm font-medium text-status-green" role="status">
+                    {passwordSaved}
+                  </p>
+                )}
+                {passwordError && (
+                  <p className="text-sm font-medium text-status-red" role="alert">
+                    {passwordError}
+                  </p>
+                )}
+
+                <button type="submit" disabled={isChangingPassword} className={primaryButtonClasses}>
+                  {isChangingPassword ? "Changing password..." : "Change Password"}
+                </button>
+              </form>
+            </Card>
+
+            <Card>
+              <h2 className="text-lg font-bold text-slate-900">Notification Preferences</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Choose which updates you'd like emailed to you. Turning one off stops just that type of email — you
+                can turn it back on anytime.
+              </p>
+
+              {preferencesError && (
+                <p className="mt-2 text-sm font-medium text-status-red" role="alert">
+                  {preferencesError}
+                </p>
+              )}
+
+              {isLoadingPreferences ? (
+                <p className="mt-4 text-sm text-slate-400">Loading...</p>
+              ) : (
+                <div className="mt-4 divide-y divide-slate-100">
+                  {preferences.map((preference) => (
+                    <div
+                      key={preference.notificationType}
+                      className={pendingPreferenceType === preference.notificationType ? "pointer-events-none opacity-60" : ""}
+                    >
+                      <Toggle
+                        label={preference.displayName}
+                        checked={preference.isEnabled}
+                        onChange={() => handlePreferenceToggle(preference)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </div>
+        </div>
+      )}
+    </AppShell>
   );
 }
