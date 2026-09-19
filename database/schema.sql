@@ -1150,46 +1150,6 @@ END
 GO
 
 -- -----------------------------------------------------------------------------
--- BISAASS-24 Notification Preferences (Opt In/Out per Type)
--- Per-applicant email opt-in/out, one row per (UserId, NotificationType) an
--- applicant has ever changed from the default. A missing row means "still
--- enabled" (the default for every type) - NotificationPreferenceRepository.
--- IsEnabledAsync treats no row as enabled, so this table only ever needs to
--- hold the types someone actually opted out of (or back into), not a full
--- row per applicant per type. NotificationType is one of
--- NotificationEventTypes' seven keys (BISAASS-59): ApplicationReceived,
--- DocumentFlagged, ExamSchedule, ExamPermitAvailable, ApplicationResult,
--- ScholarshipResult, Announcement - a broader set than
--- NotificationTriggerConfigs' three admin-level keys above, since this is
--- the applicant's own per-type control, not the Admin's system-wide kill
--- switch; NotificationDispatchService checks both where both apply.
--- -----------------------------------------------------------------------------
-IF OBJECT_ID(N'dbo.NotificationPreferences', N'U') IS NULL
-BEGIN
-    CREATE TABLE dbo.NotificationPreferences
-    (
-        UserId           UNIQUEIDENTIFIER NOT NULL,
-        NotificationType NVARCHAR(30)     NOT NULL,
-        IsEnabled        BIT              NOT NULL,
-        UpdatedAt        DATETIME2(3)     NOT NULL CONSTRAINT DF_NotificationPreferences_UpdatedAt DEFAULT SYSUTCDATETIME(),
-        CONSTRAINT PK_NotificationPreferences PRIMARY KEY (UserId, NotificationType),
-        CONSTRAINT FK_NotificationPreferences_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId)
-    );
-END
-GO
-
--- -----------------------------------------------------------------------------
--- BISAASS-59 Email Notification Dispatch (All Event Types)
--- No schema change of its own - NotificationDispatchService reads
--- applicant emails/names straight off dbo.Users and every other event's
--- detail (application, document, exam schedule, announcement) off the
--- tables those tickets already added; NotificationPreferences above is
--- this ticket's only new storage, and it exists to satisfy BISAASS-24
--- (marked Done but never actually implemented in code until this ticket
--- needed it as a hard prerequisite).
--- -----------------------------------------------------------------------------
-
--- -----------------------------------------------------------------------------
 -- BISAASS-56 Admission Status Workflow Engine
 -- Until now, an application's Status changes (BISAASS-31) only ever
 -- overwrote AdmissionApplications.Remarks/UpdatedAt in place - the previous
@@ -1228,3 +1188,43 @@ BEGIN
     CREATE NONCLUSTERED INDEX IX_ApplicationStatusHistory_Application ON dbo.ApplicationStatusHistory (ApplicationId, Category, ChangedAt);
 END
 GO
+
+-- -----------------------------------------------------------------------------
+-- BISAASS-24 Notification Preferences (Opt In/Out per Type)
+-- Per-applicant email opt-in/out, one row per (UserId, NotificationType) an
+-- applicant has ever changed from the default. A missing row means "still
+-- enabled" (the default for every type) - NotificationPreferenceRepository.
+-- IsEnabledAsync treats no row as enabled, so this table only ever needs to
+-- hold the types someone actually opted out of (or back into), not a full
+-- row per applicant per type. NotificationType is one of
+-- NotificationEventTypes' seven keys (BISAASS-59): ApplicationReceived,
+-- DocumentFlagged, ExamSchedule, ExamPermitAvailable, ApplicationResult,
+-- ScholarshipResult, Announcement - a broader set than
+-- NotificationTriggerConfigs' three admin-level keys above, since this is
+-- the applicant's own per-type control, not the Admin's system-wide kill
+-- switch; NotificationDispatchService checks both where both apply.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.NotificationPreferences', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.NotificationPreferences
+    (
+        UserId           UNIQUEIDENTIFIER NOT NULL,
+        NotificationType NVARCHAR(30)     NOT NULL,
+        IsEnabled        BIT              NOT NULL,
+        UpdatedAt        DATETIME2(3)     NOT NULL CONSTRAINT DF_NotificationPreferences_UpdatedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_NotificationPreferences PRIMARY KEY (UserId, NotificationType),
+        CONSTRAINT FK_NotificationPreferences_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId)
+    );
+END
+GO
+
+-- -----------------------------------------------------------------------------
+-- BISAASS-59 Email Notification Dispatch (All Event Types)
+-- No schema change of its own - NotificationDispatchService reads
+-- applicant emails/names straight off dbo.Users and every other event's
+-- detail (application, document, exam schedule, announcement) off the
+-- tables those tickets already added; NotificationPreferences above is
+-- this ticket's only new storage, and it exists to satisfy BISAASS-24
+-- (marked Done but never actually implemented in code until this ticket
+-- needed it as a hard prerequisite).
+-- -----------------------------------------------------------------------------
