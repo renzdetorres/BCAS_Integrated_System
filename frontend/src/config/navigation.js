@@ -56,6 +56,17 @@ export const PORTAL_NAV = {
       { label: "Settings", to: "/settings", icon: Settings },
     ],
   },
+  AcademicHead: {
+    subtitle: "ACADEMIC HEAD",
+    rolePill: "Academic Head",
+    items: [
+      { label: "Overview", to: "/portal", icon: LayoutDashboard, badgeKey: "review" },
+      { label: "Scholarships", to: "/academic-head/scholarships", icon: Award },
+      { label: "Announcements", to: "/academic-head/announcements", icon: Megaphone },
+      { label: "Reports", to: "/academic-head/reports", icon: BarChart3 },
+      { label: "Settings", to: "/academic-head/settings", icon: Settings },
+    ],
+  },
   SupportStaff: {
     subtitle: "SUPPORT STAFF",
     rolePill: "Support Staff",
