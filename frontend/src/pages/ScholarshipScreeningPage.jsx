@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { CheckCircle2, XCircle, Circle } from "lucide-react";
+import AppShell from "../components/layout/AppShell.jsx";
+import Card from "../components/ui/Card.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import {
   SCREENING_VERDICTS,
   advanceScholarshipApplicationWorkflow,
@@ -7,19 +11,7 @@ import {
   recordScholarshipScreening,
 } from "../api/evaluatorScholarshipApplicationsApi.js";
 import { ApiError } from "../api/apiClient.js";
-import "./ScholarshipScreeningPage.css";
-
-const STAGE_LABELS = {
-  Submitted: "Submitted",
-  DocumentsVerified: "Documents Verified",
-  EligibilityScreening: "Eligibility Screening",
-  Evaluation: "Evaluation",
-  Result: "Result",
-};
-
-function stageLabel(stage) {
-  return STAGE_LABELS[stage] ?? stage;
-}
+import { primaryButtonClasses } from "../lib/formStyles.js";
 
 function formatDateTime(isoDateTime) {
   return new Date(isoDateTime).toLocaleString(undefined, {
@@ -29,6 +21,50 @@ function formatDateTime(isoDateTime) {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+/** Builds the checklist shown on screen from the real eligibility fields the API returns. */
+function buildChecklist(application) {
+  const items = [];
+
+  items.push({
+    label: `GWA of ${application.minimumGradeAverage ?? "—"} or higher`,
+    detail: `Applicant: ${application.gradeAverage}`,
+    met: application.meetsMinimumGrade,
+    required: true,
+  });
+
+  items.push({
+    label: "Scholarship slot available",
+    detail: `${application.eligibilityRules.remainingSlots} remaining of ${application.eligibilityRules.totalSlots}`,
+    met: application.eligibilityRules.remainingSlots > 0,
+    required: true,
+  });
+
+  if (application.eligibilityRules.entranceExamRequired) {
+    items.push({
+      label: "Entrance exam scheduled (non-BCASian)",
+      detail: application.eligibilityRules.entranceExamScheduled ? "Scheduled" : "Not yet scheduled",
+      met: application.eligibilityRules.entranceExamScheduled,
+      required: true,
+    });
+  }
+
+  items.push({
+    label: "Top 1 automatic qualifier",
+    detail: application.eligibilityRules.isTopOne ? "Yes" : "No",
+    met: application.eligibilityRules.isTopOne,
+    required: false,
+  });
+
+  items.push({
+    label: "First-time applicant for this scholarship",
+    detail: application.eligibilityRules.isReapplication ? "Reapplication" : "First attempt",
+    met: !application.eligibilityRules.isReapplication,
+    required: false,
+  });
+
+  return items;
 }
 
 export default function ScholarshipScreeningPage() {
@@ -97,302 +133,153 @@ export default function ScholarshipScreeningPage() {
     }
   }
 
+  const checklist = application ? buildChecklist(application) : [];
+  const requiredUnmet = checklist.filter((c) => c.required && !c.met).length;
+  const optionalMet = checklist.filter((c) => !c.required && c.met).length;
+  const passes = requiredUnmet === 0;
+
   return (
-    <main className="screening-page">
-      <div className="screening-card">
-        <Link className="screening-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1>Scholarship Screening</h1>
+    <AppShell>
+      <h1 className="text-2xl font-extrabold text-slate-900">Eligibility Screening</h1>
+      {application && (
+        <p className="mt-1 text-sm text-slate-500">
+          {application.applicationId.slice(0, 8).toUpperCase()} · {application.applicantName} ·{" "}
+          {application.scholarshipName}
+        </p>
+      )}
 
-        {isLoading && <p>Loading...</p>}
-        {loadError && (
-          <p className="form-error" role="alert">
-            {loadError}
-          </p>
-        )}
+      {isLoading && <p className="mt-6 text-sm text-slate-400">Loading...</p>}
+      {loadError && (
+        <p className="mt-6 text-sm font-medium text-status-red" role="alert">
+          {loadError}
+        </p>
+      )}
 
-        {!isLoading && !loadError && application && (
-          <>
-            <section className="screening-section">
-              <h2>Workflow</h2>
-              <ol className="workflow-stepper">
-                {application.workflowStages.map((stage) => {
-                  const currentIndex = application.workflowStages.indexOf(application.status);
-                  const stageIndex = application.workflowStages.indexOf(stage);
-                  const isCurrent = stage === application.status;
-                  const isDone = currentIndex >= 0 && stageIndex < currentIndex;
-                  return (
-                    <li
-                      key={stage}
-                      className={
-                        isCurrent ? "workflow-step workflow-step-current" : isDone ? "workflow-step workflow-step-done" : "workflow-step"
-                      }
-                    >
-                      {stageLabel(stage)}
-                    </li>
-                  );
-                })}
-              </ol>
-              {!application.workflowStages.includes(application.status) && (
-                <p className="workflow-final-note">
-                  Status is <strong>{application.status}</strong> - a final decision outside this workflow.
+      {!isLoading && !loadError && application && (
+        <>
+          <Card className="mt-6">
+            <div className="flex items-center gap-4">
+              <span
+                className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${
+                  passes ? "bg-status-greenBg text-status-green" : "bg-status-redBg text-status-red"
+                }`}
+              >
+                {passes ? <CheckCircle2 size={30} /> : <XCircle size={30} />}
+              </span>
+              <div>
+                <p className="text-lg font-bold text-slate-900">
+                  {passes ? "Meets Required Criteria" : "Fails Required Criteria"}
                 </p>
-              )}
+                <p className="text-sm text-slate-500">
+                  {optionalMet} optional criterion met · {requiredUnmet} required unmet
+                </p>
+              </div>
+            </div>
+          </Card>
 
+          <Card className="mt-6">
+            <h2 className="font-bold text-slate-900">Eligibility Checklist</h2>
+            <ul className="mt-4 space-y-3">
+              {checklist.map((item) => (
+                <li key={item.label} className="flex items-start gap-3">
+                  {item.met ? (
+                    <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-status-green" />
+                  ) : (
+                    <Circle size={20} className="mt-0.5 shrink-0 text-slate-300" />
+                  )}
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800">
+                      {item.label} <span className="font-normal text-slate-500">({item.detail})</span>
+                    </p>
+                    <p className="text-xs text-slate-400">{item.required ? "Required" : "Optional"}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </Card>
+
+          {application.canAdvance && (
+            <Card className="mt-6">
+              <h2 className="font-bold text-slate-900">Workflow</h2>
+              <p className="mt-1 text-sm text-slate-500">Current stage: {application.status}</p>
               {advanceError && (
-                <p className="form-error" role="alert">
+                <p className="mt-2 text-sm font-medium text-status-red" role="alert">
                   {advanceError}
                 </p>
               )}
+              <button
+                type="button"
+                onClick={handleAdvance}
+                disabled={isAdvancing}
+                className={`${primaryButtonClasses} mt-3`}
+              >
+                {isAdvancing ? "Advancing..." : "Advance to Next Stage"}
+              </button>
+            </Card>
+          )}
 
-              {application.canAdvance && (
-                <button type="button" className="workflow-advance-button" onClick={handleAdvance} disabled={isAdvancing}>
-                  {isAdvancing ? "Advancing..." : "Advance to Next Stage"}
-                </button>
+          {application.screening && (
+            <Card className="mt-6">
+              <h2 className="font-bold text-slate-900">Current Verdict</h2>
+              <p className="mt-2 text-sm">
+                <StatusBadge
+                  status={application.screening.verdict === "Qualified" ? "Qualified" : "Not Qualified"}
+                />{" "}
+                <span className="text-slate-500">
+                  by {application.screening.evaluatedByName} on {formatDateTime(application.screening.evaluatedAt)}
+                </span>
+              </p>
+              {application.screening.remarks && (
+                <p className="mt-2 text-sm italic text-slate-500">"{application.screening.remarks}"</p>
               )}
-            </section>
+            </Card>
+          )}
 
-            <section className="screening-section">
-              <h2>Applicant</h2>
-              <dl className="screening-detail-list">
-                <div>
-                  <dt>Name</dt>
-                  <dd>{application.applicantName}</dd>
-                </div>
-                <div>
-                  <dt>Email</dt>
-                  <dd>{application.applicantEmail}</dd>
-                </div>
-                <div>
-                  <dt>BCASian</dt>
-                  <dd>{application.isBcasian === null ? "Unknown" : application.isBcasian ? "Yes" : "No"}</dd>
-                </div>
-              </dl>
-            </section>
+          <Card className="mt-6">
+            <h2 className="font-bold text-slate-900">Record Verdict</h2>
+            <form onSubmit={handleSubmit} noValidate className="mt-4 space-y-4">
+              <div className="flex gap-4">
+                {SCREENING_VERDICTS.map((option) => (
+                  <label key={option.value} className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                    <input
+                      type="radio"
+                      name="verdict"
+                      value={option.value}
+                      checked={verdict === option.value}
+                      onChange={(event) => setVerdict(event.target.value)}
+                    />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
 
-            <section className="screening-section">
-              <h2>Scholarship Requirements Check</h2>
-              <dl className="screening-detail-list">
-                <div>
-                  <dt>Scholarship</dt>
-                  <dd>
-                    {application.scholarshipName} ({application.scholarshipType})
-                  </dd>
-                </div>
-                <div>
-                  <dt>Applicant Grade Average</dt>
-                  <dd>{application.gradeAverage}</dd>
-                </div>
-                <div>
-                  <dt>Minimum Grade Required</dt>
-                  <dd>{application.minimumGradeAverage ?? "Not set"}</dd>
-                </div>
-                <div>
-                  <dt>Meets Requirement</dt>
-                  <dd>
-                    {application.meetsMinimumGrade === null ? (
-                      "N/A"
-                    ) : (
-                      <span
-                        className={
-                          application.meetsMinimumGrade ? "requirement-met" : "requirement-not-met"
-                        }
-                      >
-                        {application.meetsMinimumGrade ? "Yes" : "No"}
-                      </span>
-                    )}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Application Status</dt>
-                  <dd>{application.status}</dd>
-                </div>
-                <div>
-                  <dt>Submitted</dt>
-                  <dd>{formatDateTime(application.submittedAt)}</dd>
-                </div>
-              </dl>
-            </section>
+              <textarea
+                value={remarks}
+                onChange={(event) => setRemarks(event.target.value)}
+                rows={3}
+                maxLength={1000}
+                placeholder="Remarks (optional)"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-forest focus:outline-none focus:ring-1 focus:ring-forest"
+              />
 
-            <section className="screening-section">
-              <h2>Eligibility Rules</h2>
-              <ul className="rules-list">
-                <li className="rules-item">
-                  <span className="rules-item-label">Top 1 (free all, no entrance exam, no interview)</span>
-                  <span className={application.eligibilityRules.isTopOne ? "rules-badge-yes" : "rules-badge-no"}>
-                    {application.eligibilityRules.isTopOne ? "Yes" : "No"}
-                  </span>
-                </li>
-                <li className="rules-item">
-                  <span className="rules-item-label">Entrance Exam Required (Non-BCASian)</span>
-                  <span
-                    className={
-                      application.eligibilityRules.entranceExamRequired === null
-                        ? "rules-badge-unknown"
-                        : application.eligibilityRules.entranceExamRequired
-                          ? "rules-badge-yes"
-                          : "rules-badge-no"
-                    }
-                  >
-                    {application.eligibilityRules.entranceExamRequired === null
-                      ? "Unknown"
-                      : application.eligibilityRules.entranceExamRequired
-                        ? "Required"
-                        : "Not Required"}
-                  </span>
-                </li>
-                {application.eligibilityRules.entranceExamRequired && (
-                  <li className="rules-item">
-                    <span className="rules-item-label">Entrance Exam Scheduled</span>
-                    <span
-                      className={
-                        application.eligibilityRules.entranceExamScheduled ? "rules-badge-yes" : "rules-badge-no"
-                      }
-                    >
-                      {application.eligibilityRules.entranceExamScheduled ? "Yes" : "Not Yet"}
-                    </span>
-                  </li>
-                )}
-                <li className="rules-item">
-                  <span className="rules-item-label">Scholarship Slots</span>
-                  <span className="rules-item-value">
-                    {application.eligibilityRules.remainingSlots} remaining of{" "}
-                    {application.eligibilityRules.totalSlots}
-                  </span>
-                </li>
-                <li className="rules-item">
-                  <span className="rules-item-label">Reapplication</span>
-                  <span className={application.eligibilityRules.isReapplication ? "rules-badge-yes" : "rules-badge-no"}>
-                    {application.eligibilityRules.isReapplication ? "Yes" : "No"}
-                  </span>
-                </li>
-              </ul>
-
-              {application.eligibilityRules.previousAttempts.length > 0 && (
-                <div className="reapplication-history">
-                  <h3>Previous Attempts for This Scholarship</h3>
-                  <ul className="reapplication-list">
-                    {application.eligibilityRules.previousAttempts.map((attempt) => (
-                      <li key={attempt.applicationId} className="reapplication-row">
-                        <span className="reapplication-status">{attempt.status}</span>
-                        <span className="reapplication-verdict">
-                          {attempt.screeningVerdict
-                            ? attempt.screeningVerdict === "Qualified"
-                              ? "Qualified"
-                              : "Not Qualified"
-                            : "Not screened"}
-                        </span>
-                        <span className="reapplication-date">{formatDateTime(attempt.submittedAt)}</span>
-                        {attempt.screeningRemarks && (
-                          <span className="reapplication-remarks">"{attempt.screeningRemarks}"</span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </section>
-
-            <section className="screening-section">
-              <h2>Submitted Documents</h2>
-              {application.documents.length === 0 ? (
-                <p>No documents uploaded yet.</p>
-              ) : (
-                <ul className="document-list">
-                  {application.documents.map((document) => (
-                    <li key={document.documentType} className="document-row">
-                      <div>
-                        <span className="document-type">{document.documentType}</span>
-                        <span className="document-filename">{document.fileName}</span>
-                      </div>
-                      <div className="document-status-group">
-                        <span className={`document-status document-status-${document.status.toLowerCase()}`}>
-                          {document.status}
-                        </span>
-                        {document.flaggedReason && (
-                          <span className="document-flagged-reason">{document.flaggedReason}</span>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-
-            {application.screening && (
-              <section className="screening-section">
-                <h2>Current Verdict</h2>
-                <p className="screening-current-verdict">
-                  <span
-                    className={
-                      application.screening.verdict === "Qualified"
-                        ? "verdict-qualified"
-                        : "verdict-not-qualified"
-                    }
-                  >
-                    {application.screening.verdict === "Qualified" ? "Qualified" : "Not Qualified"}
-                  </span>{" "}
-                  by {application.screening.evaluatedByName} on{" "}
-                  {formatDateTime(application.screening.evaluatedAt)}
+              {saveError && (
+                <p className="text-sm font-medium text-status-red" role="alert">
+                  {saveError}
                 </p>
-                {application.screening.remarks && (
-                  <p className="screening-current-remarks">"{application.screening.remarks}"</p>
-                )}
-              </section>
-            )}
+              )}
+              {savedMessage && (
+                <p className="text-sm font-medium text-status-green" role="status">
+                  {savedMessage}
+                </p>
+              )}
 
-            <section className="screening-section">
-              <h2>Record Verdict</h2>
-              <form onSubmit={handleSubmit} noValidate>
-                <div className="form-row">
-                  <span className="form-row-label">Verdict</span>
-                  <div className="verdict-options">
-                    {SCREENING_VERDICTS.map((option) => (
-                      <label key={option.value} className="verdict-option">
-                        <input
-                          type="radio"
-                          name="verdict"
-                          value={option.value}
-                          checked={verdict === option.value}
-                          onChange={(event) => setVerdict(event.target.value)}
-                        />
-                        {option.label}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <label htmlFor="remarks">Remarks (optional)</label>
-                  <textarea
-                    id="remarks"
-                    value={remarks}
-                    onChange={(event) => setRemarks(event.target.value)}
-                    rows={4}
-                    maxLength={1000}
-                  />
-                </div>
-
-                {saveError && (
-                  <p className="form-error" role="alert">
-                    {saveError}
-                  </p>
-                )}
-                {savedMessage && (
-                  <p className="form-success" role="status">
-                    {savedMessage}
-                  </p>
-                )}
-
-                <button type="submit" disabled={isSaving}>
-                  {isSaving ? "Saving..." : "Save Verdict"}
-                </button>
-              </form>
-            </section>
-          </>
-        )}
-      </div>
-    </main>
+              <button type="submit" disabled={isSaving} className={primaryButtonClasses}>
+                {isSaving ? "Saving..." : "Save Verdict"}
+              </button>
+            </form>
+          </Card>
+        </>
+      )}
+    </AppShell>
   );
 }
