@@ -1,20 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Users, Clock, CheckCircle2, XCircle, BarChart3 } from "lucide-react";
-import AppShell from "../components/layout/AppShell.jsx";
-import Card from "../components/ui/Card.jsx";
-import StatCard from "../components/ui/StatCard.jsx";
-import StatusBadge from "../components/ui/StatusBadge.jsx";
-import BarChart from "../components/ui/BarChart.jsx";
-import DonutChart from "../components/ui/DonutChart.jsx";
 import { getAdminDashboard } from "../api/adminDashboardApi.js";
 import { APPLICATION_TYPES } from "../api/admissionApi.js";
 import { ApiError } from "../api/apiClient.js";
+import { useSession } from "../context/SessionContext.jsx";
+import { useLogout } from "../hooks/useLogout.js";
+import "./AdminDashboardPage.css";
 
 function formatDate(isoDateTime) {
   return new Date(isoDateTime).toLocaleDateString(undefined, {
     year: "numeric",
-    month: "short",
+    month: "long",
     day: "numeric",
   });
 }
@@ -24,6 +20,8 @@ function admissionTypeLabel(applicationType) {
 }
 
 export default function AdminDashboardPage() {
+  const { session } = useSession();
+  const handleLogout = useLogout();
   const [dashboard, setDashboard] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -50,109 +48,142 @@ export default function AdminDashboardPage() {
   }, []);
 
   return (
-    <AppShell badges={{ applications: dashboard?.pendingCount || undefined }}>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-900">Overview</h1>
-          <p className="mt-1 text-sm text-slate-500">Admissions and Scholarship — SY 2025-2026</p>
+    <main className="admin-dashboard-page">
+      <div className="admin-dashboard-shell">
+        <header className="admin-dashboard-header">
+          <div>
+            <span className="admin-dashboard-badge">Admin-Registrar</span>
+            <h1>Admin Dashboard</h1>
+            <p>
+              Signed in as <strong>{session.email}</strong>.
+            </p>
+          </div>
+          <button type="button" onClick={handleLogout}>
+            Log Out
+          </button>
+        </header>
+
+        <div className="admin-dashboard-links">
+          <Link className="admin-dashboard-link" to="/admin/applications">
+            Applications
+          </Link>
+          <Link className="admin-dashboard-link" to="/admin/documents">
+            Documents
+          </Link>
+          <Link className="admin-dashboard-link" to="/admin/archive">
+            Records Archive
+          </Link>
+          <Link className="admin-dashboard-link" to="/admin/announcements">
+            Announcements
+          </Link>
+          <Link className="admin-dashboard-link" to="/admin/reports">
+            Reports
+          </Link>
+          <Link className="admin-dashboard-link" to="/admin/exam-schedules">
+            Exam Schedules
+          </Link>
+          <Link className="admin-dashboard-link" to="/admin/exam-permits">
+            Exam Permits
+          </Link>
+          <Link className="admin-dashboard-link" to="/admin/scholarships">
+            Scholarship Slots
+          </Link>
+          <Link className="admin-dashboard-link" to="/admin/reservations">
+            Reservations
+          </Link>
+          <Link className="admin-dashboard-link" to="/admin/staff">
+            Create Staff Account
+          </Link>
+          <Link className="admin-dashboard-link" to="/admin/users">
+            Manage Accounts
+          </Link>
+          <Link className="admin-dashboard-link" to="/admin/notification-settings">
+            Notification Settings
+          </Link>
+          <Link className="admin-dashboard-link" to="/admin/settings">
+            Admin Settings
+          </Link>
         </div>
-        <Link
-          to="/admin/reports"
-          className="inline-flex items-center gap-2 rounded-lg bg-forest px-4 py-2.5 text-sm font-semibold text-white hover:bg-forest-dark"
-        >
-          <BarChart3 size={16} />
-          Generate Report
-        </Link>
-      </div>
 
-      {isLoading && <p className="mt-6 text-sm text-slate-400">Loading...</p>}
-      {errorMessage && (
-        <p className="mt-6 text-sm font-medium text-status-red" role="alert">
-          {errorMessage}
-        </p>
-      )}
+        {isLoading && (
+          <section className="admin-dashboard-card">
+            <p>Loading...</p>
+          </section>
+        )}
 
-      {!isLoading && !errorMessage && dashboard && (
-        <>
-          <div className="mt-6 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-900">Admissions Overview</h2>
-            <Link to="/admin/applications" className="text-sm font-semibold text-forest hover:underline">
-              View All →
-            </Link>
-          </div>
+        {errorMessage && (
+          <section className="admin-dashboard-card">
+            <p className="form-error" role="alert">
+              {errorMessage}
+            </p>
+          </section>
+        )}
 
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard icon={Users} label="Total Applicants" value={dashboard.totalApplicants} />
-            <StatCard icon={Clock} label="Pending Review" value={dashboard.pendingCount} />
-            <StatCard icon={CheckCircle2} label="Approved" value={dashboard.approvedCount} />
-            <StatCard icon={XCircle} label="Rejected" value={dashboard.rejectedCount} />
-          </div>
-
-          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <Card>
-              <h3 className="font-bold text-slate-900">By Program Level</h3>
-              <div className="mt-4">
-                {dashboard.byProgram.length === 0 ? (
-                  <p className="text-sm text-slate-400">No admission applications submitted yet.</p>
-                ) : (
-                  <BarChart data={dashboard.byProgram.map((p) => ({ label: p.program, count: p.count }))} />
-                )}
+        {!isLoading && !errorMessage && dashboard && (
+          <>
+            <section className="admin-stat-grid">
+              <div className="admin-stat-tile">
+                <span className="admin-stat-value">{dashboard.totalApplications}</span>
+                <span className="admin-stat-label">Total Applications</span>
               </div>
-            </Card>
-
-            <Card>
-              <h3 className="font-bold text-slate-900">Status Distribution</h3>
-              <div className="mt-4">
-                <DonutChart
-                  data={[
-                    { label: "Pending", value: dashboard.pendingCount, color: "amber" },
-                    { label: "Approved", value: dashboard.approvedCount, color: "green" },
-                    { label: "Rejected", value: dashboard.rejectedCount, color: "red" },
-                  ]}
-                />
+              <div className="admin-stat-tile">
+                <span className="admin-stat-value">{dashboard.totalApplicants}</span>
+                <span className="admin-stat-label">Total Applicants</span>
               </div>
-            </Card>
-          </div>
+              <div className="admin-stat-tile admin-stat-pending">
+                <span className="admin-stat-value">{dashboard.pendingCount}</span>
+                <span className="admin-stat-label">Pending</span>
+              </div>
+              <div className="admin-stat-tile admin-stat-approved">
+                <span className="admin-stat-value">{dashboard.approvedCount}</span>
+                <span className="admin-stat-label">Approved</span>
+              </div>
+              <div className="admin-stat-tile admin-stat-rejected">
+                <span className="admin-stat-value">{dashboard.rejectedCount}</span>
+                <span className="admin-stat-label">Rejected</span>
+              </div>
+            </section>
 
-          <Card className="mt-6">
-            <h3 className="font-bold text-slate-900">Recent Admission Applications</h3>
-            <div className="mt-4 overflow-x-auto">
-              {dashboard.recentApplications.length === 0 ? (
-                <p className="text-sm text-slate-400">No admission applications submitted yet.</p>
-              ) : (
-                <table className="w-full min-w-max border-collapse text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      <th className="px-3 py-2">Applicant</th>
-                      <th className="px-3 py-2">App. No</th>
-                      <th className="px-3 py-2">Level</th>
-                      <th className="px-3 py-2">Status</th>
-                      <th className="px-3 py-2">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dashboard.recentApplications.map((application) => (
-                      <tr key={application.applicationId} className="border-b border-slate-50 last:border-0">
-                        <td className="px-3 py-3 font-medium text-slate-800">{application.applicantName}</td>
-                        <td className="px-3 py-3 text-slate-500">
-                          {application.applicationId.slice(0, 8).toUpperCase()}
-                        </td>
-                        <td className="px-3 py-3 text-slate-500">
-                          {admissionTypeLabel(application.applicationType)} · {application.courseAppliedFor}
-                        </td>
-                        <td className="px-3 py-3">
-                          <StatusBadge status={application.status} />
-                        </td>
-                        <td className="px-3 py-3 text-slate-500">{formatDate(application.submittedAt)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <section className="admin-dashboard-card">
+              <h2>Applicants by Program</h2>
+              {dashboard.byProgram.length === 0 && <p>No admission applications submitted yet.</p>}
+              {dashboard.byProgram.length > 0 && (
+                <ul className="admin-program-list">
+                  {dashboard.byProgram.map((entry) => (
+                    <li key={entry.program}>
+                      <span className="admin-program-name">{entry.program}</span>
+                      <span className="admin-program-count">{entry.count}</span>
+                    </li>
+                  ))}
+                </ul>
               )}
-            </div>
-          </Card>
-        </>
-      )}
-    </AppShell>
+            </section>
+
+            <section className="admin-dashboard-card">
+              <h2>Recent Applications</h2>
+              {dashboard.recentApplications.length === 0 && <p>No admission applications submitted yet.</p>}
+              {dashboard.recentApplications.length > 0 && (
+                <ul className="admin-recent-list">
+                  {dashboard.recentApplications.map((application) => (
+                    <li key={application.applicationId}>
+                      <div className="admin-recent-header">
+                        <span className="admin-recent-name">{application.applicantName}</span>
+                        <span className={`admin-recent-status status-${application.status.toLowerCase()}`}>
+                          {application.status}
+                        </span>
+                      </div>
+                      <p className="admin-recent-meta">
+                        {admissionTypeLabel(application.applicationType)} &middot; {application.courseAppliedFor}{" "}
+                        &middot; Submitted {formatDate(application.submittedAt)}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </>
+        )}
+      </div>
+    </main>
   );
 }

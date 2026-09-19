@@ -11,8 +11,8 @@ import PortalPage from "./PortalPage.jsx";
 // (BISAASS-27), Evaluator gets its own queue/evaluations dashboard
 // (BISAASS-41), Academic Head gets its own decision-queue-plus-oversight
 // dashboard (BISAASS-47), Support Staff gets its own document-verification
-// dashboard; every other staff role lands on the generic staff portal until
-// they have a dedicated one built.
+// landing dashboard (BISAASS-51); every other staff role lands on the
+// generic staff portal until they have a dedicated one built.
 export default function PortalRouter() {
   const { session } = useSession();
   if (session.role === "Applicant") return <ApplicantDashboardPage />;

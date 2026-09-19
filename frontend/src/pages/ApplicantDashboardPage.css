@@ -1,0 +1,130 @@
+.dashboard-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  background: #f4f6f8;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 24px;
+}
+
+.dashboard-shell {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dashboard-eyebrow {
+  margin: 0 0 4px;
+  color: #2f6fed;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #1a2332;
+}
+
+.dashboard-header button {
+  padding: 10px 16px;
+  background: #ffffff;
+  color: #2f6fed;
+  border: 1px solid #cdd5df;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dashboard-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+}
+
+.dashboard-card h2 {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+  color: #1a2332;
+}
+
+.form-error {
+  color: #c0392b;
+  background: #fdecea;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+}
+
+.deadline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.deadline-list li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e9ef;
+}
+
+.deadline-list li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.deadline-type {
+  grid-column: 1 / -1;
+  color: #2f6fed;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.deadline-title {
+  color: #1a2332;
+  font-size: 0.95rem;
+}
+
+.deadline-date {
+  color: #5c6b7a;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.quick-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.quick-link {
+  padding: 10px 16px;
+  background: #e8f0fe;
+  color: #2f6fed;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}

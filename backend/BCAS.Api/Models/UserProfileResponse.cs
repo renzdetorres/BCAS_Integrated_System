@@ -13,7 +13,6 @@ public class UserProfileResponse
     public string Email { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
     public bool IsActive { get; set; }
-    public DateTime CreatedAt { get; set; }
 
     /// <summary>Free-text department/program name (BISAASS-49). Null unless set for an AcademicHead account.</summary>
     public string? Department { get; set; }

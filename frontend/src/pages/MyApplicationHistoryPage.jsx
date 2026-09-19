@@ -62,10 +62,10 @@ export default function MyApplicationHistoryPage() {
         <header className="history-header">
           <h1>My Application</h1>
           <div className="history-actions">
-            <Link className="history-action-link" to="/app/my-application">
+            <Link className="history-action-link" to="/applications">
               Submit Admission Application
             </Link>
-            <Link className="history-action-link" to="/app/my-application">
+            <Link className="history-action-link" to="/scholarships">
               Submit Scholarship Application
             </Link>
           </div>
