@@ -32,7 +32,7 @@ export const PORTAL_NAV = {
       { label: "Documents", to: "/documents", icon: FolderOpen, badgeKey: "documents" },
       { label: "Announcements", to: "/announcements", icon: Megaphone },
       { label: "Application Status", to: "/application-tracking", icon: ListChecks },
-      { label: "Settings", to: "/settings", icon: Settings },
+      { label: "Settings", to: "/profile", icon: Settings },
     ],
   },
   Admin: {
