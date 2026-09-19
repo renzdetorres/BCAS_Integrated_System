@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import AppShell from "../components/layout/AppShell.jsx";
-import Card from "../components/ui/Card.jsx";
-import Toggle from "../components/ui/Toggle.jsx";
+import { Link } from "react-router-dom";
 import { listSystemSettings, setSystemSettingEnabled } from "../api/systemSettingsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import "./AdminSettingsPage.css";
 
 function formatDateTime(isoDateTime) {
   return new Date(isoDateTime).toLocaleString(undefined, {
@@ -52,38 +51,48 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <AppShell>
-      <h1 className="text-2xl font-extrabold text-slate-900">Admin Settings</h1>
-      <p className="mt-1 text-sm text-slate-500">
-        System-level settings for admissions and scholarships. Admin-Registrar only.
-      </p>
-
-      {errorMessage && (
-        <p className="mt-4 text-sm font-medium text-status-red" role="alert">
-          {errorMessage}
+    <main className="admin-settings-page">
+      <div className="admin-settings-card">
+        <Link className="admin-settings-back-link" to="/portal">
+          &larr; Back to portal
+        </Link>
+        <h1>Admin Settings</h1>
+        <p className="admin-settings-subtitle">
+          System-level settings for admissions and scholarships. Admin-Registrar only.
         </p>
-      )}
 
-      <Card className="mt-6">
-        {isLoading ? (
-          <p className="text-sm text-slate-400">Loading...</p>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {settings.map((setting) => (
-              <div key={setting.settingKey} className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0">
-                <div className="min-w-0">
-                  <p className="font-semibold text-slate-800">{setting.displayName}</p>
-                  <p className="mt-0.5 text-sm text-slate-500">{setting.description}</p>
-                  <p className="mt-1 text-xs text-slate-400">Last updated {formatDateTime(setting.updatedAt)}</p>
-                </div>
-                <div className={pendingSettingKey === setting.settingKey ? "pointer-events-none opacity-60" : ""}>
-                  <Toggle checked={setting.isEnabled} onChange={() => handleToggle(setting)} label="" />
-                </div>
-              </div>
-            ))}
-          </div>
+        {errorMessage && (
+          <p className="form-error" role="alert">
+            {errorMessage}
+          </p>
         )}
-      </Card>
-    </AppShell>
+
+        {isLoading ? (
+          <p>Loading...</p>
+        ) : (
+          <ul className="admin-settings-list">
+            {settings.map((setting) => (
+              <li key={setting.settingKey} className="admin-settings-row">
+                <div className="admin-settings-info">
+                  <span className="admin-settings-name">{setting.displayName}</span>
+                  <p className="admin-settings-description">{setting.description}</p>
+                  <span className="admin-settings-updated">Last updated {formatDateTime(setting.updatedAt)}</span>
+                </div>
+                <button
+                  type="button"
+                  className={setting.isEnabled ? "setting-toggle-on" : "setting-toggle-off"}
+                  onClick={() => handleToggle(setting)}
+                  disabled={pendingSettingKey === setting.settingKey}
+                  role="switch"
+                  aria-checked={setting.isEnabled}
+                >
+                  {pendingSettingKey === setting.settingKey ? "Saving..." : setting.isEnabled ? "On" : "Off"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </main>
   );
 }

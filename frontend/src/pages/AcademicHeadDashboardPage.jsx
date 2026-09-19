@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ClipboardList, CheckCircle2, XCircle, Users, ChevronRight } from "lucide-react";
-import AppShell from "../components/layout/AppShell.jsx";
-import Card from "../components/ui/Card.jsx";
-import StatCard from "../components/ui/StatCard.jsx";
-import StatusBadge from "../components/ui/StatusBadge.jsx";
 import { getApplicationsReadyForDecision } from "../api/academicHeadScholarshipApplicationsApi.js";
 import { getAdminDashboard } from "../api/adminDashboardApi.js";
 import { ApiError } from "../api/apiClient.js";
+import { useSession } from "../context/SessionContext.jsx";
+import { useLogout } from "../hooks/useLogout.js";
+import "./AcademicHeadDashboardPage.css";
 
 function formatDate(isoDateTime) {
   return new Date(isoDateTime).toLocaleDateString(undefined, {
@@ -18,6 +16,8 @@ function formatDate(isoDateTime) {
 }
 
 export default function AcademicHeadDashboardPage() {
+  const { session } = useSession();
+  const handleLogout = useLogout();
   const [queue, setQueue] = useState([]);
   const [oversight, setOversight] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,106 +47,134 @@ export default function AcademicHeadDashboardPage() {
   }, []);
 
   return (
-    <AppShell badges={{ review: queue.length || undefined }}>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-900">Academic Head Dashboard</h1>
-          <p className="mt-1 text-sm text-slate-500">Scholarship oversight &amp; department reporting — SY 2025-2026</p>
-        </div>
-      </div>
-
-      {isLoading && <p className="mt-6 text-sm text-slate-400">Loading...</p>}
-      {errorMessage && (
-        <p className="mt-6 text-sm font-medium text-status-red" role="alert">
-          {errorMessage}
-        </p>
-      )}
-
-      {!isLoading && !errorMessage && (
-        <>
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard icon={ClipboardList} label="Awaiting Decision" value={queue.length} />
-            <StatCard icon={Users} label="Total Applications" value={oversight?.totalApplications ?? "—"} />
-            <StatCard icon={CheckCircle2} label="Approved" value={oversight?.approvedCount ?? "—"} />
-            <StatCard icon={XCircle} label="Rejected" value={oversight?.rejectedCount ?? "—"} />
+    <main className="ah-dashboard-page">
+      <div className="ah-dashboard-shell">
+        <header className="ah-dashboard-header">
+          <div>
+            <span className="ah-dashboard-badge">Academic Head</span>
+            <h1>Academic Head Dashboard</h1>
+            <p>
+              Signed in as <strong>{session.email}</strong>.
+            </p>
           </div>
+          <button type="button" onClick={handleLogout}>
+            Log Out
+          </button>
+        </header>
 
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <Link to="/academic-head/scholarships">
-              <Card className="flex h-full items-center justify-between transition-shadow hover:shadow-lg">
-                <div>
-                  <p className="font-bold text-slate-900">Scholarship Slots</p>
-                  <p className="text-sm text-slate-500">Manage slot capacity →</p>
-                </div>
-                <ChevronRight size={18} className="text-slate-300" />
-              </Card>
+        <section className="ah-dashboard-card">
+          <h2>Management</h2>
+          <p className="ah-management-subtitle">
+            Available if an Admin-Registrar has authorized the Academic Head role for each area.
+          </p>
+          <div className="ah-management-links">
+            <Link className="ah-management-link" to="/academic-head/scholarships">
+              Scholarship Slots
             </Link>
-            <Link to="/academic-head/announcements">
-              <Card className="flex h-full items-center justify-between transition-shadow hover:shadow-lg">
-                <div>
-                  <p className="font-bold text-slate-900">Announcements</p>
-                  <p className="text-sm text-slate-500">Post &amp; manage notices →</p>
-                </div>
-                <ChevronRight size={18} className="text-slate-300" />
-              </Card>
-            </Link>
-            <Link to="/academic-head/reports">
-              <Card className="flex h-full items-center justify-between transition-shadow hover:shadow-lg">
-                <div>
-                  <p className="font-bold text-slate-900">Reports</p>
-                  <p className="text-sm text-slate-500">Admission &amp; scholarship data →</p>
-                </div>
-                <ChevronRight size={18} className="text-slate-300" />
-              </Card>
+            <Link className="ah-management-link" to="/academic-head/announcements">
+              Announcements
             </Link>
           </div>
+        </section>
 
-          <Card className="mt-6">
-            <h2 className="font-bold text-slate-900">Applications Awaiting Decision</h2>
-            <div className="mt-4 overflow-x-auto">
-              {queue.length === 0 ? (
-                <p className="text-sm text-slate-400">No scholarship applications are waiting on a final decision.</p>
-              ) : (
-                <table className="w-full min-w-max border-collapse text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      <th className="px-3 py-2">Applicant</th>
-                      <th className="px-3 py-2">Scholarship</th>
-                      <th className="px-3 py-2">GWA</th>
-                      <th className="px-3 py-2">Status</th>
-                      <th className="px-3 py-2">Submitted</th>
-                      <th className="px-3 py-2"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {queue.map((application) => (
-                      <tr key={application.applicationId} className="border-b border-slate-50 last:border-0">
-                        <td className="px-3 py-3 font-medium text-slate-800">{application.applicantName}</td>
-                        <td className="px-3 py-3 text-slate-500">
-                          {application.scholarshipName} · {application.scholarshipType}
-                        </td>
-                        <td className="px-3 py-3 text-slate-500">{application.gradeAverage}</td>
-                        <td className="px-3 py-3">
-                          <StatusBadge status={application.status} />
-                        </td>
-                        <td className="px-3 py-3 text-slate-500">{formatDate(application.submittedAt)}</td>
-                        <td className="px-3 py-3">
-                          <Link
-                            to={`/academic-head/scholarship-applications/${application.applicationId}`}
-                            className="font-semibold text-forest hover:underline"
-                          >
-                            Review
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+        <section className="ah-dashboard-card">
+          <h2>Reports</h2>
+          <p className="ah-management-subtitle">
+            Admission reports are scoped to your assigned department; scholarship reports are school-wide.
+          </p>
+          <div className="ah-management-links">
+            <Link className="ah-management-link" to="/academic-head/reports">
+              View Reports
+            </Link>
+          </div>
+        </section>
+
+        <section className="ah-dashboard-card">
+          <h2>Settings</h2>
+          <div className="ah-management-links">
+            <Link className="ah-management-link" to="/academic-head/settings">
+              Profile &amp; Password
+            </Link>
+          </div>
+        </section>
+
+        {isLoading && (
+          <section className="ah-dashboard-card">
+            <p>Loading...</p>
+          </section>
+        )}
+
+        {errorMessage && (
+          <section className="ah-dashboard-card">
+            <p className="form-error" role="alert">
+              {errorMessage}
+            </p>
+          </section>
+        )}
+
+        {!isLoading && !errorMessage && (
+          <>
+            <section className="ah-dashboard-card">
+              <h2>Applications Awaiting Decision</h2>
+              {queue.length === 0 && <p>No scholarship applications are waiting on a final decision.</p>}
+              {queue.length > 0 && (
+                <ul className="ah-queue-list">
+                  {queue.map((application) => (
+                    <li key={application.applicationId}>
+                      <Link
+                        className="ah-queue-link"
+                        to={`/academic-head/scholarship-applications/${application.applicationId}`}
+                      >
+                        <div className="ah-queue-header">
+                          <span className="ah-queue-name">{application.applicantName}</span>
+                          <span className="ah-queue-status">{application.status}</span>
+                        </div>
+                        <p className="ah-queue-meta">
+                          {application.scholarshipName} &middot; {application.scholarshipType} &middot; Grade
+                          Average {application.gradeAverage} &middot; Submitted{" "}
+                          {formatDate(application.submittedAt)}
+                        </p>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
               )}
-            </div>
-          </Card>
-        </>
-      )}
-    </AppShell>
+            </section>
+
+            {oversight && (
+              <>
+                <section className="ah-oversight-heading">
+                  <h2>Admissions Oversight (Admin-Registrar)</h2>
+                  <p>Read-only, for context in approval decisions.</p>
+                </section>
+
+                <section className="ah-stat-grid">
+                  <div className="ah-stat-tile">
+                    <span className="ah-stat-value">{oversight.totalApplications}</span>
+                    <span className="ah-stat-label">Total Applications</span>
+                  </div>
+                  <div className="ah-stat-tile">
+                    <span className="ah-stat-value">{oversight.totalApplicants}</span>
+                    <span className="ah-stat-label">Total Applicants</span>
+                  </div>
+                  <div className="ah-stat-tile ah-stat-pending">
+                    <span className="ah-stat-value">{oversight.pendingCount}</span>
+                    <span className="ah-stat-label">Pending</span>
+                  </div>
+                  <div className="ah-stat-tile ah-stat-approved">
+                    <span className="ah-stat-value">{oversight.approvedCount}</span>
+                    <span className="ah-stat-label">Approved</span>
+                  </div>
+                  <div className="ah-stat-tile ah-stat-rejected">
+                    <span className="ah-stat-value">{oversight.rejectedCount}</span>
+                    <span className="ah-stat-label">Rejected</span>
+                  </div>
+                </section>
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </main>
   );
 }

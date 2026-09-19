@@ -1,15 +1,18 @@
-import AppShell from "../components/layout/AppShell.jsx";
-import Card from "../components/ui/Card.jsx";
+import { Link } from "react-router-dom";
+import "./ComingSoonPage.css";
 
-// Placeholder destination for nav/quick links whose full pages are
-// separate, not-yet-built tickets, or not offered for the signed-in role.
+// Placeholder destination for dashboard quick links whose full pages
+// (My Application, Documents, Announcements) are separate, not-yet-built tickets.
 export default function ComingSoonPage({ title }) {
   return (
-    <AppShell>
-      <Card>
-        <h1 className="text-2xl font-extrabold text-slate-900">{title}</h1>
-        <p className="mt-2 text-sm text-slate-500">This section is coming soon.</p>
-      </Card>
-    </AppShell>
+    <main className="coming-soon-page">
+      <div className="coming-soon-card">
+        <Link className="coming-soon-back-link" to="/portal">
+          &larr; Back to dashboard
+        </Link>
+        <h1>{title}</h1>
+        <p>This section is coming soon.</p>
+      </div>
+    </main>
   );
 }

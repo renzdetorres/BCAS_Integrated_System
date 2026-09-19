@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
-import AppShell from "../components/layout/AppShell.jsx";
-import Card from "../components/ui/Card.jsx";
-import { inputClasses, labelClasses, primaryButtonClasses } from "../lib/formStyles.js";
+import { Link } from "react-router-dom";
 import {
   changeMySupportStaffPassword,
   getMySupportStaffProfile,
   updateMySupportStaffProfile,
 } from "../api/supportStaffSettingsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import "./SupportStaffSettingsPage.css";
 
 const initialPasswordForm = { currentPassword: "", newPassword: "", confirmNewPassword: "" };
 
@@ -112,156 +111,139 @@ export default function SupportStaffSettingsPage() {
     }
   }
 
+  if (isLoading) {
+    return (
+      <main className="ss-settings-page">
+        <div className="ss-settings-shell">
+          <div className="ss-settings-card">Loading...</div>
+        </div>
+      </main>
+    );
+  }
+
   return (
-    <AppShell>
-      <h1 className="text-2xl font-extrabold text-slate-900">Settings</h1>
-      <p className="mt-1 text-sm text-slate-500">Manage your preferences and account security.</p>
+    <main className="ss-settings-page">
+      <div className="ss-settings-shell">
+        <Link className="ss-settings-back-link" to="/portal">
+          &larr; Back to dashboard
+        </Link>
+        <h1 className="ss-settings-title">Settings</h1>
 
-      {isLoading ? (
-        <p className="mt-6 text-sm text-slate-400">Loading...</p>
-      ) : (
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <Card>
-            <h2 className="text-lg font-bold text-slate-900">Profile</h2>
-            <p className="mt-1 text-sm text-slate-500">You can update your name and email at any time.</p>
+        <section className="ss-settings-card">
+          <h2>Profile</h2>
+          <p className="ss-settings-subtitle">You can update your name and email at any time.</p>
 
-            <form onSubmit={handleSubmit} noValidate className="mt-4 space-y-4">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label className={labelClasses} htmlFor="firstName">
-                    First name
-                  </label>
-                  <input
-                    id="firstName"
-                    name="firstName"
-                    type="text"
-                    required
-                    className={inputClasses}
-                    value={form.firstName}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div>
-                  <label className={labelClasses} htmlFor="lastName">
-                    Last name
-                  </label>
-                  <input
-                    id="lastName"
-                    name="lastName"
-                    type="text"
-                    required
-                    className={inputClasses}
-                    value={form.lastName}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
+          {savedMessage && (
+            <p className="form-success" role="status">
+              {savedMessage}
+            </p>
+          )}
+          {errorMessage && (
+            <p className="form-error" role="alert">
+              {errorMessage}
+            </p>
+          )}
 
-              <div>
-                <label className={labelClasses} htmlFor="email">
-                  Email
-                </label>
+          <form onSubmit={handleSubmit} noValidate>
+            <div className="form-row-group">
+              <div className="form-row">
+                <label htmlFor="firstName">First name</label>
                 <input
-                  id="email"
-                  name="email"
-                  type="email"
+                  id="firstName"
+                  name="firstName"
+                  type="text"
                   required
-                  className={inputClasses}
-                  value={form.email}
+                  value={form.firstName}
                   onChange={handleChange}
                 />
               </div>
-
-              {savedMessage && (
-                <p className="text-sm font-medium text-status-green" role="status">
-                  {savedMessage}
-                </p>
-              )}
-              {errorMessage && (
-                <p className="text-sm font-medium text-status-red" role="alert">
-                  {errorMessage}
-                </p>
-              )}
-
-              <button type="submit" disabled={isSubmitting} className={primaryButtonClasses}>
-                {isSubmitting ? "Saving..." : "Save Profile"}
-              </button>
-            </form>
-          </Card>
-
-          <Card>
-            <h2 className="text-lg font-bold text-slate-900">Change Password</h2>
-            <p className="mt-1 text-sm text-slate-500">Enter your current password and choose a new one.</p>
-
-            <form onSubmit={handlePasswordSubmit} noValidate className="mt-4 space-y-4">
-              <div>
-                <label className={labelClasses} htmlFor="currentPassword">
-                  Current password
-                </label>
+              <div className="form-row">
+                <label htmlFor="lastName">Last name</label>
                 <input
-                  id="currentPassword"
-                  name="currentPassword"
-                  type="password"
-                  autoComplete="current-password"
+                  id="lastName"
+                  name="lastName"
+                  type="text"
                   required
-                  className={inputClasses}
-                  value={passwordForm.currentPassword}
-                  onChange={handlePasswordChange}
+                  value={form.lastName}
+                  onChange={handleChange}
                 />
               </div>
+            </div>
 
-              <div>
-                <label className={labelClasses} htmlFor="newPassword">
-                  New password
-                </label>
-                <input
-                  id="newPassword"
-                  name="newPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  minLength={8}
-                  required
-                  className={inputClasses}
-                  value={passwordForm.newPassword}
-                  onChange={handlePasswordChange}
-                />
-              </div>
+            <div className="form-row">
+              <label htmlFor="email">Email</label>
+              <input id="email" name="email" type="email" required value={form.email} onChange={handleChange} />
+            </div>
 
-              <div>
-                <label className={labelClasses} htmlFor="confirmNewPassword">
-                  Confirm new password
-                </label>
-                <input
-                  id="confirmNewPassword"
-                  name="confirmNewPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  minLength={8}
-                  required
-                  className={inputClasses}
-                  value={passwordForm.confirmNewPassword}
-                  onChange={handlePasswordChange}
-                />
-              </div>
+            <button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save Profile"}
+            </button>
+          </form>
+        </section>
 
-              {passwordSaved && (
-                <p className="text-sm font-medium text-status-green" role="status">
-                  {passwordSaved}
-                </p>
-              )}
-              {passwordError && (
-                <p className="text-sm font-medium text-status-red" role="alert">
-                  {passwordError}
-                </p>
-              )}
+        <section className="ss-settings-card">
+          <h2>Change Password</h2>
+          <p className="ss-settings-subtitle">Enter your current password and choose a new one.</p>
 
-              <button type="submit" disabled={isChangingPassword} className={primaryButtonClasses}>
-                {isChangingPassword ? "Changing password..." : "Change Password"}
-              </button>
-            </form>
-          </Card>
-        </div>
-      )}
-    </AppShell>
+          {passwordSaved && (
+            <p className="form-success" role="status">
+              {passwordSaved}
+            </p>
+          )}
+          {passwordError && (
+            <p className="form-error" role="alert">
+              {passwordError}
+            </p>
+          )}
+
+          <form onSubmit={handlePasswordSubmit} noValidate>
+            <div className="form-row">
+              <label htmlFor="currentPassword">Current password</label>
+              <input
+                id="currentPassword"
+                name="currentPassword"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={passwordForm.currentPassword}
+                onChange={handlePasswordChange}
+              />
+            </div>
+
+            <div className="form-row">
+              <label htmlFor="newPassword">New password</label>
+              <input
+                id="newPassword"
+                name="newPassword"
+                type="password"
+                autoComplete="new-password"
+                minLength={8}
+                required
+                value={passwordForm.newPassword}
+                onChange={handlePasswordChange}
+              />
+            </div>
+
+            <div className="form-row">
+              <label htmlFor="confirmNewPassword">Confirm new password</label>
+              <input
+                id="confirmNewPassword"
+                name="confirmNewPassword"
+                type="password"
+                autoComplete="new-password"
+                minLength={8}
+                required
+                value={passwordForm.confirmNewPassword}
+                onChange={handlePasswordChange}
+              />
+            </div>
+
+            <button type="submit" disabled={isChangingPassword}>
+              {isChangingPassword ? "Changing password..." : "Change Password"}
+            </button>
+          </form>
+        </section>
+      </div>
+    </main>
   );
 }

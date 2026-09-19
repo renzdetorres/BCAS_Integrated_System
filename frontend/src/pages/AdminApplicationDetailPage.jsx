@@ -1,11 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
-import AppShell from "../components/layout/AppShell.jsx";
-import Card from "../components/ui/Card.jsx";
-import StatusBadge from "../components/ui/StatusBadge.jsx";
-import Stepper from "../components/ui/Stepper.jsx";
-import { inputClasses, labelClasses, primaryButtonClasses } from "../lib/formStyles.js";
 import {
   ARCHIVABLE_STATUSES,
   archiveApplication,
@@ -16,30 +10,8 @@ import {
   updateApplicationStatus,
 } from "../api/adminApplicationsApi.js";
 import { ApiError } from "../api/apiClient.js";
-
-const ADMISSION_STEP_LABELS = {
-  Submitted: "Submitted",
-  DocumentsReceived: "Documents Received",
-  UnderReview: "Under Review",
-  ExamScheduled: "Exam Scheduled",
-  ExamCompleted: "Exam Completed",
-  DecisionReleased: "Decision Released",
-};
-
-const SCHOLARSHIP_STEP_LABELS = {
-  Submitted: "Submitted",
-  DocumentsVerified: "Documents Verified",
-  EligibilityScreening: "Eligibility Screening",
-  Evaluation: "Evaluation",
-  Result: "Result",
-};
-
-function toStepperSteps(steps, labels) {
-  return steps.map((step) => ({
-    name: labels[step.step] ?? step.step,
-    state: step.isComplete ? "done" : step.isCurrent ? "current" : "upcoming",
-  }));
-}
+import WorkflowStepper, { ADMISSION_STEP_LABELS, SCHOLARSHIP_STEP_LABELS } from "../components/WorkflowStepper.jsx";
+import "./AdminApplicationDetailPage.css";
 
 function formatDateTime(isoDateTime) {
   return new Date(isoDateTime).toLocaleString(undefined, {
@@ -187,246 +159,239 @@ export default function AdminApplicationDetailPage() {
   const canArchive = application && !application.isArchived && ARCHIVABLE_STATUSES.includes(application.status);
 
   return (
-    <AppShell>
-      <Link
-        to="/admin/applications"
-        className="inline-flex items-center gap-1 text-sm font-semibold text-forest hover:underline"
-      >
-        <ArrowLeft size={16} /> Back to applications
-      </Link>
+    <main className="admin-app-detail-page">
+      <div className="admin-app-detail-shell">
+        <Link className="admin-app-detail-back-link" to="/admin/applications">
+          &larr; Back to applications
+        </Link>
 
-      {isLoading && <p className="mt-6 text-sm text-slate-400">Loading...</p>}
-      {errorMessage && (
-        <p className="mt-6 text-sm font-medium text-status-red" role="alert">
-          {errorMessage}
-        </p>
-      )}
-      {!isLoading && !errorMessage && !application && (
-        <p className="mt-6 text-sm text-slate-400">Application not found.</p>
-      )}
-
-      {!isLoading && !errorMessage && application && (
-        <>
-          <Card className="mt-6">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500">
-                {application.category}
-              </span>
-              <StatusBadge status={application.status} />
-              {application.isArchived && (
-                <span className="rounded-full border border-slate-300 px-2.5 py-0.5 text-xs font-semibold text-slate-500">
-                  Archived
-                </span>
-              )}
-            </div>
-            <h1 className="mt-2 text-2xl font-extrabold text-slate-900">{application.applicantName}</h1>
-            <p className="text-sm text-slate-500">{application.applicantEmail}</p>
-
-            <dl className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {application.category === "Admission" ? (
-                <>
-                  <div>
-                    <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Application Type</dt>
-                    <dd className="mt-1 text-sm text-slate-800">{application.applicationType}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Course Applied For</dt>
-                    <dd className="mt-1 text-sm text-slate-800">{application.courseAppliedFor}</dd>
-                  </div>
-                  {application.previousSchool && (
-                    <div>
-                      <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Previous School</dt>
-                      <dd className="mt-1 text-sm text-slate-800">{application.previousSchool}</dd>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <>
-                  <div>
-                    <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Scholarship</dt>
-                    <dd className="mt-1 text-sm text-slate-800">{application.scholarshipName}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Scholarship Type</dt>
-                    <dd className="mt-1 text-sm text-slate-800">{application.scholarshipType}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Grade Average</dt>
-                    <dd className="mt-1 text-sm text-slate-800">{application.gradeAverage}</dd>
-                  </div>
-                </>
-              )}
-              <div>
-                <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Submitted</dt>
-                <dd className="mt-1 text-sm text-slate-800">{formatDateTime(application.submittedAt)}</dd>
-              </div>
-              <div>
-                <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">Last Updated</dt>
-                <dd className="mt-1 text-sm text-slate-800">{formatDateTime(application.updatedAt)}</dd>
-              </div>
-            </dl>
-          </Card>
-
-          <Card className="mt-6">
-            <h2 className="font-bold text-slate-900">Workflow Status</h2>
-            <div className="mt-4">
-              <Stepper steps={toStepperSteps(application.steps, stepLabels)} />
-            </div>
-            {application.remarks && (
-              <p className="mt-2 text-sm text-slate-600">
-                <strong className="font-semibold text-slate-800">Remarks:</strong> {application.remarks}
-              </p>
-            )}
-          </Card>
-
-          <Card className="mt-6">
-            <h2 className="font-bold text-slate-900">Update Status</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Authorized staff can set this application to any status in its workflow and attach an optional remark.
+        {isLoading && (
+          <div className="admin-app-detail-card">
+            <p>Loading...</p>
+          </div>
+        )}
+        {errorMessage && (
+          <div className="admin-app-detail-card">
+            <p className="form-error" role="alert">
+              {errorMessage}
             </p>
+          </div>
+        )}
+        {!isLoading && !errorMessage && !application && (
+          <div className="admin-app-detail-card">
+            <p>Application not found.</p>
+          </div>
+        )}
 
-            <form onSubmit={handleStatusSubmit} noValidate className="mt-4 space-y-4">
-              <div>
-                <label className={labelClasses} htmlFor="status">
-                  Status
-                </label>
-                <select
-                  id="status"
-                  name="status"
-                  className={inputClasses}
-                  value={statusForm.status}
-                  onChange={(event) => setStatusForm((prev) => ({ ...prev, status: event.target.value }))}
-                >
-                  {statusOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
+        {!isLoading && !errorMessage && application && (
+          <>
+            <div className="admin-app-detail-card">
+              <div className="admin-app-detail-header">
+                <span className={`category-badge category-${application.category.toLowerCase()}`}>
+                  {application.category}
+                </span>
+                <span className={`status-badge status-${application.status.toLowerCase()}`}>
+                  {application.status}
+                </span>
+                {application.isArchived && <span className="archived-badge">Archived</span>}
               </div>
+              <h1>{application.applicantName}</h1>
+              <p className="admin-app-detail-email">{application.applicantEmail}</p>
 
-              <div>
-                <label className={labelClasses} htmlFor="remarks">
-                  Remarks (optional)
-                </label>
-                <textarea
-                  id="remarks"
-                  name="remarks"
-                  rows={3}
-                  maxLength={1000}
-                  className={inputClasses}
-                  value={statusForm.remarks}
-                  onChange={(event) => setStatusForm((prev) => ({ ...prev, remarks: event.target.value }))}
-                />
-              </div>
+              <dl className="admin-app-detail-list">
+                {application.category === "Admission" ? (
+                  <>
+                    <div>
+                      <dt>Application Type</dt>
+                      <dd>{application.applicationType}</dd>
+                    </div>
+                    <div>
+                      <dt>Course Applied For</dt>
+                      <dd>{application.courseAppliedFor}</dd>
+                    </div>
+                    {application.previousSchool && (
+                      <div>
+                        <dt>Previous School</dt>
+                        <dd>{application.previousSchool}</dd>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <dt>Scholarship</dt>
+                      <dd>{application.scholarshipName}</dd>
+                    </div>
+                    <div>
+                      <dt>Scholarship Type</dt>
+                      <dd>{application.scholarshipType}</dd>
+                    </div>
+                    <div>
+                      <dt>Grade Average</dt>
+                      <dd>{application.gradeAverage}</dd>
+                    </div>
+                  </>
+                )}
+                <div>
+                  <dt>Submitted</dt>
+                  <dd>{formatDateTime(application.submittedAt)}</dd>
+                </div>
+                <div>
+                  <dt>Last Updated</dt>
+                  <dd>{formatDateTime(application.updatedAt)}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className="admin-app-detail-card">
+              <h2>Workflow Status</h2>
+              <WorkflowStepper steps={application.steps} labels={stepLabels} />
+              {application.remarks && (
+                <p className="admin-app-detail-remarks">
+                  <strong>Remarks:</strong> {application.remarks}
+                </p>
+              )}
+            </div>
+
+            <div className="admin-app-detail-card">
+              <h2>Update Status</h2>
+              <p className="admin-app-detail-subtitle">
+                Authorized staff can set this application to any status in its workflow and attach an optional
+                remark.
+              </p>
 
               {savedMessage && (
-                <p className="text-sm font-medium text-status-green" role="status">
+                <p className="form-success" role="status">
                   {savedMessage}
                 </p>
               )}
               {saveError && (
-                <p className="text-sm font-medium text-status-red" role="alert">
+                <p className="form-error" role="alert">
                   {saveError}
                 </p>
               )}
 
-              <button type="submit" disabled={isSaving} className={primaryButtonClasses}>
-                {isSaving ? "Saving..." : "Update Status"}
-              </button>
-            </form>
-          </Card>
+              <form onSubmit={handleStatusSubmit} noValidate>
+                <div className="form-row">
+                  <label htmlFor="status">Status</label>
+                  <select
+                    id="status"
+                    name="status"
+                    value={statusForm.status}
+                    onChange={(event) => setStatusForm((prev) => ({ ...prev, status: event.target.value }))}
+                  >
+                    {statusOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-          <Card className="mt-6">
-            <h2 className="font-bold text-slate-900">Status History</h2>
-            <p className="mt-1 text-sm text-slate-500">Every status change recorded for this application, oldest first.</p>
+                <div className="form-row">
+                  <label htmlFor="remarks">Remarks (optional)</label>
+                  <textarea
+                    id="remarks"
+                    name="remarks"
+                    rows={3}
+                    maxLength={1000}
+                    value={statusForm.remarks}
+                    onChange={(event) => setStatusForm((prev) => ({ ...prev, remarks: event.target.value }))}
+                  />
+                </div>
 
-            {isLoadingHistory && <p className="mt-4 text-sm text-slate-400">Loading...</p>}
-            {historyError && (
-              <p className="mt-4 text-sm font-medium text-status-red" role="alert">
-                {historyError}
+                <button type="submit" disabled={isSaving}>
+                  {isSaving ? "Saving..." : "Update Status"}
+                </button>
+              </form>
+            </div>
+
+            <div className="admin-app-detail-card">
+              <h2>Status History</h2>
+              <p className="admin-app-detail-subtitle">
+                Every status change recorded for this application, oldest first.
               </p>
-            )}
-            {!isLoadingHistory && !historyError && statusHistory.length === 0 && (
-              <p className="mt-4 text-sm text-slate-400">No status changes recorded yet.</p>
-            )}
 
-            {!isLoadingHistory && !historyError && statusHistory.length > 0 && (
-              <ul className="mt-4 space-y-3">
-                {statusHistory.map((entry) => (
-                  <li key={entry.historyId} className="border-b border-slate-50 pb-3 last:border-0 last:pb-0">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-sm font-semibold text-slate-800">
-                        {entry.fromStatus ? `${entry.fromStatus} → ${entry.toStatus}` : `${entry.toStatus} (submitted)`}
-                      </span>
-                      <span className="text-xs text-slate-400">{formatDateTime(entry.changedAt)}</span>
-                    </div>
-                    <p className="mt-0.5 text-sm text-slate-500">
-                      by {entry.changedByName ?? "the applicant"}
-                      {entry.remarks && <> — {entry.remarks}</>}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-
-          <Card className="mt-6">
-            <h2 className="font-bold text-slate-900">Records Archive</h2>
-            {application.isArchived ? (
-              <>
-                <p className="mt-1 text-sm text-slate-500">
-                  Archived {formatDateTime(application.archivedAt)}. The record and its documents remain retrievable
-                  and are not deleted, supporting the school's 5-year retention practice.
+              {isLoadingHistory && <p>Loading...</p>}
+              {historyError && (
+                <p className="form-error" role="alert">
+                  {historyError}
                 </p>
-                {application.archiveReason && (
-                  <p className="mt-2 text-sm text-slate-600">
-                    <strong className="font-semibold text-slate-800">Reason:</strong> {application.archiveReason}
+              )}
+              {!isLoadingHistory && !historyError && statusHistory.length === 0 && <p>No status changes recorded yet.</p>}
+
+              {!isLoadingHistory && !historyError && statusHistory.length > 0 && (
+                <ul className="admin-app-status-history">
+                  {statusHistory.map((entry) => (
+                    <li key={entry.historyId}>
+                      <div className="admin-app-status-history-line">
+                        <strong>{entry.fromStatus ? `${entry.fromStatus} → ${entry.toStatus}` : `${entry.toStatus} (submitted)`}</strong>
+                        <span>{formatDateTime(entry.changedAt)}</span>
+                      </div>
+                      <div className="admin-app-status-history-meta">
+                        by {entry.changedByName ?? "the applicant"}
+                        {entry.remarks && <> &mdash; {entry.remarks}</>}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="admin-app-detail-card">
+              <h2>Records Archive</h2>
+              {application.isArchived ? (
+                <>
+                  <p className="admin-app-detail-subtitle">
+                    Archived {formatDateTime(application.archivedAt)}. The record and its documents remain
+                    retrievable and are not deleted, supporting the school's 5-year retention practice.
                   </p>
-                )}
-              </>
-            ) : canArchive ? (
-              <>
-                <p className="mt-1 text-sm text-slate-500">
-                  Archive this completed application to support the school's document disposal process. Archiving
-                  never deletes the record — it stays retrievable for the 5-year retention practice.
-                </p>
-
-                <form onSubmit={handleArchiveSubmit} noValidate className="mt-4 space-y-4">
-                  <div>
-                    <label className={labelClasses} htmlFor="archiveReason">
-                      Reason (optional)
-                    </label>
-                    <textarea
-                      id="archiveReason"
-                      name="archiveReason"
-                      rows={2}
-                      maxLength={500}
-                      className={inputClasses}
-                      value={archiveReason}
-                      onChange={(event) => setArchiveReason(event.target.value)}
-                    />
-                  </div>
+                  {application.archiveReason && (
+                    <p className="admin-app-detail-remarks">
+                      <strong>Reason:</strong> {application.archiveReason}
+                    </p>
+                  )}
+                </>
+              ) : canArchive ? (
+                <>
+                  <p className="admin-app-detail-subtitle">
+                    Archive this completed application to support the school's document disposal process.
+                    Archiving never deletes the record - it stays retrievable for the 5-year retention practice.
+                  </p>
 
                   {archiveError && (
-                    <p className="text-sm font-medium text-status-red" role="alert">
+                    <p className="form-error" role="alert">
                       {archiveError}
                     </p>
                   )}
 
-                  <button type="submit" disabled={isArchiving} className={primaryButtonClasses}>
-                    {isArchiving ? "Archiving..." : "Archive Application"}
-                  </button>
-                </form>
-              </>
-            ) : (
-              <p className="mt-1 text-sm text-slate-500">
-                Only completed applications (Approved or Rejected) can be archived.
-              </p>
-            )}
-          </Card>
-        </>
-      )}
-    </AppShell>
+                  <form onSubmit={handleArchiveSubmit} noValidate>
+                    <div className="form-row">
+                      <label htmlFor="archiveReason">Reason (optional)</label>
+                      <textarea
+                        id="archiveReason"
+                        name="archiveReason"
+                        rows={2}
+                        maxLength={500}
+                        value={archiveReason}
+                        onChange={(event) => setArchiveReason(event.target.value)}
+                      />
+                    </div>
+
+                    <button type="submit" disabled={isArchiving}>
+                      {isArchiving ? "Archiving..." : "Archive Application"}
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <p className="admin-app-detail-subtitle">
+                  Only completed applications (Approved or Rejected) can be archived.
+                </p>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </main>
   );
 }

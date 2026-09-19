@@ -1,18 +1,27 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, Calendar, FileText, FolderOpen, Megaphone, ChevronRight } from "lucide-react";
-import AppShell from "../components/layout/AppShell.jsx";
-import Card from "../components/ui/Card.jsx";
 import { getUpcomingDeadlines } from "../api/dashboardApi.js";
-import { getMyDocumentChecklist } from "../api/documentApi.js";
-import { getActiveAnnouncements } from "../api/announcementApi.js";
+import { ApiError } from "../api/apiClient.js";
 import { useSession } from "../context/SessionContext.jsx";
+import { useLogout } from "../hooks/useLogout.js";
+import "./ApplicantDashboardPage.css";
 
 const DEADLINE_TYPE_LABELS = {
-  ScholarshipDeadline: "Scholarship Application Deadline",
-  DocumentDeadline: "Document Submission Deadline",
-  EnrollmentPeriod: "Enrollment Period Opens",
+  ScholarshipDeadline: "Scholarship Deadline",
+  DocumentDeadline: "Document Deadline",
+  EnrollmentPeriod: "Enrollment Period",
 };
+
+const QUICK_LINKS = [
+  { to: "/profile", label: "Settings" },
+  { to: "/applications/history", label: "My Application" },
+  { to: "/application-tracking", label: "Application Tracking" },
+  { to: "/scholarships", label: "Scholarship Application" },
+  { to: "/documents", label: "Documents" },
+  { to: "/exam-schedule", label: "Entrance Exam Schedule" },
+  { to: "/exam-permit", label: "Exam Permit" },
+  { to: "/announcements", label: "Announcements" },
+];
 
 function formatDate(isoDate) {
   return new Date(isoDate).toLocaleDateString(undefined, {
@@ -22,116 +31,82 @@ function formatDate(isoDate) {
   });
 }
 
-function isRecent(isoDate) {
-  return Date.now() - new Date(isoDate).getTime() < 3 * 24 * 60 * 60 * 1000;
-}
-
-function greeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
-}
-
 export default function ApplicantDashboardPage() {
   const { session } = useSession();
+  const handleLogout = useLogout();
   const [deadlines, setDeadlines] = useState([]);
-  const [pendingDocuments, setPendingDocuments] = useState(0);
-  const [newAnnouncements, setNewAnnouncements] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   useEffect(() => {
-    getUpcomingDeadlines().then(setDeadlines).catch(() => {});
-    getMyDocumentChecklist()
+    let cancelled = false;
+
+    getUpcomingDeadlines()
       .then((data) => {
-        const pending = data.requirements.filter((r) => r.status !== "Verified").length;
-        setPendingDocuments(pending);
+        if (!cancelled) setDeadlines(data);
       })
-      .catch(() => {});
-    getActiveAnnouncements()
-      .then((data) => setNewAnnouncements(data.filter((a) => isRecent(a.postedAt)).length))
-      .catch(() => {});
+      .catch((error) => {
+        if (!cancelled) {
+          setErrorMessage(error instanceof ApiError ? error.message : "Failed to load deadlines.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
-    <AppShell badges={{ documents: pendingDocuments || undefined }} notificationCount={newAnnouncements}>
-      <h1 className="text-2xl font-extrabold text-slate-900">
-        {greeting()}, {session.firstName}! 👋
-      </h1>
-      <p className="mt-1 text-sm text-slate-500">
-        Here's a summary of your application status for SY 2025-2026.
-      </p>
+    <main className="dashboard-page">
+      <div className="dashboard-shell">
+        <header className="dashboard-header">
+          <div>
+            <p className="dashboard-eyebrow">Applicant Dashboard</p>
+            <h1>Welcome back, {session.firstName}!</h1>
+          </div>
+          <button type="button" onClick={handleLogout}>
+            Log Out
+          </button>
+        </header>
 
-      <Card className="mt-6">
-        <h2 className="text-lg font-bold text-slate-900">Upcoming Deadlines</h2>
-        <div className="mt-4 space-y-3">
-          {deadlines.length === 0 && <p className="text-sm text-slate-400">No upcoming deadlines.</p>}
-          {deadlines.map((deadline) => {
-            const isWarning = deadline.type === "ScholarshipDeadline";
-            return (
-              <div
-                key={`${deadline.type}-${deadline.date}`}
-                className={`flex items-center gap-3 rounded-lg px-4 py-3 ${
-                  isWarning ? "bg-status-amberBg" : "bg-slate-50"
-                }`}
-              >
-                <span
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                    isWarning ? "bg-white text-status-amber" : "bg-white text-slate-400"
-                  }`}
-                >
-                  {isWarning ? <AlertTriangle size={18} /> : <Calendar size={18} />}
-                </span>
-                <div>
-                  <p className="font-bold text-slate-900">
-                    {DEADLINE_TYPE_LABELS[deadline.type] ?? deadline.title} — {formatDate(deadline.date)}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
+        <section className="dashboard-card">
+          <h2>Upcoming Deadlines</h2>
+          {isLoading && <p>Loading...</p>}
+          {errorMessage && (
+            <p className="form-error" role="alert">
+              {errorMessage}
+            </p>
+          )}
+          {!isLoading && !errorMessage && deadlines.length === 0 && <p>No upcoming deadlines.</p>}
+          {!isLoading && deadlines.length > 0 && (
+            <ul className="deadline-list">
+              {deadlines.map((deadline) => (
+                <li key={`${deadline.type}-${deadline.date}`}>
+                  <span className="deadline-type">
+                    {DEADLINE_TYPE_LABELS[deadline.type] ?? deadline.type}
+                  </span>
+                  <span className="deadline-title">{deadline.title}</span>
+                  <span className="deadline-date">{formatDate(deadline.date)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
-      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Link to="/app/my-application">
-          <Card className="flex h-full items-center gap-3 transition-shadow hover:shadow-lg">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-forest/10 text-forest">
-              <FileText size={20} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="font-bold text-slate-900">My Application</p>
-              <p className="text-sm text-slate-500">View or apply</p>
-            </div>
-            <ChevronRight size={18} className="shrink-0 text-slate-300" />
-          </Card>
-        </Link>
-
-        <Link to="/documents">
-          <Card className="flex h-full items-center gap-3 transition-shadow hover:shadow-lg">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-forest/10 text-forest">
-              <FolderOpen size={20} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="font-bold text-slate-900">Documents</p>
-              <p className="text-sm text-slate-500">{pendingDocuments} pending uploads</p>
-            </div>
-            <ChevronRight size={18} className="shrink-0 text-slate-300" />
-          </Card>
-        </Link>
-
-        <Link to="/announcements">
-          <Card className="flex h-full items-center gap-3 transition-shadow hover:shadow-lg">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-forest/10 text-forest">
-              <Megaphone size={20} />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="font-bold text-slate-900">Announcements</p>
-              <p className="text-sm text-slate-500">{newAnnouncements} new announcements</p>
-            </div>
-            <ChevronRight size={18} className="shrink-0 text-slate-300" />
-          </Card>
-        </Link>
+        <section className="dashboard-card">
+          <h2>Quick Links</h2>
+          <div className="quick-links">
+            {QUICK_LINKS.map((link) => (
+              <Link key={link.to} className="quick-link" to={link.to}>
+                {link.label}
+              </Link>
+            ))}
+          </div>
+        </section>
       </div>
-    </AppShell>
+    </main>
   );
 }

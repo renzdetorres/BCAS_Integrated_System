@@ -1,17 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { CheckCircle2, AlertTriangle, Clock, XCircle } from "lucide-react";
-import AppShell from "../components/layout/AppShell.jsx";
-import Card from "../components/ui/Card.jsx";
-import StatusBadge from "../components/ui/StatusBadge.jsx";
-import Modal from "../components/ui/Modal.jsx";
-import { inputClasses, primaryButtonClasses } from "../lib/formStyles.js";
 import {
   listDocumentsForApplicant,
   listPendingAndFlaggedDocuments,
   reviewDocument,
 } from "../api/supportStaffDocumentsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import "./SupportStaffDocumentsPage.css";
 
 function formatDateTime(isoDateTime) {
   return new Date(isoDateTime).toLocaleString(undefined, {
@@ -25,15 +20,6 @@ function formatDateTime(isoDateTime) {
 
 const REVIEWABLE_STATUSES = new Set(["Pending", "Flagged"]);
 
-const STATUS_ICON = {
-  Pending: { Icon: Clock, className: "bg-status-amberBg text-[#9C6B12]" },
-  Verified: { Icon: CheckCircle2, className: "bg-status-greenBg text-status-green" },
-  Flagged: { Icon: AlertTriangle, className: "bg-status-redBg text-status-red" },
-  Rejected: { Icon: XCircle, className: "bg-status-redBg text-status-red" },
-};
-
-const TABS = ["All", "Pending", "Verified", "Flagged"];
-
 export default function SupportStaffDocumentsPage() {
   const [searchParams] = useSearchParams();
   const applicantId = searchParams.get("applicantId");
@@ -41,10 +27,10 @@ export default function SupportStaffDocumentsPage() {
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
-  const [tab, setTab] = useState("All");
 
   const [pendingActionId, setPendingActionId] = useState(null);
-  const [reasonPrompt, setReasonPrompt] = useState(null); // { documentId, action }
+  const [reasonPromptId, setReasonPromptId] = useState(null);
+  const [reasonAction, setReasonAction] = useState(null);
   const [reasonText, setReasonText] = useState("");
   const [reasonError, setReasonError] = useState(null);
 
@@ -67,6 +53,20 @@ export default function SupportStaffDocumentsPage() {
     loadDocuments();
   }, [loadDocuments]);
 
+  function startReasonPrompt(documentId, action) {
+    setReasonPromptId(documentId);
+    setReasonAction(action);
+    setReasonText("");
+    setReasonError(null);
+  }
+
+  function cancelReasonPrompt() {
+    setReasonPromptId(null);
+    setReasonAction(null);
+    setReasonText("");
+    setReasonError(null);
+  }
+
   async function handleApprove(documentId) {
     setPendingActionId(documentId);
     setErrorMessage(null);
@@ -80,18 +80,17 @@ export default function SupportStaffDocumentsPage() {
     }
   }
 
-  async function handleReasonSubmit() {
+  async function handleReasonSubmit(documentId) {
     if (reasonText.trim().length === 0) {
       setReasonError("A reason is required.");
       return;
     }
 
-    setPendingActionId(reasonPrompt.documentId);
+    setPendingActionId(documentId);
     setReasonError(null);
     try {
-      await reviewDocument(reasonPrompt.documentId, { status: reasonPrompt.action, reason: reasonText.trim() });
-      setReasonPrompt(null);
-      setReasonText("");
+      await reviewDocument(documentId, { status: reasonAction, reason: reasonText.trim() });
+      cancelReasonPrompt();
       await loadDocuments();
     } catch (error) {
       setReasonError(error instanceof ApiError ? error.message : "Failed to submit the review.");
@@ -100,163 +99,156 @@ export default function SupportStaffDocumentsPage() {
     }
   }
 
-  const counts = {
-    All: documents.length,
-    Pending: documents.filter((d) => d.status === "Pending").length,
-    Verified: documents.filter((d) => d.status === "Verified").length,
-    Flagged: documents.filter((d) => d.status === "Flagged" || d.status === "Rejected").length,
-  };
-
-  const rows = documents.filter((d) => {
-    if (tab === "All") return true;
-    if (tab === "Flagged") return d.status === "Flagged" || d.status === "Rejected";
-    return d.status === tab;
-  });
-
   const applicantName = documents[0]?.applicantName;
 
   return (
-    <AppShell badges={{ documents: counts.Pending || undefined }}>
-      <h1 className="text-2xl font-extrabold text-slate-900">Document Verification</h1>
-      {applicantId ? (
-        <p className="mt-1 text-sm text-slate-500">
-          {applicantName ? <>Showing every document for <strong>{applicantName}</strong>.</> : "Showing every document for this applicant."}{" "}
-          <Link to="/support-staff/documents" className="font-semibold text-forest hover:underline">
-            View full queue
-          </Link>
-        </p>
-      ) : (
-        <p className="mt-1 text-sm text-slate-500">
-          {counts.Pending} pending · {counts.Flagged} flagged.{" "}
-          <Link to="/support-staff/documents/archive" className="font-semibold text-forest hover:underline">
-            View archive
-          </Link>
-        </p>
-      )}
+    <main className="ss-documents-page">
+      <div className="ss-documents-shell">
+        <Link className="ss-documents-back-link" to={applicantId ? "/support-staff/applicants" : "/portal"}>
+          &larr; {applicantId ? "Back to Applicant Records" : "Back to dashboard"}
+        </Link>
+        <h1>Document Verification</h1>
 
-      {!applicantId && (
-        <div className="mt-6 flex flex-wrap gap-2">
-          {TABS.map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTab(t)}
-              className={`rounded-full px-4 py-1.5 text-sm font-semibold ${
-                tab === t ? "bg-forest text-white" : "bg-white text-slate-600 hover:bg-slate-100"
-              }`}
-            >
-              {t} ({counts[t]})
-            </button>
-          ))}
-        </div>
-      )}
-
-      {errorMessage && (
-        <p className="mt-4 text-sm font-medium text-status-red" role="alert">
-          {errorMessage}
-        </p>
-      )}
-
-      <div className="mt-6 space-y-3">
-        {isLoading && <p className="text-sm text-slate-400">Loading...</p>}
-        {!isLoading && rows.length === 0 && (
-          <p className="text-sm text-slate-400">
-            {applicantId ? "This applicant hasn't uploaded any documents yet." : "No documents match this filter."}
+        {applicantId ? (
+          <p className="ss-documents-subtitle">
+            {applicantName ? (
+              <>
+                Showing every document for <strong>{applicantName}</strong>, any status.
+              </>
+            ) : (
+              "Showing every document for this applicant, any status."
+            )}{" "}
+            <Link className="ss-documents-queue-link" to="/support-staff/documents">
+              View the full verification queue
+            </Link>
+            {" instead."}
+          </p>
+        ) : (
+          <p className="ss-documents-subtitle">
+            Documents awaiting review or currently flagged. Rejecting or flagging a document requires a reason; the
+            applicant can re-upload a corrected document afterward.{" "}
+            <Link className="ss-documents-queue-link" to="/support-staff/documents/archive">
+              View the document archive
+            </Link>
+            .
           </p>
         )}
-        {!isLoading &&
-          rows.map((doc) => {
-            const { Icon, className } = STATUS_ICON[doc.status] ?? STATUS_ICON.Pending;
-            const isReviewable = REVIEWABLE_STATUSES.has(doc.status);
-            return (
-              <Card key={doc.documentId}>
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${className}`}>
-                      <Icon size={20} />
-                    </span>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold text-slate-900">{doc.documentType}</p>
-                        <StatusBadge status={doc.status} />
-                      </div>
-                      <p className="text-xs text-slate-400">
-                        {doc.applicantName} · {doc.applicantEmail}
-                      </p>
-                      <span className="text-sm text-status-blue underline">{doc.fileName}</span>
-                    </div>
-                  </div>
 
-                  {isReviewable &&
-                    (doc.status === "Verified" ? (
-                      <button
-                        type="button"
-                        onClick={() => setReasonPrompt({ documentId: doc.documentId, action: "Flagged" })}
-                        className="text-sm font-semibold text-status-red hover:underline"
-                      >
-                        Flag as issue
-                      </button>
-                    ) : (
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleApprove(doc.documentId)}
-                          disabled={pendingActionId === doc.documentId}
-                          className="rounded-lg bg-forest px-4 py-2 text-sm font-semibold text-white hover:bg-forest-dark disabled:opacity-50"
-                        >
-                          {pendingActionId === doc.documentId ? "Saving..." : "✓ Mark Verified"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setReasonPrompt({ documentId: doc.documentId, action: "Flagged" })}
-                          disabled={pendingActionId === doc.documentId}
-                          className="rounded-lg border border-status-red px-4 py-2 text-sm font-semibold text-status-red hover:bg-status-redBg disabled:opacity-50"
-                        >
-                          ⚠ Flag Issue
-                        </button>
-                      </div>
-                    ))}
-                </div>
-
-                {(doc.status === "Flagged" || doc.status === "Rejected") && doc.flaggedReason && (
-                  <p className="mt-3 rounded-lg bg-status-redBg px-3 py-2 text-sm text-status-red">
-                    ⚠ {doc.flaggedReason}
-                  </p>
-                )}
-                {doc.reviewedByName && (
-                  <p className="mt-2 text-xs text-slate-400">
-                    Last reviewed by {doc.reviewedByName} on {formatDateTime(doc.reviewedAt)}
-                  </p>
-                )}
-              </Card>
-            );
-          })}
-      </div>
-
-      {reasonPrompt && (
-        <Modal title="Flag Document" onClose={() => setReasonPrompt(null)}>
-          <textarea
-            rows={3}
-            placeholder="Reason for flagging this document"
-            className={inputClasses}
-            value={reasonText}
-            onChange={(event) => setReasonText(event.target.value)}
-          />
-          {reasonError && (
-            <p className="mt-2 text-sm font-medium text-status-red" role="alert">
-              {reasonError}
+        <section className="ss-documents-card">
+          {errorMessage && (
+            <p className="form-error" role="alert">
+              {errorMessage}
             </p>
           )}
-          <button
-            type="button"
-            onClick={handleReasonSubmit}
-            disabled={pendingActionId === reasonPrompt.documentId}
-            className={`${primaryButtonClasses} mt-4 w-full`}
-          >
-            {pendingActionId === reasonPrompt.documentId ? "Submitting..." : "Confirm Flag"}
-          </button>
-        </Modal>
-      )}
-    </AppShell>
+
+          {isLoading ? (
+            <p>Loading...</p>
+          ) : documents.length === 0 ? (
+            <p>
+              {applicantId
+                ? "This applicant hasn't uploaded any documents yet."
+                : "No documents are awaiting review or flagged right now."}
+            </p>
+          ) : (
+            <table className="ss-documents-table">
+              <thead>
+                <tr>
+                  <th>Applicant</th>
+                  <th>Document Type</th>
+                  <th>Status</th>
+                  <th>Uploaded</th>
+                  <th aria-hidden="true"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {documents.map((document) => (
+                  <tr key={document.documentId}>
+                    <td>
+                      <span className="ss-documents-name">{document.applicantName}</span>
+                      <span className="ss-documents-email">{document.applicantEmail}</span>
+                    </td>
+                    <td>{document.documentType}</td>
+                    <td>
+                      <span className={`status-${document.status.toLowerCase()}`}>{document.status}</span>
+                      {document.flaggedReason && (
+                        <span className="ss-documents-reason">Reason: {document.flaggedReason}</span>
+                      )}
+                      {document.reviewedByName && (
+                        <span className="ss-documents-reviewed-by">
+                          Last reviewed by {document.reviewedByName} on {formatDateTime(document.reviewedAt)}
+                        </span>
+                      )}
+                    </td>
+                    <td>{formatDateTime(document.uploadedAt)}</td>
+                    <td className="ss-documents-actions-cell">
+                      {!REVIEWABLE_STATUSES.has(document.status) ? null : reasonPromptId === document.documentId ? (
+                        <div className="ss-documents-reason-form">
+                          <textarea
+                            rows={2}
+                            placeholder={`Reason for ${reasonAction === "Rejected" ? "rejecting" : "flagging"} this document`}
+                            value={reasonText}
+                            onChange={(event) => setReasonText(event.target.value)}
+                          />
+                          {reasonError && (
+                            <p className="form-error ss-documents-reason-error" role="alert">
+                              {reasonError}
+                            </p>
+                          )}
+                          <div className="row-actions">
+                            <button
+                              type="button"
+                              className="reason-submit"
+                              onClick={() => handleReasonSubmit(document.documentId)}
+                              disabled={pendingActionId === document.documentId}
+                            >
+                              {pendingActionId === document.documentId ? "Submitting..." : `Confirm ${reasonAction}`}
+                            </button>
+                            <button
+                              type="button"
+                              className="reason-cancel"
+                              onClick={cancelReasonPrompt}
+                              disabled={pendingActionId === document.documentId}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="row-actions">
+                          <button
+                            type="button"
+                            className="action-approve"
+                            onClick={() => handleApprove(document.documentId)}
+                            disabled={pendingActionId === document.documentId}
+                          >
+                            {pendingActionId === document.documentId ? "Saving..." : "Approve"}
+                          </button>
+                          <button
+                            type="button"
+                            className="action-reject"
+                            onClick={() => startReasonPrompt(document.documentId, "Rejected")}
+                            disabled={pendingActionId === document.documentId}
+                          >
+                            Reject
+                          </button>
+                          <button
+                            type="button"
+                            className="action-flag"
+                            onClick={() => startReasonPrompt(document.documentId, "Flagged")}
+                            disabled={pendingActionId === document.documentId}
+                          >
+                            Flag
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+      </div>
+    </main>
   );
 }

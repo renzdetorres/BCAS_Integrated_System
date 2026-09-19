@@ -1,0 +1,227 @@
+.ah-dashboard-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  background: #f4f6f8;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 24px;
+}
+
+.ah-dashboard-shell {
+  width: 100%;
+  max-width: 880px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.ah-dashboard-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ah-dashboard-badge {
+  display: inline-block;
+  background: #e8f0fe;
+  color: #2f6fed;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+
+.ah-dashboard-header h1 {
+  margin: 0 0 4px;
+  font-size: 1.4rem;
+  color: #1a2332;
+}
+
+.ah-dashboard-header p {
+  margin: 0;
+  color: #5c6b7a;
+  font-size: 0.85rem;
+}
+
+.ah-dashboard-header button {
+  padding: 10px 20px;
+  background: #ffffff;
+  color: #1a2332;
+  border: 1px solid #cdd5df;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ah-dashboard-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+}
+
+.ah-dashboard-card h2 {
+  margin: 0 0 16px;
+  font-size: 1.1rem;
+  color: #1a2332;
+}
+
+.form-error {
+  color: #c0392b;
+  background: #fdecea;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+}
+
+.ah-management-subtitle {
+  margin: 0 0 16px;
+  color: #5c6b7a;
+  font-size: 0.85rem;
+}
+
+.ah-management-links {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ah-management-link {
+  display: inline-block;
+  padding: 10px 16px;
+  background: #eef2fb;
+  color: #2f6fed;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ah-management-link:hover {
+  background: #e0e8fb;
+}
+
+.ah-queue-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ah-queue-list li {
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e5e9ef;
+}
+
+.ah-queue-list li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.ah-queue-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 8px;
+  margin: -6px;
+  padding: 6px;
+}
+
+.ah-queue-link:hover {
+  background: #f4f6f8;
+}
+
+.ah-queue-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ah-queue-name {
+  font-weight: 600;
+  color: #1a2332;
+}
+
+.ah-queue-status {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #e8f0fe;
+  color: #2f6fed;
+  white-space: nowrap;
+}
+
+.ah-queue-meta {
+  margin: 0;
+  color: #5c6b7a;
+  font-size: 0.8rem;
+}
+
+.ah-oversight-heading {
+  margin-top: 4px;
+}
+
+.ah-oversight-heading h2 {
+  margin: 0 0 2px;
+  font-size: 1.1rem;
+  color: #1a2332;
+}
+
+.ah-oversight-heading p {
+  margin: 0;
+  color: #5c6b7a;
+  font-size: 0.8rem;
+}
+
+.ah-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.ah-stat-tile {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ah-stat-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #1a2332;
+}
+
+.ah-stat-label {
+  font-size: 0.8rem;
+  color: #5c6b7a;
+}
+
+.ah-stat-pending .ah-stat-value {
+  color: #b3791a;
+}
+
+.ah-stat-approved .ah-stat-value {
+  color: #1e7e34;
+}
+
+.ah-stat-rejected .ah-stat-value {
+  color: #c0392b;
+}

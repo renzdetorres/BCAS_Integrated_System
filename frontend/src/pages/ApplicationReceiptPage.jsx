@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { getMyApplicationHistory } from "../api/applicationHistoryApi.js";
 import { APPLICATION_TYPES } from "../api/admissionApi.js";
 import { ApiError } from "../api/apiClient.js";
-import { primaryButtonClasses } from "../lib/formStyles.js";
+import "./ApplicationReceiptPage.css";
 
 function formatTimestamp(isoDateTime) {
   return new Date(isoDateTime).toLocaleString(undefined, {
@@ -48,98 +48,91 @@ export default function ApplicationReceiptPage() {
   }, [applicationId]);
 
   return (
-    <main className="min-h-screen bg-page px-4 py-8 sm:px-6">
-      <div className="mx-auto max-w-xl">
-        <Link
-          to="/applications/history"
-          className="print:hidden inline-block text-sm font-semibold text-forest hover:underline"
-        >
-          ← Back to My Application
+    <main className="receipt-page">
+      <div className="receipt-shell">
+        <Link className="receipt-back-link no-print" to="/applications/history">
+          &larr; Back to My Application
         </Link>
 
         {isLoading && (
-          <div className="mt-4 rounded-xl bg-white p-6 shadow-card">
-            <p className="text-sm text-slate-400">Loading...</p>
-          </div>
+          <section className="receipt-card">
+            <p>Loading...</p>
+          </section>
         )}
 
         {!isLoading && errorMessage && (
-          <div className="mt-4 rounded-xl bg-white p-6 shadow-card">
-            <p className="text-sm font-medium text-status-red" role="alert">
+          <section className="receipt-card">
+            <p className="form-error" role="alert">
               {errorMessage}
             </p>
-          </div>
+          </section>
         )}
 
         {!isLoading && !errorMessage && !application && (
-          <div className="mt-4 rounded-xl bg-white p-6 shadow-card">
-            <p className="text-sm text-slate-400">No application found with that id.</p>
-          </div>
+          <section className="receipt-card">
+            <p>No application found with that id.</p>
+          </section>
         )}
 
         {!isLoading && application && (
-          <div className="mt-4 rounded-xl border-t-4 border-forest bg-white p-8 shadow-card">
-            <p className="text-xs font-semibold uppercase tracking-wide text-forest">
-              BCAS Application Confirmation Receipt
-            </p>
-            <p className="mt-1 font-mono text-sm text-slate-400">{application.applicationId}</p>
+          <section className="receipt-card receipt">
+            <p className="receipt-eyebrow">BCAS Application Confirmation Receipt</p>
+            <p className="receipt-application-id">{application.applicationId}</p>
 
-            <dl className="mt-6 divide-y divide-slate-100">
-              <div className="flex items-center justify-between py-2.5">
-                <dt className="text-sm text-slate-500">Category</dt>
-                <dd className="text-sm font-semibold text-slate-800">{application.category}</dd>
+            <dl className="receipt-details">
+              <div>
+                <dt>Category</dt>
+                <dd>{application.category}</dd>
               </div>
-              <div className="flex items-center justify-between py-2.5">
-                <dt className="text-sm text-slate-500">Status</dt>
-                <dd className="text-sm font-semibold text-slate-800">{application.status}</dd>
+              <div>
+                <dt>Status</dt>
+                <dd>{application.status}</dd>
               </div>
 
               {application.category === "Admission" && (
                 <>
-                  <div className="flex items-center justify-between py-2.5">
-                    <dt className="text-sm text-slate-500">Application type</dt>
-                    <dd className="text-sm font-semibold text-slate-800">
-                      {admissionTypeLabel(application.applicationType)}
-                    </dd>
+                  <div>
+                    <dt>Application type</dt>
+                    <dd>{admissionTypeLabel(application.applicationType)}</dd>
                   </div>
-                  <div className="flex items-center justify-between py-2.5">
-                    <dt className="text-sm text-slate-500">Course applied for</dt>
-                    <dd className="text-sm font-semibold text-slate-800">{application.courseAppliedFor}</dd>
+                  <div>
+                    <dt>Course applied for</dt>
+                    <dd>{application.courseAppliedFor}</dd>
                   </div>
-                  <div className="flex items-center justify-between py-2.5">
-                    <dt className="text-sm text-slate-500">Previous school</dt>
-                    <dd className="text-sm font-semibold text-slate-800">{application.previousSchool}</dd>
+                  <div>
+                    <dt>Previous school</dt>
+                    <dd>{application.previousSchool}</dd>
                   </div>
                 </>
               )}
 
               {application.category === "Scholarship" && (
                 <>
-                  <div className="flex items-center justify-between py-2.5">
-                    <dt className="text-sm text-slate-500">Scholarship</dt>
-                    <dd className="text-sm font-semibold text-slate-800">{application.scholarshipName}</dd>
+                  <div>
+                    <dt>Scholarship</dt>
+                    <dd>{application.scholarshipName}</dd>
                   </div>
-                  <div className="flex items-center justify-between py-2.5">
-                    <dt className="text-sm text-slate-500">Scholarship type</dt>
-                    <dd className="text-sm font-semibold text-slate-800">{application.scholarshipType}</dd>
+                  <div>
+                    <dt>Scholarship type</dt>
+                    <dd>{application.scholarshipType}</dd>
                   </div>
-                  <div className="flex items-center justify-between py-2.5">
-                    <dt className="text-sm text-slate-500">Grade average</dt>
-                    <dd className="text-sm font-semibold text-slate-800">{application.gradeAverage}</dd>
+                  <div>
+                    <dt>Grade average</dt>
+                    <dd>{application.gradeAverage}</dd>
                   </div>
                 </>
               )}
 
-              <div className="flex items-center justify-between py-2.5">
-                <dt className="text-sm text-slate-500">Submitted</dt>
-                <dd className="text-sm font-semibold text-slate-800">{formatTimestamp(application.submittedAt)}</dd>
+              <div>
+                <dt>Submitted</dt>
+                <dd>{formatTimestamp(application.submittedAt)}</dd>
               </div>
             </dl>
 
-            <button type="button" onClick={() => window.print()} className={`${primaryButtonClasses} print:hidden mt-6`}>
+            <button type="button" className="no-print" onClick={() => window.print()}>
               Print / Save as PDF
             </button>
-          </div>
+          </section>
         )}
       </div>
     </main>
