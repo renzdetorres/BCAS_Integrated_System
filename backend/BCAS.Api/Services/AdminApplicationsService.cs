@@ -11,15 +11,18 @@ public class AdminApplicationsService : IAdminApplicationsService
     private readonly IAdminApplicationsRepository _applicationsRepository;
     private readonly IExamScheduleRepository _examScheduleRepository;
     private readonly IApplicantDocumentService _documentService;
+    private readonly IApplicationStatusHistoryRepository _statusHistoryRepository;
 
     public AdminApplicationsService(
         IAdminApplicationsRepository applicationsRepository,
         IExamScheduleRepository examScheduleRepository,
-        IApplicantDocumentService documentService)
+        IApplicantDocumentService documentService,
+        IApplicationStatusHistoryRepository statusHistoryRepository)
     {
         _applicationsRepository = applicationsRepository;
         _examScheduleRepository = examScheduleRepository;
         _documentService = documentService;
+        _statusHistoryRepository = statusHistoryRepository;
     }
 
     public async Task<IReadOnlyList<AdminApplicationListItemResponse>> SearchAsync(
@@ -51,6 +54,7 @@ public class AdminApplicationsService : IAdminApplicationsService
     public async Task<AdminApplicationListItemResponse> UpdateStatusAsync(
         Guid applicationId,
         UpdateApplicationStatusRequest request,
+        Guid changedByUserId,
         CancellationToken cancellationToken = default)
     {
         var category = request.Category!;
@@ -68,12 +72,45 @@ public class AdminApplicationsService : IAdminApplicationsService
             throw new InvalidApplicationStatusException(category, status);
         }
 
+        var existing = await _applicationsRepository.GetByIdAsync(applicationId, cancellationToken);
+        if (existing is null || existing.Category != category)
+        {
+            throw new ApplicationNotFoundException(applicationId);
+        }
+
+        // Only Admission has an ordered workflow to enforce (BISAASS-56) -
+        // Scholarship's Admin override deliberately stays free-form
+        // (ScholarshipWorkflowConstants' own docs), since Evaluator's
+        // forward-only AdvanceWorkflowAsync already enforces order there.
+        if (category == "Admission" && !AdmissionWorkflowConstants.IsForwardTransition(existing.Status, status))
+        {
+            throw new InvalidStatusTransitionException(applicationId, existing.Status, status);
+        }
+
         var updated = await _applicationsRepository.UpdateStatusAsync(applicationId, category, status, request.Remarks, cancellationToken)
             ?? throw new ApplicationNotFoundException(applicationId);
+
+        await _statusHistoryRepository.InsertAsync(
+            applicationId, category, existing.Status, status, request.Remarks, changedByUserId, cancellationToken);
 
         var steps = await BuildStepsAsync(
             updated, new Dictionary<Guid, DocumentChecklistResponse?>(), new Dictionary<Guid, bool>(), cancellationToken);
         return updated.ToResponse(steps);
+    }
+
+    public async Task<IReadOnlyList<ApplicationStatusHistoryEntryResponse>> GetStatusHistoryAsync(
+        Guid applicationId,
+        string category,
+        CancellationToken cancellationToken = default)
+    {
+        var existing = await _applicationsRepository.GetByIdAsync(applicationId, cancellationToken);
+        if (existing is null || existing.Category != category)
+        {
+            throw new ApplicationNotFoundException(applicationId);
+        }
+
+        var entries = await _statusHistoryRepository.GetByApplicationIdAsync(applicationId, category, cancellationToken);
+        return entries.Select(e => e.ToResponse()).ToList();
     }
 
     public async Task<AdminApplicationListItemResponse> ArchiveAsync(

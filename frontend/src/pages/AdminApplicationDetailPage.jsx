@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
-  ADMISSION_STATUSES,
   ARCHIVABLE_STATUSES,
   SCHOLARSHIP_STATUSES,
   archiveApplication,
+  getApplicationStatusHistory,
+  getValidNextAdmissionStatuses,
   searchApplications,
   updateApplicationStatus,
 } from "../api/adminApplicationsApi.js";
@@ -37,6 +38,10 @@ export default function AdminApplicationDetailPage() {
   const [isArchiving, setIsArchiving] = useState(false);
   const [archiveError, setArchiveError] = useState(null);
 
+  const [statusHistory, setStatusHistory] = useState([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [historyError, setHistoryError] = useState(null);
+
   const loadApplication = useCallback(() => {
     let cancelled = false;
 
@@ -66,10 +71,41 @@ export default function AdminApplicationDetailPage() {
 
   useEffect(() => loadApplication(), [loadApplication]);
 
+  const loadStatusHistory = useCallback(() => {
+    if (!application) return undefined;
+
+    let cancelled = false;
+    setIsLoadingHistory(true);
+    getApplicationStatusHistory(applicationId, application.category)
+      .then((data) => {
+        if (!cancelled) setStatusHistory(data);
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setHistoryError(error instanceof ApiError ? error.message : "Failed to load status history.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingHistory(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [applicationId, application?.category]);
+
+  useEffect(() => loadStatusHistory(), [loadStatusHistory]);
+
   async function handleStatusSubmit(event) {
     event.preventDefault();
     setSaveError(null);
     setSavedMessage(null);
+
+    if (statusForm.status === application.status) {
+      setSaveError("Choose a different status to record a change.");
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -81,6 +117,7 @@ export default function AdminApplicationDetailPage() {
       setApplication(updated);
       setStatusForm({ status: updated.status, remarks: updated.remarks ?? "" });
       setSavedMessage("Status updated.");
+      loadStatusHistory();
     } catch (error) {
       setSaveError(error instanceof ApiError ? error.message : "Failed to update the application's status.");
     } finally {
@@ -107,7 +144,14 @@ export default function AdminApplicationDetailPage() {
     }
   }
 
-  const statusOptions = application?.category === "Admission" ? ADMISSION_STATUSES : SCHOLARSHIP_STATUSES;
+  // Admission's Update Status dropdown only offers the current status
+  // (so it stays visible/selected) plus valid forward moves through the
+  // ordered workflow (BISAASS-56) - Scholarship's Admin override stays
+  // free-form, offering every status regardless of the current one.
+  const statusOptions =
+    application?.category === "Admission"
+      ? [application.status, ...getValidNextAdmissionStatuses(application.status)]
+      : SCHOLARSHIP_STATUSES;
   const stepLabels = application?.category === "Admission" ? ADMISSION_STEP_LABELS : SCHOLARSHIP_STEP_LABELS;
   const canArchive = application && !application.isArchived && ARCHIVABLE_STATUSES.includes(application.status);
 
@@ -257,6 +301,38 @@ export default function AdminApplicationDetailPage() {
                   {isSaving ? "Saving..." : "Update Status"}
                 </button>
               </form>
+            </div>
+
+            <div className="admin-app-detail-card">
+              <h2>Status History</h2>
+              <p className="admin-app-detail-subtitle">
+                Every status change recorded for this application, oldest first.
+              </p>
+
+              {isLoadingHistory && <p>Loading...</p>}
+              {historyError && (
+                <p className="form-error" role="alert">
+                  {historyError}
+                </p>
+              )}
+              {!isLoadingHistory && !historyError && statusHistory.length === 0 && <p>No status changes recorded yet.</p>}
+
+              {!isLoadingHistory && !historyError && statusHistory.length > 0 && (
+                <ul className="admin-app-status-history">
+                  {statusHistory.map((entry) => (
+                    <li key={entry.historyId}>
+                      <div className="admin-app-status-history-line">
+                        <strong>{entry.fromStatus ? `${entry.fromStatus} → ${entry.toStatus}` : `${entry.toStatus} (submitted)`}</strong>
+                        <span>{formatDateTime(entry.changedAt)}</span>
+                      </div>
+                      <div className="admin-app-status-history-meta">
+                        by {entry.changedByName ?? "the applicant"}
+                        {entry.remarks && <> &mdash; {entry.remarks}</>}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
             <div className="admin-app-detail-card">
