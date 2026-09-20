@@ -70,7 +70,13 @@ public class AuthController : ControllerBase
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.Lax,
+                // None (not Lax): the frontend (http://localhost:5173 in dev)
+                // and this API (https://localhost:7100) differ in scheme, which
+                // browsers treat as cross-site under the schemeful-same-site
+                // rule even though the host is the same - a Lax cookie is
+                // never sent back on the SPA's subsequent fetch() calls, so
+                // every authenticated request 401s immediately after login.
+                SameSite = SameSiteMode.None,
                 Path = "/",
                 Expires = result.ExpiresAtUtc,
             });
@@ -100,7 +106,9 @@ public class AuthController : ControllerBase
         {
             HttpOnly = true,
             Secure = true,
-            SameSite = SameSiteMode.Lax,
+            // Must match the attributes the cookie was set with (see Login)
+            // for the browser to recognize this as clearing the same cookie.
+            SameSite = SameSiteMode.None,
             Path = "/",
         });
 
