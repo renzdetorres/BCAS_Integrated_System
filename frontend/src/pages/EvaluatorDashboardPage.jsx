@@ -1,46 +1,23 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getEvaluatorDashboard } from "../api/evaluatorDashboardApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
-import Card, { StatCard } from "../components/ui/Card.jsx";
+import Card from "../components/ui/Card.jsx";
+import DataTable from "../components/ui/DataTable.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./EvaluatorDashboardPage.css";
 
 function formatDate(isoDateTime) {
   return new Date(isoDateTime).toLocaleDateString(undefined, {
     year: "numeric",
-    month: "long",
+    month: "short",
     day: "numeric",
   });
 }
 
-function ApplicationQueueList({ applications, emptyMessage }) {
-  if (applications.length === 0) return <p>{emptyMessage}</p>;
-  return (
-    <ul className="evaluator-application-list">
-      {applications.map((application) => (
-        <li key={application.applicationId}>
-          <Link
-            className="evaluator-application-link"
-            to={`/evaluator/scholarship-applications/${application.applicationId}`}
-          >
-            <div className="evaluator-application-header">
-              <span className="evaluator-application-name">{application.applicantName}</span>
-              <StatusBadge status={application.status} />
-            </div>
-            <p className="evaluator-application-meta">
-              {application.scholarshipName} &middot; {application.scholarshipType} &middot; Grade Average{" "}
-              {application.gradeAverage} &middot; Submitted {formatDate(application.submittedAt)}
-            </p>
-          </Link>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 export default function EvaluatorDashboardPage() {
+  const navigate = useNavigate();
   const [dashboard, setDashboard] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -66,8 +43,39 @@ export default function EvaluatorDashboardPage() {
     };
   }, []);
 
+  const queueColumns = [
+    { key: "applicantName", header: "Applicant", sortable: true },
+    {
+      key: "scholarship",
+      header: "Scholarship",
+      accessor: (row) => row.scholarshipName,
+      sortable: true,
+      render: (row) => (
+        <div className="evaluator-scholarship-cell">
+          <span>{row.scholarshipName}</span>
+          <span className="evaluator-scholarship-type">{row.scholarshipType}</span>
+        </div>
+      ),
+    },
+    { key: "gradeAverage", header: "Grade Avg.", sortable: true },
+    {
+      key: "status",
+      header: "Stage",
+      accessor: (row) => row.status,
+      sortable: true,
+      render: (row) => <StatusBadge status={row.status} />,
+    },
+    {
+      key: "submittedAt",
+      header: "Submitted",
+      accessor: (row) => row.submittedAt,
+      sortable: true,
+      render: (row) => formatDate(row.submittedAt),
+    },
+  ];
+
   return (
-    <AppLayout title="Evaluator Dashboard">
+    <AppLayout title="Screening Queue">
       {isLoading && (
         <Card>
           <p>Loading...</p>
@@ -84,24 +92,49 @@ export default function EvaluatorDashboardPage() {
 
       {!isLoading && !errorMessage && dashboard && (
         <>
-          <section className="evaluator-stat-grid">
-            <StatCard label="Pending Evaluations" value={dashboard.pendingEvaluationsCount} />
-          </section>
-
           <Card>
-            <h2>Scholarship Application Queue</h2>
-            <ApplicationQueueList
-              applications={dashboard.queue}
+            <div className="evaluator-queue-header">
+              <div>
+                <h2>Awaiting Screening</h2>
+                <p className="dashboard-meta">
+                  {dashboard.pendingEvaluationsCount === 0
+                    ? "Nothing waiting on you right now."
+                    : `${dashboard.pendingEvaluationsCount} scholarship application${
+                        dashboard.pendingEvaluationsCount === 1 ? "" : "s"
+                      } waiting, oldest first.`}
+                </p>
+              </div>
+            </div>
+            <DataTable
+              columns={queueColumns}
+              rows={dashboard.queue}
+              getRowKey={(row) => row.applicationId}
               emptyMessage="No scholarship applications awaiting evaluation."
+              onRowClick={(row) => navigate(`/evaluator/scholarship-applications/${row.applicationId}`)}
             />
           </Card>
 
-          <Card>
+          <Card className="evaluator-recent-card">
             <h2>Recently Evaluated</h2>
-            <ApplicationQueueList
-              applications={dashboard.recentlyEvaluated}
-              emptyMessage="No scholarship applications evaluated yet."
-            />
+            {dashboard.recentlyEvaluated.length === 0 ? (
+              <p className="dashboard-meta">No scholarship applications evaluated yet.</p>
+            ) : (
+              <ul className="evaluator-recent-list">
+                {dashboard.recentlyEvaluated.map((application) => (
+                  <li key={application.applicationId}>
+                    <button
+                      type="button"
+                      className="evaluator-recent-row"
+                      onClick={() => navigate(`/evaluator/scholarship-applications/${application.applicationId}`)}
+                    >
+                      <span className="evaluator-recent-name">{application.applicantName}</span>
+                      <span className="evaluator-recent-scholarship">{application.scholarshipName}</span>
+                      <StatusBadge status={application.status} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </Card>
         </>
       )}

@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { searchApplications } from "../api/adminApplicationsApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
-import Card from "../components/ui/Card.jsx";
 import DataTable from "../components/ui/DataTable.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./AdminApplicationsPage.css";
@@ -91,17 +90,17 @@ export default function AdminApplicationsPage() {
 
   return (
     <AppLayout title="Applications">
-      <Card>
-        <p className="admin-applications-subtitle">
-          All admission and scholarship applications. Select one to view its full detail.
+      <p className="admin-applications-subtitle">
+        All admission and scholarship applications. Select one to view its full detail.
+      </p>
+
+      {errorMessage && (
+        <p className="form-error" role="alert">
+          {errorMessage}
         </p>
+      )}
 
-        {errorMessage && (
-          <p className="form-error" role="alert">
-            {errorMessage}
-          </p>
-        )}
-
+      <div className="admin-applications-panel">
         <div className="admin-applications-extra-filter">
           <input
             className="ui-datatable-search"
@@ -144,7 +143,7 @@ export default function AdminApplicationsPage() {
             },
           ]}
         />
-      </Card>
+      </div>
     </AppLayout>
   );
 }

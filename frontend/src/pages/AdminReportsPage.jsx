@@ -16,6 +16,7 @@ import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
+import BarChart from "../components/ui/BarChart.jsx";
 import "./AdminReportsPage.css";
 
 const REPORTS = [
@@ -201,6 +202,10 @@ function EnrollmentSummaryReport() {
           <p className="report-total">
             Total Enrolled: <strong>{summary.totalEnrolled}</strong>
           </p>
+          <BarChart
+            data={summary.byProgram.map((entry) => ({ label: entry.program, value: entry.count }))}
+            emptyMessage="No enrolled applicants yet."
+          />
           <div className="report-summary-columns">
             <div>
               <h3>By Program</h3>

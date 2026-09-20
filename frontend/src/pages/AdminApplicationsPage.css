@@ -4,6 +4,17 @@
   font-size: 0.9rem;
 }
 
+/* A records panel, not a padded card - this screen is read by a registrar
+   scanning rows all day, so it should feel like a ledger, not a dashboard
+   widget: flush edges, a plain rule instead of a soft shadow. */
+.admin-applications-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-top: 3px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  padding: 18px 20px;
+}
+
 .admin-applications-extra-filter {
   margin-bottom: 16px;
 }

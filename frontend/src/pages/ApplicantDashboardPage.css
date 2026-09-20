@@ -1,12 +1,6 @@
-.dashboard-section-title {
-  margin: 0 0 16px;
-  font-size: 1.05rem;
-  color: var(--color-text-primary);
-}
-
 .dashboard-meta {
   color: var(--color-text-secondary);
-  font-size: 0.9rem;
+  font: var(--text-body-comfortable);
 }
 
 .form-error {
@@ -42,10 +36,8 @@
 .deadline-type {
   grid-column: 1 / -1;
   color: var(--color-primary);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 0.78rem;
+  font-weight: 600;
 }
 
 .deadline-title {
@@ -57,4 +49,139 @@
   color: var(--color-text-secondary);
   font-size: 0.85rem;
   white-space: nowrap;
+}
+
+.applicant-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.applicant-dashboard-main,
+.applicant-dashboard-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+@media (max-width: 960px) {
+  .applicant-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.applicant-app-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.applicant-app-course {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--color-text-primary);
+}
+
+.applicant-step-hint {
+  margin-top: 12px;
+}
+
+.applicant-requirements {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.applicant-outstanding-list {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.applicant-outstanding-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--color-bg);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  color: var(--color-text-primary);
+}
+
+.applicant-scholarship-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.applicant-scholarship-list li:not(:last-child) {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.applicant-announcements-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.applicant-announcements-header h2 {
+  margin: 0;
+}
+
+.applicant-announcements-header a {
+  color: var(--color-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.applicant-announcements-header a:hover {
+  text-decoration: underline;
+}
+
+.applicant-announcement-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.applicant-announcement-list li:not(:last-child) {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.applicant-announcement-title {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+
+.applicant-announcement-body {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }

@@ -11,3 +11,29 @@
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 16px;
 }
+
+/* Same stat-tile shape as StatCard, but the top rule is gold instead of
+   green - this one is a live queue you're meant to act on, not a static
+   count, and the gold-for-action-needed convention is used the same way
+   in the sidebar's active link and the next-action banner. */
+.ss-action-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  box-shadow: none;
+  border-top: 3px solid var(--color-accent);
+  padding: 16px 20px;
+  text-decoration: none;
+  transition: background var(--motion-standard);
+}
+
+.ss-action-tile:hover {
+  background: var(--color-primary-tint);
+}
+
+.ss-action-tile-hint {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}

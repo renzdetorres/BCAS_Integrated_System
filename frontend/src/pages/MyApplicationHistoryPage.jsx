@@ -120,7 +120,7 @@ export default function MyApplicationHistoryPage() {
                   className="history-receipt-link"
                   to={`/applications/receipt/${selectedApplication.applicationId}`}
                 >
-                  View / Print Receipt &rarr;
+                  View / Print Receipt
                 </Link>
 
                 <div className="history-detail-row">

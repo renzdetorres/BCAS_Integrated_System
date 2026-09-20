@@ -40,6 +40,20 @@
   color: var(--color-accent-dark);
 }
 
+/* The one deliberate motion moment on this screen: a slow pulse on the
+   step that's actually in progress right now, not applied to anything
+   else on the page. */
 .tracking-step-current .tracking-step-dot {
   background: var(--color-accent);
+  animation: tracking-step-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes tracking-step-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(217, 164, 65, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(217, 164, 65, 0);
+  }
 }

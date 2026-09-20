@@ -6,9 +6,11 @@ import {
   updateScholarship,
 } from "../api/academicHeadScholarshipsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import { useToast } from "../context/ToastContext.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
+import ConfirmDialog from "../components/ui/ConfirmDialog.jsx";
 import "./AcademicHeadScholarshipsPage.css";
 
 const initialCreateForm = { name: "", scholarshipType: "", totalSlots: "", minimumGradeAverage: "" };
@@ -24,11 +26,13 @@ function toRequestBody(form) {
 }
 
 export default function AcademicHeadScholarshipsPage() {
+  const { showToast } = useToast();
   const [scholarships, setScholarships] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [isForbidden, setIsForbidden] = useState(false);
   const [pendingToggleId, setPendingToggleId] = useState(null);
+  const [deactivateTarget, setDeactivateTarget] = useState(null);
 
   const [createForm, setCreateForm] = useState(initialCreateForm);
   const [isCreating, setIsCreating] = useState(false);
@@ -108,17 +112,32 @@ export default function AcademicHeadScholarshipsPage() {
     }
   }
 
-  async function handleToggle(scholarship) {
+  async function applyToggle(scholarship) {
     setPendingToggleId(scholarship.scholarshipId);
     setLoadError(null);
     try {
       const updated = await setScholarshipActiveStatus(scholarship.scholarshipId, !scholarship.isActive);
       setScholarships((prev) => prev.map((s) => (s.scholarshipId === updated.scholarshipId ? updated : s)));
+      showToast(`"${scholarship.name}" was ${updated.isActive ? "activated" : "deactivated"}.`);
     } catch (error) {
       setLoadError(error instanceof ApiError ? error.message : "Failed to update the scholarship's status.");
     } finally {
       setPendingToggleId(null);
     }
+  }
+
+  function handleToggle(scholarship) {
+    if (scholarship.isActive) {
+      setDeactivateTarget(scholarship);
+    } else {
+      applyToggle(scholarship);
+    }
+  }
+
+  async function confirmDeactivate() {
+    const scholarship = deactivateTarget;
+    setDeactivateTarget(null);
+    await applyToggle(scholarship);
   }
 
   return (
@@ -341,6 +360,20 @@ export default function AcademicHeadScholarshipsPage() {
             </Card>
           </>
         )}
+
+      <ConfirmDialog
+        open={Boolean(deactivateTarget)}
+        title="Deactivate this scholarship?"
+        message={
+          deactivateTarget
+            ? `"${deactivateTarget.name}" will stop appearing to applicants and can no longer be applied against. You can activate it again anytime.`
+            : ""
+        }
+        confirmLabel="Deactivate"
+        isSubmitting={pendingToggleId === deactivateTarget?.scholarshipId}
+        onConfirm={confirmDeactivate}
+        onCancel={() => setDeactivateTarget(null)}
+      />
     </AppLayout>
   );
 }

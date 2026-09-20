@@ -26,8 +26,6 @@ export default function TopBar({ onMenuClick }) {
 
       <div className="topbar-spacer" />
 
-      <span className="topbar-role-pill">{session.role}</span>
-
       <div className="topbar-user">
         <button
           type="button"

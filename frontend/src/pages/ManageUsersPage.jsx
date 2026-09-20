@@ -2,15 +2,18 @@ import { useCallback, useEffect, useState } from "react";
 import { ALL_ROLES, DEPARTMENT_OPTIONS, listUsers, setUserActiveStatus, updateUser } from "../api/adminApi.js";
 import { ApiError } from "../api/apiClient.js";
 import { useSession } from "../context/SessionContext.jsx";
+import { useToast } from "../context/ToastContext.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
+import ConfirmDialog from "../components/ui/ConfirmDialog.jsx";
 import "./ManageUsersPage.css";
 
 const emptyEditForm = { firstName: "", lastName: "", email: "", role: ALL_ROLES[0], department: "" };
 
 export default function ManageUsersPage() {
   const { session } = useSession();
+  const { showToast } = useToast();
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -18,6 +21,7 @@ export default function ManageUsersPage() {
   const [editingUserId, setEditingUserId] = useState(null);
   const [editForm, setEditForm] = useState(emptyEditForm);
   const [isSaving, setIsSaving] = useState(false);
+  const [deactivateTarget, setDeactivateTarget] = useState(null);
 
   const loadUsers = useCallback(async () => {
     setIsLoading(true);
@@ -36,17 +40,32 @@ export default function ManageUsersPage() {
     loadUsers();
   }, [loadUsers]);
 
-  async function handleToggle(user) {
+  async function applyToggle(user) {
     setPendingUserId(user.userId);
     setErrorMessage(null);
     try {
       const updated = await setUserActiveStatus(user.userId, !user.isActive);
       setUsers((prev) => prev.map((u) => (u.userId === updated.userId ? updated : u)));
+      showToast(`${user.firstName} ${user.lastName}'s account was ${updated.isActive ? "activated" : "deactivated"}.`);
     } catch (error) {
       setErrorMessage(error instanceof ApiError ? error.message : "Failed to update account status.");
     } finally {
       setPendingUserId(null);
     }
+  }
+
+  function handleToggle(user) {
+    if (user.isActive) {
+      setDeactivateTarget(user);
+    } else {
+      applyToggle(user);
+    }
+  }
+
+  async function confirmDeactivate() {
+    const user = deactivateTarget;
+    setDeactivateTarget(null);
+    await applyToggle(user);
   }
 
   function startEdit(user) {
@@ -241,6 +260,20 @@ export default function ManageUsersPage() {
           </table>
         )}
       </Card>
+
+      <ConfirmDialog
+        open={Boolean(deactivateTarget)}
+        title="Deactivate this account?"
+        message={
+          deactivateTarget
+            ? `${deactivateTarget.firstName} ${deactivateTarget.lastName} (${deactivateTarget.email}) won't be able to log in until this account is activated again. Nothing is deleted.`
+            : ""
+        }
+        confirmLabel="Deactivate"
+        isSubmitting={pendingUserId === deactivateTarget?.userId}
+        onConfirm={confirmDeactivate}
+        onCancel={() => setDeactivateTarget(null)}
+      />
     </AppLayout>
   );
 }

@@ -1,53 +1,126 @@
-// Sidebar nav per role, built strictly from the routes already registered in
-// App.jsx / already reachable today (each role's dashboard already links to
-// every one of these). No destination here is invented.
+// Sidebar nav per role, grouped by actual area of work (not alphabetically),
+// built strictly from routes already registered in App.jsx. Groups exist only
+// where a role has enough distinct areas to benefit from them - a 3-item role
+// stays flat rather than forcing an artificial section.
 export const NAV_ITEMS_BY_ROLE = {
   Applicant: [
-    { to: "/portal", label: "Dashboard", icon: "home", end: true },
-    { to: "/applications", label: "My Application", icon: "doc" },
-    { to: "/applications/history", label: "Application History", icon: "history" },
-    { to: "/application-tracking", label: "Application Tracking", icon: "track" },
-    { to: "/scholarships", label: "Scholarship Application", icon: "award" },
-    { to: "/documents", label: "Documents", icon: "folder" },
-    { to: "/exam-schedule", label: "Exam Schedule", icon: "calendar" },
-    { to: "/exam-permit", label: "Exam Permit", icon: "ticket" },
-    { to: "/announcements", label: "Announcements", icon: "bell" },
-    { to: "/profile", label: "Settings", icon: "settings" },
+    {
+      section: null,
+      items: [{ to: "/portal", label: "Dashboard", icon: "home", end: true }],
+    },
+    {
+      section: "My Application",
+      items: [
+        { to: "/applications", label: "Admission Application", icon: "doc" },
+        { to: "/applications/history", label: "Application History", icon: "history" },
+        { to: "/application-tracking", label: "Application Tracking", icon: "track" },
+        { to: "/documents", label: "Documents", icon: "folder" },
+      ],
+    },
+    {
+      section: "Scholarship",
+      items: [{ to: "/scholarships", label: "Scholarship Application", icon: "award" }],
+    },
+    {
+      section: "Entrance Exam",
+      items: [
+        { to: "/exam-schedule", label: "Exam Schedule", icon: "calendar" },
+        { to: "/exam-permit", label: "Exam Permit", icon: "ticket" },
+      ],
+    },
+    {
+      section: null,
+      items: [
+        { to: "/announcements", label: "Announcements", icon: "bell" },
+        { to: "/profile", label: "Settings", icon: "settings" },
+      ],
+    },
   ],
   Admin: [
-    { to: "/portal", label: "Dashboard", icon: "home", end: true },
-    { to: "/admin/applications", label: "Applications", icon: "doc" },
-    { to: "/admin/documents", label: "Document Verification", icon: "folder" },
-    { to: "/admin/archive", label: "Records Archive", icon: "archive" },
-    { to: "/admin/reservations", label: "Reservations", icon: "bookmark" },
-    { to: "/admin/exam-schedules", label: "Exam Schedules", icon: "calendar" },
-    { to: "/admin/exam-permits", label: "Exam Permits", icon: "ticket" },
-    { to: "/admin/scholarships", label: "Scholarships", icon: "award" },
-    { to: "/admin/announcements", label: "Announcements", icon: "bell" },
-    { to: "/admin/reports", label: "Reports", icon: "chart" },
-    { to: "/admin/users", label: "Account Management", icon: "users" },
-    { to: "/admin/staff", label: "Provision Staff", icon: "user-plus" },
-    { to: "/admin/notification-settings", label: "Notification Settings", icon: "mail" },
-    { to: "/admin/settings", label: "System Settings", icon: "settings" },
+    {
+      section: null,
+      items: [{ to: "/portal", label: "Dashboard", icon: "home", end: true }],
+    },
+    {
+      section: "Admissions",
+      items: [
+        { to: "/admin/applications", label: "Applications", icon: "doc" },
+        { to: "/admin/documents", label: "Document Verification", icon: "folder" },
+        { to: "/admin/exam-schedules", label: "Exam Schedules", icon: "calendar" },
+        { to: "/admin/exam-permits", label: "Exam Permits", icon: "ticket" },
+        { to: "/admin/reservations", label: "Reservations", icon: "bookmark" },
+        { to: "/admin/archive", label: "Records Archive", icon: "archive" },
+      ],
+    },
+    {
+      section: "Scholarships",
+      items: [{ to: "/admin/scholarships", label: "Scholarships", icon: "award" }],
+    },
+    {
+      section: "Communications",
+      items: [{ to: "/admin/announcements", label: "Announcements", icon: "bell" }],
+    },
+    {
+      section: "Reports",
+      items: [{ to: "/admin/reports", label: "Reports", icon: "chart" }],
+    },
+    {
+      section: "Administration",
+      items: [
+        { to: "/admin/users", label: "Account Management", icon: "users" },
+        { to: "/admin/staff", label: "Provision Staff", icon: "user-plus" },
+        { to: "/admin/notification-settings", label: "Notification Settings", icon: "mail" },
+        { to: "/admin/settings", label: "System Settings", icon: "settings" },
+      ],
+    },
   ],
   Evaluator: [
-    { to: "/portal", label: "Dashboard", icon: "home", end: true },
-    { to: "/evaluator/scholarship-slots", label: "Scholarship Slots", icon: "award" },
-    { to: "/evaluator/settings", label: "Settings", icon: "settings" },
+    {
+      section: null,
+      items: [
+        { to: "/portal", label: "Dashboard", icon: "home", end: true },
+        { to: "/evaluator/scholarship-slots", label: "Scholarship Slots", icon: "award" },
+        { to: "/evaluator/settings", label: "Settings", icon: "settings" },
+      ],
+    },
   ],
   AcademicHead: [
-    { to: "/portal", label: "Dashboard", icon: "home", end: true },
-    { to: "/academic-head/scholarships", label: "Scholarships", icon: "award" },
-    { to: "/academic-head/announcements", label: "Announcements", icon: "bell" },
-    { to: "/academic-head/reports", label: "Reports", icon: "chart" },
-    { to: "/academic-head/settings", label: "Settings", icon: "settings" },
+    {
+      section: null,
+      items: [{ to: "/portal", label: "Dashboard", icon: "home", end: true }],
+    },
+    {
+      section: "Scholarship Oversight",
+      items: [
+        { to: "/academic-head/scholarships", label: "Scholarships", icon: "award" },
+        { to: "/academic-head/announcements", label: "Announcements", icon: "bell" },
+        { to: "/academic-head/reports", label: "Reports", icon: "chart" },
+      ],
+    },
+    {
+      section: null,
+      items: [{ to: "/academic-head/settings", label: "Settings", icon: "settings" }],
+    },
   ],
   SupportStaff: [
-    { to: "/portal", label: "Dashboard", icon: "home", end: true },
-    { to: "/support-staff/documents", label: "Document Verification", icon: "folder" },
-    { to: "/support-staff/documents/archive", label: "Document Archive", icon: "archive" },
-    { to: "/support-staff/applicants", label: "Applicant Records", icon: "users" },
-    { to: "/support-staff/settings", label: "Settings", icon: "settings" },
+    {
+      section: null,
+      items: [{ to: "/portal", label: "Dashboard", icon: "home", end: true }],
+    },
+    {
+      section: "Document Verification",
+      items: [
+        { to: "/support-staff/documents", label: "Verification Queue", icon: "folder" },
+        { to: "/support-staff/documents/archive", label: "Document Archive", icon: "archive" },
+      ],
+    },
+    {
+      section: null,
+      items: [
+        { to: "/support-staff/applicants", label: "Applicant Records", icon: "users" },
+        { to: "/support-staff/settings", label: "Settings", icon: "settings" },
+      ],
+    },
   ],
 };
 

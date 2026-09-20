@@ -5,9 +5,11 @@ import {
   setAnnouncementActiveStatus,
 } from "../api/adminAnnouncementsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import { useToast } from "../context/ToastContext.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
+import ConfirmDialog from "../components/ui/ConfirmDialog.jsx";
 import "./AdminAnnouncementsPage.css";
 
 const initialCreateForm = { category: "Admission", title: "", body: "" };
@@ -23,10 +25,12 @@ function formatDateTime(isoDateTime) {
 }
 
 export default function AdminAnnouncementsPage() {
+  const { showToast } = useToast();
   const [announcements, setAnnouncements] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [pendingToggleId, setPendingToggleId] = useState(null);
+  const [deactivateTarget, setDeactivateTarget] = useState(null);
 
   const [createForm, setCreateForm] = useState(initialCreateForm);
   const [isCreating, setIsCreating] = useState(false);
@@ -67,7 +71,7 @@ export default function AdminAnnouncementsPage() {
     }
   }
 
-  async function handleToggle(announcement) {
+  async function applyToggle(announcement) {
     setPendingToggleId(announcement.announcementId);
     setLoadError(null);
     try {
@@ -75,11 +79,26 @@ export default function AdminAnnouncementsPage() {
       setAnnouncements((prev) =>
         prev.map((a) => (a.announcementId === updated.announcementId ? updated : a)),
       );
+      showToast(`"${announcement.title}" was ${updated.isActive ? "posted" : "deactivated"}.`);
     } catch (error) {
       setLoadError(error instanceof ApiError ? error.message : "Failed to update the announcement's status.");
     } finally {
       setPendingToggleId(null);
     }
+  }
+
+  function handleToggle(announcement) {
+    if (announcement.isActive) {
+      setDeactivateTarget(announcement);
+    } else {
+      applyToggle(announcement);
+    }
+  }
+
+  async function confirmDeactivate() {
+    const announcement = deactivateTarget;
+    setDeactivateTarget(null);
+    await applyToggle(announcement);
   }
 
   return (
@@ -188,6 +207,20 @@ export default function AdminAnnouncementsPage() {
           </ul>
         )}
       </Card>
+
+      <ConfirmDialog
+        open={Boolean(deactivateTarget)}
+        title="Deactivate this announcement?"
+        message={
+          deactivateTarget
+            ? `"${deactivateTarget.title}" will no longer be visible to applicants. You can post it again anytime.`
+            : ""
+        }
+        confirmLabel="Deactivate"
+        isSubmitting={pendingToggleId === deactivateTarget?.announcementId}
+        onConfirm={confirmDeactivate}
+        onCancel={() => setDeactivateTarget(null)}
+      />
     </AppLayout>
   );
 }

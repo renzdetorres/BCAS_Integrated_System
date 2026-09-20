@@ -1,22 +1,29 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getApplicationsReadyForDecision } from "../api/academicHeadScholarshipApplicationsApi.js";
 import { getAdminDashboard } from "../api/adminDashboardApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
-import Card, { StatCard } from "../components/ui/Card.jsx";
-import StatusBadge from "../components/ui/StatusBadge.jsx";
+import Card from "../components/ui/Card.jsx";
+import DataTable from "../components/ui/DataTable.jsx";
 import "./AcademicHeadDashboardPage.css";
 
 function formatDate(isoDateTime) {
   return new Date(isoDateTime).toLocaleDateString(undefined, {
     year: "numeric",
-    month: "long",
+    month: "short",
     day: "numeric",
   });
 }
 
+function daysWaiting(isoDateTime) {
+  const days = Math.floor((Date.now() - new Date(isoDateTime).getTime()) / 86400000);
+  if (days <= 0) return "Today";
+  return `${days} day${days === 1 ? "" : "s"}`;
+}
+
 export default function AcademicHeadDashboardPage() {
+  const navigate = useNavigate();
   const [queue, setQueue] = useState([]);
   const [oversight, setOversight] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,8 +52,39 @@ export default function AcademicHeadDashboardPage() {
     };
   }, []);
 
+  const columns = [
+    { key: "applicantName", header: "Applicant", sortable: true },
+    {
+      key: "scholarship",
+      header: "Scholarship",
+      accessor: (row) => row.scholarshipName,
+      sortable: true,
+      render: (row) => (
+        <div className="ah-scholarship-cell">
+          <span>{row.scholarshipName}</span>
+          <span className="ah-scholarship-type">{row.scholarshipType}</span>
+        </div>
+      ),
+    },
+    { key: "gradeAverage", header: "Grade Avg.", sortable: true },
+    {
+      key: "submittedAt",
+      header: "Submitted",
+      accessor: (row) => row.submittedAt,
+      sortable: true,
+      render: (row) => formatDate(row.submittedAt),
+    },
+    {
+      key: "waiting",
+      header: "Awaiting Decision",
+      accessor: (row) => row.submittedAt,
+      sortable: true,
+      render: (row) => <span className="ah-waiting-pill">{daysWaiting(row.submittedAt)}</span>,
+    },
+  ];
+
   return (
-    <AppLayout title="Academic Head Dashboard">
+    <AppLayout title="Decision Queue">
       {isLoading && (
         <Card>
           <p>Loading...</p>
@@ -64,47 +102,55 @@ export default function AcademicHeadDashboardPage() {
       {!isLoading && !errorMessage && (
         <>
           <Card>
-            <h2>Applications Awaiting Decision</h2>
-            {queue.length === 0 && <p>No scholarship applications are waiting on a final decision.</p>}
-            {queue.length > 0 && (
-              <ul className="ah-queue-list">
-                {queue.map((application) => (
-                  <li key={application.applicationId}>
-                    <Link
-                      className="ah-queue-link"
-                      to={`/academic-head/scholarship-applications/${application.applicationId}`}
-                    >
-                      <div className="ah-queue-header">
-                        <span className="ah-queue-name">{application.applicantName}</span>
-                        <StatusBadge status={application.status} />
-                      </div>
-                      <p className="ah-queue-meta">
-                        {application.scholarshipName} &middot; {application.scholarshipType} &middot; Grade
-                        Average {application.gradeAverage} &middot; Submitted{" "}
-                        {formatDate(application.submittedAt)}
-                      </p>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <div className="ah-queue-header">
+              <h2>Ready for Final Decision</h2>
+              <p className="dashboard-meta">
+                {queue.length === 0
+                  ? "Nothing is waiting on your approval right now."
+                  : `${queue.length} scholarship application${
+                      queue.length === 1 ? "" : "s"
+                    } have completed screening and evaluation - review each before confirming Approved or Rejected.`}
+              </p>
+            </div>
+            <DataTable
+              columns={columns}
+              rows={queue}
+              getRowKey={(row) => row.applicationId}
+              emptyMessage="No scholarship applications are waiting on a final decision."
+              onRowClick={(row) => navigate(`/academic-head/scholarship-applications/${row.applicationId}`)}
+            />
           </Card>
 
           {oversight && (
-            <>
-              <div className="ah-oversight-heading">
-                <h2>Admissions Oversight (Admin-Registrar)</h2>
-                <p>Read-only, for context in approval decisions.</p>
-              </div>
-
-              <section className="ah-stat-grid">
-                <StatCard label="Total Applications" value={oversight.totalApplications} />
-                <StatCard label="Total Applicants" value={oversight.totalApplicants} />
-                <StatCard label="Pending" value={oversight.pendingCount} />
-                <StatCard label="Approved" value={oversight.approvedCount} />
-                <StatCard label="Rejected" value={oversight.rejectedCount} />
-              </section>
-            </>
+            <Card className="ah-oversight-card">
+              <h3>Admissions Context</h3>
+              <p className="dashboard-meta">
+                Read-only, from Admin-Registrar's admissions pipeline - for context only, not something you manage
+                here.
+              </p>
+              <dl className="ah-oversight-figures">
+                <div>
+                  <dt>Applications</dt>
+                  <dd>{oversight.totalApplications}</dd>
+                </div>
+                <div>
+                  <dt>Applicants</dt>
+                  <dd>{oversight.totalApplicants}</dd>
+                </div>
+                <div>
+                  <dt>Pending</dt>
+                  <dd>{oversight.pendingCount}</dd>
+                </div>
+                <div>
+                  <dt>Approved</dt>
+                  <dd>{oversight.approvedCount}</dd>
+                </div>
+                <div>
+                  <dt>Rejected</dt>
+                  <dd>{oversight.rejectedCount}</dd>
+                </div>
+              </dl>
+            </Card>
           )}
         </>
       )}

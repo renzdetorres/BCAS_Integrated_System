@@ -6,8 +6,10 @@ import {
   setExamScheduleOffered,
 } from "../api/adminExamSchedulesApi.js";
 import { ApiError } from "../api/apiClient.js";
+import { useToast } from "../context/ToastContext.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
+import ConfirmDialog from "../components/ui/ConfirmDialog.jsx";
 import "./AdminExamSchedulesPage.css";
 
 const initialForm = { dayType: DAY_TYPES[0], examDate: "", examTime: "", venue: "", isOffered: true };
@@ -31,10 +33,12 @@ function formatDateTime(isoDateTime) {
 }
 
 export default function AdminExamSchedulesPage() {
+  const { showToast } = useToast();
   const [schedules, setSchedules] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [pendingToggleId, setPendingToggleId] = useState(null);
+  const [unofferTarget, setUnofferTarget] = useState(null);
 
   const [form, setForm] = useState(initialForm);
   const [isCreating, setIsCreating] = useState(false);
@@ -80,7 +84,7 @@ export default function AdminExamSchedulesPage() {
     }
   }
 
-  async function handleToggleOffered(schedule) {
+  async function applyToggleOffered(schedule) {
     setPendingToggleId(schedule.examScheduleId);
     setLoadError(null);
     try {
@@ -88,11 +92,26 @@ export default function AdminExamSchedulesPage() {
       setSchedules((prev) =>
         prev.map((s) => (s.examScheduleId === updated.examScheduleId ? { ...s, isOffered: updated.isOffered } : s))
       );
+      showToast(`${formatDate(schedule.examDate)} at ${schedule.examTime} is now ${updated.isOffered ? "offered" : "not offered"}.`);
     } catch (error) {
       setLoadError(error instanceof ApiError ? error.message : "Failed to update the exam schedule.");
     } finally {
       setPendingToggleId(null);
     }
+  }
+
+  function handleToggleOffered(schedule) {
+    if (schedule.isOffered) {
+      setUnofferTarget(schedule);
+    } else {
+      applyToggleOffered(schedule);
+    }
+  }
+
+  async function confirmUnoffer() {
+    const schedule = unofferTarget;
+    setUnofferTarget(null);
+    await applyToggleOffered(schedule);
   }
 
   return (
@@ -243,6 +262,25 @@ export default function AdminExamSchedulesPage() {
             </ul>
           )}
         </Card>
+
+      <ConfirmDialog
+        open={Boolean(unofferTarget)}
+        title="Mark this schedule as not offered?"
+        message={
+          unofferTarget
+            ? `${formatDate(unofferTarget.examDate)} at ${unofferTarget.examTime} (${unofferTarget.venue}) will stop appearing as a choice to applicants.` +
+              (unofferTarget.assignedApplicants.length > 0
+                ? ` ${unofferTarget.assignedApplicants.length} applicant${
+                    unofferTarget.assignedApplicants.length === 1 ? "" : "s"
+                  } already selected this slot and will keep it - only new selections are blocked.`
+                : "")
+            : ""
+        }
+        confirmLabel="Mark Not Offered"
+        isSubmitting={pendingToggleId === unofferTarget?.examScheduleId}
+        onConfirm={confirmUnoffer}
+        onCancel={() => setUnofferTarget(null)}
+      />
     </AppLayout>
   );
 }

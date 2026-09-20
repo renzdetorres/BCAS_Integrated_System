@@ -30,9 +30,10 @@
   gap: 8px;
   margin-bottom: 28px;
   color: var(--color-primary);
-  font-size: 20px;
+  font-family: var(--font-serif);
+  font-size: 21px;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.03em;
 }
 
 @media (max-width: 900px) {
@@ -176,7 +177,7 @@
   color: var(--color-text-inverse);
   border: none;
   border-radius: var(--radius-md);
-  font-size: 1rem;
+  font-size: 0.97rem;
   font-weight: 600;
   cursor: pointer;
   margin-top: 4px;

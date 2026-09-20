@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { SessionProvider } from "./context/SessionContext.jsx";
+import { ToastProvider } from "./context/ToastContext.jsx";
 import RequireAuth from "./components/RequireAuth.jsx";
 import RequireRole from "./components/RequireRole.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
@@ -47,67 +48,69 @@ export default function App() {
   return (
     <BrowserRouter>
       <SessionProvider>
-        <Routes>
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route element={<RequireAuth />}>
-            <Route path="/portal" element={<PortalRouter />} />
-            <Route path="/announcements" element={<AnnouncementsRouter />} />
-            <Route element={<RequireRole allowedRoles={["Admin"]} />}>
-              <Route path="/admin/staff" element={<ProvisionStaffPage />} />
-              <Route path="/admin/users" element={<ManageUsersPage />} />
-              <Route path="/admin/notification-settings" element={<NotificationSettingsPage />} />
-              <Route path="/admin/settings" element={<AdminSettingsPage />} />
-              <Route path="/admin/applications" element={<AdminApplicationsPage />} />
-              <Route path="/admin/applications/:applicationId" element={<AdminApplicationDetailPage />} />
-              <Route path="/admin/documents" element={<AdminDocumentsPage />} />
-              <Route path="/admin/archive" element={<AdminArchivePage />} />
-              <Route path="/admin/announcements" element={<AdminAnnouncementsPage />} />
-              <Route path="/admin/reports" element={<AdminReportsPage />} />
-              <Route path="/admin/reports/scholarship/:applicationId/contract" element={<ScholarshipContractPage />} />
-              <Route path="/admin/exam-schedules" element={<AdminExamSchedulesPage />} />
-              <Route path="/admin/exam-permits" element={<AdminExamPermitsPage />} />
-              <Route path="/admin/scholarships" element={<AdminScholarshipsPage />} />
-              <Route path="/admin/reservations" element={<AdminReservationsPage />} />
+        <ToastProvider>
+          <Routes>
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route element={<RequireAuth />}>
+              <Route path="/portal" element={<PortalRouter />} />
+              <Route path="/announcements" element={<AnnouncementsRouter />} />
+              <Route element={<RequireRole allowedRoles={["Admin"]} />}>
+                <Route path="/admin/staff" element={<ProvisionStaffPage />} />
+                <Route path="/admin/users" element={<ManageUsersPage />} />
+                <Route path="/admin/notification-settings" element={<NotificationSettingsPage />} />
+                <Route path="/admin/settings" element={<AdminSettingsPage />} />
+                <Route path="/admin/applications" element={<AdminApplicationsPage />} />
+                <Route path="/admin/applications/:applicationId" element={<AdminApplicationDetailPage />} />
+                <Route path="/admin/documents" element={<AdminDocumentsPage />} />
+                <Route path="/admin/archive" element={<AdminArchivePage />} />
+                <Route path="/admin/announcements" element={<AdminAnnouncementsPage />} />
+                <Route path="/admin/reports" element={<AdminReportsPage />} />
+                <Route path="/admin/reports/scholarship/:applicationId/contract" element={<ScholarshipContractPage />} />
+                <Route path="/admin/exam-schedules" element={<AdminExamSchedulesPage />} />
+                <Route path="/admin/exam-permits" element={<AdminExamPermitsPage />} />
+                <Route path="/admin/scholarships" element={<AdminScholarshipsPage />} />
+                <Route path="/admin/reservations" element={<AdminReservationsPage />} />
+              </Route>
+              <Route element={<RequireRole allowedRoles={["Evaluator"]} />}>
+                <Route
+                  path="/evaluator/scholarship-applications/:applicationId"
+                  element={<ScholarshipScreeningPage />}
+                />
+                <Route path="/evaluator/scholarship-slots" element={<ScholarshipSlotsPage />} />
+                <Route path="/evaluator/settings" element={<EvaluatorSettingsPage />} />
+              </Route>
+              <Route element={<RequireRole allowedRoles={["AcademicHead"]} />}>
+                <Route
+                  path="/academic-head/scholarship-applications/:applicationId"
+                  element={<AcademicHeadReviewPage />}
+                />
+                <Route path="/academic-head/scholarships" element={<AcademicHeadScholarshipsPage />} />
+                <Route path="/academic-head/announcements" element={<AcademicHeadAnnouncementsPage />} />
+                <Route path="/academic-head/reports" element={<AcademicHeadReportsPage />} />
+                <Route path="/academic-head/settings" element={<AcademicHeadSettingsPage />} />
+              </Route>
+              <Route element={<RequireRole allowedRoles={["SupportStaff"]} />}>
+                <Route path="/support-staff/documents" element={<SupportStaffDocumentsPage />} />
+                <Route path="/support-staff/documents/archive" element={<SupportStaffDocumentArchivePage />} />
+                <Route path="/support-staff/applicants" element={<SupportStaffApplicantsPage />} />
+                <Route path="/support-staff/settings" element={<SupportStaffSettingsPage />} />
+              </Route>
+              <Route element={<RequireRole allowedRoles={["Applicant"]} />}>
+                <Route path="/profile" element={<ApplicantProfilePage />} />
+                <Route path="/applications" element={<AdmissionApplicationPage />} />
+                <Route path="/applications/history" element={<MyApplicationHistoryPage />} />
+                <Route path="/applications/receipt/:applicationId" element={<ApplicationReceiptPage />} />
+                <Route path="/scholarships" element={<ScholarshipApplicationPage />} />
+                <Route path="/documents" element={<DocumentsPage />} />
+                <Route path="/exam-schedule" element={<ExamSchedulePage />} />
+                <Route path="/exam-permit" element={<ExamPermitPage />} />
+                <Route path="/application-tracking" element={<ApplicationTrackingPage />} />
+              </Route>
             </Route>
-            <Route element={<RequireRole allowedRoles={["Evaluator"]} />}>
-              <Route
-                path="/evaluator/scholarship-applications/:applicationId"
-                element={<ScholarshipScreeningPage />}
-              />
-              <Route path="/evaluator/scholarship-slots" element={<ScholarshipSlotsPage />} />
-              <Route path="/evaluator/settings" element={<EvaluatorSettingsPage />} />
-            </Route>
-            <Route element={<RequireRole allowedRoles={["AcademicHead"]} />}>
-              <Route
-                path="/academic-head/scholarship-applications/:applicationId"
-                element={<AcademicHeadReviewPage />}
-              />
-              <Route path="/academic-head/scholarships" element={<AcademicHeadScholarshipsPage />} />
-              <Route path="/academic-head/announcements" element={<AcademicHeadAnnouncementsPage />} />
-              <Route path="/academic-head/reports" element={<AcademicHeadReportsPage />} />
-              <Route path="/academic-head/settings" element={<AcademicHeadSettingsPage />} />
-            </Route>
-            <Route element={<RequireRole allowedRoles={["SupportStaff"]} />}>
-              <Route path="/support-staff/documents" element={<SupportStaffDocumentsPage />} />
-              <Route path="/support-staff/documents/archive" element={<SupportStaffDocumentArchivePage />} />
-              <Route path="/support-staff/applicants" element={<SupportStaffApplicantsPage />} />
-              <Route path="/support-staff/settings" element={<SupportStaffSettingsPage />} />
-            </Route>
-            <Route element={<RequireRole allowedRoles={["Applicant"]} />}>
-              <Route path="/profile" element={<ApplicantProfilePage />} />
-              <Route path="/applications" element={<AdmissionApplicationPage />} />
-              <Route path="/applications/history" element={<MyApplicationHistoryPage />} />
-              <Route path="/applications/receipt/:applicationId" element={<ApplicationReceiptPage />} />
-              <Route path="/scholarships" element={<ScholarshipApplicationPage />} />
-              <Route path="/documents" element={<DocumentsPage />} />
-              <Route path="/exam-schedule" element={<ExamSchedulePage />} />
-              <Route path="/exam-permit" element={<ExamPermitPage />} />
-              <Route path="/application-tracking" element={<ApplicationTrackingPage />} />
-            </Route>
-          </Route>
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </ToastProvider>
       </SessionProvider>
     </BrowserRouter>
   );
