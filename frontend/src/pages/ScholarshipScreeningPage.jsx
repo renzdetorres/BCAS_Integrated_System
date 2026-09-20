@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   SCREENING_VERDICTS,
   advanceScholarshipApplicationWorkflow,
@@ -7,6 +7,9 @@ import {
   recordScholarshipScreening,
 } from "../api/evaluatorScholarshipApplicationsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./ScholarshipScreeningPage.css";
 
 const STAGE_LABELS = {
@@ -98,13 +101,7 @@ export default function ScholarshipScreeningPage() {
   }
 
   return (
-    <main className="screening-page">
-      <div className="screening-card">
-        <Link className="screening-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1>Scholarship Screening</h1>
-
+    <AppLayout title="Scholarship Screening">
         {isLoading && <p>Loading...</p>}
         {loadError && (
           <p className="form-error" role="alert">
@@ -114,7 +111,7 @@ export default function ScholarshipScreeningPage() {
 
         {!isLoading && !loadError && application && (
           <>
-            <section className="screening-section">
+            <Card className="screening-section">
               <h2>Workflow</h2>
               <ol className="workflow-stepper">
                 {application.workflowStages.map((stage) => {
@@ -151,9 +148,9 @@ export default function ScholarshipScreeningPage() {
                   {isAdvancing ? "Advancing..." : "Advance to Next Stage"}
                 </button>
               )}
-            </section>
+            </Card>
 
-            <section className="screening-section">
+            <Card className="screening-section">
               <h2>Applicant</h2>
               <dl className="screening-detail-list">
                 <div>
@@ -169,9 +166,9 @@ export default function ScholarshipScreeningPage() {
                   <dd>{application.isBcasian === null ? "Unknown" : application.isBcasian ? "Yes" : "No"}</dd>
                 </div>
               </dl>
-            </section>
+            </Card>
 
-            <section className="screening-section">
+            <Card className="screening-section">
               <h2>Scholarship Requirements Check</h2>
               <dl className="screening-detail-list">
                 <div>
@@ -194,13 +191,10 @@ export default function ScholarshipScreeningPage() {
                     {application.meetsMinimumGrade === null ? (
                       "N/A"
                     ) : (
-                      <span
-                        className={
-                          application.meetsMinimumGrade ? "requirement-met" : "requirement-not-met"
-                        }
-                      >
-                        {application.meetsMinimumGrade ? "Yes" : "No"}
-                      </span>
+                      <StatusBadge
+                        status={application.meetsMinimumGrade ? "Eligible" : "NotEligible"}
+                        label={application.meetsMinimumGrade ? "Yes" : "No"}
+                      />
                     )}
                   </dd>
                 </div>
@@ -213,9 +207,9 @@ export default function ScholarshipScreeningPage() {
                   <dd>{formatDateTime(application.submittedAt)}</dd>
                 </div>
               </dl>
-            </section>
+            </Card>
 
-            <section className="screening-section">
+            <Card className="screening-section">
               <h2>Eligibility Rules</h2>
               <ul className="rules-list">
                 <li className="rules-item">
@@ -275,14 +269,12 @@ export default function ScholarshipScreeningPage() {
                   <ul className="reapplication-list">
                     {application.eligibilityRules.previousAttempts.map((attempt) => (
                       <li key={attempt.applicationId} className="reapplication-row">
-                        <span className="reapplication-status">{attempt.status}</span>
-                        <span className="reapplication-verdict">
-                          {attempt.screeningVerdict
-                            ? attempt.screeningVerdict === "Qualified"
-                              ? "Qualified"
-                              : "Not Qualified"
-                            : "Not screened"}
-                        </span>
+                        <StatusBadge status={attempt.status} />
+                        {attempt.screeningVerdict ? (
+                          <StatusBadge status={attempt.screeningVerdict} />
+                        ) : (
+                          <StatusBadge status="Pending" label="Not screened" />
+                        )}
                         <span className="reapplication-date">{formatDateTime(attempt.submittedAt)}</span>
                         {attempt.screeningRemarks && (
                           <span className="reapplication-remarks">"{attempt.screeningRemarks}"</span>
@@ -292,9 +284,9 @@ export default function ScholarshipScreeningPage() {
                   </ul>
                 </div>
               )}
-            </section>
+            </Card>
 
-            <section className="screening-section">
+            <Card className="screening-section">
               <h2>Submitted Documents</h2>
               {application.documents.length === 0 ? (
                 <p>No documents uploaded yet.</p>
@@ -307,9 +299,7 @@ export default function ScholarshipScreeningPage() {
                         <span className="document-filename">{document.fileName}</span>
                       </div>
                       <div className="document-status-group">
-                        <span className={`document-status document-status-${document.status.toLowerCase()}`}>
-                          {document.status}
-                        </span>
+                        <StatusBadge status={document.status} />
                         {document.flaggedReason && (
                           <span className="document-flagged-reason">{document.flaggedReason}</span>
                         )}
@@ -318,31 +308,23 @@ export default function ScholarshipScreeningPage() {
                   ))}
                 </ul>
               )}
-            </section>
+            </Card>
 
             {application.screening && (
-              <section className="screening-section">
+              <Card className="screening-section">
                 <h2>Current Verdict</h2>
                 <p className="screening-current-verdict">
-                  <span
-                    className={
-                      application.screening.verdict === "Qualified"
-                        ? "verdict-qualified"
-                        : "verdict-not-qualified"
-                    }
-                  >
-                    {application.screening.verdict === "Qualified" ? "Qualified" : "Not Qualified"}
-                  </span>{" "}
-                  by {application.screening.evaluatedByName} on{" "}
+                  <StatusBadge status={application.screening.verdict} /> by{" "}
+                  {application.screening.evaluatedByName} on{" "}
                   {formatDateTime(application.screening.evaluatedAt)}
                 </p>
                 {application.screening.remarks && (
                   <p className="screening-current-remarks">"{application.screening.remarks}"</p>
                 )}
-              </section>
+              </Card>
             )}
 
-            <section className="screening-section">
+            <Card className="screening-section">
               <h2>Record Verdict</h2>
               <form onSubmit={handleSubmit} noValidate>
                 <div className="form-row">
@@ -389,10 +371,9 @@ export default function ScholarshipScreeningPage() {
                   {isSaving ? "Saving..." : "Save Verdict"}
                 </button>
               </form>
-            </section>
+            </Card>
           </>
         )}
-      </div>
-    </main>
+    </AppLayout>
   );
 }

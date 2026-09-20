@@ -1,52 +1,6 @@
-.admin-exam-schedules-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  background: #f4f6f8;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  padding: 24px;
-}
-
-.admin-exam-schedules-shell {
-  width: 100%;
-  max-width: 720px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 24px;
-}
-
-.admin-exam-schedules-back-link {
-  display: inline-block;
-  color: #2f6fed;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.admin-exam-schedules-shell h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: #1a2332;
-}
-
-.admin-exam-schedules-card {
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  padding: 32px;
-}
-
-.admin-exam-schedules-card h2 {
-  margin: 0 0 8px;
-  font-size: 1.1rem;
-  color: #1a2332;
-}
-
 .admin-exam-schedules-subtitle {
   margin: 0 0 20px;
-  color: #5c6b7a;
+  color: var(--color-text-secondary);
   font-size: 0.85rem;
 }
 
@@ -70,14 +24,14 @@
 .form-row label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--color-text-primary);
 }
 
 .form-row input,
 .form-row select {
   padding: 10px 12px;
-  border: 1px solid #cdd5df;
-  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   font-size: 0.95rem;
   font-family: inherit;
 }
@@ -87,41 +41,45 @@
   align-items: center;
   gap: 8px;
   font-size: 0.85rem;
-  color: #1a2332;
+  color: var(--color-text-primary);
   margin-bottom: 16px;
   cursor: pointer;
 }
 
 .form-error {
-  color: #c0392b;
-  background: #fdecea;
-  border-radius: 8px;
+  color: var(--color-status-red-text);
+  background: var(--color-status-red-bg);
+  border-radius: var(--radius-md);
   padding: 10px 12px;
   font-size: 0.85rem;
   margin-bottom: 16px;
 }
 
 .form-success {
-  color: #1e7e34;
-  background: #e9f7ef;
-  border-radius: 8px;
+  color: var(--color-status-green-text);
+  background: var(--color-status-green-bg);
+  border-radius: var(--radius-md);
   padding: 10px 12px;
   font-size: 0.85rem;
   margin-bottom: 16px;
 }
 
-.admin-exam-schedules-card button[type="submit"] {
+.admin-exam-schedules-form-card button[type="submit"] {
   padding: 10px 24px;
-  background: #2f6fed;
-  color: #ffffff;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
 }
 
-.admin-exam-schedules-card button[type="submit"]:disabled {
+.admin-exam-schedules-form-card button[type="submit"]:hover {
+  background: var(--color-primary-dark);
+}
+
+.admin-exam-schedules-form-card button[type="submit"]:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
@@ -137,7 +95,7 @@
 
 .schedule-row {
   padding-bottom: 16px;
-  border-bottom: 1px solid #e5e9ef;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .schedule-row:last-child {
@@ -165,18 +123,18 @@
 }
 
 .daytype-saturday {
-  background: #e8f0fe;
-  color: #2f6fed;
+  background: var(--color-status-amber-bg);
+  color: var(--color-status-amber-text);
 }
 
 .daytype-weekday {
-  background: #f3e8fe;
-  color: #7c3fed;
+  background: var(--color-status-purple-bg);
+  color: var(--color-status-purple-text);
 }
 
 .schedule-datetime {
   font-weight: 600;
-  color: #1a2332;
+  color: var(--color-text-primary);
   font-size: 0.9rem;
 }
 
@@ -192,13 +150,13 @@
 }
 
 .toggle-offered-on {
-  background: #e9f7ef;
-  color: #1e7e34;
+  background: var(--color-status-green-bg);
+  color: var(--color-status-green-text);
 }
 
 .toggle-offered-off {
-  background: #f0f2f5;
-  color: #5c6b7a;
+  background: var(--color-status-gray-bg);
+  color: var(--color-status-gray-text);
 }
 
 .toggle-offered-on:disabled,
@@ -209,14 +167,14 @@
 
 .schedule-venue {
   margin: 0 0 10px;
-  color: #5c6b7a;
+  color: var(--color-text-secondary);
   font-size: 0.85rem;
 }
 
 .schedule-applicants-count {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #5c6b7a;
+  color: var(--color-text-secondary);
 }
 
 .applicant-list {
@@ -234,16 +192,16 @@
   gap: 10px;
   font-size: 0.8rem;
   padding: 6px 10px;
-  background: #f9fbff;
+  background: var(--color-bg);
   border-radius: 6px;
 }
 
 .applicant-name {
   font-weight: 600;
-  color: #1a2332;
+  color: var(--color-text-primary);
 }
 
 .applicant-email,
 .applicant-selected-at {
-  color: #5c6b7a;
+  color: var(--color-text-secondary);
 }

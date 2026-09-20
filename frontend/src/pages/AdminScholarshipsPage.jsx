@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   createScholarship,
   listScholarships,
@@ -7,6 +6,9 @@ import {
   updateScholarship,
 } from "../api/adminScholarshipsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./AdminScholarshipsPage.css";
 
 const initialCreateForm = { name: "", scholarshipType: "", totalSlots: "", minimumGradeAverage: "" };
@@ -117,14 +119,8 @@ export default function AdminScholarshipsPage() {
   }
 
   return (
-    <main className="admin-scholarships-page">
-      <div className="admin-scholarships-shell">
-        <Link className="admin-scholarships-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1>Scholarship Slots</h1>
-
-        <section className="admin-scholarships-card">
+    <AppLayout title="Scholarships">
+        <Card className="admin-scholarships-form-card">
           <h2>Add Scholarship</h2>
           <p className="admin-scholarships-subtitle">
             Remaining slots start equal to total slots. Deactivated scholarships stop appearing to applicants and
@@ -197,9 +193,9 @@ export default function AdminScholarshipsPage() {
               {isCreating ? "Creating..." : "Add Scholarship"}
             </button>
           </form>
-        </section>
+        </Card>
 
-        <section className="admin-scholarships-card">
+        <Card>
           <h2>All Scholarships</h2>
 
           {loadError && (
@@ -279,9 +275,7 @@ export default function AdminScholarshipsPage() {
                         />
                       </td>
                       <td>
-                        <span className={scholarship.isActive ? "status-active" : "status-inactive"}>
-                          {scholarship.isActive ? "Active" : "Deactivated"}
-                        </span>
+                        <StatusBadge status={scholarship.isActive ? "Active" : "Inactive"} label={scholarship.isActive ? "Active" : "Deactivated"} />
                       </td>
                       <td className="edit-actions">
                         <button
@@ -308,9 +302,7 @@ export default function AdminScholarshipsPage() {
                       <td>{scholarship.occupiedSlots}</td>
                       <td>{scholarship.minimumGradeAverage ?? "—"}</td>
                       <td>
-                        <span className={scholarship.isActive ? "status-active" : "status-inactive"}>
-                          {scholarship.isActive ? "Active" : "Deactivated"}
-                        </span>
+                        <StatusBadge status={scholarship.isActive ? "Active" : "Inactive"} label={scholarship.isActive ? "Active" : "Deactivated"} />
                       </td>
                       <td className="row-actions">
                         <button type="button" className="edit-trigger" onClick={() => startEdit(scholarship)}>
@@ -335,8 +327,7 @@ export default function AdminScholarshipsPage() {
               </tbody>
             </table>
           )}
-        </section>
-      </div>
-    </main>
+        </Card>
+    </AppLayout>
   );
 }

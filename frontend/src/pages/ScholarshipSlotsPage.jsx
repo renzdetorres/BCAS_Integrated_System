@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { getScholarshipSlots } from "../api/evaluatorScholarshipSlotsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./ScholarshipSlotsPage.css";
 
 export default function ScholarshipSlotsPage() {
@@ -31,15 +33,9 @@ export default function ScholarshipSlotsPage() {
   }, []);
 
   return (
-    <main className="scholarship-slots-page">
-      <div className="scholarship-slots-card">
-        <Link className="scholarship-slots-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1>Scholarship Slots</h1>
-        <p className="scholarship-slots-subtitle">
-          Read-only. Available and occupied slots per scholarship.
-        </p>
+    <AppLayout title="Scholarship Slots">
+      <Card>
+        <p className="scholarship-slots-subtitle">Read-only. Available and occupied slots per scholarship.</p>
 
         {errorMessage && (
           <p className="form-error" role="alert">
@@ -67,9 +63,7 @@ export default function ScholarshipSlotsPage() {
                   <td>{scholarship.name}</td>
                   <td>{scholarship.scholarshipType}</td>
                   <td>
-                    <span className={scholarship.isActive ? "slots-status-active" : "slots-status-inactive"}>
-                      {scholarship.isActive ? "Active" : "Inactive"}
-                    </span>
+                    <StatusBadge status={scholarship.isActive ? "Active" : "Inactive"} />
                   </td>
                   <td>{scholarship.occupiedSlots}</td>
                   <td>{scholarship.remainingSlots}</td>
@@ -79,7 +73,7 @@ export default function ScholarshipSlotsPage() {
             </tbody>
           </table>
         )}
-      </div>
-    </main>
+      </Card>
+    </AppLayout>
   );
 }

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { listExamPermits, releaseExamPermit } from "../api/adminExamPermitsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./AdminExamPermitsPage.css";
 
 function formatDate(isoDate) {
@@ -63,12 +65,7 @@ export default function AdminExamPermitsPage() {
   const released = permits.filter((p) => p.isReleased);
 
   return (
-    <main className="admin-exam-permits-page">
-      <div className="admin-exam-permits-shell">
-        <Link className="admin-exam-permits-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1>Exam Permits</h1>
+    <AppLayout title="Exam Permits">
         <p className="admin-exam-permits-subtitle">
           Generate and release entrance-exam permits. Release is blocked until every one of an applicant's
           required documents has been verified.
@@ -88,12 +85,12 @@ export default function AdminExamPermitsPage() {
         {isLoading ? (
           <p>Loading...</p>
         ) : permits.length === 0 ? (
-          <section className="admin-exam-permits-card">
+          <Card>
             <p>No applicants have selected an entrance exam schedule yet.</p>
-          </section>
+          </Card>
         ) : (
           <>
-            <section className="admin-exam-permits-card">
+            <Card>
               <h2>Pending Release ({pending.length})</h2>
               {pending.length === 0 ? (
                 <p>Nothing waiting on release.</p>
@@ -106,11 +103,10 @@ export default function AdminExamPermitsPage() {
                           <span className="permit-applicant-name">{permit.applicantName}</span>
                           <span className="permit-applicant-email">{permit.applicantEmail}</span>
                         </div>
-                        <span
-                          className={`docs-badge ${permit.documentsVerified ? "docs-verified" : "docs-pending"}`}
-                        >
-                          {permit.documentsVerified ? "Documents Verified" : "Documents Pending"}
-                        </span>
+                        <StatusBadge
+                          status={permit.documentsVerified ? "Verified" : "Pending"}
+                          label={permit.documentsVerified ? "Documents Verified" : "Documents Pending"}
+                        />
                       </div>
                       <p className="permit-schedule">
                         <span className={`daytype-badge daytype-${permit.dayType.toLowerCase()}`}>
@@ -135,9 +131,9 @@ export default function AdminExamPermitsPage() {
                   ))}
                 </ul>
               )}
-            </section>
+            </Card>
 
-            <section className="admin-exam-permits-card">
+            <Card>
               <h2>Released ({released.length})</h2>
               {released.length === 0 ? (
                 <p>No permits released yet.</p>
@@ -163,10 +159,9 @@ export default function AdminExamPermitsPage() {
                   ))}
                 </ul>
               )}
-            </section>
+            </Card>
           </>
         )}
-      </div>
-    </main>
+    </AppLayout>
   );
 }

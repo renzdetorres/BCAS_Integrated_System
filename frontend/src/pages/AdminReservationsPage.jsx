@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { listReservations, recordReservation } from "../api/adminReservationsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./AdminReservationsPage.css";
 
 function formatDate(isoDateTime) {
@@ -48,9 +50,7 @@ function ReservationRow({ reservation, onSaved }) {
           <span className="reservation-applicant-name">{reservation.applicantName}</span>
           <span className="reservation-applicant-email">{reservation.applicantEmail}</span>
         </div>
-        <span className={reservation.isReserved ? "status-active" : "status-inactive"}>
-          {reservation.isReserved ? "Reserved" : "Unreserved"}
-        </span>
+        <StatusBadge status={reservation.isReserved ? "Active" : "Inactive"} label={reservation.isReserved ? "Reserved" : "Unreserved"} />
       </div>
       <p className="reservation-meta">
         {reservation.applicationType} &middot; {reservation.courseAppliedFor} &middot; Submitted{" "}
@@ -136,12 +136,7 @@ export default function AdminReservationsPage() {
   const reserved = reservations.filter((r) => r.isReserved);
 
   return (
-    <main className="admin-reservations-page">
-      <div className="admin-reservations-shell">
-        <Link className="admin-reservations-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1>Reservations</h1>
+    <AppLayout title="Reservations">
         <p className="admin-reservations-subtitle">
           Record whether an approved applicant has reserved their slot. This only tracks status recorded by staff -
           it never processes the reservation fee itself (see Admin Settings for the online-payment toggle).
@@ -156,12 +151,12 @@ export default function AdminReservationsPage() {
         {isLoading ? (
           <p>Loading...</p>
         ) : reservations.length === 0 ? (
-          <section className="admin-reservations-card">
+          <Card>
             <p>No approved admission applications yet.</p>
-          </section>
+          </Card>
         ) : (
           <>
-            <section className="admin-reservations-card">
+            <Card>
               <h2>Unreserved ({unreserved.length})</h2>
               {unreserved.length === 0 ? (
                 <p>Every approved applicant has reserved their slot.</p>
@@ -176,9 +171,9 @@ export default function AdminReservationsPage() {
                   ))}
                 </ul>
               )}
-            </section>
+            </Card>
 
-            <section className="admin-reservations-card">
+            <Card>
               <h2>Reserved ({reserved.length})</h2>
               {reserved.length === 0 ? (
                 <p>No reservations recorded yet.</p>
@@ -193,10 +188,9 @@ export default function AdminReservationsPage() {
                   ))}
                 </ul>
               )}
-            </section>
+            </Card>
           </>
         )}
-      </div>
-    </main>
+    </AppLayout>
   );
 }

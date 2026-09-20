@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   FINAL_DECISIONS,
   getScholarshipApplicationDetail,
   recordFinalDecision,
 } from "../api/academicHeadScholarshipApplicationsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./AcademicHeadReviewPage.css";
 
 const STAGE_LABELS = {
@@ -82,13 +85,7 @@ export default function AcademicHeadReviewPage() {
   }
 
   return (
-    <main className="ah-review-page">
-      <div className="ah-review-card">
-        <Link className="ah-review-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1>Scholarship Records Review</h1>
-
+    <AppLayout title="Scholarship Records Review">
         {isLoading && <p>Loading...</p>}
         {loadError && (
           <p className="form-error" role="alert">
@@ -98,7 +95,7 @@ export default function AcademicHeadReviewPage() {
 
         {!isLoading && !loadError && application && (
           <>
-            <section className="ah-review-section">
+            <Card className="ah-review-section">
               <h2>Workflow</h2>
               <ol className="ah-workflow-stepper">
                 {application.workflowStages.map((stage) => {
@@ -128,9 +125,9 @@ export default function AcademicHeadReviewPage() {
                   <> - not yet ready for a final decision (must reach "Result" first).</>
                 )}
               </p>
-            </section>
+            </Card>
 
-            <section className="ah-review-section">
+            <Card className="ah-review-section">
               <h2>Applicant &amp; Academic Records</h2>
               <dl className="ah-detail-list">
                 <div>
@@ -163,9 +160,9 @@ export default function AcademicHeadReviewPage() {
                   <dd>{formatDateTime(application.submittedAt)}</dd>
                 </div>
               </dl>
-            </section>
+            </Card>
 
-            <section className="ah-review-section">
+            <Card className="ah-review-section">
               <h2>Submitted Documents</h2>
               {application.documents.length === 0 ? (
                 <p>No documents uploaded yet.</p>
@@ -174,53 +171,39 @@ export default function AcademicHeadReviewPage() {
                   {application.documents.map((document) => (
                     <li key={document.documentType} className="ah-document-row">
                       <span>{document.documentType}</span>
-                      <span className={`ah-document-status ah-document-status-${document.status.toLowerCase()}`}>
-                        {document.status}
-                      </span>
+                      <StatusBadge status={document.status} />
                     </li>
                   ))}
                 </ul>
               )}
-            </section>
+            </Card>
 
-            <section className="ah-review-section">
+            <Card className="ah-review-section">
               <h2>Evaluation Result</h2>
               {application.screening ? (
                 <p className="ah-eval-result">
-                  <span
-                    className={
-                      application.screening.verdict === "Qualified" ? "ah-verdict-qualified" : "ah-verdict-not-qualified"
-                    }
-                  >
-                    {application.screening.verdict === "Qualified" ? "Qualified" : "Not Qualified"}
-                  </span>{" "}
-                  by {application.screening.evaluatedByName} on {formatDateTime(application.screening.evaluatedAt)}
+                  <StatusBadge status={application.screening.verdict} /> by{" "}
+                  {application.screening.evaluatedByName} on {formatDateTime(application.screening.evaluatedAt)}
                   {application.screening.remarks && <> &mdash; "{application.screening.remarks}"</>}
                 </p>
               ) : (
                 <p>Not yet screened by an Evaluator.</p>
               )}
-            </section>
+            </Card>
 
             {application.finalDecision && (
-              <section className="ah-review-section">
+              <Card className="ah-review-section">
                 <h2>Confirmed Decision</h2>
                 <p className="ah-eval-result">
-                  <span
-                    className={
-                      application.finalDecision.decision === "Approved" ? "ah-decision-approved" : "ah-decision-rejected"
-                    }
-                  >
-                    {application.finalDecision.decision}
-                  </span>{" "}
-                  by {application.finalDecision.decidedByName} on {formatDateTime(application.finalDecision.decidedAt)}
+                  <StatusBadge status={application.finalDecision.decision} /> by{" "}
+                  {application.finalDecision.decidedByName} on {formatDateTime(application.finalDecision.decidedAt)}
                   {application.finalDecision.remarks && <> &mdash; "{application.finalDecision.remarks}"</>}
                 </p>
-              </section>
+              </Card>
             )}
 
             {application.canConfirmDecision && (
-              <section className="ah-review-section">
+              <Card className="ah-review-section">
                 <h2>Confirm Final Decision</h2>
                 <form onSubmit={handleSubmit} noValidate>
                   <div className="form-row">
@@ -267,11 +250,10 @@ export default function AcademicHeadReviewPage() {
                     {isSaving ? "Confirming..." : "Confirm Decision"}
                   </button>
                 </form>
-              </section>
+              </Card>
             )}
           </>
         )}
-      </div>
-    </main>
+    </AppLayout>
   );
 }

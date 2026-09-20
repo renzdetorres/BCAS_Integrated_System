@@ -6,6 +6,9 @@ import {
   submitScholarshipApplication,
 } from "../api/scholarshipApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./ScholarshipApplicationPage.css";
 
 const initialForm = { scholarshipId: "", gradeAverage: "" };
@@ -84,98 +87,90 @@ export default function ScholarshipApplicationPage() {
   }
 
   return (
-    <main className="scholarship-page">
-      <div className="scholarship-shell">
-        <Link className="scholarship-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
+    <AppLayout title="Scholarship Application">
+      <Card className="scholarship-card">
+        <h2>Submit Scholarship Application</h2>
 
-        <section className="scholarship-card">
-          <h1>Submit Scholarship Application</h1>
+        {errorMessage && (
+          <p className="form-error" role="alert">
+            {errorMessage}
+            {profileIncomplete && (
+              <>
+                {" "}
+                <Link to="/profile">Complete your profile</Link>.
+              </>
+            )}
+          </p>
+        )}
 
-          {errorMessage && (
-            <p className="form-error" role="alert">
-              {errorMessage}
-              {profileIncomplete && (
-                <>
-                  {" "}
-                  <Link to="/profile">Complete your profile</Link>.
-                </>
-              )}
-            </p>
-          )}
+        {!isLoading && scholarships.length === 0 && !errorMessage && (
+          <p>No scholarship slots are currently open for applications.</p>
+        )}
 
-          {!isLoading && scholarships.length === 0 && !errorMessage && (
-            <p>No scholarship slots are currently open for applications.</p>
-          )}
+        {(isLoading || scholarships.length > 0) && (
+          <form onSubmit={handleSubmit} noValidate>
+            <div className="form-row">
+              <label htmlFor="scholarshipId">Scholarship</label>
+              <select
+                id="scholarshipId"
+                name="scholarshipId"
+                value={form.scholarshipId}
+                onChange={handleChange}
+                disabled={isLoading}
+                required
+              >
+                {scholarships.map((s) => (
+                  <option key={s.scholarshipId} value={s.scholarshipId}>
+                    {s.name} ({s.scholarshipType}) - {s.remainingSlots} slot
+                    {s.remainingSlots === 1 ? "" : "s"} left
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {(isLoading || scholarships.length > 0) && (
-            <form onSubmit={handleSubmit} noValidate>
-              <div className="form-row">
-                <label htmlFor="scholarshipId">Scholarship</label>
-                <select
-                  id="scholarshipId"
-                  name="scholarshipId"
-                  value={form.scholarshipId}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                  required
-                >
-                  {scholarships.map((s) => (
-                    <option key={s.scholarshipId} value={s.scholarshipId}>
-                      {s.name} ({s.scholarshipType}) - {s.remainingSlots} slot
-                      {s.remainingSlots === 1 ? "" : "s"} left
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="form-row">
+              <label htmlFor="gradeAverage">Grade average</label>
+              <input
+                id="gradeAverage"
+                name="gradeAverage"
+                type="number"
+                step="0.01"
+                min="0"
+                max="999.99"
+                required
+                value={form.gradeAverage}
+                onChange={handleChange}
+              />
+            </div>
 
-              <div className="form-row">
-                <label htmlFor="gradeAverage">Grade average</label>
-                <input
-                  id="gradeAverage"
-                  name="gradeAverage"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="999.99"
-                  required
-                  value={form.gradeAverage}
-                  onChange={handleChange}
-                />
-              </div>
+            <button type="submit" disabled={isSubmitting || isLoading || scholarships.length === 0}>
+              {isSubmitting ? "Submitting..." : "Submit Application"}
+            </button>
+          </form>
+        )}
+      </Card>
 
-              <button type="submit" disabled={isSubmitting || isLoading || scholarships.length === 0}>
-                {isSubmitting ? "Submitting..." : "Submit Application"}
-              </button>
-            </form>
-          )}
-        </section>
-
-        <section className="scholarship-card">
-          <h2>My Scholarship Applications</h2>
-          {isLoading && <p>Loading...</p>}
-          {!isLoading && applications.length === 0 && <p>No applications submitted yet.</p>}
-          {!isLoading && applications.length > 0 && (
-            <ul className="scholarship-list">
-              {applications.map((application) => (
-                <li key={application.applicationId}>
-                  <div className="scholarship-list-header">
-                    <span className="scholarship-name">{application.scholarshipName}</span>
-                    <span className={`scholarship-status status-${application.status.toLowerCase()}`}>
-                      {application.status}
-                    </span>
-                  </div>
-                  <p className="scholarship-meta">
-                    {application.scholarshipType} &middot; Grade average {application.gradeAverage} &middot;
-                    Submitted {formatDate(application.submittedAt)}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
-    </main>
+      <Card className="scholarship-card">
+        <h2>My Scholarship Applications</h2>
+        {isLoading && <p>Loading...</p>}
+        {!isLoading && applications.length === 0 && <p>No applications submitted yet.</p>}
+        {!isLoading && applications.length > 0 && (
+          <ul className="scholarship-list">
+            {applications.map((application) => (
+              <li key={application.applicationId}>
+                <div className="scholarship-list-header">
+                  <span className="scholarship-name">{application.scholarshipName}</span>
+                  <StatusBadge status={application.status} />
+                </div>
+                <p className="scholarship-meta">
+                  {application.scholarshipType} &middot; Grade average {application.gradeAverage} &middot;
+                  Submitted {formatDate(application.submittedAt)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    </AppLayout>
   );
 }

@@ -1,18 +1,14 @@
-import { Link } from "react-router-dom";
-import "./ComingSoonPage.css";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
 
-// Placeholder destination for dashboard quick links whose full pages
-// (My Application, Documents, Announcements) are separate, not-yet-built tickets.
+// Placeholder destination for roles that have no backend endpoint for this
+// feature yet (e.g. Announcements for Evaluator/Support Staff).
 export default function ComingSoonPage({ title }) {
   return (
-    <main className="coming-soon-page">
-      <div className="coming-soon-card">
-        <Link className="coming-soon-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1>{title}</h1>
+    <AppLayout title={title}>
+      <Card>
         <p>This section is coming soon.</p>
-      </div>
-    </main>
+      </Card>
+    </AppLayout>
   );
 }

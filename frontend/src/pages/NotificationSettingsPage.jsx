@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { listNotificationTriggers, setNotificationTriggerEnabled } from "../api/notificationSettingsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
 import "./NotificationSettingsPage.css";
 
 function formatDateTime(isoDateTime) {
@@ -51,12 +52,8 @@ export default function NotificationSettingsPage() {
   }
 
   return (
-    <main className="notification-settings-page">
-      <div className="notification-settings-card">
-        <Link className="notification-settings-back-link" to="/portal">
-          &larr; Back to portal
-        </Link>
-        <h1>Notification Settings</h1>
+    <AppLayout title="Notification Settings">
+      <Card>
         <p className="notification-settings-subtitle">
           Turn system-triggered email notifications on or off. A change here applies starting with the
           next notification event of that kind.
@@ -95,7 +92,7 @@ export default function NotificationSettingsPage() {
             ))}
           </ul>
         )}
-      </div>
-    </main>
+      </Card>
+    </AppLayout>
   );
 }

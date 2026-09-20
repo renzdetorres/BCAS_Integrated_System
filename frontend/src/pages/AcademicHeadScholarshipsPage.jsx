@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   createScholarship,
   listScholarships,
@@ -7,6 +6,9 @@ import {
   updateScholarship,
 } from "../api/academicHeadScholarshipsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./AcademicHeadScholarshipsPage.css";
 
 const initialCreateForm = { name: "", scholarshipType: "", totalSlots: "", minimumGradeAverage: "" };
@@ -120,22 +122,16 @@ export default function AcademicHeadScholarshipsPage() {
   }
 
   return (
-    <main className="ah-scholarships-page">
-      <div className="ah-scholarships-shell">
-        <Link className="ah-scholarships-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1>Scholarship Slots</h1>
-
+    <AppLayout title="Scholarships">
         {isForbidden ? (
-          <section className="ah-scholarships-card">
+          <Card>
             <p className="form-error" role="alert">
               {loadError}
             </p>
-          </section>
+          </Card>
         ) : (
           <>
-            <section className="ah-scholarships-card">
+            <Card className="ah-scholarships-form-card">
               <h2>Add Scholarship</h2>
               <p className="ah-scholarships-subtitle">
                 Remaining slots start equal to total slots. Deactivated scholarships stop appearing to applicants
@@ -208,9 +204,9 @@ export default function AcademicHeadScholarshipsPage() {
                   {isCreating ? "Creating..." : "Add Scholarship"}
                 </button>
               </form>
-            </section>
+            </Card>
 
-            <section className="ah-scholarships-card">
+            <Card>
               <h2>All Scholarships</h2>
 
               {loadError && (
@@ -290,9 +286,7 @@ export default function AcademicHeadScholarshipsPage() {
                             />
                           </td>
                           <td>
-                            <span className={scholarship.isActive ? "status-active" : "status-inactive"}>
-                              {scholarship.isActive ? "Active" : "Deactivated"}
-                            </span>
+                            <StatusBadge status={scholarship.isActive ? "Active" : "Inactive"} label={scholarship.isActive ? "Active" : "Deactivated"} />
                           </td>
                           <td className="edit-actions">
                             <button
@@ -319,9 +313,7 @@ export default function AcademicHeadScholarshipsPage() {
                           <td>{scholarship.occupiedSlots}</td>
                           <td>{scholarship.minimumGradeAverage ?? "—"}</td>
                           <td>
-                            <span className={scholarship.isActive ? "status-active" : "status-inactive"}>
-                              {scholarship.isActive ? "Active" : "Deactivated"}
-                            </span>
+                            <StatusBadge status={scholarship.isActive ? "Active" : "Inactive"} label={scholarship.isActive ? "Active" : "Deactivated"} />
                           </td>
                           <td className="row-actions">
                             <button type="button" className="edit-trigger" onClick={() => startEdit(scholarship)}>
@@ -346,10 +338,9 @@ export default function AcademicHeadScholarshipsPage() {
                   </tbody>
                 </table>
               )}
-            </section>
+            </Card>
           </>
         )}
-      </div>
-    </main>
+    </AppLayout>
   );
 }

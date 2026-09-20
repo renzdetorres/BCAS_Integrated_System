@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   createAnnouncement,
   listAnnouncements,
   setAnnouncementActiveStatus,
 } from "../api/academicHeadAnnouncementsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./AcademicHeadAnnouncementsPage.css";
 
 const initialCreateForm = { category: "Admission", title: "", body: "" };
@@ -84,22 +86,16 @@ export default function AcademicHeadAnnouncementsPage() {
   }
 
   return (
-    <main className="ah-announcements-page">
-      <div className="ah-announcements-shell">
-        <Link className="ah-announcements-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1>Announcements</h1>
-
+    <AppLayout title="Announcements">
         {isForbidden ? (
-          <section className="ah-announcements-card">
+          <Card>
             <p className="form-error" role="alert">
               {loadError}
             </p>
-          </section>
+          </Card>
         ) : (
           <>
-            <section className="ah-announcements-card">
+            <Card className="ah-announcements-card">
               <h2>Create Announcement</h2>
               <p className="ah-announcements-subtitle">
                 New announcements start as drafts. Post one to make it visible to applicants; deactivate it to hide
@@ -156,9 +152,9 @@ export default function AcademicHeadAnnouncementsPage() {
                   {isCreating ? "Creating..." : "Create Announcement"}
                 </button>
               </form>
-            </section>
+            </Card>
 
-            <section className="ah-announcements-card">
+            <Card className="ah-announcements-card">
               <h2>All Announcements</h2>
 
               {loadError && (
@@ -179,9 +175,7 @@ export default function AcademicHeadAnnouncementsPage() {
                         <span className={`announcements-category category-${announcement.category.toLowerCase()}`}>
                           {announcement.category}
                         </span>
-                        <span className={announcement.isActive ? "status-active" : "status-inactive"}>
-                          {announcement.isActive ? "Posted" : "Draft"}
-                        </span>
+                        <StatusBadge status={announcement.isActive ? "Active" : "Draft"} label={announcement.isActive ? "Posted" : "Draft"} />
                         <span className="ah-announcements-date">{formatDateTime(announcement.postedAt)}</span>
                       </div>
                       <p className="ah-announcements-title">{announcement.title}</p>
@@ -204,10 +198,9 @@ export default function AcademicHeadAnnouncementsPage() {
                   ))}
                 </ul>
               )}
-            </section>
+            </Card>
           </>
         )}
-      </div>
-    </main>
+    </AppLayout>
   );
 }

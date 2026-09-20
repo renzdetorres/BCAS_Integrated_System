@@ -1,41 +1,6 @@
-.admin-settings-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  background: #f4f6f8;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  padding: 24px;
-}
-
-.admin-settings-card {
-  width: 100%;
-  max-width: 720px;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  padding: 32px;
-  margin-top: 24px;
-}
-
-.admin-settings-back-link {
-  display: inline-block;
-  margin-bottom: 16px;
-  color: #2f6fed;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.admin-settings-card h1 {
-  margin: 0 0 8px;
-  font-size: 1.5rem;
-  color: #1a2332;
-}
-
 .admin-settings-subtitle {
   margin: 0 0 24px;
-  color: #5c6b7a;
+  color: var(--color-text-secondary);
   font-size: 0.9rem;
 }
 
@@ -54,8 +19,8 @@
   justify-content: space-between;
   gap: 16px;
   padding: 16px;
-  border: 1px solid #e5e9ef;
-  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
 }
 
 .admin-settings-info {
@@ -66,18 +31,18 @@
 
 .admin-settings-name {
   font-weight: 600;
-  color: #1a2332;
+  color: var(--color-text-primary);
   font-size: 0.95rem;
 }
 
 .admin-settings-description {
   margin: 0;
-  color: #5c6b7a;
+  color: var(--color-text-secondary);
   font-size: 0.85rem;
 }
 
 .admin-settings-updated {
-  color: #8a97a6;
+  color: var(--color-text-secondary);
   font-size: 0.75rem;
 }
 
@@ -94,13 +59,13 @@
 }
 
 .setting-toggle-on {
-  background: #e9f7ef;
-  color: #1e7e34;
+  background: var(--color-status-green-bg);
+  color: var(--color-status-green-text);
 }
 
 .setting-toggle-off {
-  background: #f0f2f5;
-  color: #5c6b7a;
+  background: var(--color-status-gray-bg);
+  color: var(--color-status-gray-text);
 }
 
 .setting-toggle-on:disabled,

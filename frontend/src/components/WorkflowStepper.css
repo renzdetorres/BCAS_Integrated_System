@@ -1,0 +1,45 @@
+.tracking-stepper {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 4px;
+}
+
+.tracking-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 6px 8px;
+  border-radius: 999px;
+  background: var(--color-status-gray-bg);
+  color: var(--color-status-gray-text);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.tracking-step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #c3cbd4;
+}
+
+.tracking-step-complete {
+  background: var(--color-status-green-bg);
+  color: var(--color-status-green-text);
+}
+
+.tracking-step-complete .tracking-step-dot {
+  background: var(--color-status-green-text);
+}
+
+.tracking-step-current {
+  background: #fbf0da;
+  color: var(--color-accent-dark);
+}
+
+.tracking-step-current .tracking-step-dot {
+  background: var(--color-accent);
+}

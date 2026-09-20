@@ -2,6 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { searchApplicants } from "../api/supportStaffApplicantsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
+import DataTable from "../components/ui/DataTable.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./SupportStaffApplicantsPage.css";
 
 function formatDate(isoDateTime) {
@@ -15,7 +19,6 @@ function formatDate(isoDateTime) {
 
 export default function SupportStaffApplicantsPage() {
   const [search, setSearch] = useState("");
-  const [appliedSearch, setAppliedSearch] = useState("");
   const [applicants, setApplicants] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -34,98 +37,84 @@ export default function SupportStaffApplicantsPage() {
   }, []);
 
   useEffect(() => {
-    loadApplicants(appliedSearch);
-  }, [appliedSearch, loadApplicants]);
+    const timeout = setTimeout(() => loadApplicants(search.trim()), 300);
+    return () => clearTimeout(timeout);
+  }, [search, loadApplicants]);
 
-  function handleSubmit(event) {
-    event.preventDefault();
-    setAppliedSearch(search.trim());
-  }
+  const columns = [
+    {
+      key: "name",
+      header: "Name",
+      accessor: (row) => `${row.firstName} ${row.lastName}`,
+      sortable: true,
+      render: (row) => `${row.firstName} ${row.lastName}`,
+    },
+    { key: "email", header: "Email", sortable: true },
+    {
+      key: "application",
+      header: "Application",
+      render: (row) =>
+        row.applicationType ? (
+          <div className="ss-applicants-cell">
+            <span className="ss-applicants-app-type">{row.applicationType}</span>
+            <span className="ss-applicants-app-course">{row.courseAppliedFor}</span>
+          </div>
+        ) : (
+          <span className="ss-applicants-no-application">No application yet</span>
+        ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      accessor: (row) => row.applicationStatus,
+      sortable: true,
+      render: (row) => (row.applicationStatus ? <StatusBadge status={row.applicationStatus} /> : "—"),
+    },
+    {
+      key: "submittedAt",
+      header: "Submitted",
+      accessor: (row) => row.submittedAt,
+      sortable: true,
+      render: (row) => formatDate(row.submittedAt),
+    },
+    {
+      key: "actions",
+      header: "",
+      render: (row) => (
+        <Link className="ss-applicants-verify-link" to={`/support-staff/documents?applicantId=${row.userId}`}>
+          View Documents
+        </Link>
+      ),
+    },
+  ];
 
   return (
-    <main className="ss-applicants-page">
-      <div className="ss-applicants-shell">
-        <Link className="ss-applicants-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1>Applicant Records</h1>
+    <AppLayout title="Applicant Records">
+      <Card>
         <p className="ss-applicants-subtitle">
           Search applicants by name or email, view their admission application info, and jump directly into
           Document Verification for one.
         </p>
 
-        <section className="ss-applicants-card">
-          <form className="ss-applicants-search" onSubmit={handleSubmit}>
-            <input
-              type="text"
-              placeholder="Search by name or email"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-            <button type="submit">Search</button>
-          </form>
+        {errorMessage && (
+          <p className="form-error" role="alert">
+            {errorMessage}
+          </p>
+        )}
 
-          {errorMessage && (
-            <p className="form-error" role="alert">
-              {errorMessage}
-            </p>
-          )}
-
-          {isLoading ? (
-            <p>Loading...</p>
-          ) : applicants.length === 0 ? (
-            <p>No applicant records match this search.</p>
-          ) : (
-            <table className="ss-applicants-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Application</th>
-                  <th>Status</th>
-                  <th>Submitted</th>
-                  <th aria-hidden="true"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {applicants.map((applicant) => (
-                  <tr key={applicant.userId}>
-                    <td>
-                      {applicant.firstName} {applicant.lastName}
-                    </td>
-                    <td>{applicant.email}</td>
-                    <td>
-                      {applicant.applicationType ? (
-                        <>
-                          <span className="ss-applicants-app-type">{applicant.applicationType}</span>
-                          <span className="ss-applicants-app-course">{applicant.courseAppliedFor}</span>
-                        </>
-                      ) : (
-                        <span className="ss-applicants-no-application">No application yet</span>
-                      )}
-                    </td>
-                    <td>
-                      {applicant.applicationStatus ? (
-                        <span className={`status-badge status-${applicant.applicationStatus.toLowerCase()}`}>
-                          {applicant.applicationStatus}
-                        </span>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td>{formatDate(applicant.submittedAt)}</td>
-                    <td>
-                      <Link className="ss-applicants-verify-link" to={`/support-staff/documents?applicantId=${applicant.userId}`}>
-                        View Documents
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </section>
-      </div>
-    </main>
+        <DataTable
+          columns={columns}
+          rows={applicants}
+          getRowKey={(row) => row.userId}
+          isLoading={isLoading}
+          emptyMessage="No applicant records match this search."
+          search={{
+            value: search,
+            onChange: setSearch,
+            placeholder: "Search by name or email",
+          }}
+        />
+      </Card>
+    </AppLayout>
   );
 }

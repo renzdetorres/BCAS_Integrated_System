@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   changeMyAcademicHeadPassword,
   getMyAcademicHeadProfile,
   updateMyAcademicHeadProfile,
 } from "../api/academicHeadSettingsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
 import "./AcademicHeadSettingsPage.css";
 
 const initialPasswordForm = { currentPassword: "", newPassword: "", confirmNewPassword: "" };
@@ -113,23 +114,15 @@ export default function AcademicHeadSettingsPage() {
 
   if (isLoading) {
     return (
-      <main className="ah-settings-page">
-        <div className="ah-settings-shell">
-          <div className="ah-settings-card">Loading...</div>
-        </div>
-      </main>
+      <AppLayout title="Settings">
+        <Card>Loading...</Card>
+      </AppLayout>
     );
   }
 
   return (
-    <main className="ah-settings-page">
-      <div className="ah-settings-shell">
-        <Link className="ah-settings-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1 className="ah-settings-title">Settings</h1>
-
-        <section className="ah-settings-card">
+    <AppLayout title="Settings">
+        <Card className="ah-settings-card">
           <h2>Profile</h2>
           <p className="ah-settings-subtitle">You can update your name and email at any time.</p>
 
@@ -179,9 +172,9 @@ export default function AcademicHeadSettingsPage() {
               {isSubmitting ? "Saving..." : "Save Profile"}
             </button>
           </form>
-        </section>
+        </Card>
 
-        <section className="ah-settings-card">
+        <Card className="ah-settings-card">
           <h2>Change Password</h2>
           <p className="ah-settings-subtitle">Enter your current password and choose a new one.</p>
 
@@ -242,8 +235,7 @@ export default function AcademicHeadSettingsPage() {
               {isChangingPassword ? "Changing password..." : "Change Password"}
             </button>
           </form>
-        </section>
-      </div>
-    </main>
+        </Card>
+    </AppLayout>
   );
 }

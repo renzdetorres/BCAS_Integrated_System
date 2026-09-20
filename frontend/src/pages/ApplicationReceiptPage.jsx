@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { getMyApplicationHistory } from "../api/applicationHistoryApi.js";
 import { APPLICATION_TYPES } from "../api/admissionApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
 import "./ApplicationReceiptPage.css";
 
 function formatTimestamp(isoDateTime) {
@@ -48,93 +50,87 @@ export default function ApplicationReceiptPage() {
   }, [applicationId]);
 
   return (
-    <main className="receipt-page">
-      <div className="receipt-shell">
-        <Link className="receipt-back-link no-print" to="/applications/history">
-          &larr; Back to My Application
-        </Link>
+    <AppLayout title="Application Receipt">
+      {isLoading && (
+        <Card>
+          <p>Loading...</p>
+        </Card>
+      )}
 
-        {isLoading && (
-          <section className="receipt-card">
-            <p>Loading...</p>
-          </section>
-        )}
+      {!isLoading && errorMessage && (
+        <Card>
+          <p className="form-error" role="alert">
+            {errorMessage}
+          </p>
+        </Card>
+      )}
 
-        {!isLoading && errorMessage && (
-          <section className="receipt-card">
-            <p className="form-error" role="alert">
-              {errorMessage}
-            </p>
-          </section>
-        )}
+      {!isLoading && !errorMessage && !application && (
+        <Card>
+          <p>No application found with that id.</p>
+        </Card>
+      )}
 
-        {!isLoading && !errorMessage && !application && (
-          <section className="receipt-card">
-            <p>No application found with that id.</p>
-          </section>
-        )}
+      {!isLoading && application && (
+        <Card className="receipt">
+          <p className="receipt-eyebrow">BCAS Application Confirmation Receipt</p>
+          <p className="receipt-application-id">{application.applicationId}</p>
 
-        {!isLoading && application && (
-          <section className="receipt-card receipt">
-            <p className="receipt-eyebrow">BCAS Application Confirmation Receipt</p>
-            <p className="receipt-application-id">{application.applicationId}</p>
+          <dl className="receipt-details">
+            <div>
+              <dt>Category</dt>
+              <dd>{application.category}</dd>
+            </div>
+            <div>
+              <dt>Status</dt>
+              <dd>{application.status}</dd>
+            </div>
 
-            <dl className="receipt-details">
-              <div>
-                <dt>Category</dt>
-                <dd>{application.category}</dd>
-              </div>
-              <div>
-                <dt>Status</dt>
-                <dd>{application.status}</dd>
-              </div>
+            {application.category === "Admission" && (
+              <>
+                <div>
+                  <dt>Application type</dt>
+                  <dd>{admissionTypeLabel(application.applicationType)}</dd>
+                </div>
+                <div>
+                  <dt>Course applied for</dt>
+                  <dd>{application.courseAppliedFor}</dd>
+                </div>
+                <div>
+                  <dt>Previous school</dt>
+                  <dd>{application.previousSchool}</dd>
+                </div>
+              </>
+            )}
 
-              {application.category === "Admission" && (
-                <>
-                  <div>
-                    <dt>Application type</dt>
-                    <dd>{admissionTypeLabel(application.applicationType)}</dd>
-                  </div>
-                  <div>
-                    <dt>Course applied for</dt>
-                    <dd>{application.courseAppliedFor}</dd>
-                  </div>
-                  <div>
-                    <dt>Previous school</dt>
-                    <dd>{application.previousSchool}</dd>
-                  </div>
-                </>
-              )}
+            {application.category === "Scholarship" && (
+              <>
+                <div>
+                  <dt>Scholarship</dt>
+                  <dd>{application.scholarshipName}</dd>
+                </div>
+                <div>
+                  <dt>Scholarship type</dt>
+                  <dd>{application.scholarshipType}</dd>
+                </div>
+                <div>
+                  <dt>Grade average</dt>
+                  <dd>{application.gradeAverage}</dd>
+                </div>
+              </>
+            )}
 
-              {application.category === "Scholarship" && (
-                <>
-                  <div>
-                    <dt>Scholarship</dt>
-                    <dd>{application.scholarshipName}</dd>
-                  </div>
-                  <div>
-                    <dt>Scholarship type</dt>
-                    <dd>{application.scholarshipType}</dd>
-                  </div>
-                  <div>
-                    <dt>Grade average</dt>
-                    <dd>{application.gradeAverage}</dd>
-                  </div>
-                </>
-              )}
+            <div>
+              <dt>Submitted</dt>
+              <dd>{formatTimestamp(application.submittedAt)}</dd>
+            </div>
+          </dl>
 
-              <div>
-                <dt>Submitted</dt>
-                <dd>{formatTimestamp(application.submittedAt)}</dd>
-              </div>
-            </dl>
-
-            <button type="button" className="no-print" onClick={() => window.print()}>
-              Print / Save as PDF
-            </button>
-          </section>
-        )}
-      </div>
-    </main>
+          <button type="button" className="no-print" onClick={() => window.print()}>
+            Print / Save as PDF
+          </button>
+        </Card>
+      )}
+    </AppLayout>
   );
 }

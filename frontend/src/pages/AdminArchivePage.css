@@ -1,177 +1,54 @@
-.admin-archive-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  background: #f4f6f8;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  padding: 24px;
-}
-
-.admin-archive-shell {
-  width: 100%;
-  max-width: 1040px;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  padding: 32px;
-  margin-top: 24px;
-}
-
-.admin-archive-back-link {
-  display: inline-block;
-  margin-bottom: 16px;
-  color: #2f6fed;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.admin-archive-shell h1 {
-  margin: 0 0 8px;
-  font-size: 1.5rem;
-  color: #1a2332;
-}
-
 .admin-archive-subtitle {
   margin: 0 0 20px;
-  color: #5c6b7a;
+  color: var(--color-text-secondary);
   font-size: 0.9rem;
 }
 
-.admin-archive-filters {
-  margin-bottom: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.filter-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.filter-row input,
-.filter-row select {
-  flex: 1;
-  min-width: 160px;
-  padding: 9px 12px;
-  border: 1px solid #cdd5df;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-family: inherit;
-}
-
-.filter-row button {
-  padding: 9px 20px;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.filter-row button[type="submit"] {
-  background: #2f6fed;
-  color: #ffffff;
-}
-
-.admin-archive-clear {
-  background: #f0f2f5;
-  color: #5c6b7a;
+.admin-archive-extra-filter {
+  margin-bottom: 16px;
 }
 
 .form-error {
-  color: #c0392b;
-  background: #fdecea;
-  border-radius: 8px;
+  color: var(--color-status-red-text);
+  background: var(--color-status-red-bg);
+  border-radius: var(--radius-md);
   padding: 10px 12px;
   font-size: 0.85rem;
   margin-bottom: 16px;
 }
 
-.admin-archive-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-
-.admin-archive-table th,
-.admin-archive-table td {
-  text-align: left;
-  padding: 10px 8px;
-  border-bottom: 1px solid #e5e9ef;
-  vertical-align: top;
-}
-
-.admin-archive-table th {
-  color: #5c6b7a;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.admin-archive-row-link {
+.admin-archive-cell {
   display: flex;
   flex-direction: column;
-  color: inherit;
-  text-decoration: none;
-}
-
-.admin-archive-row-link:hover .admin-archive-name {
-  text-decoration: underline;
 }
 
 .admin-archive-name {
   font-weight: 600;
-  color: #1a2332;
+  color: var(--color-text-primary);
 }
 
 .admin-archive-email {
-  color: #5c6b7a;
+  color: var(--color-text-secondary);
   font-size: 0.8rem;
 }
 
-.admin-archive-reason {
-  color: #5c6b7a;
-  max-width: 240px;
-}
-
-.category-badge,
-.status-badge {
+.category-badge {
   display: inline-block;
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  padding: 3px 10px;
+  padding: 4px 12px;
   border-radius: 999px;
   white-space: nowrap;
 }
 
 .category-admission {
-  background: #e8f0fe;
-  color: #2f6fed;
+  background: var(--color-status-amber-bg);
+  color: var(--color-status-amber-text);
 }
 
 .category-scholarship {
-  background: #f3e8fe;
-  color: #7c3fed;
-}
-
-.status-badge {
-  background: #f0f2f5;
-  color: #5c6b7a;
-}
-
-.status-approved,
-.status-result {
-  background: #e9f7ef;
-  color: #1e7e34;
-}
-
-.status-rejected {
-  background: #fdecea;
-  color: #c0392b;
+  background: var(--color-status-purple-bg);
+  color: var(--color-status-purple-text);
 }

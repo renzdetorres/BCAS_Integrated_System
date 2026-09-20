@@ -1,39 +1,7 @@
-.receipt-page {
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  background: #f4f6f8;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  padding: 24px;
-}
-
-.receipt-shell {
-  width: 100%;
-  max-width: 560px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 24px;
-}
-
-.receipt-back-link {
-  color: #2f6fed;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.receipt-card {
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  padding: 24px;
-}
-
 .form-error {
-  color: #c0392b;
-  background: #fdecea;
-  border-radius: 8px;
+  color: var(--color-status-red-text);
+  background: var(--color-status-red-bg);
+  border-radius: var(--radius-md);
   padding: 10px 12px;
   font-size: 0.85rem;
 }
@@ -44,14 +12,14 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #2f6fed;
+  color: var(--color-primary);
 }
 
 .receipt-application-id {
   margin: 4px 0 20px;
   font-size: 1.1rem;
   font-weight: 700;
-  color: #1a2332;
+  color: var(--color-text-primary);
   word-break: break-all;
 }
 
@@ -68,25 +36,28 @@
   font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  color: #8a97a6;
+  color: var(--color-text-secondary);
 }
 
 .receipt-details dd {
   margin: 0;
   font-weight: 600;
-  color: #1a2332;
+  color: var(--color-text-primary);
 }
 
-.receipt-card button {
-  width: 100%;
-  padding: 12px;
-  background: #2f6fed;
-  color: #ffffff;
+.receipt button {
+  padding: 12px 20px;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+.receipt button:hover {
+  background: var(--color-primary-dark);
 }
 
 @media print {
@@ -94,18 +65,8 @@
     display: none !important;
   }
 
-  .receipt-page {
-    background: #ffffff;
-    padding: 0;
-  }
-
-  .receipt-shell {
-    max-width: none;
-    margin-top: 0;
-  }
-
-  .receipt-card.receipt {
+  .receipt {
     box-shadow: none;
-    border: 1px solid #1a2332;
+    border: 1px solid var(--color-text-primary);
   }
 }

@@ -1,145 +1,36 @@
-.ss-archive-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  background: #f4f6f8;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  padding: 24px;
-}
-
-.ss-archive-shell {
-  width: 100%;
-  max-width: 860px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 24px;
-}
-
-.ss-archive-back-link {
-  display: inline-block;
-  color: #2f6fed;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.ss-archive-shell h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: #1a2332;
-}
-
 .ss-archive-subtitle {
-  margin: 0;
-  color: #5c6b7a;
+  margin: 0 0 20px;
+  color: var(--color-text-secondary);
   font-size: 0.85rem;
-}
-
-.ss-archive-card {
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  padding: 32px;
-}
-
-.ss-archive-filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.ss-archive-filters input,
-.ss-archive-filters select {
-  padding: 9px 12px;
-  border: 1px solid #cdd5df;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-family: inherit;
-  min-width: 160px;
-}
-
-.ss-archive-filters input {
-  flex: 1;
-}
-
-.ss-archive-filters button {
-  padding: 9px 20px;
-  border: none;
-  border-radius: 8px;
-  background: #2f6fed;
-  color: #ffffff;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
 }
 
 .form-error {
-  color: #c0392b;
-  background: #fdecea;
-  border-radius: 8px;
+  color: var(--color-status-red-text);
+  background: var(--color-status-red-bg);
+  border-radius: var(--radius-md);
   padding: 10px 12px;
   font-size: 0.85rem;
   margin-bottom: 16px;
 }
 
-.ss-archive-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85rem;
-}
-
-.ss-archive-table th,
-.ss-archive-table td {
-  text-align: left;
-  padding: 10px 8px;
-  border-bottom: 1px solid #e5e9ef;
-}
-
-.ss-archive-table th {
-  color: #5c6b7a;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.ss-archive-cell {
+  display: flex;
+  flex-direction: column;
 }
 
 .ss-archive-name {
-  display: block;
   font-weight: 600;
-  color: #1a2332;
+  color: var(--color-text-primary);
 }
 
 .ss-archive-email {
-  display: block;
-  color: #5c6b7a;
+  color: var(--color-text-secondary);
   font-size: 0.8rem;
 }
 
 .ss-archive-reason {
   display: block;
-  color: #5c6b7a;
+  color: var(--color-text-secondary);
   font-size: 0.75rem;
-  margin-top: 2px;
-}
-
-.status-pending {
-  color: #b3791a;
-  font-weight: 600;
-}
-
-.status-flagged {
-  color: #c0392b;
-  font-weight: 600;
-}
-
-.status-verified {
-  color: #1e7e34;
-  font-weight: 600;
-}
-
-.status-rejected {
-  color: #c0392b;
-  font-weight: 600;
+  margin-top: 4px;
 }

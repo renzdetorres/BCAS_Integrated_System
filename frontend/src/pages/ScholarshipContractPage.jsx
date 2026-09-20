@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { getScholarshipContract } from "../api/adminReportsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
 import "./ScholarshipContractPage.css";
 
 function formatDate(isoDateTime) {
@@ -36,17 +37,16 @@ export default function ScholarshipContractPage() {
   }, [applicationId]);
 
   return (
-    <main className="contract-page">
-      <div className="contract-toolbar no-print">
-        <Link className="contract-back-link" to="/admin/reports">
-          &larr; Back to reports
-        </Link>
-        {contract && (
-          <button type="button" onClick={() => window.print()}>
+    <AppLayout
+      title="Scholarship Contract"
+      actions={
+        contract && (
+          <button type="button" className="no-print contract-print-button" onClick={() => window.print()}>
             Print
           </button>
-        )}
-      </div>
+        )
+      }
+    >
 
       {isLoading && <p className="no-print">Loading...</p>}
       {errorMessage && (
@@ -116,6 +116,6 @@ export default function ScholarshipContractPage() {
           </div>
         </article>
       )}
-    </main>
+    </AppLayout>
   );
 }

@@ -6,6 +6,9 @@ import {
   submitAdmissionApplication,
 } from "../api/admissionApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./AdmissionApplicationPage.css";
 
 const initialForm = {
@@ -79,102 +82,94 @@ export default function AdmissionApplicationPage() {
   }
 
   return (
-    <main className="admission-page">
-      <div className="admission-shell">
-        <Link className="admission-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
+    <AppLayout title="My Application">
+      <Card className="admission-card">
+        <h2>Submit Admission Application</h2>
 
-        <section className="admission-card">
-          <h1>Submit Admission Application</h1>
+        {errorMessage && (
+          <p className="form-error" role="alert">
+            {errorMessage}
+            {profileIncomplete && (
+              <>
+                {" "}
+                <Link to="/profile">Complete your profile</Link>.
+              </>
+            )}
+          </p>
+        )}
 
-          {errorMessage && (
-            <p className="form-error" role="alert">
-              {errorMessage}
-              {profileIncomplete && (
-                <>
-                  {" "}
-                  <Link to="/profile">Complete your profile</Link>.
-                </>
-              )}
-            </p>
-          )}
-
-          <form onSubmit={handleSubmit} noValidate>
-            <div className="form-row">
-              <label htmlFor="applicationType">Application type</label>
-              <select
-                id="applicationType"
-                name="applicationType"
-                value={form.applicationType}
-                onChange={handleChange}
-              >
-                {APPLICATION_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-row">
-              <label htmlFor="courseAppliedFor">Course applied for</label>
-              <input
-                id="courseAppliedFor"
-                name="courseAppliedFor"
-                type="text"
-                required
-                value={form.courseAppliedFor}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="form-row">
-              <label htmlFor="previousSchool">Previous school</label>
-              <input
-                id="previousSchool"
-                name="previousSchool"
-                type="text"
-                required
-                value={form.previousSchool}
-                onChange={handleChange}
-              />
-            </div>
-
-            <button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Submitting..." : "Submit Application"}
-            </button>
-          </form>
-        </section>
-
-        <section className="admission-card">
-          <h2>My Applications</h2>
-          {isLoading && <p>Loading...</p>}
-          {!isLoading && applications.length === 0 && <p>No applications submitted yet.</p>}
-          {!isLoading && applications.length > 0 && (
-            <ul className="admission-list">
-              {applications.map((application) => (
-                <li key={application.applicationId}>
-                  <div className="admission-list-header">
-                    <span className="admission-type">
-                      {APPLICATION_TYPES.find((t) => t.value === application.applicationType)?.label ??
-                        application.applicationType}
-                    </span>
-                    <span className={`admission-status status-${application.status.toLowerCase()}`}>
-                      {application.status}
-                    </span>
-                  </div>
-                  <p className="admission-course">{application.courseAppliedFor}</p>
-                  <p className="admission-meta">
-                    Previous school: {application.previousSchool} &middot; Submitted{" "}
-                    {formatDate(application.submittedAt)}
-                  </p>
-                </li>
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="form-row">
+            <label htmlFor="applicationType">Application type</label>
+            <select
+              id="applicationType"
+              name="applicationType"
+              value={form.applicationType}
+              onChange={handleChange}
+            >
+              {APPLICATION_TYPES.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
               ))}
-            </ul>
-          )}
-        </section>
-      </div>
-    </main>
+            </select>
+          </div>
+
+          <div className="form-row">
+            <label htmlFor="courseAppliedFor">Course applied for</label>
+            <input
+              id="courseAppliedFor"
+              name="courseAppliedFor"
+              type="text"
+              required
+              value={form.courseAppliedFor}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-row">
+            <label htmlFor="previousSchool">Previous school</label>
+            <input
+              id="previousSchool"
+              name="previousSchool"
+              type="text"
+              required
+              value={form.previousSchool}
+              onChange={handleChange}
+            />
+          </div>
+
+          <button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Submitting..." : "Submit Application"}
+          </button>
+        </form>
+      </Card>
+
+      <Card className="admission-card">
+        <h2>My Applications</h2>
+        {isLoading && <p>Loading...</p>}
+        {!isLoading && applications.length === 0 && <p>No applications submitted yet.</p>}
+        {!isLoading && applications.length > 0 && (
+          <ul className="admission-list">
+            {applications.map((application) => (
+              <li key={application.applicationId}>
+                <div className="admission-list-header">
+                  <span className="admission-type">
+                    {APPLICATION_TYPES.find((t) => t.value === application.applicationType)?.label ??
+                      application.applicationType}
+                  </span>
+                  <StatusBadge status={application.status} />
+                </div>
+                <p className="admission-course">{application.courseAppliedFor}</p>
+                <p className="admission-meta">
+                  Previous school: {application.previousSchool} &middot; Submitted{" "}
+                  {formatDate(application.submittedAt)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    </AppLayout>
   );
 }

@@ -1,10 +1,25 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { searchApplications } from "../api/adminApplicationsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
+import DataTable from "../components/ui/DataTable.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./AdminApplicationsPage.css";
 
 const initialFilters = { search: "", status: "", category: "", program: "" };
+
+const STATUS_OPTIONS = [
+  "Submitted",
+  "UnderReview",
+  "DocumentsVerified",
+  "EligibilityScreening",
+  "Evaluation",
+  "Result",
+  "Approved",
+  "Rejected",
+].map((value) => ({ value, label: value }));
 
 function formatDate(isoDateTime) {
   return new Date(isoDateTime).toLocaleDateString(undefined, {
@@ -15,8 +30,8 @@ function formatDate(isoDateTime) {
 }
 
 export default function AdminApplicationsPage() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState(initialFilters);
-  const [appliedFilters, setAppliedFilters] = useState(initialFilters);
   const [applications, setApplications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -35,71 +50,51 @@ export default function AdminApplicationsPage() {
   }, []);
 
   useEffect(() => {
-    loadApplications(appliedFilters);
-  }, [appliedFilters, loadApplications]);
+    const timeout = setTimeout(() => loadApplications(filters), 300);
+    return () => clearTimeout(timeout);
+  }, [filters, loadApplications]);
 
-  function handleFilterChange(event) {
-    const { name, value } = event.target;
-    setFilters((prev) => ({ ...prev, [name]: value }));
-  }
-
-  function handleSubmit(event) {
-    event.preventDefault();
-    setAppliedFilters(filters);
-  }
-
-  function handleClear() {
-    setFilters(initialFilters);
-    setAppliedFilters(initialFilters);
-  }
+  const columns = [
+    {
+      key: "applicant",
+      header: "Applicant",
+      accessor: (row) => row.applicantName,
+      sortable: true,
+      render: (row) => (
+        <div className="admin-applications-cell">
+          <span className="admin-applications-name">{row.applicantName}</span>
+          <span className="admin-applications-email">{row.applicantEmail}</span>
+        </div>
+      ),
+    },
+    { key: "category", header: "Type", accessor: (row) => row.category, sortable: true },
+    {
+      key: "program",
+      header: "Program",
+      render: (row) => row.courseAppliedFor ?? row.scholarshipName,
+    },
+    {
+      key: "status",
+      header: "Status",
+      accessor: (row) => row.status,
+      sortable: true,
+      render: (row) => <StatusBadge status={row.status} adminContext />,
+    },
+    {
+      key: "submittedAt",
+      header: "Submitted",
+      accessor: (row) => row.submittedAt,
+      sortable: true,
+      render: (row) => formatDate(row.submittedAt),
+    },
+  ];
 
   return (
-    <main className="admin-applications-page">
-      <div className="admin-applications-shell">
-        <Link className="admin-applications-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1>Applications</h1>
+    <AppLayout title="Applications">
+      <Card>
         <p className="admin-applications-subtitle">
           All admission and scholarship applications. Select one to view its full detail.
         </p>
-
-        <form className="admin-applications-filters" onSubmit={handleSubmit}>
-          <div className="filter-row">
-            <input
-              name="search"
-              type="text"
-              placeholder="Search by applicant name or email"
-              value={filters.search}
-              onChange={handleFilterChange}
-            />
-            <input
-              name="program"
-              type="text"
-              placeholder="Program / scholarship"
-              value={filters.program}
-              onChange={handleFilterChange}
-            />
-          </div>
-          <div className="filter-row">
-            <select name="category" value={filters.category} onChange={handleFilterChange}>
-              <option value="">All types</option>
-              <option value="Admission">Admission</option>
-              <option value="Scholarship">Scholarship</option>
-            </select>
-            <input
-              name="status"
-              type="text"
-              placeholder="Status (e.g. Submitted, Approved)"
-              value={filters.status}
-              onChange={handleFilterChange}
-            />
-            <button type="submit">Search</button>
-            <button type="button" className="admin-applications-clear" onClick={handleClear}>
-              Clear
-            </button>
-          </div>
-        </form>
 
         {errorMessage && (
           <p className="form-error" role="alert">
@@ -107,51 +102,49 @@ export default function AdminApplicationsPage() {
           </p>
         )}
 
-        {isLoading ? (
-          <p>Loading...</p>
-        ) : applications.length === 0 ? (
-          <p>No applications match these filters.</p>
-        ) : (
-          <table className="admin-applications-table">
-            <thead>
-              <tr>
-                <th>Applicant</th>
-                <th>Type</th>
-                <th>Program</th>
-                <th>Status</th>
-                <th>Submitted</th>
-              </tr>
-            </thead>
-            <tbody>
-              {applications.map((application) => (
-                <tr key={application.applicationId}>
-                  <td>
-                    <Link
-                      className="admin-applications-row-link"
-                      to={`/admin/applications/${application.applicationId}`}
-                    >
-                      <span className="admin-applications-name">{application.applicantName}</span>
-                      <span className="admin-applications-email">{application.applicantEmail}</span>
-                    </Link>
-                  </td>
-                  <td>
-                    <span className={`category-badge category-${application.category.toLowerCase()}`}>
-                      {application.category}
-                    </span>
-                  </td>
-                  <td>{application.courseAppliedFor ?? application.scholarshipName}</td>
-                  <td>
-                    <span className={`status-badge status-${application.status.toLowerCase()}`}>
-                      {application.status}
-                    </span>
-                  </td>
-                  <td>{formatDate(application.submittedAt)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </main>
+        <div className="admin-applications-extra-filter">
+          <input
+            className="ui-datatable-search"
+            type="text"
+            placeholder="Filter by program / scholarship"
+            value={filters.program}
+            onChange={(event) => setFilters((prev) => ({ ...prev, program: event.target.value }))}
+          />
+        </div>
+
+        <DataTable
+          columns={columns}
+          rows={applications}
+          getRowKey={(row) => row.applicationId}
+          isLoading={isLoading}
+          emptyMessage="No applications match these filters."
+          onRowClick={(row) => navigate(`/admin/applications/${row.applicationId}`)}
+          search={{
+            value: filters.search,
+            onChange: (value) => setFilters((prev) => ({ ...prev, search: value })),
+            placeholder: "Search by applicant name or email",
+          }}
+          filters={[
+            {
+              key: "category",
+              label: "All types",
+              value: filters.category,
+              onChange: (value) => setFilters((prev) => ({ ...prev, category: value })),
+              options: [
+                { value: "Admission", label: "Admission" },
+                { value: "Scholarship", label: "Scholarship" },
+              ],
+            },
+            {
+              key: "status",
+              label: "All statuses",
+              value: filters.status,
+              onChange: (value) => setFilters((prev) => ({ ...prev, status: value })),
+              options: STATUS_OPTIONS,
+            },
+          ]}
+        />
+      </Card>
+    </AppLayout>
   );
 }

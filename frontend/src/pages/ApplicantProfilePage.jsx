@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { changeMyPassword, getMyProfile, saveMyProfile } from "../api/profileApi.js";
 import { getMyNotificationPreferences, setMyNotificationPreference } from "../api/notificationPreferencesApi.js";
 import { ApiError } from "../api/apiClient.js";
 import { useSession } from "../context/SessionContext.jsx";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
 import "./ApplicantProfilePage.css";
 
 const initialPasswordForm = { currentPassword: "", newPassword: "", confirmNewPassword: "" };
@@ -183,23 +184,15 @@ export default function ApplicantProfilePage() {
 
   if (isLoading) {
     return (
-      <main className="profile-page">
-        <div className="profile-shell">
-          <div className="profile-card">Loading...</div>
-        </div>
-      </main>
+      <AppLayout title="Settings">
+        <Card>Loading...</Card>
+      </AppLayout>
     );
   }
 
   return (
-    <main className="profile-page">
-      <div className="profile-shell">
-        <Link className="profile-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1 className="profile-page-title">Settings</h1>
-
-        <section className="profile-card">
+    <AppLayout title="Settings">
+      <Card className="profile-card">
           <h2>Profile</h2>
           <p className="profile-subtitle">
             {hasExistingProfile
@@ -301,9 +294,9 @@ export default function ApplicantProfilePage() {
               {isSubmitting ? "Saving..." : "Save Profile"}
             </button>
           </form>
-        </section>
+      </Card>
 
-        <section className="profile-card">
+      <Card className="profile-card">
           <h2>Change Password</h2>
           <p className="profile-subtitle">Enter your current password and choose a new one.</p>
 
@@ -364,9 +357,9 @@ export default function ApplicantProfilePage() {
               {isChangingPassword ? "Changing password..." : "Change Password"}
             </button>
           </form>
-        </section>
+      </Card>
 
-        <section className="profile-card">
+      <Card className="profile-card">
           <h2>Notification Preferences</h2>
           <p className="profile-subtitle">
             Choose which updates you'd like emailed to you. Turning one off stops just that type of email - you can
@@ -404,8 +397,7 @@ export default function ApplicantProfilePage() {
               ))}
             </ul>
           )}
-        </section>
-      </div>
-    </main>
+      </Card>
+    </AppLayout>
   );
 }

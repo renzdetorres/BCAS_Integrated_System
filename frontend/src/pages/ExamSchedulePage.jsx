@@ -6,6 +6,8 @@ import {
   selectExamSchedule,
 } from "../api/examScheduleApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
 import "./ExamSchedulePage.css";
 
 function formatDate(isoDate) {
@@ -75,63 +77,55 @@ export default function ExamSchedulePage() {
   }
 
   return (
-    <main className="exam-schedule-page">
-      <div className="exam-schedule-shell">
-        <Link className="exam-schedule-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
+    <AppLayout title="Entrance Exam Schedule">
+      <Card className="exam-schedule-card">
+        {selection && (
+          <div className="exam-schedule-confirmed">
+            <p className="exam-schedule-confirmed-label">Your confirmed schedule</p>
+            <p className="exam-schedule-confirmed-date">{formatDate(selection.examDate)}</p>
+            <p className="exam-schedule-confirmed-time">{formatTime(selection.examTime)}</p>
+            <Link to="/exam-permit">View my exam permit &rarr;</Link>
+          </div>
+        )}
 
-        <section className="exam-schedule-card">
-          <h1>Entrance Exam Schedule</h1>
+        {errorMessage && (
+          <p className="form-error" role="alert">
+            {errorMessage}
+          </p>
+        )}
 
-          {selection && (
-            <div className="exam-schedule-confirmed">
-              <p className="exam-schedule-confirmed-label">Your confirmed schedule</p>
-              <p className="exam-schedule-confirmed-date">{formatDate(selection.examDate)}</p>
-              <p className="exam-schedule-confirmed-time">{formatTime(selection.examTime)}</p>
-              <Link to="/exam-permit">View my exam permit &rarr;</Link>
+        {!isLoading && schedules.length === 0 && !errorMessage && (
+          <p>No exam schedules are currently available. Please check back later.</p>
+        )}
+
+        {(isLoading || schedules.length > 0) && (
+          <form onSubmit={handleSubmit} noValidate>
+            <div className="form-row">
+              <label htmlFor="examScheduleId">
+                {selection ? "Choose a different schedule" : "Choose a schedule"}
+              </label>
+              <select
+                id="examScheduleId"
+                name="examScheduleId"
+                value={selectedId}
+                onChange={(event) => setSelectedId(event.target.value)}
+                disabled={isLoading}
+                required
+              >
+                {schedules.map((s) => (
+                  <option key={s.examScheduleId} value={s.examScheduleId}>
+                    {s.dayType} &middot; {formatDate(s.examDate)} &middot; {formatTime(s.examTime)} &middot; {s.venue}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
 
-          {errorMessage && (
-            <p className="form-error" role="alert">
-              {errorMessage}
-            </p>
-          )}
-
-          {!isLoading && schedules.length === 0 && !errorMessage && (
-            <p>No exam schedules are currently available. Please check back later.</p>
-          )}
-
-          {(isLoading || schedules.length > 0) && (
-            <form onSubmit={handleSubmit} noValidate>
-              <div className="form-row">
-                <label htmlFor="examScheduleId">
-                  {selection ? "Choose a different schedule" : "Choose a schedule"}
-                </label>
-                <select
-                  id="examScheduleId"
-                  name="examScheduleId"
-                  value={selectedId}
-                  onChange={(event) => setSelectedId(event.target.value)}
-                  disabled={isLoading}
-                  required
-                >
-                  {schedules.map((s) => (
-                    <option key={s.examScheduleId} value={s.examScheduleId}>
-                      {s.dayType} &middot; {formatDate(s.examDate)} &middot; {formatTime(s.examTime)} &middot; {s.venue}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <button type="submit" disabled={isSubmitting || isLoading || schedules.length === 0}>
-                {isSubmitting ? "Confirming..." : selection ? "Change Schedule" : "Confirm Schedule"}
-              </button>
-            </form>
-          )}
-        </section>
-      </div>
-    </main>
+            <button type="submit" disabled={isSubmitting || isLoading || schedules.length === 0}>
+              {isSubmitting ? "Confirming..." : selection ? "Change Schedule" : "Confirm Schedule"}
+            </button>
+          </form>
+        )}
+      </Card>
+    </AppLayout>
   );
 }

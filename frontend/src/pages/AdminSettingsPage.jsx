@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { listSystemSettings, setSystemSettingEnabled } from "../api/systemSettingsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
 import "./AdminSettingsPage.css";
 
 function formatDateTime(isoDateTime) {
@@ -51,12 +52,8 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <main className="admin-settings-page">
-      <div className="admin-settings-card">
-        <Link className="admin-settings-back-link" to="/portal">
-          &larr; Back to portal
-        </Link>
-        <h1>Admin Settings</h1>
+    <AppLayout title="System Settings">
+      <Card>
         <p className="admin-settings-subtitle">
           System-level settings for admissions and scholarships. Admin-Registrar only.
         </p>
@@ -92,7 +89,7 @@ export default function AdminSettingsPage() {
             ))}
           </ul>
         )}
-      </div>
-    </main>
+      </Card>
+    </AppLayout>
   );
 }

@@ -13,6 +13,9 @@ import {
   getSectionFiles,
 } from "../api/adminReportsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./AdminReportsPage.css";
 
 const REPORTS = [
@@ -85,7 +88,7 @@ function EnrollmentListReport() {
   }
 
   return (
-    <section className="report-card">
+    <Card className="report-card">
       <div className="report-card-header">
         <h2>Enrollment List</h2>
         <button type="button" onClick={handleExport} disabled={isExporting}>
@@ -151,7 +154,7 @@ function EnrollmentListReport() {
           </tbody>
         </table>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -181,7 +184,7 @@ function EnrollmentSummaryReport() {
   }
 
   return (
-    <section className="report-card">
+    <Card className="report-card">
       <div className="report-card-header">
         <h2>Summary of Enrollment</h2>
         <button type="button" onClick={handleExport} disabled={isExporting}>
@@ -240,7 +243,7 @@ function EnrollmentSummaryReport() {
           </div>
         </>
       ) : null}
-    </section>
+    </Card>
   );
 }
 
@@ -270,7 +273,7 @@ function SectionFilesReport() {
   }
 
   return (
-    <section className="report-card">
+    <Card className="report-card">
       <div className="report-card-header">
         <h2>File per Section</h2>
         <button type="button" onClick={handleExport} disabled={isExporting}>
@@ -315,7 +318,7 @@ function SectionFilesReport() {
           </div>
         ))
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -341,7 +344,7 @@ function ScholarshipApplicantListReport() {
   }, []);
 
   return (
-    <section className="report-card">
+    <Card className="report-card">
       <h2>Scholarship Applicant List</h2>
 
       <form
@@ -393,7 +396,7 @@ function ScholarshipApplicantListReport() {
                 <td>{row.scholarshipName}</td>
                 <td>{row.gradeAverage}</td>
                 <td>
-                  <span className={`status-badge status-${row.status.toLowerCase()}`}>{row.status}</span>
+                  <StatusBadge status={row.status} />
                 </td>
                 <td>{formatDate(row.submittedAt)}</td>
               </tr>
@@ -401,7 +404,7 @@ function ScholarshipApplicantListReport() {
           </tbody>
         </table>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -427,7 +430,7 @@ function ScholarshipQualificationReport() {
   }, []);
 
   return (
-    <section className="report-card">
+    <Card className="report-card">
       <h2>Qualified / Not Qualified Applicants</h2>
 
       <form
@@ -471,9 +474,7 @@ function ScholarshipQualificationReport() {
                 </td>
                 <td>{row.scholarshipName}</td>
                 <td>
-                  <span className={row.verdict === "Qualified" ? "status-active" : "status-inactive"}>
-                    {row.verdict === "Qualified" ? "Qualified" : "Not Qualified"}
-                  </span>
+                  <StatusBadge status={row.verdict} />
                 </td>
                 <td>{row.evaluatedByName}</td>
                 <td>{formatDate(row.evaluatedAt)}</td>
@@ -482,7 +483,7 @@ function ScholarshipQualificationReport() {
           </tbody>
         </table>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -508,7 +509,7 @@ function ScholarshipResultsReport() {
   }, []);
 
   return (
-    <section className="report-card">
+    <Card className="report-card">
       <h2>Scholarship Results</h2>
 
       <form
@@ -552,7 +553,7 @@ function ScholarshipResultsReport() {
                 </td>
                 <td>{row.scholarshipName}</td>
                 <td>
-                  <span className={`status-badge status-${row.status.toLowerCase()}`}>{row.status}</span>
+                  <StatusBadge status={row.status} />
                 </td>
                 <td>{formatDate(row.decidedAt ?? row.submittedAt)}</td>
                 <td>
@@ -567,7 +568,7 @@ function ScholarshipResultsReport() {
           </tbody>
         </table>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -587,7 +588,7 @@ function ScholarshipSlotsReport() {
   }, []);
 
   return (
-    <section className="report-card">
+    <Card className="report-card">
       <h2>Scholarship Slot Report</h2>
 
       <ReportError message={errorMessage} />
@@ -618,16 +619,14 @@ function ScholarshipSlotsReport() {
                 <td>{row.remainingSlots}</td>
                 <td>{row.occupiedSlots}</td>
                 <td>
-                  <span className={row.isActive ? "status-active" : "status-inactive"}>
-                    {row.isActive ? "Active" : "Deactivated"}
-                  </span>
+                  <StatusBadge status={row.isActive ? "Active" : "Inactive"} label={row.isActive ? "Active" : "Deactivated"} />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -646,12 +645,7 @@ export default function AdminReportsPage() {
   const ActiveComponent = REPORT_COMPONENTS[activeReport];
 
   return (
-    <main className="admin-reports-page">
-      <div className="admin-reports-shell">
-        <Link className="admin-reports-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1>Reports</h1>
+    <AppLayout title="Reports">
         <p className="admin-reports-subtitle">
           Admission and Scholarship reports. Admission reports can be exported to Excel; approved scholarship
           applications can be viewed and printed as a contract.
@@ -678,7 +672,6 @@ export default function AdminReportsPage() {
         </nav>
 
         <ActiveComponent />
-      </div>
-    </main>
+    </AppLayout>
   );
 }

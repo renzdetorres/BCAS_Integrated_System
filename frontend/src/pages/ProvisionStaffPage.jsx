@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { provisionStaff, STAFF_ROLES } from "../api/adminApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
 import "./ProvisionStaffPage.css";
 
 const initialForm = {
@@ -48,12 +49,8 @@ export default function ProvisionStaffPage() {
   }
 
   return (
-    <main className="provision-page">
-      <div className="provision-card">
-        <Link className="provision-back-link" to="/portal">
-          &larr; Back to portal
-        </Link>
-        <h1>Create Staff Account</h1>
+    <AppLayout title="Provision Staff">
+      <Card className="provision-card">
         <p className="provision-subtitle">
           Admin-only. Applicant accounts are never created here - applicants self-register.
         </p>
@@ -152,7 +149,7 @@ export default function ProvisionStaffPage() {
             {isSubmitting ? "Creating account..." : "Create Account"}
           </button>
         </form>
-      </div>
-    </main>
+      </Card>
+    </AppLayout>
   );
 }

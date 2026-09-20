@@ -1,59 +1,13 @@
-.admin-reservations-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  background: #f4f6f8;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  padding: 24px;
-}
-
-.admin-reservations-shell {
-  width: 100%;
-  max-width: 720px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 24px;
-}
-
-.admin-reservations-back-link {
-  display: inline-block;
-  color: #2f6fed;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.admin-reservations-shell h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: #1a2332;
-}
-
 .admin-reservations-subtitle {
-  margin: 0;
-  color: #5c6b7a;
+  margin: 0 0 20px;
+  color: var(--color-text-secondary);
   font-size: 0.9rem;
 }
 
-.admin-reservations-card {
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  padding: 32px;
-}
-
-.admin-reservations-card h2 {
-  margin: 0 0 16px;
-  font-size: 1.1rem;
-  color: #1a2332;
-}
-
 .form-error {
-  color: #c0392b;
-  background: #fdecea;
-  border-radius: 8px;
+  color: var(--color-status-red-text);
+  background: var(--color-status-red-bg);
+  border-radius: var(--radius-md);
   padding: 10px 12px;
   font-size: 0.85rem;
   margin: 0 0 12px;
@@ -70,7 +24,7 @@
 
 .reservation-row {
   padding-bottom: 18px;
-  border-bottom: 1px solid #e5e9ef;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .reservation-row:last-child {
@@ -89,43 +43,25 @@
 .reservation-applicant-name {
   display: block;
   font-weight: 600;
-  color: #1a2332;
+  color: var(--color-text-primary);
   font-size: 0.95rem;
 }
 
 .reservation-applicant-email {
   display: block;
-  color: #5c6b7a;
+  color: var(--color-text-secondary);
   font-size: 0.8rem;
-}
-
-.status-active {
-  color: #1e7e34;
-  font-weight: 700;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  white-space: nowrap;
-}
-
-.status-inactive {
-  color: #b3791a;
-  font-weight: 700;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  white-space: nowrap;
 }
 
 .reservation-meta {
   margin: 0 0 6px;
-  color: #5c6b7a;
+  color: var(--color-text-secondary);
   font-size: 0.85rem;
 }
 
 .reservation-recorded {
   margin: 0 0 10px;
-  color: #2f6fed;
+  color: var(--color-primary);
   font-size: 0.8rem;
 }
 
@@ -139,49 +75,54 @@
 
 .reservation-toggle-group {
   display: inline-flex;
-  border: 1px solid #cdd5df;
-  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
 .toggle-option {
   padding: 7px 14px;
   border: none;
-  background: #ffffff;
-  color: #5c6b7a;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
 }
 
 .toggle-option-selected {
-  background: #2f6fed;
-  color: #ffffff;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
 }
 
 .reservation-remarks-input {
   flex: 1;
   min-width: 180px;
   padding: 8px 10px;
-  border: 1px solid #cdd5df;
-  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   font-size: 0.85rem;
   font-family: inherit;
 }
 
 .reservation-save {
   padding: 8px 18px;
-  background: #1e7e34;
-  color: #ffffff;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
 }
 
+.reservation-save:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+
 .reservation-save:disabled {
-  background: #cdd5df;
+  background: var(--color-status-gray-bg);
+  color: var(--color-status-gray-text);
   cursor: not-allowed;
 }

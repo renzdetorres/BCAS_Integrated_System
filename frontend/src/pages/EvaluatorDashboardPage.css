@@ -1,132 +1,15 @@
-.evaluator-dashboard-page {
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  background: #f4f6f8;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  padding: 24px;
-}
-
-.evaluator-dashboard-shell {
-  width: 100%;
-  max-width: 880px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 24px;
-}
-
-.evaluator-dashboard-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.evaluator-dashboard-badge {
-  display: inline-block;
-  background: #e8f0fe;
-  color: #2f6fed;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 4px 10px;
-  border-radius: 999px;
-  margin-bottom: 8px;
-}
-
-.evaluator-dashboard-header h1 {
-  margin: 0 0 4px;
-  font-size: 1.4rem;
-  color: #1a2332;
-}
-
-.evaluator-dashboard-header p {
-  margin: 0;
-  color: #5c6b7a;
-  font-size: 0.85rem;
-}
-
-.evaluator-dashboard-header button {
-  padding: 10px 20px;
-  background: #ffffff;
-  color: #1a2332;
-  border: 1px solid #cdd5df;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.evaluator-dashboard-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.evaluator-dashboard-link {
-  color: #2f6fed;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.evaluator-dashboard-link:hover {
-  text-decoration: underline;
-}
-
-.evaluator-dashboard-card {
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  padding: 24px;
-}
-
-.evaluator-dashboard-card h2 {
-  margin: 0 0 16px;
-  font-size: 1.1rem;
-  color: #1a2332;
-}
-
 .form-error {
-  color: #c0392b;
-  background: #fdecea;
-  border-radius: 8px;
+  color: var(--color-status-red-text);
+  background: var(--color-status-red-bg);
+  border-radius: var(--radius-md);
   padding: 10px 12px;
   font-size: 0.85rem;
 }
 
 .evaluator-stat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
-}
-
-.evaluator-stat-tile {
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.evaluator-stat-value {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #1a2332;
-}
-
-.evaluator-stat-label {
-  font-size: 0.8rem;
-  color: #5c6b7a;
-}
-
-.evaluator-stat-pending .evaluator-stat-value {
-  color: #b3791a;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
 }
 
 .evaluator-application-list {
@@ -140,7 +23,7 @@
 
 .evaluator-application-list li {
   padding-bottom: 14px;
-  border-bottom: 1px solid #e5e9ef;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .evaluator-application-list li:last-child {
@@ -152,13 +35,13 @@
   display: block;
   color: inherit;
   text-decoration: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin: -6px;
   padding: 6px;
 }
 
 .evaluator-application-link:hover {
-  background: #f4f6f8;
+  background: var(--color-bg);
 }
 
 .evaluator-application-header {
@@ -171,41 +54,11 @@
 
 .evaluator-application-name {
   font-weight: 600;
-  color: #1a2332;
-}
-
-.evaluator-application-status {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  padding: 3px 10px;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-
-.status-submitted {
-  background: #e8f0fe;
-  color: #2f6fed;
-}
-
-.status-underreview {
-  background: #fff4e0;
-  color: #b3791a;
-}
-
-.status-approved {
-  background: #e9f7ef;
-  color: #1e7e34;
-}
-
-.status-rejected {
-  background: #fdecea;
-  color: #c0392b;
+  color: var(--color-text-primary);
 }
 
 .evaluator-application-meta {
   margin: 0;
-  color: #5c6b7a;
+  color: var(--color-text-secondary);
   font-size: 0.8rem;
 }

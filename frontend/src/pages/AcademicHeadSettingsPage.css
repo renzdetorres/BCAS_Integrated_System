@@ -1,53 +1,12 @@
-.ah-settings-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  background: #f4f6f8;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  padding: 24px;
-}
-
-.ah-settings-shell {
-  width: 100%;
-  max-width: 560px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 24px;
-}
-
-.ah-settings-card {
-  width: 100%;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  padding: 32px;
-}
-
-.ah-settings-back-link {
-  display: inline-block;
-  color: #2f6fed;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.ah-settings-title {
-  margin: 0;
-  font-size: 1.5rem;
-  color: #1a2332;
-}
-
 .ah-settings-card h2 {
   margin: 0 0 8px;
   font-size: 1.2rem;
-  color: #1a2332;
+  color: var(--color-text-primary);
 }
 
 .ah-settings-subtitle {
   margin: 0 0 24px;
-  color: #5c6b7a;
+  color: var(--color-text-secondary);
   font-size: 0.9rem;
 }
 
@@ -71,52 +30,55 @@
 .form-row label {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--color-text-primary);
 }
 
 .form-row input {
   padding: 10px 12px;
-  border: 1px solid #cdd5df;
-  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   font-size: 1rem;
   font-family: inherit;
-  background: #ffffff;
+  background: var(--color-surface);
 }
 
 .form-row input:focus {
   outline: none;
-  border-color: #2f6fed;
-  box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.15);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(27, 67, 50, 0.15);
 }
 
 .form-error {
-  color: #c0392b;
-  background: #fdecea;
-  border-radius: 8px;
+  color: var(--color-status-red-text);
+  background: var(--color-status-red-bg);
+  border-radius: var(--radius-md);
   padding: 10px 12px;
   font-size: 0.85rem;
   margin-bottom: 16px;
 }
 
 .form-success {
-  color: #1e7e34;
-  background: #e9f7ef;
-  border-radius: 8px;
+  color: var(--color-status-green-text);
+  background: var(--color-status-green-bg);
+  border-radius: var(--radius-md);
   padding: 10px 12px;
   font-size: 0.85rem;
   margin-bottom: 16px;
 }
 
 .ah-settings-card button {
-  width: 100%;
-  padding: 12px;
-  background: #2f6fed;
-  color: #ffffff;
+  padding: 12px 20px;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+.ah-settings-card button:hover {
+  background: var(--color-primary-dark);
 }
 
 .ah-settings-card button:disabled {

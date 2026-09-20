@@ -48,13 +48,17 @@ export default function LoginPage() {
   if (isLoading || session) {
     return (
       <main className="login-page">
-        <div style={{ color: "#5c6b7a" }}>Loading...</div>
+        <div style={{ color: "#ffffff" }}>Loading...</div>
       </main>
     );
   }
 
   return (
     <main className="login-page">
+      <div className="auth-brand">
+        <span className="auth-brand-mark">BCAS</span>
+        <span className="auth-brand-subtitle">Integrated Scholarship &amp; Admissions System</span>
+      </div>
       <div className="login-card">
         <h1>Log In</h1>
         <p className="login-subtitle">Sign in to continue to your application.</p>

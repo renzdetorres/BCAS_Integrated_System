@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   DAY_TYPES,
   createExamSchedule,
@@ -7,6 +6,8 @@ import {
   setExamScheduleOffered,
 } from "../api/adminExamSchedulesApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
 import "./AdminExamSchedulesPage.css";
 
 const initialForm = { dayType: DAY_TYPES[0], examDate: "", examTime: "", venue: "", isOffered: true };
@@ -95,14 +96,8 @@ export default function AdminExamSchedulesPage() {
   }
 
   return (
-    <main className="admin-exam-schedules-page">
-      <div className="admin-exam-schedules-shell">
-        <Link className="admin-exam-schedules-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1>Exam Schedules</h1>
-
-        <section className="admin-exam-schedules-card">
+    <AppLayout title="Exam Schedules">
+        <Card className="admin-exam-schedules-form-card">
           <h2>Add Schedule</h2>
           <p className="admin-exam-schedules-subtitle">
             Saturday schedules are always selectable. Weekday schedules also need a teacher available to
@@ -179,9 +174,9 @@ export default function AdminExamSchedulesPage() {
               {isCreating ? "Creating..." : "Add Schedule"}
             </button>
           </form>
-        </section>
+        </Card>
 
-        <section className="admin-exam-schedules-card">
+        <Card>
           <h2>All Schedules</h2>
 
           {loadError && (
@@ -247,8 +242,7 @@ export default function AdminExamSchedulesPage() {
               ))}
             </ul>
           )}
-        </section>
-      </div>
-    </main>
+        </Card>
+    </AppLayout>
   );
 }

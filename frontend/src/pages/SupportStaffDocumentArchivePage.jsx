@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { DOCUMENT_TYPES, searchArchivedDocuments } from "../api/supportStaffDocumentsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
+import DataTable from "../components/ui/DataTable.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./SupportStaffDocumentArchivePage.css";
 
 const initialFilters = { search: "", documentType: "" };
@@ -18,7 +21,6 @@ function formatDateTime(isoDateTime) {
 
 export default function SupportStaffDocumentArchivePage() {
   const [filters, setFilters] = useState(initialFilters);
-  const [appliedFilters, setAppliedFilters] = useState(initialFilters);
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -37,95 +39,88 @@ export default function SupportStaffDocumentArchivePage() {
   }, []);
 
   useEffect(() => {
-    loadDocuments(appliedFilters);
-  }, [appliedFilters, loadDocuments]);
+    const timeout = setTimeout(() => loadDocuments(filters), 300);
+    return () => clearTimeout(timeout);
+  }, [filters, loadDocuments]);
 
-  function handleFilterChange(event) {
-    const { name, value } = event.target;
-    setFilters((prev) => ({ ...prev, [name]: value }));
-  }
-
-  function handleSubmit(event) {
-    event.preventDefault();
-    setAppliedFilters(filters);
-  }
+  const columns = [
+    {
+      key: "applicant",
+      header: "Applicant",
+      accessor: (row) => row.applicantName,
+      sortable: true,
+      render: (row) => (
+        <div className="ss-archive-cell">
+          <span className="ss-archive-name">{row.applicantName}</span>
+          <span className="ss-archive-email">{row.applicantEmail}</span>
+        </div>
+      ),
+    },
+    { key: "documentType", header: "Document Type", sortable: true },
+    {
+      key: "status",
+      header: "Status",
+      accessor: (row) => row.status,
+      sortable: true,
+      render: (row) => (
+        <>
+          <StatusBadge status={row.status} />
+          {row.flaggedReason && <span className="ss-archive-reason">Reason: {row.flaggedReason}</span>}
+        </>
+      ),
+    },
+    {
+      key: "uploadedAt",
+      header: "Uploaded",
+      accessor: (row) => row.uploadedAt,
+      sortable: true,
+      render: (row) => formatDateTime(row.uploadedAt),
+    },
+    {
+      key: "updatedAt",
+      header: "Archived/Updated",
+      accessor: (row) => row.updatedAt,
+      sortable: true,
+      render: (row) => formatDateTime(row.updatedAt),
+    },
+  ];
 
   return (
-    <main className="ss-archive-page">
-      <div className="ss-archive-shell">
-        <Link className="ss-archive-back-link" to="/support-staff/documents">
-          &larr; Back to Document Verification
-        </Link>
-        <h1>Document Archive</h1>
+    <AppLayout title="Document Archive">
+      <Card>
         <p className="ss-archive-subtitle">
           Archived documents, kept separate from the active verification queue. Browse or search here without
           cluttering the queue.
         </p>
 
-        <section className="ss-archive-card">
-          <form className="ss-archive-filters" onSubmit={handleSubmit}>
-            <input
-              type="text"
-              name="search"
-              placeholder="Search by applicant name or email"
-              value={filters.search}
-              onChange={handleFilterChange}
-            />
-            <select name="documentType" value={filters.documentType} onChange={handleFilterChange}>
-              <option value="">All document types</option>
-              {DOCUMENT_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-            <button type="submit">Search</button>
-          </form>
+        {errorMessage && (
+          <p className="form-error" role="alert">
+            {errorMessage}
+          </p>
+        )}
 
-          {errorMessage && (
-            <p className="form-error" role="alert">
-              {errorMessage}
-            </p>
-          )}
-
-          {isLoading ? (
-            <p>Loading...</p>
-          ) : documents.length === 0 ? (
-            <p>No archived documents match this search.</p>
-          ) : (
-            <table className="ss-archive-table">
-              <thead>
-                <tr>
-                  <th>Applicant</th>
-                  <th>Document Type</th>
-                  <th>Status</th>
-                  <th>Uploaded</th>
-                  <th>Archived/Updated</th>
-                </tr>
-              </thead>
-              <tbody>
-                {documents.map((document) => (
-                  <tr key={document.documentId}>
-                    <td>
-                      <span className="ss-archive-name">{document.applicantName}</span>
-                      <span className="ss-archive-email">{document.applicantEmail}</span>
-                    </td>
-                    <td>{document.documentType}</td>
-                    <td>
-                      <span className={`status-${document.status.toLowerCase()}`}>{document.status}</span>
-                      {document.flaggedReason && (
-                        <span className="ss-archive-reason">Reason: {document.flaggedReason}</span>
-                      )}
-                    </td>
-                    <td>{formatDateTime(document.uploadedAt)}</td>
-                    <td>{formatDateTime(document.updatedAt)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </section>
-      </div>
-    </main>
+        <DataTable
+          columns={columns}
+          rows={documents}
+          getRowKey={(row) => row.documentId}
+          isLoading={isLoading}
+          emptyMessage="No archived documents match this search."
+          search={{
+            value: filters.search,
+            onChange: (value) => setFilters((prev) => ({ ...prev, search: value })),
+            placeholder: "Search by applicant name or email",
+          }}
+          filters={[
+            {
+              key: "documentType",
+              label: "All document types",
+              value: filters.documentType,
+              onChange: (value) => setFilters((prev) => ({ ...prev, documentType: value })),
+              options: DOCUMENT_TYPES.map((type) => ({ value: type, label: type })),
+            },
+          ]}
+        />
+      </Card>
+    </AppLayout>
   );
 }

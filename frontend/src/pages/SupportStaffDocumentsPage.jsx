@@ -6,6 +6,9 @@ import {
   reviewDocument,
 } from "../api/supportStaffDocumentsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./SupportStaffDocumentsPage.css";
 
 function formatDateTime(isoDateTime) {
@@ -102,13 +105,7 @@ export default function SupportStaffDocumentsPage() {
   const applicantName = documents[0]?.applicantName;
 
   return (
-    <main className="ss-documents-page">
-      <div className="ss-documents-shell">
-        <Link className="ss-documents-back-link" to={applicantId ? "/support-staff/applicants" : "/portal"}>
-          &larr; {applicantId ? "Back to Applicant Records" : "Back to dashboard"}
-        </Link>
-        <h1>Document Verification</h1>
-
+    <AppLayout title="Document Verification">
         {applicantId ? (
           <p className="ss-documents-subtitle">
             {applicantName ? (
@@ -134,7 +131,7 @@ export default function SupportStaffDocumentsPage() {
           </p>
         )}
 
-        <section className="ss-documents-card">
+        <Card>
           {errorMessage && (
             <p className="form-error" role="alert">
               {errorMessage}
@@ -169,7 +166,7 @@ export default function SupportStaffDocumentsPage() {
                     </td>
                     <td>{document.documentType}</td>
                     <td>
-                      <span className={`status-${document.status.toLowerCase()}`}>{document.status}</span>
+                      <StatusBadge status={document.status} />
                       {document.flaggedReason && (
                         <span className="ss-documents-reason">Reason: {document.flaggedReason}</span>
                       )}
@@ -247,8 +244,7 @@ export default function SupportStaffDocumentsPage() {
               </tbody>
             </table>
           )}
-        </section>
-      </div>
-    </main>
+        </Card>
+    </AppLayout>
   );
 }

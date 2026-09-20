@@ -59,6 +59,10 @@ export default function RegisterPage() {
   if (registeredEmail) {
     return (
       <main className="register-page">
+        <div className="auth-brand">
+          <span className="auth-brand-mark">BCAS</span>
+          <span className="auth-brand-subtitle">Integrated Scholarship &amp; Admissions System</span>
+        </div>
         <div className="register-card">
           <h1>Registration complete</h1>
           <p>
@@ -75,6 +79,10 @@ export default function RegisterPage() {
 
   return (
     <main className="register-page">
+      <div className="auth-brand">
+        <span className="auth-brand-mark">BCAS</span>
+        <span className="auth-brand-subtitle">Integrated Scholarship &amp; Admissions System</span>
+      </div>
       <div className="register-card">
         <h1>Applicant Registration</h1>
         <p className="register-subtitle">Create your account to start your application.</p>

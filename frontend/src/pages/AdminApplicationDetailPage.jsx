@@ -11,6 +11,8 @@ import {
 } from "../api/adminApplicationsApi.js";
 import { ApiError } from "../api/apiClient.js";
 import WorkflowStepper, { ADMISSION_STEP_LABELS, SCHOLARSHIP_STEP_LABELS } from "../components/WorkflowStepper.jsx";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./AdminApplicationDetailPage.css";
 
 function formatDateTime(isoDateTime) {
@@ -159,12 +161,14 @@ export default function AdminApplicationDetailPage() {
   const canArchive = application && !application.isArchived && ARCHIVABLE_STATUSES.includes(application.status);
 
   return (
-    <main className="admin-app-detail-page">
-      <div className="admin-app-detail-shell">
+    <AppLayout
+      title="Application Detail"
+      actions={
         <Link className="admin-app-detail-back-link" to="/admin/applications">
           &larr; Back to applications
         </Link>
-
+      }
+    >
         {isLoading && (
           <div className="admin-app-detail-card">
             <p>Loading...</p>
@@ -190,10 +194,8 @@ export default function AdminApplicationDetailPage() {
                 <span className={`category-badge category-${application.category.toLowerCase()}`}>
                   {application.category}
                 </span>
-                <span className={`status-badge status-${application.status.toLowerCase()}`}>
-                  {application.status}
-                </span>
-                {application.isArchived && <span className="archived-badge">Archived</span>}
+                <StatusBadge status={application.status} adminContext />
+                {application.isArchived && <StatusBadge status="Inactive" label="Archived" />}
               </div>
               <h1>{application.applicantName}</h1>
               <p className="admin-app-detail-email">{application.applicantEmail}</p>
@@ -391,7 +393,6 @@ export default function AdminApplicationDetailPage() {
             </div>
           </>
         )}
-      </div>
-    </main>
+    </AppLayout>
   );
 }

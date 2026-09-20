@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { DOCUMENT_STATUSES, DOCUMENT_TYPES, searchDocuments } from "../api/adminDocumentsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
+import DataTable from "../components/ui/DataTable.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./AdminDocumentsPage.css";
 
 const initialFilters = { search: "", status: "", documentType: "" };
@@ -18,7 +21,6 @@ function formatDateTime(isoDateTime) {
 
 export default function AdminDocumentsPage() {
   const [filters, setFilters] = useState(initialFilters);
-  const [appliedFilters, setAppliedFilters] = useState(initialFilters);
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -37,67 +39,53 @@ export default function AdminDocumentsPage() {
   }, []);
 
   useEffect(() => {
-    loadDocuments(appliedFilters);
-  }, [appliedFilters, loadDocuments]);
+    const timeout = setTimeout(() => loadDocuments(filters), 300);
+    return () => clearTimeout(timeout);
+  }, [filters, loadDocuments]);
 
-  function handleFilterChange(event) {
-    const { name, value } = event.target;
-    setFilters((prev) => ({ ...prev, [name]: value }));
-  }
-
-  function handleSubmit(event) {
-    event.preventDefault();
-    setAppliedFilters(filters);
-  }
-
-  function handleClear() {
-    setFilters(initialFilters);
-    setAppliedFilters(initialFilters);
-  }
+  const columns = [
+    {
+      key: "applicant",
+      header: "Applicant",
+      accessor: (row) => row.applicantName,
+      sortable: true,
+      render: (row) => (
+        <div className="admin-documents-applicant">
+          <span className="admin-documents-name">{row.applicantName}</span>
+          <span className="admin-documents-email">{row.applicantEmail}</span>
+        </div>
+      ),
+    },
+    { key: "documentType", header: "Document", sortable: true },
+    { key: "fileName", header: "File" },
+    {
+      key: "status",
+      header: "Status",
+      accessor: (row) => row.status,
+      sortable: true,
+      render: (row) => (
+        <>
+          <StatusBadge status={row.status} />
+          {row.flaggedReason && <p className="admin-documents-reason">{row.flaggedReason}</p>}
+        </>
+      ),
+    },
+    {
+      key: "uploadedAt",
+      header: "Uploaded",
+      accessor: (row) => row.uploadedAt,
+      sortable: true,
+      render: (row) => formatDateTime(row.uploadedAt),
+    },
+  ];
 
   return (
-    <main className="admin-documents-page">
-      <div className="admin-documents-shell">
-        <Link className="admin-documents-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1>Documents</h1>
+    <AppLayout title="Document Verification">
+      <Card>
         <p className="admin-documents-subtitle">
           Every document submitted across all applicants, with verification status and, for a
           flagged or rejected document, the reason given.
         </p>
-
-        <form className="admin-documents-filters" onSubmit={handleSubmit}>
-          <div className="filter-row">
-            <input
-              name="search"
-              type="text"
-              placeholder="Search by applicant name or email"
-              value={filters.search}
-              onChange={handleFilterChange}
-            />
-            <select name="documentType" value={filters.documentType} onChange={handleFilterChange}>
-              <option value="">All document types</option>
-              {DOCUMENT_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-            <select name="status" value={filters.status} onChange={handleFilterChange}>
-              <option value="">All statuses</option>
-              {DOCUMENT_STATUSES.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
-            <button type="submit">Search</button>
-            <button type="button" className="admin-documents-clear" onClick={handleClear}>
-              Clear
-            </button>
-          </div>
-        </form>
 
         {errorMessage && (
           <p className="form-error" role="alert">
@@ -105,47 +93,35 @@ export default function AdminDocumentsPage() {
           </p>
         )}
 
-        {isLoading ? (
-          <p>Loading...</p>
-        ) : documents.length === 0 ? (
-          <p>No documents match these filters.</p>
-        ) : (
-          <table className="admin-documents-table">
-            <thead>
-              <tr>
-                <th>Applicant</th>
-                <th>Document</th>
-                <th>File</th>
-                <th>Status</th>
-                <th>Uploaded</th>
-              </tr>
-            </thead>
-            <tbody>
-              {documents.map((document) => (
-                <tr key={document.documentId}>
-                  <td>
-                    <div className="admin-documents-applicant">
-                      <span className="admin-documents-name">{document.applicantName}</span>
-                      <span className="admin-documents-email">{document.applicantEmail}</span>
-                    </div>
-                  </td>
-                  <td>{document.documentType}</td>
-                  <td>{document.fileName}</td>
-                  <td>
-                    <span className={`status-badge status-${document.status.toLowerCase()}`}>
-                      {document.status}
-                    </span>
-                    {document.flaggedReason && (
-                      <p className="admin-documents-reason">{document.flaggedReason}</p>
-                    )}
-                  </td>
-                  <td>{formatDateTime(document.uploadedAt)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </main>
+        <DataTable
+          columns={columns}
+          rows={documents}
+          getRowKey={(row) => row.documentId}
+          isLoading={isLoading}
+          emptyMessage="No documents match these filters."
+          search={{
+            value: filters.search,
+            onChange: (value) => setFilters((prev) => ({ ...prev, search: value })),
+            placeholder: "Search by applicant name or email",
+          }}
+          filters={[
+            {
+              key: "documentType",
+              label: "All document types",
+              value: filters.documentType,
+              onChange: (value) => setFilters((prev) => ({ ...prev, documentType: value })),
+              options: DOCUMENT_TYPES.map((type) => ({ value: type, label: type })),
+            },
+            {
+              key: "status",
+              label: "All statuses",
+              value: filters.status,
+              onChange: (value) => setFilters((prev) => ({ ...prev, status: value })),
+              options: DOCUMENT_STATUSES.map((status) => ({ value: status, label: status })),
+            },
+          ]}
+        />
+      </Card>
+    </AppLayout>
   );
 }

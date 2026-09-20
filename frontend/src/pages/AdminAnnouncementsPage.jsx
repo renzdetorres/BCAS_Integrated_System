@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   createAnnouncement,
   listAnnouncements,
   setAnnouncementActiveStatus,
 } from "../api/adminAnnouncementsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./AdminAnnouncementsPage.css";
 
 const initialCreateForm = { category: "Admission", title: "", body: "" };
@@ -81,120 +83,111 @@ export default function AdminAnnouncementsPage() {
   }
 
   return (
-    <main className="admin-announcements-page">
-      <div className="admin-announcements-shell">
-        <Link className="admin-announcements-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1>Announcements</h1>
+    <AppLayout title="Announcements">
+      <Card className="admin-announcements-card">
+        <h2>Create Announcement</h2>
+        <p className="admin-announcements-subtitle">
+          New announcements start as drafts. Post one to make it visible to applicants; deactivate it to hide it
+          again without deleting it.
+        </p>
 
-        <section className="admin-announcements-card">
-          <h2>Create Announcement</h2>
-          <p className="admin-announcements-subtitle">
-            New announcements start as drafts. Post one to make it visible to applicants; deactivate it to hide it
-            again without deleting it.
+        {createdMessage && (
+          <p className="form-success" role="status">
+            {createdMessage}
           </p>
+        )}
+        {createError && (
+          <p className="form-error" role="alert">
+            {createError}
+          </p>
+        )}
 
-          {createdMessage && (
-            <p className="form-success" role="status">
-              {createdMessage}
-            </p>
-          )}
-          {createError && (
-            <p className="form-error" role="alert">
-              {createError}
-            </p>
-          )}
+        <form onSubmit={handleCreate} noValidate>
+          <div className="form-row">
+            <label htmlFor="category">Category</label>
+            <select
+              id="category"
+              value={createForm.category}
+              onChange={(event) => setCreateForm((prev) => ({ ...prev, category: event.target.value }))}
+            >
+              <option value="Admission">Admission</option>
+              <option value="Scholarship">Scholarship</option>
+            </select>
+          </div>
+          <div className="form-row">
+            <label htmlFor="title">Title</label>
+            <input
+              id="title"
+              type="text"
+              required
+              maxLength={200}
+              value={createForm.title}
+              onChange={(event) => setCreateForm((prev) => ({ ...prev, title: event.target.value }))}
+            />
+          </div>
+          <div className="form-row">
+            <label htmlFor="body">Body</label>
+            <textarea
+              id="body"
+              rows={4}
+              required
+              maxLength={2000}
+              value={createForm.body}
+              onChange={(event) => setCreateForm((prev) => ({ ...prev, body: event.target.value }))}
+            />
+          </div>
 
-          <form onSubmit={handleCreate} noValidate>
-            <div className="form-row">
-              <label htmlFor="category">Category</label>
-              <select
-                id="category"
-                value={createForm.category}
-                onChange={(event) => setCreateForm((prev) => ({ ...prev, category: event.target.value }))}
-              >
-                <option value="Admission">Admission</option>
-                <option value="Scholarship">Scholarship</option>
-              </select>
-            </div>
-            <div className="form-row">
-              <label htmlFor="title">Title</label>
-              <input
-                id="title"
-                type="text"
-                required
-                maxLength={200}
-                value={createForm.title}
-                onChange={(event) => setCreateForm((prev) => ({ ...prev, title: event.target.value }))}
-              />
-            </div>
-            <div className="form-row">
-              <label htmlFor="body">Body</label>
-              <textarea
-                id="body"
-                rows={4}
-                required
-                maxLength={2000}
-                value={createForm.body}
-                onChange={(event) => setCreateForm((prev) => ({ ...prev, body: event.target.value }))}
-              />
-            </div>
+          <button type="submit" disabled={isCreating}>
+            {isCreating ? "Creating..." : "Create Announcement"}
+          </button>
+        </form>
+      </Card>
 
-            <button type="submit" disabled={isCreating}>
-              {isCreating ? "Creating..." : "Create Announcement"}
-            </button>
-          </form>
-        </section>
+      <Card className="admin-announcements-card">
+        <h2>All Announcements</h2>
 
-        <section className="admin-announcements-card">
-          <h2>All Announcements</h2>
+        {loadError && (
+          <p className="form-error" role="alert">
+            {loadError}
+          </p>
+        )}
 
-          {loadError && (
-            <p className="form-error" role="alert">
-              {loadError}
-            </p>
-          )}
-
-          {isLoading ? (
-            <p>Loading...</p>
-          ) : announcements.length === 0 ? (
-            <p>No announcements yet.</p>
-          ) : (
-            <ul className="admin-announcements-list">
-              {announcements.map((announcement) => (
-                <li key={announcement.announcementId}>
-                  <div className="admin-announcements-list-header">
-                    <span className={`announcements-category category-${announcement.category.toLowerCase()}`}>
-                      {announcement.category}
-                    </span>
-                    <span className={announcement.isActive ? "status-active" : "status-inactive"}>
-                      {announcement.isActive ? "Posted" : "Draft"}
-                    </span>
-                    <span className="admin-announcements-date">{formatDateTime(announcement.postedAt)}</span>
-                  </div>
-                  <p className="admin-announcements-title">{announcement.title}</p>
-                  <p className="admin-announcements-body">{announcement.body}</p>
-                  <div className="row-actions">
-                    <button
-                      type="button"
-                      className={announcement.isActive ? "toggle-deactivate" : "toggle-activate"}
-                      onClick={() => handleToggle(announcement)}
-                      disabled={pendingToggleId === announcement.announcementId}
-                    >
-                      {pendingToggleId === announcement.announcementId
-                        ? "Saving..."
-                        : announcement.isActive
-                          ? "Deactivate"
-                          : "Post"}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
-    </main>
+        {isLoading ? (
+          <p>Loading...</p>
+        ) : announcements.length === 0 ? (
+          <p>No announcements yet.</p>
+        ) : (
+          <ul className="admin-announcements-list">
+            {announcements.map((announcement) => (
+              <li key={announcement.announcementId}>
+                <div className="admin-announcements-list-header">
+                  <span className={`announcements-category category-${announcement.category.toLowerCase()}`}>
+                    {announcement.category}
+                  </span>
+                  <StatusBadge status={announcement.isActive ? "Active" : "Draft"} label={announcement.isActive ? "Posted" : "Draft"} />
+                  <span className="admin-announcements-date">{formatDateTime(announcement.postedAt)}</span>
+                </div>
+                <p className="admin-announcements-title">{announcement.title}</p>
+                <p className="admin-announcements-body">{announcement.body}</p>
+                <div className="row-actions">
+                  <button
+                    type="button"
+                    className={announcement.isActive ? "toggle-deactivate" : "toggle-activate"}
+                    onClick={() => handleToggle(announcement)}
+                    disabled={pendingToggleId === announcement.announcementId}
+                  >
+                    {pendingToggleId === announcement.announcementId
+                      ? "Saving..."
+                      : announcement.isActive
+                        ? "Deactivate"
+                        : "Post"}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    </AppLayout>
   );
 }

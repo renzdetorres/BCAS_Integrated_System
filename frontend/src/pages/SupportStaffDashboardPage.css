@@ -1,132 +1,13 @@
-.ss-dashboard-page {
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  background: #f4f6f8;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  padding: 24px;
-}
-
-.ss-dashboard-shell {
-  width: 100%;
-  max-width: 880px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 24px;
-}
-
-.ss-dashboard-header {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.ss-dashboard-badge {
-  display: inline-block;
-  background: #e8f0fe;
-  color: #2f6fed;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 4px 10px;
-  border-radius: 999px;
-  margin-bottom: 8px;
-}
-
-.ss-dashboard-header h1 {
-  margin: 0 0 4px;
-  font-size: 1.4rem;
-  color: #1a2332;
-}
-
-.ss-dashboard-header p {
-  margin: 0;
-  color: #5c6b7a;
-  font-size: 0.85rem;
-}
-
-.ss-dashboard-header button {
-  padding: 10px 20px;
-  background: #ffffff;
-  color: #1a2332;
-  border: 1px solid #cdd5df;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.ss-dashboard-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.ss-dashboard-link {
-  color: #2f6fed;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.ss-dashboard-link:hover {
-  text-decoration: underline;
-}
-
-.ss-dashboard-card {
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  padding: 24px;
-}
-
 .form-error {
-  color: #c0392b;
-  background: #fdecea;
-  border-radius: 8px;
+  color: var(--color-status-red-text);
+  background: var(--color-status-red-bg);
+  border-radius: var(--radius-md);
   padding: 10px 12px;
   font-size: 0.85rem;
 }
 
 .ss-stat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
-}
-
-.ss-stat-tile {
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  padding: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.ss-stat-value {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: #1a2332;
-}
-
-.ss-stat-label {
-  font-size: 0.8rem;
-  color: #5c6b7a;
-}
-
-.ss-stat-pending .ss-stat-value {
-  color: #b3791a;
-}
-
-.ss-stat-verified .ss-stat-value {
-  color: #1e7e34;
-}
-
-.ss-stat-flagged .ss-stat-value {
-  color: #c0392b;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
 }

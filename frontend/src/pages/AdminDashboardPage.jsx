@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { getAdminDashboard } from "../api/adminDashboardApi.js";
 import { APPLICATION_TYPES } from "../api/admissionApi.js";
 import { ApiError } from "../api/apiClient.js";
-import { useSession } from "../context/SessionContext.jsx";
-import { useLogout } from "../hooks/useLogout.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card, { StatCard } from "../components/ui/Card.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./AdminDashboardPage.css";
 
 function formatDate(isoDateTime) {
@@ -20,8 +20,6 @@ function admissionTypeLabel(applicationType) {
 }
 
 export default function AdminDashboardPage() {
-  const { session } = useSession();
-  const handleLogout = useLogout();
   const [dashboard, setDashboard] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -48,142 +46,68 @@ export default function AdminDashboardPage() {
   }, []);
 
   return (
-    <main className="admin-dashboard-page">
-      <div className="admin-dashboard-shell">
-        <header className="admin-dashboard-header">
-          <div>
-            <span className="admin-dashboard-badge">Admin-Registrar</span>
-            <h1>Admin Dashboard</h1>
-            <p>
-              Signed in as <strong>{session.email}</strong>.
-            </p>
-          </div>
-          <button type="button" onClick={handleLogout}>
-            Log Out
-          </button>
-        </header>
+    <AppLayout title="Admin Dashboard">
+      {isLoading && (
+        <Card>
+          <p>Loading...</p>
+        </Card>
+      )}
 
-        <div className="admin-dashboard-links">
-          <Link className="admin-dashboard-link" to="/admin/applications">
-            Applications
-          </Link>
-          <Link className="admin-dashboard-link" to="/admin/documents">
-            Documents
-          </Link>
-          <Link className="admin-dashboard-link" to="/admin/archive">
-            Records Archive
-          </Link>
-          <Link className="admin-dashboard-link" to="/admin/announcements">
-            Announcements
-          </Link>
-          <Link className="admin-dashboard-link" to="/admin/reports">
-            Reports
-          </Link>
-          <Link className="admin-dashboard-link" to="/admin/exam-schedules">
-            Exam Schedules
-          </Link>
-          <Link className="admin-dashboard-link" to="/admin/exam-permits">
-            Exam Permits
-          </Link>
-          <Link className="admin-dashboard-link" to="/admin/scholarships">
-            Scholarship Slots
-          </Link>
-          <Link className="admin-dashboard-link" to="/admin/reservations">
-            Reservations
-          </Link>
-          <Link className="admin-dashboard-link" to="/admin/staff">
-            Create Staff Account
-          </Link>
-          <Link className="admin-dashboard-link" to="/admin/users">
-            Manage Accounts
-          </Link>
-          <Link className="admin-dashboard-link" to="/admin/notification-settings">
-            Notification Settings
-          </Link>
-          <Link className="admin-dashboard-link" to="/admin/settings">
-            Admin Settings
-          </Link>
-        </div>
+      {errorMessage && (
+        <Card>
+          <p className="form-error" role="alert">
+            {errorMessage}
+          </p>
+        </Card>
+      )}
 
-        {isLoading && (
-          <section className="admin-dashboard-card">
-            <p>Loading...</p>
+      {!isLoading && !errorMessage && dashboard && (
+        <>
+          <section className="admin-stat-grid">
+            <StatCard label="Total Applications" value={dashboard.totalApplications} />
+            <StatCard label="Total Applicants" value={dashboard.totalApplicants} />
+            <StatCard label="Pending" value={dashboard.pendingCount} />
+            <StatCard label="Approved" value={dashboard.approvedCount} />
+            <StatCard label="Rejected" value={dashboard.rejectedCount} />
           </section>
-        )}
 
-        {errorMessage && (
-          <section className="admin-dashboard-card">
-            <p className="form-error" role="alert">
-              {errorMessage}
-            </p>
-          </section>
-        )}
+          <Card>
+            <h2>Applicants by Program</h2>
+            {dashboard.byProgram.length === 0 && <p>No admission applications submitted yet.</p>}
+            {dashboard.byProgram.length > 0 && (
+              <ul className="admin-program-list">
+                {dashboard.byProgram.map((entry) => (
+                  <li key={entry.program}>
+                    <span className="admin-program-name">{entry.program}</span>
+                    <span className="admin-program-count">{entry.count}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
 
-        {!isLoading && !errorMessage && dashboard && (
-          <>
-            <section className="admin-stat-grid">
-              <div className="admin-stat-tile">
-                <span className="admin-stat-value">{dashboard.totalApplications}</span>
-                <span className="admin-stat-label">Total Applications</span>
-              </div>
-              <div className="admin-stat-tile">
-                <span className="admin-stat-value">{dashboard.totalApplicants}</span>
-                <span className="admin-stat-label">Total Applicants</span>
-              </div>
-              <div className="admin-stat-tile admin-stat-pending">
-                <span className="admin-stat-value">{dashboard.pendingCount}</span>
-                <span className="admin-stat-label">Pending</span>
-              </div>
-              <div className="admin-stat-tile admin-stat-approved">
-                <span className="admin-stat-value">{dashboard.approvedCount}</span>
-                <span className="admin-stat-label">Approved</span>
-              </div>
-              <div className="admin-stat-tile admin-stat-rejected">
-                <span className="admin-stat-value">{dashboard.rejectedCount}</span>
-                <span className="admin-stat-label">Rejected</span>
-              </div>
-            </section>
-
-            <section className="admin-dashboard-card">
-              <h2>Applicants by Program</h2>
-              {dashboard.byProgram.length === 0 && <p>No admission applications submitted yet.</p>}
-              {dashboard.byProgram.length > 0 && (
-                <ul className="admin-program-list">
-                  {dashboard.byProgram.map((entry) => (
-                    <li key={entry.program}>
-                      <span className="admin-program-name">{entry.program}</span>
-                      <span className="admin-program-count">{entry.count}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-
-            <section className="admin-dashboard-card">
-              <h2>Recent Applications</h2>
-              {dashboard.recentApplications.length === 0 && <p>No admission applications submitted yet.</p>}
-              {dashboard.recentApplications.length > 0 && (
-                <ul className="admin-recent-list">
-                  {dashboard.recentApplications.map((application) => (
-                    <li key={application.applicationId}>
-                      <div className="admin-recent-header">
-                        <span className="admin-recent-name">{application.applicantName}</span>
-                        <span className={`admin-recent-status status-${application.status.toLowerCase()}`}>
-                          {application.status}
-                        </span>
-                      </div>
-                      <p className="admin-recent-meta">
-                        {admissionTypeLabel(application.applicationType)} &middot; {application.courseAppliedFor}{" "}
-                        &middot; Submitted {formatDate(application.submittedAt)}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          </>
-        )}
-      </div>
-    </main>
+          <Card>
+            <h2>Recent Applications</h2>
+            {dashboard.recentApplications.length === 0 && <p>No admission applications submitted yet.</p>}
+            {dashboard.recentApplications.length > 0 && (
+              <ul className="admin-recent-list">
+                {dashboard.recentApplications.map((application) => (
+                  <li key={application.applicationId}>
+                    <div className="admin-recent-header">
+                      <span className="admin-recent-name">{application.applicantName}</span>
+                      <StatusBadge status={application.status} adminContext />
+                    </div>
+                    <p className="admin-recent-meta">
+                      {admissionTypeLabel(application.applicationType)} &middot; {application.courseAppliedFor}{" "}
+                      &middot; Submitted {formatDate(application.submittedAt)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        </>
+      )}
+    </AppLayout>
   );
 }

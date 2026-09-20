@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { ALL_ROLES, listUsers, setUserActiveStatus, updateUser } from "../api/adminApi.js";
 import { ApiError } from "../api/apiClient.js";
 import { useSession } from "../context/SessionContext.jsx";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./ManageUsersPage.css";
 
 const emptyEditForm = { firstName: "", lastName: "", email: "", role: ALL_ROLES[0], department: "" };
@@ -85,12 +87,8 @@ export default function ManageUsersPage() {
   }
 
   return (
-    <main className="manage-users-page">
-      <div className="manage-users-card">
-        <Link className="manage-users-back-link" to="/portal">
-          &larr; Back to portal
-        </Link>
-        <h1>Manage Accounts</h1>
+    <AppLayout title="Account Management">
+      <Card>
         <p className="manage-users-subtitle">
           Edit an account's name, email, or role, or deactivate it to block login without deleting it or
           any linked records.
@@ -181,9 +179,7 @@ export default function ManageUsersPage() {
                       )}
                     </td>
                     <td>
-                      <span className={user.isActive ? "status-active" : "status-inactive"}>
-                        {user.isActive ? "Active" : "Deactivated"}
-                      </span>
+                      <StatusBadge status={user.isActive ? "Active" : "Inactive"} label={user.isActive ? "Active" : "Deactivated"} />
                     </td>
                     <td className="edit-actions">
                       <button
@@ -208,9 +204,7 @@ export default function ManageUsersPage() {
                     <td>{user.role}</td>
                     <td>{user.department ?? "—"}</td>
                     <td>
-                      <span className={user.isActive ? "status-active" : "status-inactive"}>
-                        {user.isActive ? "Active" : "Deactivated"}
-                      </span>
+                      <StatusBadge status={user.isActive ? "Active" : "Inactive"} label={user.isActive ? "Active" : "Deactivated"} />
                     </td>
                     <td className="row-actions">
                       <button type="button" className="edit-trigger" onClick={() => startEdit(user)}>
@@ -240,7 +234,7 @@ export default function ManageUsersPage() {
             </tbody>
           </table>
         )}
-      </div>
-    </main>
+      </Card>
+    </AppLayout>
   );
 }

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   changeMyEvaluatorPassword,
   getMyEvaluatorProfile,
   updateMyEvaluatorProfile,
 } from "../api/evaluatorSettingsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
 import "./EvaluatorSettingsPage.css";
 
 const initialPasswordForm = { currentPassword: "", newPassword: "", confirmNewPassword: "" };
@@ -113,23 +114,15 @@ export default function EvaluatorSettingsPage() {
 
   if (isLoading) {
     return (
-      <main className="evaluator-settings-page">
-        <div className="evaluator-settings-shell">
-          <div className="evaluator-settings-card">Loading...</div>
-        </div>
-      </main>
+      <AppLayout title="Settings">
+        <Card>Loading...</Card>
+      </AppLayout>
     );
   }
 
   return (
-    <main className="evaluator-settings-page">
-      <div className="evaluator-settings-shell">
-        <Link className="evaluator-settings-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1 className="evaluator-settings-title">Settings</h1>
-
-        <section className="evaluator-settings-card">
+    <AppLayout title="Settings">
+        <Card className="evaluator-settings-card">
           <h2>Profile</h2>
           <p className="evaluator-settings-subtitle">You can update your name and email at any time.</p>
 
@@ -179,9 +172,9 @@ export default function EvaluatorSettingsPage() {
               {isSubmitting ? "Saving..." : "Save Profile"}
             </button>
           </form>
-        </section>
+        </Card>
 
-        <section className="evaluator-settings-card">
+        <Card className="evaluator-settings-card">
           <h2>Change Password</h2>
           <p className="evaluator-settings-subtitle">Enter your current password and choose a new one.</p>
 
@@ -242,8 +235,7 @@ export default function EvaluatorSettingsPage() {
               {isChangingPassword ? "Changing password..." : "Change Password"}
             </button>
           </form>
-        </section>
-      </div>
-    </main>
+        </Card>
+    </AppLayout>
   );
 }

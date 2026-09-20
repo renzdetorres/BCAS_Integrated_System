@@ -1,3 +1,5 @@
+import "./WorkflowStepper.css";
+
 export const ADMISSION_STEP_LABELS = {
   Submitted: "Submitted",
   DocumentsReceived: "Documents Received",

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   changeMySupportStaffPassword,
   getMySupportStaffProfile,
   updateMySupportStaffProfile,
 } from "../api/supportStaffSettingsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
 import "./SupportStaffSettingsPage.css";
 
 const initialPasswordForm = { currentPassword: "", newPassword: "", confirmNewPassword: "" };
@@ -113,23 +114,15 @@ export default function SupportStaffSettingsPage() {
 
   if (isLoading) {
     return (
-      <main className="ss-settings-page">
-        <div className="ss-settings-shell">
-          <div className="ss-settings-card">Loading...</div>
-        </div>
-      </main>
+      <AppLayout title="Settings">
+        <Card>Loading...</Card>
+      </AppLayout>
     );
   }
 
   return (
-    <main className="ss-settings-page">
-      <div className="ss-settings-shell">
-        <Link className="ss-settings-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1 className="ss-settings-title">Settings</h1>
-
-        <section className="ss-settings-card">
+    <AppLayout title="Settings">
+        <Card className="ss-settings-card">
           <h2>Profile</h2>
           <p className="ss-settings-subtitle">You can update your name and email at any time.</p>
 
@@ -179,9 +172,9 @@ export default function SupportStaffSettingsPage() {
               {isSubmitting ? "Saving..." : "Save Profile"}
             </button>
           </form>
-        </section>
+        </Card>
 
-        <section className="ss-settings-card">
+        <Card className="ss-settings-card">
           <h2>Change Password</h2>
           <p className="ss-settings-subtitle">Enter your current password and choose a new one.</p>
 
@@ -242,8 +235,7 @@ export default function SupportStaffSettingsPage() {
               {isChangingPassword ? "Changing password..." : "Change Password"}
             </button>
           </form>
-        </section>
-      </div>
-    </main>
+        </Card>
+    </AppLayout>
   );
 }

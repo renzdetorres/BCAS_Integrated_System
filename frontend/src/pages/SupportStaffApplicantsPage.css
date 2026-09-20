@@ -1,126 +1,43 @@
-.ss-applicants-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  background: #f4f6f8;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  padding: 24px;
-}
-
-.ss-applicants-shell {
-  width: 100%;
-  max-width: 720px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 24px;
-}
-
-.ss-applicants-back-link {
-  display: inline-block;
-  color: #2f6fed;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.ss-applicants-shell h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: #1a2332;
-}
-
 .ss-applicants-subtitle {
-  margin: 0;
-  color: #5c6b7a;
+  margin: 0 0 20px;
+  color: var(--color-text-secondary);
   font-size: 0.85rem;
-}
-
-.ss-applicants-card {
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  padding: 32px;
 }
 
 .form-error {
-  color: #c0392b;
-  background: #fdecea;
-  border-radius: 8px;
+  color: var(--color-status-red-text);
+  background: var(--color-status-red-bg);
+  border-radius: var(--radius-md);
   padding: 10px 12px;
   font-size: 0.85rem;
   margin-bottom: 16px;
 }
 
-.ss-applicants-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.85rem;
-}
-
-.ss-applicants-table th,
-.ss-applicants-table td {
-  text-align: left;
-  padding: 10px 8px;
-  border-bottom: 1px solid #e5e9ef;
-}
-
-.ss-applicants-table th {
-  color: #5c6b7a;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.ss-applicants-search {
+.ss-applicants-cell {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.ss-applicants-search input {
-  flex: 1;
-  min-width: 220px;
-  padding: 9px 12px;
-  border: 1px solid #cdd5df;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-family: inherit;
-}
-
-.ss-applicants-search button {
-  padding: 9px 20px;
-  border: none;
-  border-radius: 8px;
-  background: #2f6fed;
-  color: #ffffff;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
+  flex-direction: column;
 }
 
 .ss-applicants-app-type {
   display: block;
   font-weight: 600;
-  color: #1a2332;
+  color: var(--color-text-primary);
 }
 
 .ss-applicants-app-course {
   display: block;
-  color: #5c6b7a;
+  color: var(--color-text-secondary);
   font-size: 0.8rem;
 }
 
 .ss-applicants-no-application {
-  color: #8a97a6;
+  color: var(--color-text-secondary);
   font-size: 0.8rem;
   font-style: italic;
 }
 
 .ss-applicants-verify-link {
-  color: #2f6fed;
+  color: var(--color-primary);
   font-weight: 600;
   font-size: 0.8rem;
   text-decoration: none;
@@ -129,37 +46,4 @@
 
 .ss-applicants-verify-link:hover {
   text-decoration: underline;
-}
-
-.status-badge {
-  display: inline-block;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  padding: 3px 10px;
-  border-radius: 999px;
-  white-space: nowrap;
-  background: #f0f2f5;
-  color: #5c6b7a;
-}
-
-.status-approved {
-  background: #e9f7ef;
-  color: #1e7e34;
-}
-
-.status-rejected {
-  background: #fdecea;
-  color: #c0392b;
-}
-
-.status-submitted {
-  background: #e8f0fe;
-  color: #2f6fed;
-}
-
-.status-underreview {
-  background: #fff4e0;
-  color: #b3791a;
 }

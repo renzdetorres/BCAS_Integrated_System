@@ -1,48 +1,13 @@
-.manage-users-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  background: #f4f6f8;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-  padding: 24px;
-}
-
-.manage-users-card {
-  width: 100%;
-  max-width: 720px;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-  padding: 32px;
-  margin-top: 24px;
-}
-
-.manage-users-back-link {
-  display: inline-block;
-  margin-bottom: 16px;
-  color: #2f6fed;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.manage-users-card h1 {
-  margin: 0 0 8px;
-  font-size: 1.5rem;
-  color: #1a2332;
-}
-
 .manage-users-subtitle {
   margin: 0 0 24px;
-  color: #5c6b7a;
+  color: var(--color-text-secondary);
   font-size: 0.9rem;
 }
 
 .form-error {
-  color: #c0392b;
-  background: #fdecea;
-  border-radius: 8px;
+  color: var(--color-status-red-text);
+  background: var(--color-status-red-bg);
+  border-radius: var(--radius-md);
   padding: 10px 12px;
   font-size: 0.85rem;
   margin-bottom: 16px;
@@ -58,24 +23,14 @@
 .manage-users-table td {
   text-align: left;
   padding: 10px 8px;
-  border-bottom: 1px solid #e5e9ef;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .manage-users-table th {
-  color: #5c6b7a;
+  color: var(--color-text-secondary);
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-}
-
-.status-active {
-  color: #1e7e34;
-  font-weight: 600;
-}
-
-.status-inactive {
-  color: #c0392b;
-  font-weight: 600;
 }
 
 .toggle-activate,
@@ -89,13 +44,13 @@
 }
 
 .toggle-activate {
-  background: #e9f7ef;
-  color: #1e7e34;
+  background: var(--color-status-green-bg);
+  color: var(--color-status-green-text);
 }
 
 .toggle-deactivate {
-  background: #fdecea;
-  color: #c0392b;
+  background: var(--color-status-red-bg);
+  color: var(--color-status-red-text);
 }
 
 .toggle-activate:disabled,
@@ -122,18 +77,18 @@
 }
 
 .edit-trigger {
-  background: #eef2fb;
-  color: #2f6fed;
+  background: var(--color-status-amber-bg);
+  color: var(--color-status-amber-text);
 }
 
 .edit-save {
-  background: #e9f7ef;
-  color: #1e7e34;
+  background: var(--color-status-green-bg);
+  color: var(--color-status-green-text);
 }
 
 .edit-cancel {
-  background: #f0f2f5;
-  color: #5c6b7a;
+  background: var(--color-status-gray-bg);
+  color: var(--color-status-gray-text);
 }
 
 .edit-save:disabled,
@@ -143,14 +98,14 @@
 }
 
 .edit-row {
-  background: #f9fbff;
+  background: var(--color-bg);
 }
 
 .edit-input {
   width: 100%;
   max-width: 140px;
   padding: 6px 8px;
-  border: 1px solid #cdd5e0;
+  border: 1px solid var(--color-border);
   border-radius: 6px;
   font-size: 0.85rem;
   margin-bottom: 4px;

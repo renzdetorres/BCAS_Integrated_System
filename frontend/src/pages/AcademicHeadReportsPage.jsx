@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   exportEnrollmentList,
   exportEnrollmentSummary,
@@ -13,6 +12,9 @@ import {
   getSectionFiles,
 } from "../api/academicHeadReportsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./AcademicHeadReportsPage.css";
 
 const REPORTS = [
@@ -85,7 +87,7 @@ function EnrollmentListReport() {
   }
 
   return (
-    <section className="report-card">
+    <Card className="report-card">
       <div className="report-card-header">
         <h2>Enrollment List</h2>
         <button type="button" onClick={handleExport} disabled={isExporting}>
@@ -144,7 +146,7 @@ function EnrollmentListReport() {
           </tbody>
         </table>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -174,7 +176,7 @@ function EnrollmentSummaryReport() {
   }
 
   return (
-    <section className="report-card">
+    <Card className="report-card">
       <div className="report-card-header">
         <h2>Summary of Enrollment</h2>
         <button type="button" onClick={handleExport} disabled={isExporting}>
@@ -234,7 +236,7 @@ function EnrollmentSummaryReport() {
           </div>
         </>
       ) : null}
-    </section>
+    </Card>
   );
 }
 
@@ -264,7 +266,7 @@ function SectionFilesReport() {
   }
 
   return (
-    <section className="report-card">
+    <Card className="report-card">
       <div className="report-card-header">
         <h2>File per Section</h2>
         <button type="button" onClick={handleExport} disabled={isExporting}>
@@ -310,7 +312,7 @@ function SectionFilesReport() {
           </div>
         ))
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -336,7 +338,7 @@ function ScholarshipApplicantListReport() {
   }, []);
 
   return (
-    <section className="report-card">
+    <Card className="report-card">
       <h2>Scholarship Applicant List</h2>
       <p className="report-subtitle">School-wide - scholarships aren't tied to any department.</p>
 
@@ -389,7 +391,7 @@ function ScholarshipApplicantListReport() {
                 <td>{row.scholarshipName}</td>
                 <td>{row.gradeAverage}</td>
                 <td>
-                  <span className={`status-badge status-${row.status.toLowerCase()}`}>{row.status}</span>
+                  <StatusBadge status={row.status} />
                 </td>
                 <td>{formatDate(row.submittedAt)}</td>
               </tr>
@@ -397,7 +399,7 @@ function ScholarshipApplicantListReport() {
           </tbody>
         </table>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -423,7 +425,7 @@ function ScholarshipQualificationReport() {
   }, []);
 
   return (
-    <section className="report-card">
+    <Card className="report-card">
       <h2>Qualified / Not Qualified Applicants</h2>
       <p className="report-subtitle">School-wide - scholarships aren't tied to any department.</p>
 
@@ -468,9 +470,7 @@ function ScholarshipQualificationReport() {
                 </td>
                 <td>{row.scholarshipName}</td>
                 <td>
-                  <span className={row.verdict === "Qualified" ? "status-active" : "status-inactive"}>
-                    {row.verdict === "Qualified" ? "Qualified" : "Not Qualified"}
-                  </span>
+                  <StatusBadge status={row.verdict} />
                 </td>
                 <td>{row.evaluatedByName}</td>
                 <td>{formatDate(row.evaluatedAt)}</td>
@@ -479,7 +479,7 @@ function ScholarshipQualificationReport() {
           </tbody>
         </table>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -505,7 +505,7 @@ function ScholarshipResultsReport() {
   }, []);
 
   return (
-    <section className="report-card">
+    <Card className="report-card">
       <h2>Scholarship Results</h2>
       <p className="report-subtitle">School-wide - scholarships aren't tied to any department.</p>
 
@@ -549,7 +549,7 @@ function ScholarshipResultsReport() {
                 </td>
                 <td>{row.scholarshipName}</td>
                 <td>
-                  <span className={`status-badge status-${row.status.toLowerCase()}`}>{row.status}</span>
+                  <StatusBadge status={row.status} />
                 </td>
                 <td>{formatDate(row.decidedAt ?? row.submittedAt)}</td>
               </tr>
@@ -557,7 +557,7 @@ function ScholarshipResultsReport() {
           </tbody>
         </table>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -577,7 +577,7 @@ function ScholarshipSlotsReport() {
   }, []);
 
   return (
-    <section className="report-card">
+    <Card className="report-card">
       <h2>Scholarship Slot Report</h2>
       <p className="report-subtitle">School-wide - scholarships aren't tied to any department.</p>
 
@@ -609,16 +609,14 @@ function ScholarshipSlotsReport() {
                 <td>{row.remainingSlots}</td>
                 <td>{row.occupiedSlots}</td>
                 <td>
-                  <span className={row.isActive ? "status-active" : "status-inactive"}>
-                    {row.isActive ? "Active" : "Deactivated"}
-                  </span>
+                  <StatusBadge status={row.isActive ? "Active" : "Inactive"} label={row.isActive ? "Active" : "Deactivated"} />
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -638,12 +636,7 @@ export default function AcademicHeadReportsPage() {
   const categories = [...new Set(REPORTS.map((report) => report.category))];
 
   return (
-    <main className="ah-reports-page">
-      <div className="ah-reports-shell">
-        <Link className="ah-reports-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1>Reports</h1>
+    <AppLayout title="Reports">
         <p className="ah-reports-subtitle">
           Admission reports are scoped to your assigned department. Scholarship reports are school-wide, since
           scholarships aren't tied to any department.
@@ -670,7 +663,6 @@ export default function AcademicHeadReportsPage() {
         </nav>
 
         <ActiveComponent />
-      </div>
-    </main>
+    </AppLayout>
   );
 }

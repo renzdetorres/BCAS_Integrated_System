@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { searchApplications } from "../api/adminApplicationsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
+import DataTable from "../components/ui/DataTable.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./AdminArchivePage.css";
 
 const initialFilters = { search: "", category: "", program: "" };
@@ -15,8 +19,8 @@ function formatDate(isoDateTime) {
 }
 
 export default function AdminArchivePage() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState(initialFilters);
-  const [appliedFilters, setAppliedFilters] = useState(initialFilters);
   const [applications, setApplications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -35,66 +39,58 @@ export default function AdminArchivePage() {
   }, []);
 
   useEffect(() => {
-    loadArchivedApplications(appliedFilters);
-  }, [appliedFilters, loadArchivedApplications]);
+    const timeout = setTimeout(() => loadArchivedApplications(filters), 300);
+    return () => clearTimeout(timeout);
+  }, [filters, loadArchivedApplications]);
 
-  function handleFilterChange(event) {
-    const { name, value } = event.target;
-    setFilters((prev) => ({ ...prev, [name]: value }));
-  }
-
-  function handleSubmit(event) {
-    event.preventDefault();
-    setAppliedFilters(filters);
-  }
-
-  function handleClear() {
-    setFilters(initialFilters);
-    setAppliedFilters(initialFilters);
-  }
+  const columns = [
+    {
+      key: "applicant",
+      header: "Applicant",
+      accessor: (row) => row.applicantName,
+      sortable: true,
+      render: (row) => (
+        <div className="admin-archive-cell">
+          <span className="admin-archive-name">{row.applicantName}</span>
+          <span className="admin-archive-email">{row.applicantEmail}</span>
+        </div>
+      ),
+    },
+    {
+      key: "category",
+      header: "Type",
+      accessor: (row) => row.category,
+      sortable: true,
+      render: (row) => (
+        <span className={`category-badge category-${row.category.toLowerCase()}`}>{row.category}</span>
+      ),
+    },
+    { key: "program", header: "Program", render: (row) => row.courseAppliedFor ?? row.scholarshipName },
+    {
+      key: "status",
+      header: "Status",
+      accessor: (row) => row.status,
+      sortable: true,
+      render: (row) => <StatusBadge status={row.status} adminContext />,
+    },
+    {
+      key: "archivedAt",
+      header: "Archived",
+      accessor: (row) => row.archivedAt,
+      sortable: true,
+      render: (row) => formatDate(row.archivedAt),
+    },
+    { key: "archiveReason", header: "Reason", render: (row) => row.archiveReason ?? "—" },
+  ];
 
   return (
-    <main className="admin-archive-page">
-      <div className="admin-archive-shell">
-        <Link className="admin-archive-back-link" to="/portal">
-          &larr; Back to dashboard
-        </Link>
-        <h1>Records Archive</h1>
+    <AppLayout title="Records Archive">
+      <Card>
         <p className="admin-archive-subtitle">
           Completed/inactive admission and scholarship applications archived to support the school's document
           disposal process. Nothing here is deleted - every record (and, for an Admission application, its
           documents) remains retrievable for the school's 5-year retention practice.
         </p>
-
-        <form className="admin-archive-filters" onSubmit={handleSubmit}>
-          <div className="filter-row">
-            <input
-              name="search"
-              type="text"
-              placeholder="Search by applicant name or email"
-              value={filters.search}
-              onChange={handleFilterChange}
-            />
-            <input
-              name="program"
-              type="text"
-              placeholder="Program / scholarship"
-              value={filters.program}
-              onChange={handleFilterChange}
-            />
-          </div>
-          <div className="filter-row">
-            <select name="category" value={filters.category} onChange={handleFilterChange}>
-              <option value="">All types</option>
-              <option value="Admission">Admission</option>
-              <option value="Scholarship">Scholarship</option>
-            </select>
-            <button type="submit">Search</button>
-            <button type="button" className="admin-archive-clear" onClick={handleClear}>
-              Clear
-            </button>
-          </div>
-        </form>
 
         {errorMessage && (
           <p className="form-error" role="alert">
@@ -102,50 +98,42 @@ export default function AdminArchivePage() {
           </p>
         )}
 
-        {isLoading ? (
-          <p>Loading...</p>
-        ) : applications.length === 0 ? (
-          <p>No archived records match these filters.</p>
-        ) : (
-          <table className="admin-archive-table">
-            <thead>
-              <tr>
-                <th>Applicant</th>
-                <th>Type</th>
-                <th>Program</th>
-                <th>Status</th>
-                <th>Archived</th>
-                <th>Reason</th>
-              </tr>
-            </thead>
-            <tbody>
-              {applications.map((application) => (
-                <tr key={application.applicationId}>
-                  <td>
-                    <Link className="admin-archive-row-link" to={`/admin/applications/${application.applicationId}`}>
-                      <span className="admin-archive-name">{application.applicantName}</span>
-                      <span className="admin-archive-email">{application.applicantEmail}</span>
-                    </Link>
-                  </td>
-                  <td>
-                    <span className={`category-badge category-${application.category.toLowerCase()}`}>
-                      {application.category}
-                    </span>
-                  </td>
-                  <td>{application.courseAppliedFor ?? application.scholarshipName}</td>
-                  <td>
-                    <span className={`status-badge status-${application.status.toLowerCase()}`}>
-                      {application.status}
-                    </span>
-                  </td>
-                  <td>{formatDate(application.archivedAt)}</td>
-                  <td className="admin-archive-reason">{application.archiveReason ?? "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </main>
+        <div className="admin-archive-extra-filter">
+          <input
+            className="ui-datatable-search"
+            type="text"
+            placeholder="Filter by program / scholarship"
+            value={filters.program}
+            onChange={(event) => setFilters((prev) => ({ ...prev, program: event.target.value }))}
+          />
+        </div>
+
+        <DataTable
+          columns={columns}
+          rows={applications}
+          getRowKey={(row) => row.applicationId}
+          isLoading={isLoading}
+          emptyMessage="No archived records match these filters."
+          onRowClick={(row) => navigate(`/admin/applications/${row.applicationId}`)}
+          search={{
+            value: filters.search,
+            onChange: (value) => setFilters((prev) => ({ ...prev, search: value })),
+            placeholder: "Search by applicant name or email",
+          }}
+          filters={[
+            {
+              key: "category",
+              label: "All types",
+              value: filters.category,
+              onChange: (value) => setFilters((prev) => ({ ...prev, category: value })),
+              options: [
+                { value: "Admission", label: "Admission" },
+                { value: "Scholarship", label: "Scholarship" },
+              ],
+            },
+          ]}
+        />
+      </Card>
+    </AppLayout>
   );
 }
