@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import AppShell from "../components/layout/AppShell.jsx";
-import Card from "../components/ui/Card.jsx";
-import StatusBadge from "../components/ui/StatusBadge.jsx";
-import { inputClasses, primaryButtonClasses } from "../lib/formStyles.js";
+import { Link } from "react-router-dom";
 import { listReservations, recordReservation } from "../api/adminReservationsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import "./AdminReservationsPage.css";
 
 function formatDate(isoDateTime) {
   return new Date(isoDateTime).toLocaleDateString(undefined, {
@@ -44,68 +42,67 @@ function ReservationRow({ reservation, onSaved }) {
   }
 
   return (
-    <div className="rounded-lg border border-slate-100 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-2">
+    <li className="reservation-row">
+      <div className="reservation-row-header">
         <div>
-          <p className="font-semibold text-slate-800">{reservation.applicantName}</p>
-          <p className="text-xs text-slate-400">{reservation.applicantEmail}</p>
+          <span className="reservation-applicant-name">{reservation.applicantName}</span>
+          <span className="reservation-applicant-email">{reservation.applicantEmail}</span>
         </div>
-        <StatusBadge status={reservation.isReserved ? "Reserved" : "Unreserved"} />
+        <span className={reservation.isReserved ? "status-active" : "status-inactive"}>
+          {reservation.isReserved ? "Reserved" : "Unreserved"}
+        </span>
       </div>
-      <p className="mt-2 text-sm text-slate-500">
-        {reservation.applicationType} · {reservation.courseAppliedFor} · Submitted {formatDate(reservation.submittedAt)}
+      <p className="reservation-meta">
+        {reservation.applicationType} &middot; {reservation.courseAppliedFor} &middot; Submitted{" "}
+        {formatDate(reservation.submittedAt)}
       </p>
 
       {reservation.recordedAt && (
-        <p className="mt-1 text-xs text-slate-400">
-          {reservation.reservationFee != null && <>Fee ₱{reservation.reservationFee.toFixed(2)} · </>}
+        <p className="reservation-recorded">
+          {reservation.reservationFee != null && <>Fee &#8369;{reservation.reservationFee.toFixed(2)} &middot; </>}
           Last recorded {formatDateTime(reservation.recordedAt)}
           {reservation.recordedByName && <> by {reservation.recordedByName}</>}
         </p>
       )}
 
       {error && (
-        <p className="mt-2 text-sm font-medium text-status-red" role="alert">
+        <p className="form-error" role="alert">
           {error}
         </p>
       )}
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <div className="flex overflow-hidden rounded-lg border border-slate-300" role="radiogroup" aria-label="Reservation status">
+      <div className="reservation-form">
+        <div className="reservation-toggle-group" role="radiogroup" aria-label="Reservation status">
           <button
             type="button"
+            className={isReserved ? "toggle-option toggle-option-selected" : "toggle-option"}
             aria-pressed={isReserved}
             onClick={() => setIsReserved(true)}
-            className={`px-3 py-1.5 text-sm font-semibold ${
-              isReserved ? "bg-forest text-white" : "bg-white text-slate-600 hover:bg-slate-50"
-            }`}
           >
             Reserved
           </button>
           <button
             type="button"
+            className={!isReserved ? "toggle-option toggle-option-selected" : "toggle-option"}
             aria-pressed={!isReserved}
             onClick={() => setIsReserved(false)}
-            className={`border-l border-slate-300 px-3 py-1.5 text-sm font-semibold ${
-              !isReserved ? "bg-forest text-white" : "bg-white text-slate-600 hover:bg-slate-50"
-            }`}
           >
             Unreserved
           </button>
         </div>
         <input
           type="text"
+          className="reservation-remarks-input"
           placeholder="Remarks (optional, e.g. receipt number)"
           maxLength={500}
-          className={`${inputClasses} max-w-xs`}
           value={remarks}
           onChange={(event) => setRemarks(event.target.value)}
         />
-        <button type="button" onClick={handleSave} disabled={isSaving} className={primaryButtonClasses}>
+        <button type="button" className="reservation-save" onClick={handleSave} disabled={isSaving}>
           {isSaving ? "Saving..." : "Save"}
         </button>
       </div>
-    </div>
+    </li>
   );
 }
 
@@ -139,56 +136,67 @@ export default function AdminReservationsPage() {
   const reserved = reservations.filter((r) => r.isReserved);
 
   return (
-    <AppShell>
-      <div>
-        <h1 className="text-2xl font-extrabold text-slate-900">Reservations</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Record whether an approved applicant has reserved their slot. This only tracks status recorded by staff —
+    <main className="admin-reservations-page">
+      <div className="admin-reservations-shell">
+        <Link className="admin-reservations-back-link" to="/portal">
+          &larr; Back to dashboard
+        </Link>
+        <h1>Reservations</h1>
+        <p className="admin-reservations-subtitle">
+          Record whether an approved applicant has reserved their slot. This only tracks status recorded by staff -
           it never processes the reservation fee itself (see Admin Settings for the online-payment toggle).
         </p>
+
+        {loadError && (
+          <p className="form-error" role="alert">
+            {loadError}
+          </p>
+        )}
+
+        {isLoading ? (
+          <p>Loading...</p>
+        ) : reservations.length === 0 ? (
+          <section className="admin-reservations-card">
+            <p>No approved admission applications yet.</p>
+          </section>
+        ) : (
+          <>
+            <section className="admin-reservations-card">
+              <h2>Unreserved ({unreserved.length})</h2>
+              {unreserved.length === 0 ? (
+                <p>Every approved applicant has reserved their slot.</p>
+              ) : (
+                <ul className="reservation-list">
+                  {unreserved.map((reservation) => (
+                    <ReservationRow
+                      key={reservation.applicationId}
+                      reservation={reservation}
+                      onSaved={handleSaved}
+                    />
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <section className="admin-reservations-card">
+              <h2>Reserved ({reserved.length})</h2>
+              {reserved.length === 0 ? (
+                <p>No reservations recorded yet.</p>
+              ) : (
+                <ul className="reservation-list">
+                  {reserved.map((reservation) => (
+                    <ReservationRow
+                      key={reservation.applicationId}
+                      reservation={reservation}
+                      onSaved={handleSaved}
+                    />
+                  ))}
+                </ul>
+              )}
+            </section>
+          </>
+        )}
       </div>
-
-      {loadError && (
-        <p className="mt-4 text-sm font-medium text-status-red" role="alert">
-          {loadError}
-        </p>
-      )}
-
-      {isLoading ? (
-        <p className="mt-6 text-sm text-slate-400">Loading...</p>
-      ) : reservations.length === 0 ? (
-        <Card className="mt-6">
-          <p className="text-sm text-slate-400">No approved admission applications yet.</p>
-        </Card>
-      ) : (
-        <>
-          <Card className="mt-6">
-            <h2 className="font-bold text-slate-900">Unreserved ({unreserved.length})</h2>
-            {unreserved.length === 0 ? (
-              <p className="mt-2 text-sm text-slate-400">Every approved applicant has reserved their slot.</p>
-            ) : (
-              <div className="mt-4 space-y-3">
-                {unreserved.map((reservation) => (
-                  <ReservationRow key={reservation.applicationId} reservation={reservation} onSaved={handleSaved} />
-                ))}
-              </div>
-            )}
-          </Card>
-
-          <Card className="mt-6">
-            <h2 className="font-bold text-slate-900">Reserved ({reserved.length})</h2>
-            {reserved.length === 0 ? (
-              <p className="mt-2 text-sm text-slate-400">No reservations recorded yet.</p>
-            ) : (
-              <div className="mt-4 space-y-3">
-                {reserved.map((reservation) => (
-                  <ReservationRow key={reservation.applicationId} reservation={reservation} onSaved={handleSaved} />
-                ))}
-              </div>
-            )}
-          </Card>
-        </>
-      )}
-    </AppShell>
+    </main>
   );
 }

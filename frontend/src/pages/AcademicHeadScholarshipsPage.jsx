@@ -1,11 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Layers, CheckCircle2, Circle } from "lucide-react";
-import AppShell from "../components/layout/AppShell.jsx";
-import Card from "../components/ui/Card.jsx";
-import StatCard from "../components/ui/StatCard.jsx";
-import ProgressBar from "../components/ui/ProgressBar.jsx";
-import Modal from "../components/ui/Modal.jsx";
-import { inputClasses, labelClasses, primaryButtonClasses, outlineButtonClasses } from "../lib/formStyles.js";
+import { Link } from "react-router-dom";
 import {
   createScholarship,
   listScholarships,
@@ -13,8 +7,10 @@ import {
   updateScholarship,
 } from "../api/academicHeadScholarshipsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import "./AcademicHeadScholarshipsPage.css";
 
-const initialForm = { name: "", scholarshipType: "", totalSlots: "", minimumGradeAverage: "" };
+const initialCreateForm = { name: "", scholarshipType: "", totalSlots: "", minimumGradeAverage: "" };
+const emptyEditForm = initialCreateForm;
 
 function toRequestBody(form) {
   return {
@@ -32,13 +28,13 @@ export default function AcademicHeadScholarshipsPage() {
   const [isForbidden, setIsForbidden] = useState(false);
   const [pendingToggleId, setPendingToggleId] = useState(null);
 
-  const [isCreateOpen, setCreateOpen] = useState(false);
-  const [createForm, setCreateForm] = useState(initialForm);
+  const [createForm, setCreateForm] = useState(initialCreateForm);
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState(null);
+  const [createdMessage, setCreatedMessage] = useState(null);
 
-  const [editing, setEditing] = useState(null);
-  const [editForm, setEditForm] = useState(initialForm);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState(emptyEditForm);
   const [isSaving, setIsSaving] = useState(false);
   const [editError, setEditError] = useState(null);
 
@@ -64,11 +60,12 @@ export default function AcademicHeadScholarshipsPage() {
   async function handleCreate(event) {
     event.preventDefault();
     setCreateError(null);
+    setCreatedMessage(null);
     setIsCreating(true);
     try {
       await createScholarship(toRequestBody(createForm));
-      setCreateForm(initialForm);
-      setCreateOpen(false);
+      setCreateForm(initialCreateForm);
+      setCreatedMessage("Scholarship created.");
       await loadScholarships();
     } catch (error) {
       setCreateError(error instanceof ApiError ? error.message : "Failed to create the scholarship.");
@@ -79,7 +76,7 @@ export default function AcademicHeadScholarshipsPage() {
 
   function startEdit(scholarship) {
     setEditError(null);
-    setEditing(scholarship);
+    setEditingId(scholarship.scholarshipId);
     setEditForm({
       name: scholarship.name,
       scholarshipType: scholarship.scholarshipType,
@@ -88,14 +85,20 @@ export default function AcademicHeadScholarshipsPage() {
     });
   }
 
-  async function handleEditSave(event) {
-    event.preventDefault();
+  function cancelEdit() {
+    setEditingId(null);
+    setEditForm(emptyEditForm);
+    setEditError(null);
+  }
+
+  async function handleEditSave(scholarshipId) {
     setIsSaving(true);
     setEditError(null);
     try {
-      const updated = await updateScholarship(editing.scholarshipId, toRequestBody(editForm));
+      const updated = await updateScholarship(scholarshipId, toRequestBody(editForm));
       setScholarships((prev) => prev.map((s) => (s.scholarshipId === updated.scholarshipId ? updated : s)));
-      setEditing(null);
+      setEditingId(null);
+      setEditForm(emptyEditForm);
     } catch (error) {
       setEditError(error instanceof ApiError ? error.message : "Failed to update the scholarship.");
     } finally {
@@ -116,254 +119,237 @@ export default function AcademicHeadScholarshipsPage() {
     }
   }
 
-  const totalSlots = scholarships.reduce((sum, s) => sum + s.totalSlots, 0);
-  const usedSlots = scholarships.reduce((sum, s) => sum + s.occupiedSlots, 0);
-
   return (
-    <AppShell>
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-extrabold text-slate-900">Scholarship Slots</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Available if an Admin-Registrar has authorized this area for your role.
-          </p>
-        </div>
-        {!isForbidden && (
-          <button
-            type="button"
-            onClick={() => setCreateOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg bg-forest px-4 py-2.5 text-sm font-semibold text-white hover:bg-forest-dark"
-          >
-            + Add Slot
-          </button>
-        )}
-      </div>
+    <main className="ah-scholarships-page">
+      <div className="ah-scholarships-shell">
+        <Link className="ah-scholarships-back-link" to="/portal">
+          &larr; Back to dashboard
+        </Link>
+        <h1>Scholarship Slots</h1>
 
-      {isForbidden ? (
-        <Card className="mt-6">
-          <p className="text-sm font-medium text-status-red" role="alert">
-            {loadError}
-          </p>
-        </Card>
-      ) : (
-        <>
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <StatCard icon={Layers} label="Total Slots" value={totalSlots} />
-            <StatCard icon={CheckCircle2} label="Slots Used" value={usedSlots} />
-            <StatCard icon={Circle} label="Slots Remaining" value={totalSlots - usedSlots} />
-          </div>
-
-          {loadError && (
-            <p className="mt-4 text-sm font-medium text-status-red" role="alert">
+        {isForbidden ? (
+          <section className="ah-scholarships-card">
+            <p className="form-error" role="alert">
               {loadError}
             </p>
-          )}
+          </section>
+        ) : (
+          <>
+            <section className="ah-scholarships-card">
+              <h2>Add Scholarship</h2>
+              <p className="ah-scholarships-subtitle">
+                Remaining slots start equal to total slots. Deactivated scholarships stop appearing to applicants
+                and can no longer be applied against.
+              </p>
 
-          <div className="mt-6 space-y-3">
-            {isLoading && <p className="text-sm text-slate-400">Loading...</p>}
-            {!isLoading && scholarships.length === 0 && <p className="text-sm text-slate-400">No scholarships yet.</p>}
-            {!isLoading &&
-              scholarships.map((slot) => {
-                const isFull = slot.remainingSlots <= 0;
-                return (
-                  <Card key={slot.scholarshipId}>
-                    <div className="flex flex-wrap items-center justify-between gap-4">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-bold text-slate-900">{slot.name}</p>
-                          {isFull && (
-                            <span className="rounded-full bg-status-redBg px-2.5 py-0.5 text-xs font-bold text-status-red">
-                              FULL
-                            </span>
-                          )}
-                        </div>
-                        <div className="mt-1 flex flex-wrap gap-2">
-                          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500">
-                            {slot.scholarshipType}
-                          </span>
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500">
-                            <span
-                              className={`h-1.5 w-1.5 rounded-full ${slot.isActive ? "bg-status-green" : "bg-status-gray"}`}
+              {createdMessage && (
+                <p className="form-success" role="status">
+                  {createdMessage}
+                </p>
+              )}
+              {createError && (
+                <p className="form-error" role="alert">
+                  {createError}
+                </p>
+              )}
+
+              <form onSubmit={handleCreate} noValidate>
+                <div className="form-row-group">
+                  <div className="form-row">
+                    <label htmlFor="name">Name</label>
+                    <input
+                      id="name"
+                      type="text"
+                      required
+                      value={createForm.name}
+                      onChange={(event) => setCreateForm((prev) => ({ ...prev, name: event.target.value }))}
+                    />
+                  </div>
+                  <div className="form-row">
+                    <label htmlFor="scholarshipType">Type</label>
+                    <input
+                      id="scholarshipType"
+                      type="text"
+                      required
+                      value={createForm.scholarshipType}
+                      onChange={(event) => setCreateForm((prev) => ({ ...prev, scholarshipType: event.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div className="form-row-group">
+                  <div className="form-row">
+                    <label htmlFor="totalSlots">Total Slots</label>
+                    <input
+                      id="totalSlots"
+                      type="number"
+                      min="1"
+                      required
+                      value={createForm.totalSlots}
+                      onChange={(event) => setCreateForm((prev) => ({ ...prev, totalSlots: event.target.value }))}
+                    />
+                  </div>
+                  <div className="form-row">
+                    <label htmlFor="minimumGradeAverage">Minimum Grade Average (optional)</label>
+                    <input
+                      id="minimumGradeAverage"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      value={createForm.minimumGradeAverage}
+                      onChange={(event) =>
+                        setCreateForm((prev) => ({ ...prev, minimumGradeAverage: event.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <button type="submit" disabled={isCreating}>
+                  {isCreating ? "Creating..." : "Add Scholarship"}
+                </button>
+              </form>
+            </section>
+
+            <section className="ah-scholarships-card">
+              <h2>All Scholarships</h2>
+
+              {loadError && (
+                <p className="form-error" role="alert">
+                  {loadError}
+                </p>
+              )}
+
+              {isLoading ? (
+                <p>Loading...</p>
+              ) : scholarships.length === 0 ? (
+                <p>No scholarships yet.</p>
+              ) : (
+                <table className="ah-scholarships-table">
+                  <thead>
+                    <tr>
+                      <th>Name / Type</th>
+                      <th>Total</th>
+                      <th>Remaining</th>
+                      <th>Occupied</th>
+                      <th>Min. Grade</th>
+                      <th>Status</th>
+                      <th aria-hidden="true"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {scholarships.map((scholarship) =>
+                      editingId === scholarship.scholarshipId ? (
+                        <tr key={scholarship.scholarshipId} className="edit-row">
+                          <td>
+                            <input
+                              className="edit-input"
+                              value={editForm.name}
+                              onChange={(event) => setEditForm((prev) => ({ ...prev, name: event.target.value }))}
+                              aria-label="Name"
                             />
-                            {slot.isActive ? "Open" : "Closed"}
-                          </span>
-                          {slot.minimumGradeAverage != null && (
-                            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500">
-                              Min. GWA {slot.minimumGradeAverage}
+                            <input
+                              className="edit-input"
+                              value={editForm.scholarshipType}
+                              onChange={(event) =>
+                                setEditForm((prev) => ({ ...prev, scholarshipType: event.target.value }))
+                              }
+                              aria-label="Type"
+                            />
+                            {editError && (
+                              <p className="form-error edit-row-error" role="alert">
+                                {editError}
+                              </p>
+                            )}
+                          </td>
+                          <td>
+                            <input
+                              className="edit-input edit-input-narrow"
+                              type="number"
+                              min="1"
+                              value={editForm.totalSlots}
+                              onChange={(event) =>
+                                setEditForm((prev) => ({ ...prev, totalSlots: event.target.value }))
+                              }
+                              aria-label="Total slots"
+                            />
+                          </td>
+                          <td>{scholarship.remainingSlots}</td>
+                          <td>{scholarship.occupiedSlots}</td>
+                          <td>
+                            <input
+                              className="edit-input edit-input-narrow"
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.01"
+                              value={editForm.minimumGradeAverage}
+                              onChange={(event) =>
+                                setEditForm((prev) => ({ ...prev, minimumGradeAverage: event.target.value }))
+                              }
+                              aria-label="Minimum grade average"
+                            />
+                          </td>
+                          <td>
+                            <span className={scholarship.isActive ? "status-active" : "status-inactive"}>
+                              {scholarship.isActive ? "Active" : "Deactivated"}
                             </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-6">
-                        <div className="w-40">
-                          <ProgressBar value={slot.occupiedSlots} max={slot.totalSlots} />
-                          <p className="mt-1 text-right text-xs text-slate-400">
-                            {slot.occupiedSlots}/{slot.totalSlots}
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleToggle(slot)}
-                            disabled={pendingToggleId === slot.scholarshipId}
-                            className={outlineButtonClasses}
-                          >
-                            {pendingToggleId === slot.scholarshipId ? "Saving..." : slot.isActive ? "Close" : "Open"}
-                          </button>
-                          <button type="button" onClick={() => startEdit(slot)} className={outlineButtonClasses}>
-                            Edit
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-          </div>
-        </>
-      )}
-
-      {isCreateOpen && (
-        <Modal title="Add Slot" onClose={() => setCreateOpen(false)}>
-          <form onSubmit={handleCreate} className="space-y-4">
-            <div>
-              <label className={labelClasses} htmlFor="name">
-                Slot name
-              </label>
-              <input
-                id="name"
-                className={inputClasses}
-                required
-                value={createForm.name}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, name: e.target.value }))}
-              />
-            </div>
-            <div>
-              <label className={labelClasses} htmlFor="scholarshipType">
-                Category
-              </label>
-              <input
-                id="scholarshipType"
-                className={inputClasses}
-                required
-                placeholder="e.g. Merit-Based"
-                value={createForm.scholarshipType}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, scholarshipType: e.target.value }))}
-              />
-            </div>
-            <div>
-              <label className={labelClasses} htmlFor="totalSlots">
-                Total slots
-              </label>
-              <input
-                id="totalSlots"
-                type="number"
-                min={1}
-                className={inputClasses}
-                required
-                value={createForm.totalSlots}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, totalSlots: e.target.value }))}
-              />
-            </div>
-            <div>
-              <label className={labelClasses} htmlFor="minimumGradeAverage">
-                Minimum grade average (optional)
-              </label>
-              <input
-                id="minimumGradeAverage"
-                type="number"
-                min={0}
-                max={100}
-                step="0.01"
-                className={inputClasses}
-                value={createForm.minimumGradeAverage}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, minimumGradeAverage: e.target.value }))}
-              />
-            </div>
-
-            {createError && (
-              <p className="text-sm font-medium text-status-red" role="alert">
-                {createError}
-              </p>
-            )}
-
-            <button type="submit" disabled={isCreating} className={`${primaryButtonClasses} w-full`}>
-              {isCreating ? "Creating..." : "Add Slot"}
-            </button>
-          </form>
-        </Modal>
-      )}
-
-      {editing && (
-        <Modal title={`Edit ${editing.name}`} onClose={() => setEditing(null)}>
-          <form onSubmit={handleEditSave} className="space-y-4">
-            <div>
-              <label className={labelClasses} htmlFor="editName">
-                Slot name
-              </label>
-              <input
-                id="editName"
-                className={inputClasses}
-                required
-                value={editForm.name}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
-              />
-            </div>
-            <div>
-              <label className={labelClasses} htmlFor="editType">
-                Category
-              </label>
-              <input
-                id="editType"
-                className={inputClasses}
-                required
-                value={editForm.scholarshipType}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, scholarshipType: e.target.value }))}
-              />
-            </div>
-            <div>
-              <label className={labelClasses} htmlFor="editTotalSlots">
-                Total slots
-              </label>
-              <input
-                id="editTotalSlots"
-                type="number"
-                min={1}
-                className={inputClasses}
-                required
-                value={editForm.totalSlots}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, totalSlots: e.target.value }))}
-              />
-            </div>
-            <div>
-              <label className={labelClasses} htmlFor="editMinGrade">
-                Minimum grade average (optional)
-              </label>
-              <input
-                id="editMinGrade"
-                type="number"
-                min={0}
-                max={100}
-                step="0.01"
-                className={inputClasses}
-                value={editForm.minimumGradeAverage}
-                onChange={(e) => setEditForm((prev) => ({ ...prev, minimumGradeAverage: e.target.value }))}
-              />
-            </div>
-
-            {editError && (
-              <p className="text-sm font-medium text-status-red" role="alert">
-                {editError}
-              </p>
-            )}
-
-            <button type="submit" disabled={isSaving} className={`${primaryButtonClasses} w-full`}>
-              {isSaving ? "Saving..." : "Save Changes"}
-            </button>
-          </form>
-        </Modal>
-      )}
-    </AppShell>
+                          </td>
+                          <td className="edit-actions">
+                            <button
+                              type="button"
+                              className="edit-save"
+                              onClick={() => handleEditSave(scholarship.scholarshipId)}
+                              disabled={isSaving}
+                            >
+                              {isSaving ? "Saving..." : "Save"}
+                            </button>
+                            <button type="button" className="edit-cancel" onClick={cancelEdit} disabled={isSaving}>
+                              Cancel
+                            </button>
+                          </td>
+                        </tr>
+                      ) : (
+                        <tr key={scholarship.scholarshipId}>
+                          <td>
+                            <span className="scholarship-name">{scholarship.name}</span>
+                            <span className="scholarship-type">{scholarship.scholarshipType}</span>
+                          </td>
+                          <td>{scholarship.totalSlots}</td>
+                          <td>{scholarship.remainingSlots}</td>
+                          <td>{scholarship.occupiedSlots}</td>
+                          <td>{scholarship.minimumGradeAverage ?? "—"}</td>
+                          <td>
+                            <span className={scholarship.isActive ? "status-active" : "status-inactive"}>
+                              {scholarship.isActive ? "Active" : "Deactivated"}
+                            </span>
+                          </td>
+                          <td className="row-actions">
+                            <button type="button" className="edit-trigger" onClick={() => startEdit(scholarship)}>
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              className={scholarship.isActive ? "toggle-deactivate" : "toggle-activate"}
+                              onClick={() => handleToggle(scholarship)}
+                              disabled={pendingToggleId === scholarship.scholarshipId}
+                            >
+                              {pendingToggleId === scholarship.scholarshipId
+                                ? "Saving..."
+                                : scholarship.isActive
+                                  ? "Deactivate"
+                                  : "Activate"}
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    )}
+                  </tbody>
+                </table>
+              )}
+            </section>
+          </>
+        )}
+      </div>
+    </main>
   );
 }

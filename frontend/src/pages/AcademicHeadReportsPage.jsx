@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import AppShell from "../components/layout/AppShell.jsx";
-import Card from "../components/ui/Card.jsx";
-import StatusBadge from "../components/ui/StatusBadge.jsx";
-import { inputClasses, outlineButtonClasses, primaryButtonClasses } from "../lib/formStyles.js";
+import { Link } from "react-router-dom";
 import {
   exportEnrollmentList,
   exportEnrollmentSummary,
@@ -16,6 +13,7 @@ import {
   getSectionFiles,
 } from "../api/academicHeadReportsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import "./AcademicHeadReportsPage.css";
 
 const REPORTS = [
   { key: "enrollmentList", category: "Admission (your department)", label: "Enrollment List" },
@@ -49,47 +47,9 @@ function useReportError() {
 function ReportError({ message }) {
   if (!message) return null;
   return (
-    <p className="mt-3 text-sm font-medium text-status-red" role="alert">
+    <p className="form-error" role="alert">
       {message}
     </p>
-  );
-}
-
-function ReportTable({ columns, rows, rowKey }) {
-  return (
-    <div className="mt-4 overflow-x-auto">
-      <table className="w-full min-w-max border-collapse text-left text-sm">
-        <thead>
-          <tr className="border-b border-slate-100 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            {columns.map((c) => (
-              <th key={c.header} className="px-3 py-2">
-                {c.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={rowKey(row)} className="border-b border-slate-50 last:border-0">
-              {columns.map((c) => (
-                <td key={c.header} className="px-3 py-3 align-middle text-slate-700">
-                  {c.render(row)}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function ApplicantCell({ name, email }) {
-  return (
-    <div>
-      <span className="block font-semibold text-slate-800">{name}</span>
-      <span className="block text-xs text-slate-400">{email}</span>
-    </div>
   );
 }
 
@@ -107,7 +67,7 @@ function EnrollmentListReport() {
       if (data) setRows(data);
       setIsLoading(false);
     },
-    [runReport]
+    [runReport],
   );
 
   useEffect(() => {
@@ -125,58 +85,66 @@ function EnrollmentListReport() {
   }
 
   return (
-    <Card>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-bold text-slate-900">Enrollment List</h2>
-        <button type="button" onClick={handleExport} disabled={isExporting} className={primaryButtonClasses}>
-          {isExporting ? "Exporting..." : "↓ Export to Excel"}
+    <section className="report-card">
+      <div className="report-card-header">
+        <h2>Enrollment List</h2>
+        <button type="button" onClick={handleExport} disabled={isExporting}>
+          {isExporting ? "Exporting..." : "Export to Excel"}
         </button>
       </div>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="report-subtitle">
         Approved admission applicants in your department who have reserved their slot.
       </p>
 
       <form
-        className="mt-4 flex flex-wrap gap-3"
+        className="report-filters"
         onSubmit={(event) => {
           event.preventDefault();
           load(applicationType);
         }}
       >
-        <select
-          className={`${inputClasses} max-w-xs`}
-          value={applicationType}
-          onChange={(event) => setApplicationType(event.target.value)}
-        >
+        <select value={applicationType} onChange={(event) => setApplicationType(event.target.value)}>
           <option value="">All types</option>
           <option value="NewStudent">New Student</option>
           <option value="Transferee">Transferee</option>
         </select>
-        <button type="submit" className={outlineButtonClasses}>
-          Filter
-        </button>
+        <button type="submit">Filter</button>
       </form>
 
       <ReportError message={errorMessage} />
 
       {isLoading ? (
-        <p className="mt-4 text-sm text-slate-400">Loading...</p>
+        <p>Loading...</p>
       ) : rows.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-400">No enrolled applicants match these filters.</p>
+        <p>No enrolled applicants match these filters.</p>
       ) : (
-        <ReportTable
-          rowKey={(r) => r.applicationId}
-          columns={[
-            { header: "Applicant", render: (r) => <ApplicantCell name={r.applicantName} email={r.applicantEmail} /> },
-            { header: "Type", render: (r) => r.applicationType },
-            { header: "Program", render: (r) => r.courseAppliedFor },
-            { header: "Submitted", render: (r) => formatDate(r.submittedAt) },
-            { header: "Reserved", render: (r) => formatDate(r.reservedAt) },
-          ]}
-          rows={rows}
-        />
+        <table className="report-table">
+          <thead>
+            <tr>
+              <th>Applicant</th>
+              <th>Type</th>
+              <th>Program</th>
+              <th>Submitted</th>
+              <th>Reserved</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.applicationId}>
+                <td>
+                  <span className="report-name">{row.applicantName}</span>
+                  <span className="report-email">{row.applicantEmail}</span>
+                </td>
+                <td>{row.applicationType}</td>
+                <td>{row.courseAppliedFor}</td>
+                <td>{formatDate(row.submittedAt)}</td>
+                <td>{formatDate(row.reservedAt)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
-    </Card>
+    </section>
   );
 }
 
@@ -206,51 +174,67 @@ function EnrollmentSummaryReport() {
   }
 
   return (
-    <Card>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-bold text-slate-900">Summary of Enrollment</h2>
-        <button type="button" onClick={handleExport} disabled={isExporting} className={primaryButtonClasses}>
-          {isExporting ? "Exporting..." : "↓ Export to Excel"}
+    <section className="report-card">
+      <div className="report-card-header">
+        <h2>Summary of Enrollment</h2>
+        <button type="button" onClick={handleExport} disabled={isExporting}>
+          {isExporting ? "Exporting..." : "Export to Excel"}
         </button>
       </div>
-      <p className="mt-1 text-sm text-slate-500">Scoped to your department.</p>
+      <p className="report-subtitle">Scoped to your department.</p>
 
       <ReportError message={errorMessage} />
 
       {isLoading ? (
-        <p className="mt-4 text-sm text-slate-400">Loading...</p>
+        <p>Loading...</p>
       ) : summary ? (
         <>
-          <p className="mt-4 text-sm text-slate-600">
-            Total Enrolled: <strong className="font-bold text-slate-900">{summary.totalEnrolled}</strong>
+          <p className="report-total">
+            Total Enrolled: <strong>{summary.totalEnrolled}</strong>
           </p>
-          <div className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div className="report-summary-columns">
             <div>
-              <h3 className="mb-2 font-semibold text-slate-700">By Program</h3>
-              <ReportTable
-                rowKey={(r) => r.program}
-                columns={[
-                  { header: "Program", render: (r) => r.program },
-                  { header: "Count", render: (r) => r.count },
-                ]}
-                rows={summary.byProgram}
-              />
+              <h3>By Program</h3>
+              <table className="report-table">
+                <thead>
+                  <tr>
+                    <th>Program</th>
+                    <th>Count</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {summary.byProgram.map((entry) => (
+                    <tr key={entry.program}>
+                      <td>{entry.program}</td>
+                      <td>{entry.count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
             <div>
-              <h3 className="mb-2 font-semibold text-slate-700">By Application Type</h3>
-              <ReportTable
-                rowKey={(r) => r.applicationType}
-                columns={[
-                  { header: "Type", render: (r) => r.applicationType },
-                  { header: "Count", render: (r) => r.count },
-                ]}
-                rows={summary.byApplicationType}
-              />
+              <h3>By Application Type</h3>
+              <table className="report-table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Count</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {summary.byApplicationType.map((entry) => (
+                    <tr key={entry.applicationType}>
+                      <td>{entry.applicationType}</td>
+                      <td>{entry.count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </>
       ) : null}
-    </Card>
+    </section>
   );
 }
 
@@ -280,14 +264,14 @@ function SectionFilesReport() {
   }
 
   return (
-    <Card>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-bold text-slate-900">File per Section</h2>
-        <button type="button" onClick={handleExport} disabled={isExporting} className={primaryButtonClasses}>
-          {isExporting ? "Exporting..." : "↓ Export to Excel"}
+    <section className="report-card">
+      <div className="report-card-header">
+        <h2>File per Section</h2>
+        <button type="button" onClick={handleExport} disabled={isExporting}>
+          {isExporting ? "Exporting..." : "Export to Excel"}
         </button>
       </div>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="report-subtitle">
         Enrolled applicants in your department, grouped by their applied-for course, used here as the section
         grouping.
       </p>
@@ -295,26 +279,38 @@ function SectionFilesReport() {
       <ReportError message={errorMessage} />
 
       {isLoading ? (
-        <p className="mt-4 text-sm text-slate-400">Loading...</p>
+        <p>Loading...</p>
       ) : sections.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-400">No enrolled applicants yet.</p>
+        <p>No enrolled applicants yet.</p>
       ) : (
         sections.map((section) => (
-          <div key={section.section} className="mb-6 last:mb-0">
-            <h3 className="mb-2 font-semibold text-slate-700">{section.section}</h3>
-            <ReportTable
-              rowKey={(s) => s.applicationId}
-              columns={[
-                { header: "Applicant", render: (s) => <ApplicantCell name={s.applicantName} email={s.applicantEmail} /> },
-                { header: "Type", render: (s) => s.applicationType },
-                { header: "Submitted", render: (s) => formatDate(s.submittedAt) },
-              ]}
-              rows={section.students}
-            />
+          <div key={section.section} className="report-section-group">
+            <h3>{section.section}</h3>
+            <table className="report-table">
+              <thead>
+                <tr>
+                  <th>Applicant</th>
+                  <th>Type</th>
+                  <th>Submitted</th>
+                </tr>
+              </thead>
+              <tbody>
+                {section.students.map((student) => (
+                  <tr key={student.applicationId}>
+                    <td>
+                      <span className="report-name">{student.applicantName}</span>
+                      <span className="report-email">{student.applicantEmail}</span>
+                    </td>
+                    <td>{student.applicationType}</td>
+                    <td>{formatDate(student.submittedAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         ))
       )}
-    </Card>
+    </section>
   );
 }
 
@@ -331,7 +327,7 @@ function ScholarshipApplicantListReport() {
       if (data) setRows(data);
       setIsLoading(false);
     },
-    [runReport]
+    [runReport],
   );
 
   useEffect(() => {
@@ -340,12 +336,12 @@ function ScholarshipApplicantListReport() {
   }, []);
 
   return (
-    <Card>
-      <h2 className="text-lg font-bold text-slate-900">Scholarship Applicant List</h2>
-      <p className="mt-1 text-sm text-slate-500">School-wide — scholarships aren't tied to any department.</p>
+    <section className="report-card">
+      <h2>Scholarship Applicant List</h2>
+      <p className="report-subtitle">School-wide - scholarships aren't tied to any department.</p>
 
       <form
-        className="mt-4 flex flex-wrap gap-3"
+        className="report-filters"
         onSubmit={(event) => {
           event.preventDefault();
           load(filters);
@@ -354,42 +350,54 @@ function ScholarshipApplicantListReport() {
         <input
           type="text"
           placeholder="Scholarship name"
-          className={`${inputClasses} max-w-xs`}
           value={filters.scholarshipName}
           onChange={(event) => setFilters((prev) => ({ ...prev, scholarshipName: event.target.value }))}
         />
         <input
           type="text"
           placeholder="Status"
-          className={`${inputClasses} max-w-xs`}
           value={filters.status}
           onChange={(event) => setFilters((prev) => ({ ...prev, status: event.target.value }))}
         />
-        <button type="submit" className={outlineButtonClasses}>
-          Filter
-        </button>
+        <button type="submit">Filter</button>
       </form>
 
       <ReportError message={errorMessage} />
 
       {isLoading ? (
-        <p className="mt-4 text-sm text-slate-400">Loading...</p>
+        <p>Loading...</p>
       ) : rows.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-400">No scholarship applications match these filters.</p>
+        <p>No scholarship applications match these filters.</p>
       ) : (
-        <ReportTable
-          rowKey={(r) => r.applicationId}
-          columns={[
-            { header: "Applicant", render: (r) => <ApplicantCell name={r.applicantName} email={r.applicantEmail} /> },
-            { header: "Scholarship", render: (r) => r.scholarshipName },
-            { header: "Grade Avg.", render: (r) => r.gradeAverage },
-            { header: "Status", render: (r) => <StatusBadge status={r.status} /> },
-            { header: "Submitted", render: (r) => formatDate(r.submittedAt) },
-          ]}
-          rows={rows}
-        />
+        <table className="report-table">
+          <thead>
+            <tr>
+              <th>Applicant</th>
+              <th>Scholarship</th>
+              <th>Grade Avg.</th>
+              <th>Status</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.applicationId}>
+                <td>
+                  <span className="report-name">{row.applicantName}</span>
+                  <span className="report-email">{row.applicantEmail}</span>
+                </td>
+                <td>{row.scholarshipName}</td>
+                <td>{row.gradeAverage}</td>
+                <td>
+                  <span className={`status-badge status-${row.status.toLowerCase()}`}>{row.status}</span>
+                </td>
+                <td>{formatDate(row.submittedAt)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
-    </Card>
+    </section>
   );
 }
 
@@ -406,7 +414,7 @@ function ScholarshipQualificationReport() {
       if (data) setRows(data);
       setIsLoading(false);
     },
-    [runReport]
+    [runReport],
   );
 
   useEffect(() => {
@@ -415,47 +423,63 @@ function ScholarshipQualificationReport() {
   }, []);
 
   return (
-    <Card>
-      <h2 className="text-lg font-bold text-slate-900">Qualified / Not Qualified Applicants</h2>
-      <p className="mt-1 text-sm text-slate-500">School-wide — scholarships aren't tied to any department.</p>
+    <section className="report-card">
+      <h2>Qualified / Not Qualified Applicants</h2>
+      <p className="report-subtitle">School-wide - scholarships aren't tied to any department.</p>
 
       <form
-        className="mt-4 flex flex-wrap gap-3"
+        className="report-filters"
         onSubmit={(event) => {
           event.preventDefault();
           load(verdict);
         }}
       >
-        <select className={`${inputClasses} max-w-xs`} value={verdict} onChange={(event) => setVerdict(event.target.value)}>
+        <select value={verdict} onChange={(event) => setVerdict(event.target.value)}>
           <option value="">All verdicts</option>
           <option value="Qualified">Qualified</option>
           <option value="NotQualified">Not Qualified</option>
         </select>
-        <button type="submit" className={outlineButtonClasses}>
-          Filter
-        </button>
+        <button type="submit">Filter</button>
       </form>
 
       <ReportError message={errorMessage} />
 
       {isLoading ? (
-        <p className="mt-4 text-sm text-slate-400">Loading...</p>
+        <p>Loading...</p>
       ) : rows.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-400">No eligibility screenings match this filter.</p>
+        <p>No eligibility screenings match this filter.</p>
       ) : (
-        <ReportTable
-          rowKey={(r) => r.applicationId}
-          columns={[
-            { header: "Applicant", render: (r) => <ApplicantCell name={r.applicantName} email={r.applicantEmail} /> },
-            { header: "Scholarship", render: (r) => r.scholarshipName },
-            { header: "Verdict", render: (r) => <StatusBadge status={r.verdict === "Qualified" ? "Qualified" : "Not Qualified"} /> },
-            { header: "Evaluated By", render: (r) => r.evaluatedByName },
-            { header: "Evaluated", render: (r) => formatDate(r.evaluatedAt) },
-          ]}
-          rows={rows}
-        />
+        <table className="report-table">
+          <thead>
+            <tr>
+              <th>Applicant</th>
+              <th>Scholarship</th>
+              <th>Verdict</th>
+              <th>Evaluated By</th>
+              <th>Evaluated</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.applicationId}>
+                <td>
+                  <span className="report-name">{row.applicantName}</span>
+                  <span className="report-email">{row.applicantEmail}</span>
+                </td>
+                <td>{row.scholarshipName}</td>
+                <td>
+                  <span className={row.verdict === "Qualified" ? "status-active" : "status-inactive"}>
+                    {row.verdict === "Qualified" ? "Qualified" : "Not Qualified"}
+                  </span>
+                </td>
+                <td>{row.evaluatedByName}</td>
+                <td>{formatDate(row.evaluatedAt)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
-    </Card>
+    </section>
   );
 }
 
@@ -472,7 +496,7 @@ function ScholarshipResultsReport() {
       if (data) setRows(data);
       setIsLoading(false);
     },
-    [runReport]
+    [runReport],
   );
 
   useEffect(() => {
@@ -481,46 +505,59 @@ function ScholarshipResultsReport() {
   }, []);
 
   return (
-    <Card>
-      <h2 className="text-lg font-bold text-slate-900">Scholarship Results</h2>
-      <p className="mt-1 text-sm text-slate-500">School-wide — scholarships aren't tied to any department.</p>
+    <section className="report-card">
+      <h2>Scholarship Results</h2>
+      <p className="report-subtitle">School-wide - scholarships aren't tied to any department.</p>
 
       <form
-        className="mt-4 flex flex-wrap gap-3"
+        className="report-filters"
         onSubmit={(event) => {
           event.preventDefault();
           load(decision);
         }}
       >
-        <select className={`${inputClasses} max-w-xs`} value={decision} onChange={(event) => setDecision(event.target.value)}>
+        <select value={decision} onChange={(event) => setDecision(event.target.value)}>
           <option value="">All results</option>
           <option value="Approved">Approved</option>
           <option value="Rejected">Rejected</option>
         </select>
-        <button type="submit" className={outlineButtonClasses}>
-          Filter
-        </button>
+        <button type="submit">Filter</button>
       </form>
 
       <ReportError message={errorMessage} />
 
       {isLoading ? (
-        <p className="mt-4 text-sm text-slate-400">Loading...</p>
+        <p>Loading...</p>
       ) : rows.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-400">No decided scholarship applications match this filter.</p>
+        <p>No decided scholarship applications match this filter.</p>
       ) : (
-        <ReportTable
-          rowKey={(r) => r.applicationId}
-          columns={[
-            { header: "Applicant", render: (r) => <ApplicantCell name={r.applicantName} email={r.applicantEmail} /> },
-            { header: "Scholarship", render: (r) => r.scholarshipName },
-            { header: "Result", render: (r) => <StatusBadge status={r.status} /> },
-            { header: "Decided", render: (r) => formatDate(r.decidedAt ?? r.submittedAt) },
-          ]}
-          rows={rows}
-        />
+        <table className="report-table">
+          <thead>
+            <tr>
+              <th>Applicant</th>
+              <th>Scholarship</th>
+              <th>Result</th>
+              <th>Decided</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.applicationId}>
+                <td>
+                  <span className="report-name">{row.applicantName}</span>
+                  <span className="report-email">{row.applicantEmail}</span>
+                </td>
+                <td>{row.scholarshipName}</td>
+                <td>
+                  <span className={`status-badge status-${row.status.toLowerCase()}`}>{row.status}</span>
+                </td>
+                <td>{formatDate(row.decidedAt ?? row.submittedAt)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
-    </Card>
+    </section>
   );
 }
 
@@ -540,30 +577,48 @@ function ScholarshipSlotsReport() {
   }, []);
 
   return (
-    <Card>
-      <h2 className="text-lg font-bold text-slate-900">Scholarship Slot Report</h2>
-      <p className="mt-1 text-sm text-slate-500">School-wide — scholarships aren't tied to any department.</p>
+    <section className="report-card">
+      <h2>Scholarship Slot Report</h2>
+      <p className="report-subtitle">School-wide - scholarships aren't tied to any department.</p>
 
       <ReportError message={errorMessage} />
 
       {isLoading ? (
-        <p className="mt-4 text-sm text-slate-400">Loading...</p>
+        <p>Loading...</p>
       ) : rows.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-400">No scholarships yet.</p>
+        <p>No scholarships yet.</p>
       ) : (
-        <ReportTable
-          rowKey={(r) => r.scholarshipId}
-          columns={[
-            { header: "Scholarship", render: (r) => <ApplicantCell name={r.name} email={r.scholarshipType} /> },
-            { header: "Total", render: (r) => r.totalSlots },
-            { header: "Remaining", render: (r) => r.remainingSlots },
-            { header: "Occupied", render: (r) => r.occupiedSlots },
-            { header: "Status", render: (r) => <StatusBadge status={r.isActive ? "Active" : "Inactive"} /> },
-          ]}
-          rows={rows}
-        />
+        <table className="report-table">
+          <thead>
+            <tr>
+              <th>Scholarship</th>
+              <th>Total</th>
+              <th>Remaining</th>
+              <th>Occupied</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.scholarshipId}>
+                <td>
+                  <span className="report-name">{row.name}</span>
+                  <span className="report-email">{row.scholarshipType}</span>
+                </td>
+                <td>{row.totalSlots}</td>
+                <td>{row.remainingSlots}</td>
+                <td>{row.occupiedSlots}</td>
+                <td>
+                  <span className={row.isActive ? "status-active" : "status-inactive"}>
+                    {row.isActive ? "Active" : "Deactivated"}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
-    </Card>
+    </section>
   );
 }
 
@@ -583,40 +638,39 @@ export default function AcademicHeadReportsPage() {
   const categories = [...new Set(REPORTS.map((report) => report.category))];
 
   return (
-    <AppShell>
-      <div>
-        <h1 className="text-2xl font-extrabold text-slate-900">Reports</h1>
-        <p className="mt-1 text-sm text-slate-500">
+    <main className="ah-reports-page">
+      <div className="ah-reports-shell">
+        <Link className="ah-reports-back-link" to="/portal">
+          &larr; Back to dashboard
+        </Link>
+        <h1>Reports</h1>
+        <p className="ah-reports-subtitle">
           Admission reports are scoped to your assigned department. Scholarship reports are school-wide, since
           scholarships aren't tied to any department.
         </p>
-      </div>
 
-      <div className="mt-6 flex flex-wrap gap-x-8 gap-y-3">
-        {categories.map((category) => (
-          <div key={category}>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">{category}</p>
-            <div className="flex flex-wrap gap-2">
-              {REPORTS.filter((report) => report.category === category).map((report) => (
-                <button
-                  key={report.key}
-                  type="button"
-                  onClick={() => setActiveReport(report.key)}
-                  className={`rounded-full px-4 py-1.5 text-sm font-semibold ${
-                    report.key === activeReport ? "bg-forest text-white" : "bg-white text-slate-600 hover:bg-slate-100"
-                  }`}
-                >
-                  {report.label}
-                </button>
-              ))}
+        <nav className="ah-reports-nav">
+          {categories.map((category) => (
+            <div key={category} className="ah-reports-nav-group">
+              <span className="ah-reports-nav-label">{category}</span>
+              <div className="ah-reports-nav-buttons">
+                {REPORTS.filter((report) => report.category === category).map((report) => (
+                  <button
+                    key={report.key}
+                    type="button"
+                    className={report.key === activeReport ? "report-tab report-tab-active" : "report-tab"}
+                    onClick={() => setActiveReport(report.key)}
+                  >
+                    {report.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </nav>
 
-      <div className="mt-6">
         <ActiveComponent />
       </div>
-    </AppShell>
+    </main>
   );
 }

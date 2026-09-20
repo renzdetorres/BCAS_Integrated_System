@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import StatusBadge from "../components/ui/StatusBadge.jsx";
-import { inputClasses, labelClasses, primaryButtonClasses } from "../lib/formStyles.js";
 import { getMyExamPermit, getMyRescheduleRequest, submitRescheduleRequest } from "../api/examPermitApi.js";
 import { ApiError } from "../api/apiClient.js";
+import "./ExamPermitPage.css";
 
 function formatDate(isoDate) {
   return new Date(isoDate).toLocaleDateString(undefined, {
@@ -20,19 +19,6 @@ function formatTime(isoTime) {
     hour: "numeric",
     minute: "2-digit",
   });
-}
-
-function Shell({ children }) {
-  return (
-    <main className="min-h-screen bg-page px-4 py-8 sm:px-6">
-      <div className="mx-auto max-w-xl">
-        <Link to="/portal" className="print:hidden inline-block text-sm font-semibold text-forest hover:underline">
-          ← Back to dashboard
-        </Link>
-        {children}
-      </div>
-    </main>
-  );
 }
 
 export default function ExamPermitPage() {
@@ -94,135 +80,141 @@ export default function ExamPermitPage() {
 
   if (isLoading) {
     return (
-      <Shell>
-        <p className="mt-4 text-sm text-slate-400">Loading...</p>
-      </Shell>
+      <main className="exam-permit-page">
+        <div className="exam-permit-shell">
+          <p>Loading...</p>
+        </div>
+      </main>
     );
   }
 
   if (noPermitYet) {
     return (
-      <Shell>
-        <div className="mt-4 rounded-xl bg-white p-6 shadow-card">
-          <h1 className="text-xl font-extrabold text-slate-900">Exam Permit</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            You haven't selected an entrance exam schedule yet.{" "}
-            <Link to="/exam-schedule" className="font-semibold text-forest hover:underline">
-              Choose a schedule
-            </Link>{" "}
-            to have your permit issued.
-          </p>
+      <main className="exam-permit-page">
+        <div className="exam-permit-shell">
+          <Link className="exam-permit-back-link no-print" to="/portal">
+            &larr; Back to dashboard
+          </Link>
+          <section className="exam-permit-card">
+            <h1>Exam Permit</h1>
+            <p>
+              You haven&apos;t selected an entrance exam schedule yet.{" "}
+              <Link to="/exam-schedule">Choose a schedule</Link> to have your permit issued.
+            </p>
+          </section>
         </div>
-      </Shell>
+      </main>
     );
   }
 
   if (permitPending) {
     return (
-      <Shell>
-        <div className="mt-4 rounded-xl bg-white p-6 shadow-card">
-          <h1 className="text-xl font-extrabold text-slate-900">Exam Permit</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Your exam permit hasn't been released yet. The registrar releases it once all of your required documents
-            have been verified — check your{" "}
-            <Link to="/documents" className="font-semibold text-forest hover:underline">
-              Documents
-            </Link>{" "}
-            checklist for status.
-          </p>
+      <main className="exam-permit-page">
+        <div className="exam-permit-shell">
+          <Link className="exam-permit-back-link no-print" to="/portal">
+            &larr; Back to dashboard
+          </Link>
+          <section className="exam-permit-card">
+            <h1>Exam Permit</h1>
+            <p>
+              Your exam permit hasn&apos;t been released yet. The registrar releases it once all of your required
+              documents have been verified - check your <Link to="/documents">Documents</Link> checklist for status.
+            </p>
+          </section>
         </div>
-      </Shell>
+      </main>
     );
   }
 
   return (
-    <Shell>
-      {errorMessage && (
-        <p className="print:hidden mt-4 text-sm font-medium text-status-red" role="alert">
-          {errorMessage}
-        </p>
-      )}
+    <main className="exam-permit-page">
+      <div className="exam-permit-shell">
+        <Link className="exam-permit-back-link no-print" to="/portal">
+          &larr; Back to dashboard
+        </Link>
 
-      {permit && (
-        <div className="mt-4 rounded-xl border-t-4 border-forest bg-white p-8 shadow-card">
-          <p className="text-xs font-semibold uppercase tracking-wide text-forest">BCAS Entrance Exam Permit</p>
-          <p className="mt-1 font-mono text-lg font-bold text-slate-900">{permit.permitNumber}</p>
-
-          <dl className="mt-6 divide-y divide-slate-100">
-            <div className="flex items-center justify-between py-2.5">
-              <dt className="text-sm text-slate-500">Schedule</dt>
-              <dd className="text-sm font-semibold text-slate-800">{permit.dayType}</dd>
-            </div>
-            <div className="flex items-center justify-between py-2.5">
-              <dt className="text-sm text-slate-500">Date</dt>
-              <dd className="text-sm font-semibold text-slate-800">{formatDate(permit.examDate)}</dd>
-            </div>
-            <div className="flex items-center justify-between py-2.5">
-              <dt className="text-sm text-slate-500">Time</dt>
-              <dd className="text-sm font-semibold text-slate-800">{formatTime(permit.examTime)}</dd>
-            </div>
-            <div className="flex items-center justify-between py-2.5">
-              <dt className="text-sm text-slate-500">Venue</dt>
-              <dd className="text-sm font-semibold text-slate-800">{permit.venue}</dd>
-            </div>
-          </dl>
-
-          <button type="button" onClick={() => window.print()} className={`${primaryButtonClasses} print:hidden mt-6`}>
-            Print / Save as PDF
-          </button>
-        </div>
-      )}
-
-      <div className="print:hidden mt-6 rounded-xl bg-white p-6 shadow-card">
-        <h2 className="font-bold text-slate-900">Reschedule Request</h2>
-
-        {rescheduleRequest && (
-          <div className="mt-3">
-            <StatusBadge status={rescheduleRequest.status} />
-            <p className="mt-2 text-sm italic text-slate-600">"{rescheduleRequest.reason}"</p>
-          </div>
-        )}
-
-        {rescheduleRequest?.status === "Pending" && (
-          <p className="mt-3 text-sm text-slate-500">
-            Your request is awaiting review. You'll see an updated permit above once it's approved.
+        {errorMessage && (
+          <p className="form-error no-print" role="alert">
+            {errorMessage}
           </p>
         )}
 
-        {(!rescheduleRequest || rescheduleRequest.status !== "Pending") && (
-          <form onSubmit={handleSubmitReschedule} noValidate className="mt-3 space-y-4">
-            <p className="text-sm text-slate-500">
-              Unable to attend your assigned schedule? Tell us why and we'll review your request.
-            </p>
+        {permit && (
+          <section className="exam-permit-card permit">
+            <p className="permit-eyebrow">BCAS Entrance Exam Permit</p>
+            <p className="permit-number">{permit.permitNumber}</p>
 
-            <div>
-              <label className={labelClasses} htmlFor="reason">
-                Reason
-              </label>
-              <textarea
-                id="reason"
-                name="reason"
-                rows={4}
-                maxLength={500}
-                required
-                className={inputClasses}
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
-              />
-            </div>
+            <dl className="permit-details">
+              <div>
+                <dt>Schedule</dt>
+                <dd>{permit.dayType}</dd>
+              </div>
+              <div>
+                <dt>Date</dt>
+                <dd>{formatDate(permit.examDate)}</dd>
+              </div>
+              <div>
+                <dt>Time</dt>
+                <dd>{formatTime(permit.examTime)}</dd>
+              </div>
+              <div>
+                <dt>Venue</dt>
+                <dd>{permit.venue}</dd>
+              </div>
+            </dl>
 
-            {rescheduleError && (
-              <p className="text-sm font-medium text-status-red" role="alert">
-                {rescheduleError}
-              </p>
-            )}
-
-            <button type="submit" disabled={isSubmitting || reason.trim().length === 0} className={primaryButtonClasses}>
-              {isSubmitting ? "Submitting..." : "Request Reschedule"}
+            <button type="button" className="no-print" onClick={() => window.print()}>
+              Print / Save as PDF
             </button>
-          </form>
+          </section>
         )}
+
+        <section className="exam-permit-card no-print">
+          <h2>Reschedule Request</h2>
+
+          {rescheduleRequest && (
+            <div className="reschedule-status">
+              <span className={`reschedule-badge status-${rescheduleRequest.status.toLowerCase()}`}>
+                {rescheduleRequest.status}
+              </span>
+              <p className="reschedule-reason">&ldquo;{rescheduleRequest.reason}&rdquo;</p>
+            </div>
+          )}
+
+          {rescheduleRequest?.status === "Pending" && (
+            <p>Your request is awaiting review. You&apos;ll see an updated permit above once it&apos;s approved.</p>
+          )}
+
+          {(!rescheduleRequest || rescheduleRequest.status !== "Pending") && (
+            <form onSubmit={handleSubmitReschedule} noValidate>
+              <p>Unable to attend your assigned schedule? Tell us why and we&apos;ll review your request.</p>
+
+              {rescheduleError && (
+                <p className="form-error" role="alert">
+                  {rescheduleError}
+                </p>
+              )}
+
+              <div className="form-row">
+                <label htmlFor="reason">Reason</label>
+                <textarea
+                  id="reason"
+                  name="reason"
+                  rows={4}
+                  maxLength={500}
+                  required
+                  value={reason}
+                  onChange={(event) => setReason(event.target.value)}
+                />
+              </div>
+
+              <button type="submit" disabled={isSubmitting || reason.trim().length === 0}>
+                {isSubmitting ? "Submitting..." : "Request Reschedule"}
+              </button>
+            </form>
+          )}
+        </section>
       </div>
-    </Shell>
+    </main>
   );
 }

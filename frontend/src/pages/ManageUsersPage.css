@@ -1,0 +1,161 @@
+.manage-users-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  background: #f4f6f8;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 24px;
+}
+
+.manage-users-card {
+  width: 100%;
+  max-width: 720px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  padding: 32px;
+  margin-top: 24px;
+}
+
+.manage-users-back-link {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: #2f6fed;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.manage-users-card h1 {
+  margin: 0 0 8px;
+  font-size: 1.5rem;
+  color: #1a2332;
+}
+
+.manage-users-subtitle {
+  margin: 0 0 24px;
+  color: #5c6b7a;
+  font-size: 0.9rem;
+}
+
+.form-error {
+  color: #c0392b;
+  background: #fdecea;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+
+.manage-users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.manage-users-table th,
+.manage-users-table td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid #e5e9ef;
+}
+
+.manage-users-table th {
+  color: #5c6b7a;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.status-active {
+  color: #1e7e34;
+  font-weight: 600;
+}
+
+.status-inactive {
+  color: #c0392b;
+  font-weight: 600;
+}
+
+.toggle-activate,
+.toggle-deactivate {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toggle-activate {
+  background: #e9f7ef;
+  color: #1e7e34;
+}
+
+.toggle-deactivate {
+  background: #fdecea;
+  color: #c0392b;
+}
+
+.toggle-activate:disabled,
+.toggle-deactivate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.row-actions,
+.edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.edit-trigger,
+.edit-save,
+.edit-cancel {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.edit-trigger {
+  background: #eef2fb;
+  color: #2f6fed;
+}
+
+.edit-save {
+  background: #e9f7ef;
+  color: #1e7e34;
+}
+
+.edit-cancel {
+  background: #f0f2f5;
+  color: #5c6b7a;
+}
+
+.edit-save:disabled,
+.edit-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.edit-row {
+  background: #f9fbff;
+}
+
+.edit-input {
+  width: 100%;
+  max-width: 140px;
+  padding: 6px 8px;
+  border: 1px solid #cdd5e0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+}
+
+.edit-row select.edit-input {
+  max-width: 160px;
+}
