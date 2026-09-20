@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, extractErrorMessage } from "./apiClient.js";
+import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
 export const DOCUMENT_TYPE_LABELS = {
   ReportCard: "Report Card",
@@ -17,7 +17,7 @@ export async function getMyDocumentChecklist() {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to load document checklist.";
+    const message = resolveErrorMessage(response, data, "Failed to load document checklist.");
     throw new ApiError(message, response.status);
   }
 
@@ -37,7 +37,7 @@ export async function uploadDocument(documentType, file) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to upload document. Please try again.";
+    const message = resolveErrorMessage(response, data, "Failed to upload document. Please try again.");
     throw new ApiError(message, response.status);
   }
 

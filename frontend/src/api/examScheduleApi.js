@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, extractErrorMessage } from "./apiClient.js";
+import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
 export async function getAvailableExamSchedules() {
   const response = await fetch(`${API_BASE_URL}/api/exam-schedules`, {
@@ -7,7 +7,7 @@ export async function getAvailableExamSchedules() {
   });
 
   if (!response.ok) {
-    throw new ApiError("Failed to load exam schedules.", response.status);
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to load exam schedules."), response.status);
   }
 
   return response.json();
@@ -24,7 +24,7 @@ export async function getMyExamScheduleSelection() {
   }
 
   if (!response.ok) {
-    throw new ApiError("Failed to load your exam schedule.", response.status);
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to load your exam schedule."), response.status);
   }
 
   return response.json();
@@ -41,7 +41,7 @@ export async function selectExamSchedule(examScheduleId) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to select exam schedule. Please try again.";
+    const message = resolveErrorMessage(response, data, "Failed to select exam schedule. Please try again.");
     throw new ApiError(message, response.status);
   }
 

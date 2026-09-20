@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, extractErrorMessage } from "./apiClient.js";
+import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
 export const ADMISSION_STATUSES = ["Submitted", "UnderReview", "Approved", "Rejected"];
 
@@ -67,7 +67,7 @@ export async function searchApplications({ search, status, category, program, ar
   });
 
   if (!response.ok) {
-    throw new ApiError("Failed to load applications.", response.status);
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to load applications."), response.status);
   }
 
   return response.json();
@@ -84,7 +84,7 @@ export async function updateApplicationStatus(applicationId, { category, status,
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to update the application's status. Please try again.";
+    const message = resolveErrorMessage(response, data, "Failed to update the application's status. Please try again.");
     throw new ApiError(message, response.status);
   }
 
@@ -99,7 +99,7 @@ export async function getApplicationStatusHistory(applicationId, category) {
   });
 
   if (!response.ok) {
-    throw new ApiError("Failed to load this application's status history.", response.status);
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to load this application's status history."), response.status);
   }
 
   return response.json();
@@ -116,7 +116,7 @@ export async function archiveApplication(applicationId, { category, reason }) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to archive this application. Please try again.";
+    const message = resolveErrorMessage(response, data, "Failed to archive this application. Please try again.");
     throw new ApiError(message, response.status);
   }
 

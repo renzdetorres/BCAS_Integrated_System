@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, extractErrorMessage } from "./apiClient.js";
+import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
 export const APPLICATION_TYPES = [
   { value: "NewStudent", label: "New Student" },
@@ -12,7 +12,7 @@ export async function getMyAdmissionApplications() {
   });
 
   if (!response.ok) {
-    throw new ApiError("Failed to load applications.", response.status);
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to load applications."), response.status);
   }
 
   return response.json();
@@ -29,7 +29,7 @@ export async function submitAdmissionApplication({ applicationType, courseApplie
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to submit application. Please try again.";
+    const message = resolveErrorMessage(response, data, "Failed to submit application. Please try again.");
     throw new ApiError(message, response.status);
   }
 

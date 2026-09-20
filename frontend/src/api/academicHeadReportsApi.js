@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, extractErrorMessage } from "./apiClient.js";
+import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
 function buildQuery(params) {
   if (!params) return "";
@@ -19,7 +19,7 @@ async function getJson(path, params) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to load this report.";
+    const message = resolveErrorMessage(response, data, "Failed to load this report.");
     throw new ApiError(message, response.status);
   }
 
@@ -34,7 +34,7 @@ async function downloadFile(path, params, fallbackFileName) {
 
   if (!response.ok) {
     const data = await response.json().catch(() => null);
-    const message = extractErrorMessage(data) ?? "Failed to export this report.";
+    const message = resolveErrorMessage(response, data, "Failed to export this report.");
     throw new ApiError(message, response.status);
   }
 

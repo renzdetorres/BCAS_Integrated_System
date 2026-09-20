@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, extractErrorMessage } from "./apiClient.js";
+import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
 export async function listExamPermits() {
   const response = await fetch(`${API_BASE_URL}/api/admin/exam-permits`, {
@@ -7,7 +7,7 @@ export async function listExamPermits() {
   });
 
   if (!response.ok) {
-    throw new ApiError("Failed to load exam permits.", response.status);
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to load exam permits."), response.status);
   }
 
   return response.json();
@@ -22,7 +22,7 @@ export async function releaseExamPermit(userId) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to release the exam permit. Please try again.";
+    const message = resolveErrorMessage(response, data, "Failed to release the exam permit. Please try again.");
     throw new ApiError(message, response.status);
   }
 

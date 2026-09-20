@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError } from "./apiClient.js";
+import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
 export async function getMyApplicationHistory() {
   const response = await fetch(`${API_BASE_URL}/api/applications/history`, {
@@ -7,7 +7,7 @@ export async function getMyApplicationHistory() {
   });
 
   if (!response.ok) {
-    throw new ApiError("Failed to load application history.", response.status);
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to load application history."), response.status);
   }
 
   return response.json();

@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, extractErrorMessage } from "./apiClient.js";
+import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
 export async function listScholarships() {
   const response = await fetch(`${API_BASE_URL}/api/academic-head/scholarships`, {
@@ -9,7 +9,7 @@ export async function listScholarships() {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to load scholarships.";
+    const message = resolveErrorMessage(response, data, "Failed to load scholarships.");
     throw new ApiError(message, response.status);
   }
 
@@ -27,7 +27,7 @@ export async function createScholarship({ name, scholarshipType, totalSlots, min
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to create the scholarship. Please try again.";
+    const message = resolveErrorMessage(response, data, "Failed to create the scholarship. Please try again.");
     throw new ApiError(message, response.status);
   }
 
@@ -45,7 +45,7 @@ export async function updateScholarship(scholarshipId, { name, scholarshipType, 
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to update the scholarship. Please try again.";
+    const message = resolveErrorMessage(response, data, "Failed to update the scholarship. Please try again.");
     throw new ApiError(message, response.status);
   }
 
@@ -63,7 +63,7 @@ export async function setScholarshipActiveStatus(scholarshipId, isActive) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to update the scholarship's status. Please try again.";
+    const message = resolveErrorMessage(response, data, "Failed to update the scholarship's status. Please try again.");
     throw new ApiError(message, response.status);
   }
 

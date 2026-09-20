@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, extractErrorMessage } from "./apiClient.js";
+import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
 export const STAFF_ROLES = ["Evaluator", "SupportStaff", "AcademicHead", "Admin"];
 export const ALL_ROLES = ["Applicant", ...STAFF_ROLES];
@@ -16,7 +16,7 @@ export async function provisionStaff({ firstName, lastName, email, password, rol
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to create staff account. Please try again.";
+    const message = resolveErrorMessage(response, data, "Failed to create staff account. Please try again.");
     throw new ApiError(message, response.status);
   }
 
@@ -30,7 +30,7 @@ export async function listUsers() {
   });
 
   if (!response.ok) {
-    throw new ApiError("Failed to load accounts.", response.status);
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to load accounts."), response.status);
   }
 
   return response.json();
@@ -47,7 +47,7 @@ export async function updateUser(userId, { firstName, lastName, email, role, dep
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to update account. Please try again.";
+    const message = resolveErrorMessage(response, data, "Failed to update account. Please try again.");
     throw new ApiError(message, response.status);
   }
 
@@ -65,7 +65,7 @@ export async function setUserActiveStatus(userId, isActive) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to update account status. Please try again.";
+    const message = resolveErrorMessage(response, data, "Failed to update account status. Please try again.");
     throw new ApiError(message, response.status);
   }
 

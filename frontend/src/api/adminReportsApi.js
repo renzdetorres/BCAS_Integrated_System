@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, extractErrorMessage } from "./apiClient.js";
+import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
 function buildQuery(params) {
   if (!params) return "";
@@ -17,7 +17,7 @@ async function getJson(path, params) {
   });
 
   if (!response.ok) {
-    throw new ApiError("Failed to load this report.", response.status);
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to load this report."), response.status);
   }
 
   return response.json();
@@ -30,7 +30,7 @@ async function downloadFile(path, params, fallbackFileName) {
   });
 
   if (!response.ok) {
-    throw new ApiError("Failed to export this report.", response.status);
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to export this report."), response.status);
   }
 
   const blob = await response.blob();
@@ -73,7 +73,7 @@ export async function getScholarshipContract(applicationId) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to load this scholarship contract.";
+    const message = resolveErrorMessage(response, data, "Failed to load this scholarship contract.");
     throw new ApiError(message, response.status);
   }
 

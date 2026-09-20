@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, extractErrorMessage } from "./apiClient.js";
+import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
 /** Returns the applicant's saved profile, or null if setup hasn't been completed yet. */
 export async function getMyProfile() {
@@ -12,7 +12,7 @@ export async function getMyProfile() {
   }
 
   if (!response.ok) {
-    throw new ApiError("Failed to load profile.", response.status);
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to load profile."), response.status);
   }
 
   return response.json();
@@ -29,7 +29,7 @@ export async function saveMyProfile(profile) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to save profile. Please try again.";
+    const message = resolveErrorMessage(response, data, "Failed to save profile. Please try again.");
     throw new ApiError(message, response.status);
   }
 
@@ -49,6 +49,6 @@ export async function changeMyPassword({ currentPassword, newPassword }) {
   }
 
   const data = await response.json().catch(() => null);
-  const message = extractErrorMessage(data) ?? "Failed to change password. Please try again.";
+  const message = resolveErrorMessage(response, data, "Failed to change password. Please try again.");
   throw new ApiError(message, response.status);
 }

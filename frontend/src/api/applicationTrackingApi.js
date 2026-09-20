@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError } from "./apiClient.js";
+import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
 export async function getMyApplicationTracking() {
   const response = await fetch(`${API_BASE_URL}/api/application-tracking`, {
@@ -7,7 +7,7 @@ export async function getMyApplicationTracking() {
   });
 
   if (!response.ok) {
-    throw new ApiError("Failed to load application tracking.", response.status);
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to load application tracking."), response.status);
   }
 
   return response.json();

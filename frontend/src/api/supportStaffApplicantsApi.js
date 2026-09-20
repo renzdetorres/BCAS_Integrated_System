@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, extractErrorMessage } from "./apiClient.js";
+import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
 export async function searchApplicants({ search } = {}) {
   const params = new URLSearchParams();
@@ -13,7 +13,7 @@ export async function searchApplicants({ search } = {}) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to load applicant records.";
+    const message = resolveErrorMessage(response, data, "Failed to load applicant records.");
     throw new ApiError(message, response.status);
   }
 

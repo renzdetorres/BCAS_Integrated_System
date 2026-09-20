@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError } from "./apiClient.js";
+import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
 export const DOCUMENT_TYPES = ["ReportCard", "IdPicture", "PSA", "TOR", "SF10"];
 
@@ -17,7 +17,7 @@ export async function searchDocuments({ search, status, documentType } = {}) {
   });
 
   if (!response.ok) {
-    throw new ApiError("Failed to load documents.", response.status);
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to load documents."), response.status);
   }
 
   return response.json();

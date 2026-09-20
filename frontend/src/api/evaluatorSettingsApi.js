@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, extractErrorMessage } from "./apiClient.js";
+import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
 export async function getMyEvaluatorProfile() {
   const response = await fetch(`${API_BASE_URL}/api/evaluator/settings`, {
@@ -9,7 +9,7 @@ export async function getMyEvaluatorProfile() {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to load your profile.";
+    const message = resolveErrorMessage(response, data, "Failed to load your profile.");
     throw new ApiError(message, response.status);
   }
 
@@ -27,7 +27,7 @@ export async function updateMyEvaluatorProfile({ firstName, lastName, email }) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to save profile. Please try again.";
+    const message = resolveErrorMessage(response, data, "Failed to save profile. Please try again.");
     throw new ApiError(message, response.status);
   }
 
@@ -47,6 +47,6 @@ export async function changeMyEvaluatorPassword({ currentPassword, newPassword }
   }
 
   const data = await response.json().catch(() => null);
-  const message = extractErrorMessage(data) ?? "Failed to change password. Please try again.";
+  const message = resolveErrorMessage(response, data, "Failed to change password. Please try again.");
   throw new ApiError(message, response.status);
 }

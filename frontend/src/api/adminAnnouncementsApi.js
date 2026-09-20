@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, extractErrorMessage } from "./apiClient.js";
+import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
 export async function listAnnouncements() {
   const response = await fetch(`${API_BASE_URL}/api/admin/announcements`, {
@@ -7,7 +7,7 @@ export async function listAnnouncements() {
   });
 
   if (!response.ok) {
-    throw new ApiError("Failed to load announcements.", response.status);
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to load announcements."), response.status);
   }
 
   return response.json();
@@ -24,7 +24,7 @@ export async function createAnnouncement({ category, title, body }) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to create the announcement. Please try again.";
+    const message = resolveErrorMessage(response, data, "Failed to create the announcement. Please try again.");
     throw new ApiError(message, response.status);
   }
 
@@ -42,7 +42,7 @@ export async function setAnnouncementActiveStatus(announcementId, isActive) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to update the announcement's status. Please try again.";
+    const message = resolveErrorMessage(response, data, "Failed to update the announcement's status. Please try again.");
     throw new ApiError(message, response.status);
   }
 

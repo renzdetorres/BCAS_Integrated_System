@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, extractErrorMessage } from "./apiClient.js";
+import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
 export async function getMyNotificationPreferences() {
   const response = await fetch(`${API_BASE_URL}/api/notification-preferences`, {
@@ -7,7 +7,7 @@ export async function getMyNotificationPreferences() {
   });
 
   if (!response.ok) {
-    throw new ApiError("Failed to load notification preferences.", response.status);
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to load notification preferences."), response.status);
   }
 
   return response.json();
@@ -27,7 +27,7 @@ export async function setMyNotificationPreference(notificationType, isEnabled) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to update notification preference. Please try again.";
+    const message = resolveErrorMessage(response, data, "Failed to update notification preference. Please try again.");
     throw new ApiError(message, response.status);
   }
 

@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, extractErrorMessage } from "./apiClient.js";
+import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
 export const FINAL_DECISIONS = [
   { value: "Approved", label: "Approved" },
@@ -12,7 +12,7 @@ export async function getApplicationsReadyForDecision() {
   });
 
   if (!response.ok) {
-    throw new ApiError("Failed to load applications.", response.status);
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to load applications."), response.status);
   }
 
   return response.json();
@@ -30,7 +30,7 @@ export async function getScholarshipApplicationDetail(applicationId) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to load application.";
+    const message = resolveErrorMessage(response, data, "Failed to load application.");
     throw new ApiError(message, response.status);
   }
 
@@ -51,7 +51,7 @@ export async function recordFinalDecision(applicationId, { decision, remarks }) 
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to record the decision. Please try again.";
+    const message = resolveErrorMessage(response, data, "Failed to record the decision. Please try again.");
     throw new ApiError(message, response.status);
   }
 

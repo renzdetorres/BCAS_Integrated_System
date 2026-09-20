@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiError, extractErrorMessage } from "./apiClient.js";
+import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
 export const DOCUMENT_TYPES = ["ReportCard", "IdPicture", "PSA", "TOR", "SF10"];
 
@@ -11,7 +11,7 @@ export async function listPendingAndFlaggedDocuments() {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to load documents.";
+    const message = resolveErrorMessage(response, data, "Failed to load documents.");
     throw new ApiError(message, response.status);
   }
 
@@ -30,7 +30,7 @@ export async function listDocumentsForApplicant(applicantUserId) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to load documents.";
+    const message = resolveErrorMessage(response, data, "Failed to load documents.");
     throw new ApiError(message, response.status);
   }
 
@@ -51,7 +51,7 @@ export async function searchArchivedDocuments({ search, documentType } = {}) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to load the document archive.";
+    const message = resolveErrorMessage(response, data, "Failed to load the document archive.");
     throw new ApiError(message, response.status);
   }
 
@@ -69,7 +69,7 @@ export async function reviewDocument(documentId, { status, reason }) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Failed to review the document. Please try again.";
+    const message = resolveErrorMessage(response, data, "Failed to review the document. Please try again.");
     throw new ApiError(message, response.status);
   }
 
