@@ -3,6 +3,10 @@ import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 export const STAFF_ROLES = ["Evaluator", "SupportStaff", "AcademicHead", "Admin"];
 export const ALL_ROLES = ["Applicant", ...STAFF_ROLES];
 
+// The department/level an Academic Head oversees - scopes which admission
+// reports they can see (see AcademicHeadReportsService).
+export const DEPARTMENT_OPTIONS = ["College", "Senior High School", "High School", "Elementary"];
+
 export async function provisionStaff({ firstName, lastName, email, password, role, department }) {
   const response = await fetch(`${API_BASE_URL}/api/admin/staff`, {
     method: "POST",

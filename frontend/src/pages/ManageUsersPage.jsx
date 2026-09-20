@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ALL_ROLES, listUsers, setUserActiveStatus, updateUser } from "../api/adminApi.js";
+import { ALL_ROLES, DEPARTMENT_OPTIONS, listUsers, setUserActiveStatus, updateUser } from "../api/adminApi.js";
 import { ApiError } from "../api/apiClient.js";
 import { useSession } from "../context/SessionContext.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
@@ -166,14 +166,20 @@ export default function ManageUsersPage() {
                     </td>
                     <td>
                       {editForm.role === "AcademicHead" ? (
-                        <input
+                        <select
                           className="edit-input"
                           name="department"
                           value={editForm.department}
                           onChange={handleEditChange}
                           aria-label="Department"
-                          placeholder="e.g. BSIT"
-                        />
+                        >
+                          <option value="">Select a department</option>
+                          {DEPARTMENT_OPTIONS.map((department) => (
+                            <option key={department} value={department}>
+                              {department}
+                            </option>
+                          ))}
+                        </select>
                       ) : (
                         "—"
                       )}

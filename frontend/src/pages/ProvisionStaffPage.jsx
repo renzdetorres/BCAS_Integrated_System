@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { provisionStaff, STAFF_ROLES } from "../api/adminApi.js";
+import { provisionStaff, STAFF_ROLES, DEPARTMENT_OPTIONS } from "../api/adminApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
@@ -128,14 +128,14 @@ export default function ProvisionStaffPage() {
           {form.role === "AcademicHead" && (
             <div className="form-row">
               <label htmlFor="department">Department</label>
-              <input
-                id="department"
-                name="department"
-                type="text"
-                placeholder="e.g. BSIT"
-                value={form.department}
-                onChange={handleChange}
-              />
+              <select id="department" name="department" value={form.department} onChange={handleChange}>
+                <option value="">Select a department</option>
+                {DEPARTMENT_OPTIONS.map((department) => (
+                  <option key={department} value={department}>
+                    {department}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 
