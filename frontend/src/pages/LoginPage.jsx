@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { loginUser, ApiError } from "../api/authApi.js";
 import { useSession } from "../context/SessionContext.jsx";
+import AuthShowcase from "../components/auth/AuthShowcase.jsx";
+import Icon from "../components/ui/Icon.jsx";
+import "../components/auth/AuthForm.css";
 import "./LoginPage.css";
 
 const initialForm = { email: "", password: "" };
@@ -10,6 +13,7 @@ export default function LoginPage() {
   const [form, setForm] = useState(initialForm);
   const [errorMessage, setErrorMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { session, isLoading, setSession } = useSession();
   const navigate = useNavigate();
 
@@ -47,63 +51,86 @@ export default function LoginPage() {
 
   if (isLoading || session) {
     return (
-      <main className="login-page">
-        <div style={{ color: "#ffffff" }}>Loading...</div>
+      <main className="auth-loading-page">
+        <span className="auth-spinner" aria-hidden="true" />
+        <span>Loading...</span>
       </main>
     );
   }
 
   return (
-    <main className="login-page">
-      <div className="auth-brand">
-        <span className="auth-brand-mark">BCAS</span>
-        <span className="auth-brand-subtitle">Integrated Scholarship &amp; Admissions System</span>
-      </div>
-      <div className="login-card">
-        <h1>Log In</h1>
-        <p className="login-subtitle">Sign in to continue to your application.</p>
+    <main className="auth-page">
+      <div className="auth-shell">
+        <AuthShowcase />
 
-        <form onSubmit={handleSubmit} noValidate>
-          <div className="form-row">
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={form.email}
-              onChange={handleChange}
-            />
-          </div>
+        <section className="auth-form-side">
+          <div className="auth-form-panel">
+            <div className="auth-mobile-brand">
+              <Icon name="graduation-cap" size={22} />
+              BCAS
+            </div>
 
-          <div className="form-row">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={form.password}
-              onChange={handleChange}
-            />
-          </div>
+            <h1>Welcome back</h1>
+            <p className="auth-subtitle">Sign in to continue to your application.</p>
 
-          {errorMessage && (
-            <p className="form-error" role="alert">
-              {errorMessage}
+            <form onSubmit={handleSubmit} noValidate>
+              <div className="input-group">
+                <label htmlFor="email">Email</label>
+                <div className="input-with-icon">
+                  <Icon name="mail" size={18} className="input-icon" />
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={form.email}
+                    onChange={handleChange}
+                  />
+                </div>
+              </div>
+
+              <div className="input-group">
+                <label htmlFor="password">Password</label>
+                <div className="input-with-icon has-toggle">
+                  <Icon name="lock" size={18} className="input-icon" />
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    required
+                    value={form.password}
+                    onChange={handleChange}
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowPassword((show) => !show)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    <Icon name={showPassword ? "eye-off" : "eye"} size={18} />
+                  </button>
+                </div>
+              </div>
+
+              {errorMessage && (
+                <p className="form-error" role="alert">
+                  {errorMessage}
+                </p>
+              )}
+
+              <button type="submit" className="auth-submit" disabled={isSubmitting}>
+                {isSubmitting && <span className="auth-spinner" aria-hidden="true" />}
+                {isSubmitting ? "Signing in..." : "Log In"}
+              </button>
+            </form>
+
+            <p className="auth-switch">
+              Need an account? <Link to="/register">Register</Link>
             </p>
-          )}
-
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Signing in..." : "Log In"}
-          </button>
-        </form>
-
-        <Link className="login-link" to="/register">
-          Need an account? Register
-        </Link>
+          </div>
+        </section>
       </div>
     </main>
   );
