@@ -48,17 +48,15 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore
-        run: dotnet restore backend/BCAS.Api/BCAS.Api.csproj
-
-      - name: Build
-        run: dotnet build backend/BCAS.Api/BCAS.Api.csproj --configuration Release --no-restore
-
+      # A single publish step (rather than separate restore/build/publish)
+      # so the restore is done for the win-x86 target from the start - a
+      # restore with no --runtime, followed by a --no-build publish that
+      # asks for one, fails because the earlier restore never fetched
+      # packages for that runtime.
       - name: Publish
         run: >
           dotnet publish backend/BCAS.Api/BCAS.Api.csproj
           --configuration Release
-          --no-build
           --runtime win-x86
           --self-contained false
           --output ./publish
