@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { searchApplications } from "../api/adminApplicationsApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
+import Card from "../components/ui/Card.jsx";
 import DataTable from "../components/ui/DataTable.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./AdminApplicationsPage.css";
@@ -100,10 +101,10 @@ export default function AdminApplicationsPage() {
         </p>
       )}
 
-      <div className="admin-applications-panel">
+      <Card tier="data">
         <div className="admin-applications-extra-filter">
           <input
-            className="ui-datatable-search"
+            className="ui-input ui-datatable-search"
             type="text"
             placeholder="Filter by program / scholarship"
             value={filters.program}
@@ -143,7 +144,7 @@ export default function AdminApplicationsPage() {
             },
           ]}
         />
-      </div>
+      </Card>
     </AppLayout>
   );
 }

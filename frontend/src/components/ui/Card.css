@@ -11,6 +11,24 @@
   color: var(--color-text-primary);
 }
 
+/* Data container: a table/dense list a staff member scans repeatedly - reads
+   as a records panel, not a floating widget. Matches the treatment already
+   used for the Applications table. */
+.ui-card--data {
+  box-shadow: none;
+  border: 1px solid var(--color-border);
+  border-top: 3px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  padding: 18px 20px;
+}
+
+/* Action panel: something the viewer is meant to act on now - the gold rule
+   is the same "act on this" signal as the sidebar's active link. */
+.ui-card--action {
+  border-left: 4px solid var(--color-accent);
+  border-radius: var(--radius-sm) var(--radius-md) var(--radius-md) var(--radius-md);
+}
+
 /* Stat tiles read as a small ledger, not analytics widgets: a plain label
    over a serif figure, separated by a rule rather than four identical
    shadowed cards in a row. */

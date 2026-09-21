@@ -131,3 +131,13 @@ export const ROLE_LABELS = {
   AcademicHead: "Academic Head Portal",
   SupportStaff: "Support Staff Portal",
 };
+
+// Same roles, without "Portal" - for compact spots like the TopBar's role
+// tag where the sidebar's fuller label would wrap or crowd the user menu.
+export const ROLE_SHORT_LABELS = {
+  Applicant: "Applicant",
+  Admin: "Admin / Registrar",
+  Evaluator: "Evaluator",
+  AcademicHead: "Academic Head",
+  SupportStaff: "Support Staff",
+};
