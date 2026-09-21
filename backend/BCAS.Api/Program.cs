@@ -150,4 +150,14 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
+// The built React app (frontend/dist) is copied into wwwroot before publish
+// (see .github/workflows/deploy-backend.yml) so this one app serves both the
+// API and the SPA from the same origin - no separate frontend host, no CORS
+// needed between them. MapControllers() above still wins for any /api/...
+// route; this only catches requests nothing else matched (page reloads on a
+// client-side route like /portal, direct links, etc.).
+app.UseDefaultFiles();
+app.UseStaticFiles();
+app.MapFallbackToFile("index.html");
+
 app.Run();

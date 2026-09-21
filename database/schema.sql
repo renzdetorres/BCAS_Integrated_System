@@ -4,15 +4,6 @@
 -- Covers: BISAASS-8 Applicant Self-Service Registration
 -- =============================================================================
 
-IF DB_ID(N'BCAS') IS NULL
-BEGIN
-    CREATE DATABASE BCAS;
-END
-GO
-
-USE BCAS;
-GO
-
 -- -----------------------------------------------------------------------------
 -- Roles
 -- Applicant is the only role self-service registration is allowed to assign.
