@@ -61,7 +61,7 @@
 
 .confirm-dialog-confirm {
   background: var(--color-status-red-text);
-  color: #ffffff;
+  color: var(--color-white);
 }
 
 .confirm-dialog-confirm:hover:not(:disabled) {

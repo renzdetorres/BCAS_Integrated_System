@@ -105,7 +105,7 @@
 .input-with-icon input:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(27, 67, 50, 0.15);
+  box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
 }
 
 .input-with-icon.has-toggle input {
@@ -199,7 +199,7 @@
   height: 16px;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.4);
-  border-top-color: #ffffff;
+  border-top-color: var(--color-white);
   animation: auth-spin 0.7s linear infinite;
   flex-shrink: 0;
 }
@@ -246,7 +246,7 @@
   justify-content: center;
   gap: 12px;
   background: var(--color-primary);
-  color: #ffffff;
+  color: var(--color-white);
 }
 
 .auth-loading-page .auth-spinner {
