@@ -5,6 +5,15 @@
   padding: 24px;
 }
 
+/* For reference material sitting alongside a primary record (e.g. an
+   applicant's deadlines/announcements next to their actual application
+   status) - flush border instead of a shadow, so every panel on a page
+   doesn't read as the same weight regardless of what it holds. */
+.ui-card-flat {
+  box-shadow: none;
+  border: 1px solid var(--color-border);
+}
+
 .ui-card h2 {
   margin: 0 0 16px;
   font: var(--text-h2);

@@ -4,6 +4,33 @@
   color: var(--color-text-primary);
 }
 
+/* The dossier: one continuous case file the evaluator reads top to bottom,
+   sections divided by a rule rather than each living in its own shadowed
+   card - the read-heavy counterpart to the ledger-flush treatment the
+   registrar's dense table already uses for its own reason. */
+.screening-dossier {
+  padding: 4px 24px;
+}
+
+.screening-dossier-section {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.screening-dossier-section:first-child {
+  padding-top: 20px;
+}
+
+.screening-dossier-section:last-child {
+  border-bottom: none;
+}
+
+.screening-dossier-section h2 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  color: var(--color-text-primary);
+}
+
 .screening-detail-list {
   margin: 0;
   display: grid;
@@ -236,6 +263,8 @@
   color: var(--color-text-primary);
 }
 
+/* Same left-flag language as StatusBadge, not a second pill convention for
+   the same kind of yes/no/unknown result. */
 .rules-badge-yes,
 .rules-badge-no,
 .rules-badge-unknown {
@@ -243,8 +272,9 @@
   font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  padding: 4px 12px;
-  border-radius: 999px;
+  padding: 3px 9px 3px 8px;
+  border-left: 3px solid currentColor;
+  border-radius: 0 2px 2px 0;
   white-space: nowrap;
 }
 

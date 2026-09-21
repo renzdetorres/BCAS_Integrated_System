@@ -1,50 +1,81 @@
+/* A routed form, not an onboarding wizard: a connected line with a
+   waypoint per stage reads as an application actually moving between
+   desks, rather than the pill-chip row every SaaS product uses for
+   "step 2 of 5". Waypoints are diamonds, not circles - one more
+   deliberate break from that convention - and the connecting rule
+   itself turns green as it's crossed, so progress is legible without
+   reading any label. */
 .tracking-stepper {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 6px 0 0;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px 4px;
+  align-items: flex-start;
 }
 
 .tracking-step {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 6px 10px 6px 8px;
-  border-radius: 999px;
-  background: var(--color-status-gray-bg);
-  color: var(--color-status-gray-text);
-  font-size: 0.75rem;
-  font-weight: 600;
+  gap: 8px;
+  text-align: center;
+  padding: 0 4px;
+}
+
+.tracking-step:not(:first-child)::before {
+  content: "";
+  position: absolute;
+  top: 5px;
+  right: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--color-border);
+}
+
+.tracking-step-complete:not(:first-child)::before {
+  background: var(--color-status-green-text);
 }
 
 .tracking-step-dot {
+  position: relative;
+  z-index: 1;
   width: 8px;
   height: 8px;
-  border-radius: 50%;
-  background: #c3cbd4;
-}
-
-.tracking-step-complete {
-  background: var(--color-status-green-bg);
-  color: var(--color-status-green-text);
+  flex-shrink: 0;
+  transform: rotate(45deg);
+  background: var(--color-surface);
+  border: 2px solid var(--color-status-gray-text);
 }
 
 .tracking-step-complete .tracking-step-dot {
   background: var(--color-status-green-text);
+  border-color: var(--color-status-green-text);
 }
 
-.tracking-step-current {
-  background: #fbf0da;
+.tracking-step-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  line-height: 1.3;
+}
+
+.tracking-step-complete .tracking-step-label {
+  color: var(--color-status-green-text);
+}
+
+.tracking-step-current .tracking-step-label {
   color: var(--color-accent-dark);
+  font-weight: 700;
 }
 
-/* The one deliberate motion moment on this screen: a slow pulse on the
-   step that's actually in progress right now, not applied to anything
-   else on the page. */
+/* The one deliberate motion moment: a slow pulse on the waypoint that's
+   actually in progress right now, not applied to anything else. */
 .tracking-step-current .tracking-step-dot {
   background: var(--color-accent);
+  border-color: var(--color-accent-dark);
   animation: tracking-step-pulse 2.2s ease-in-out infinite;
 }
 
