@@ -7,6 +7,7 @@ using BCAS.Api.Models;
 using BCAS.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace BCAS.Api.Controllers;
 
@@ -15,11 +16,22 @@ namespace BCAS.Api.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly AuthCookieOptions _cookieOptions;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IOptions<AuthCookieOptions> cookieOptions)
     {
         _authService = authService;
+        _cookieOptions = cookieOptions.Value;
     }
+
+    /// <summary>
+    /// The two cookie attributes that must match between Login (Append) and
+    /// Logout (Delete) for the browser to treat them as the same cookie - see
+    /// AuthCookieOptions.RequireHttps for why this is configurable rather
+    /// than hardcoded.
+    /// </summary>
+    private (bool Secure, SameSiteMode SameSite) CookieSecurity =>
+        _cookieOptions.RequireHttps ? (true, SameSiteMode.None) : (false, SameSiteMode.Lax);
 
     /// <summary>
     /// Public self-service registration. Always creates an Applicant account;
@@ -66,17 +78,12 @@ public class AuthController : ControllerBase
         {
             var result = await _authService.LoginAsync(request, cancellationToken);
 
+            var (secure, sameSite) = CookieSecurity;
             Response.Cookies.Append(AuthConstants.AuthCookieName, result.Token, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                // None (not Lax): the frontend (http://localhost:5173 in dev)
-                // and this API (https://localhost:7100) differ in scheme, which
-                // browsers treat as cross-site under the schemeful-same-site
-                // rule even though the host is the same - a Lax cookie is
-                // never sent back on the SPA's subsequent fetch() calls, so
-                // every authenticated request 401s immediately after login.
-                SameSite = SameSiteMode.None,
+                Secure = secure,
+                SameSite = sameSite,
                 Path = "/",
                 Expires = result.ExpiresAtUtc,
             });
@@ -102,13 +109,12 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public IActionResult Logout()
     {
+        var (secure, sameSite) = CookieSecurity;
         Response.Cookies.Delete(AuthConstants.AuthCookieName, new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
-            // Must match the attributes the cookie was set with (see Login)
-            // for the browser to recognize this as clearing the same cookie.
-            SameSite = SameSiteMode.None,
+            Secure = secure,
+            SameSite = sameSite,
             Path = "/",
         });
 

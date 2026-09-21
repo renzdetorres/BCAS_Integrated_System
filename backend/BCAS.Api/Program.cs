@@ -18,6 +18,7 @@ var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<Jw
     ?? throw new InvalidOperationException("Jwt configuration section is missing.");
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection(SmtpOptions.SectionName));
+builder.Services.Configure<AuthCookieOptions>(builder.Configuration.GetSection(AuthCookieOptions.SectionName));
 
 builder.Services.AddSingleton<IDbConnectionFactory, SqlConnectionFactory>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
