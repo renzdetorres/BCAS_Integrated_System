@@ -5,7 +5,10 @@ import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import DataTable from "../components/ui/DataTable.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
+import { StatCard } from "../components/ui/Card.jsx";
 import "./AdminApplicationsPage.css";
+
+const TERMINAL_STATUSES = new Set(["Approved", "Rejected"]);
 
 const initialFilters = { search: "", status: "", category: "", program: "" };
 
@@ -88,6 +91,10 @@ export default function AdminApplicationsPage() {
     },
   ];
 
+  const needsActionCount = applications.filter((row) => !TERMINAL_STATUSES.has(row.status)).length;
+  const approvedCount = applications.filter((row) => row.status === "Approved").length;
+  const rejectedCount = applications.filter((row) => row.status === "Rejected").length;
+
   return (
     <AppLayout title="Applications">
       <p className="admin-applications-subtitle">
@@ -100,17 +107,19 @@ export default function AdminApplicationsPage() {
         </p>
       )}
 
-      <div className="admin-applications-panel">
-        <div className="admin-applications-extra-filter">
-          <input
-            className="ui-datatable-search"
-            type="text"
-            placeholder="Filter by program / scholarship"
-            value={filters.program}
-            onChange={(event) => setFilters((prev) => ({ ...prev, program: event.target.value }))}
-          />
-        </div>
+      {!isLoading && !errorMessage && (
+        <section className="admin-applications-queue-summary">
+          <StatCard label="Needs Action" value={needsActionCount} />
+          <StatCard label="Approved" value={approvedCount} />
+          <StatCard label="Rejected" value={rejectedCount} />
+          <p className="admin-applications-queue-caption">
+            Counts reflect the {applications.length} application{applications.length === 1 ? "" : "s"} shown below,
+            not the full archive.
+          </p>
+        </section>
+      )}
 
+      <div className="admin-applications-panel">
         <DataTable
           columns={columns}
           rows={applications}
@@ -142,6 +151,15 @@ export default function AdminApplicationsPage() {
               options: STATUS_OPTIONS,
             },
           ]}
+          extraToolbar={
+            <input
+              className="ui-datatable-search"
+              type="text"
+              placeholder="Filter by program / scholarship"
+              value={filters.program}
+              onChange={(event) => setFilters((prev) => ({ ...prev, program: event.target.value }))}
+            />
+          }
         />
       </div>
     </AppLayout>

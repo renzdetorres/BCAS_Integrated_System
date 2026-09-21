@@ -122,32 +122,8 @@
   cursor: not-allowed;
 }
 
-.workflow-stepper {
-  list-style: none;
-  margin: 0 0 16px;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.workflow-step {
-  padding: 6px 14px;
-  border-radius: 999px;
-  background: var(--color-status-gray-bg);
-  color: var(--color-status-gray-text);
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.workflow-step-current {
-  background: var(--color-status-amber-bg);
-  color: var(--color-status-amber-text);
-}
-
-.workflow-step-done {
-  background: var(--color-status-green-bg);
-  color: var(--color-status-green-text);
+.screening-section .tracking-stepper {
+  margin-bottom: 16px;
 }
 
 .workflow-final-note {

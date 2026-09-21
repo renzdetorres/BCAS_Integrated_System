@@ -161,12 +161,18 @@ export default function ApplicantDashboardPage() {
                   />
                   {outstandingDocs.length > 0 && (
                     <ul className="applicant-outstanding-list">
-                      {outstandingDocs.map((doc) => (
-                        <li key={doc.documentType}>
-                          <span>{DOCUMENT_TYPE_LABELS[doc.documentType] ?? doc.documentType}</span>
-                          <StatusBadge status={doc.status === "NotSubmitted" ? "NotUploaded" : doc.status} />
-                        </li>
-                      ))}
+                      {outstandingDocs.map((doc) => {
+                        const needsAttention = doc.status === "Flagged" || doc.status === "Rejected";
+                        return (
+                          <li
+                            key={doc.documentType}
+                            className={needsAttention ? "applicant-outstanding-flagged" : undefined}
+                          >
+                            <span>{DOCUMENT_TYPE_LABELS[doc.documentType] ?? doc.documentType}</span>
+                            <StatusBadge status={doc.status === "NotSubmitted" ? "NotUploaded" : doc.status} />
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </div>

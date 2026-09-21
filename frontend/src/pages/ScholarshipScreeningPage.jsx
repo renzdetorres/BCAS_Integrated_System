@@ -10,19 +10,8 @@ import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
+import WorkflowStepper, { SCHOLARSHIP_STEP_LABELS } from "../components/WorkflowStepper.jsx";
 import "./ScholarshipScreeningPage.css";
-
-const STAGE_LABELS = {
-  Submitted: "Submitted",
-  DocumentsVerified: "Documents Verified",
-  EligibilityScreening: "Eligibility Screening",
-  Evaluation: "Evaluation",
-  Result: "Result",
-};
-
-function stageLabel(stage) {
-  return STAGE_LABELS[stage] ?? stage;
-}
 
 function formatDateTime(isoDateTime) {
   return new Date(isoDateTime).toLocaleString(undefined, {
@@ -113,24 +102,17 @@ export default function ScholarshipScreeningPage() {
           <>
             <Card className="screening-section">
               <h2>Workflow</h2>
-              <ol className="workflow-stepper">
-                {application.workflowStages.map((stage) => {
+              <WorkflowStepper
+                steps={application.workflowStages.map((stage, index) => {
                   const currentIndex = application.workflowStages.indexOf(application.status);
-                  const stageIndex = application.workflowStages.indexOf(stage);
-                  const isCurrent = stage === application.status;
-                  const isDone = currentIndex >= 0 && stageIndex < currentIndex;
-                  return (
-                    <li
-                      key={stage}
-                      className={
-                        isCurrent ? "workflow-step workflow-step-current" : isDone ? "workflow-step workflow-step-done" : "workflow-step"
-                      }
-                    >
-                      {stageLabel(stage)}
-                    </li>
-                  );
+                  return {
+                    step: stage,
+                    isCurrent: stage === application.status,
+                    isComplete: currentIndex >= 0 && index < currentIndex,
+                  };
                 })}
-              </ol>
+                labels={SCHOLARSHIP_STEP_LABELS}
+              />
               {!application.workflowStages.includes(application.status) && (
                 <p className="workflow-final-note">
                   Status is <strong>{application.status}</strong> - a final decision outside this workflow.
