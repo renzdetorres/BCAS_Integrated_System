@@ -13,10 +13,12 @@ namespace BCAS.Api.Controllers;
 public class AdminScholarshipsController : ControllerBase
 {
     private readonly IAdminScholarshipsService _scholarshipsService;
+    private readonly IAuditLogService _auditLogService;
 
-    public AdminScholarshipsController(IAdminScholarshipsService scholarshipsService)
+    public AdminScholarshipsController(IAdminScholarshipsService scholarshipsService, IAuditLogService auditLogService)
     {
         _scholarshipsService = scholarshipsService;
+        _auditLogService = auditLogService;
     }
 
     /// <summary>Admin-only: every scholarship regardless of active status, with remaining/occupied slot counts.</summary>
@@ -36,6 +38,7 @@ public class AdminScholarshipsController : ControllerBase
         [FromBody] CreateScholarshipRequest request, CancellationToken cancellationToken)
     {
         var created = await _scholarshipsService.CreateAsync(request, cancellationToken);
+        await _auditLogService.LogAsync(User, "ScholarshipCreated", $"\"{created.Name}\" ({created.TotalSlots} slots)", cancellationToken);
         return CreatedAtAction(nameof(GetAll), new { id = created.ScholarshipId }, created);
     }
 
@@ -54,6 +57,7 @@ public class AdminScholarshipsController : ControllerBase
         try
         {
             var updated = await _scholarshipsService.UpdateAsync(scholarshipId, request, cancellationToken);
+            await _auditLogService.LogAsync(User, "ScholarshipUpdated", $"\"{updated.Name}\"", cancellationToken);
             return Ok(updated);
         }
         catch (InvalidTotalSlotsException ex)
@@ -91,6 +95,11 @@ public class AdminScholarshipsController : ControllerBase
         try
         {
             var updated = await _scholarshipsService.SetActiveStatusAsync(scholarshipId, request.IsActive!.Value, cancellationToken);
+            await _auditLogService.LogAsync(
+                User,
+                updated.IsActive ? "ScholarshipActivated" : "ScholarshipDeactivated",
+                $"\"{updated.Name}\"",
+                cancellationToken);
             return Ok(updated);
         }
         catch (ScholarshipNotFoundException ex)

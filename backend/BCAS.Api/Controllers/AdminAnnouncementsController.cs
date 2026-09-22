@@ -13,10 +13,12 @@ namespace BCAS.Api.Controllers;
 public class AdminAnnouncementsController : ControllerBase
 {
     private readonly IAdminAnnouncementService _announcementService;
+    private readonly IAuditLogService _auditLogService;
 
-    public AdminAnnouncementsController(IAdminAnnouncementService announcementService)
+    public AdminAnnouncementsController(IAdminAnnouncementService announcementService, IAuditLogService auditLogService)
     {
         _announcementService = announcementService;
+        _auditLogService = auditLogService;
     }
 
     /// <summary>Admin-only: every announcement regardless of active status, most recently posted first.</summary>
@@ -42,6 +44,7 @@ public class AdminAnnouncementsController : ControllerBase
         try
         {
             var created = await _announcementService.CreateAsync(request, cancellationToken);
+            await _auditLogService.LogAsync(User, "AnnouncementCreated", $"\"{created.Title}\" ({created.Category})", cancellationToken);
             return CreatedAtAction(nameof(GetAll), new { id = created.AnnouncementId }, created);
         }
         catch (InvalidAnnouncementCategoryException ex)
@@ -70,6 +73,11 @@ public class AdminAnnouncementsController : ControllerBase
         try
         {
             var updated = await _announcementService.SetActiveStatusAsync(announcementId, request.IsActive!.Value, cancellationToken);
+            await _auditLogService.LogAsync(
+                User,
+                updated.IsActive ? "AnnouncementPosted" : "AnnouncementDeactivated",
+                $"\"{updated.Title}\"",
+                cancellationToken);
             return Ok(updated);
         }
         catch (AnnouncementNotFoundException ex)

@@ -1219,3 +1219,72 @@ GO
 -- (marked Done but never actually implemented in code until this ticket
 -- needed it as a hard prerequisite).
 -- -----------------------------------------------------------------------------
+
+-- -----------------------------------------------------------------------------
+-- System-wide activity log: every login, and the administrative changes
+-- AuditLogService is wired into (see its summary comment for exact
+-- coverage). UserEmail is stored directly, not just UserId, so a row still
+-- reads correctly if the account is later renamed or removed; UserId is kept
+-- too for exact joins where the account still exists.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.AuditLogs', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.AuditLogs
+    (
+        AuditLogId  UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_AuditLogs_AuditLogId DEFAULT NEWID(),
+        UserId      UNIQUEIDENTIFIER NULL,
+        UserEmail   NVARCHAR(256)    NOT NULL,
+        Action      NVARCHAR(50)     NOT NULL,
+        Details     NVARCHAR(1000)   NULL,
+        CreatedAt   DATETIME2(3)     NOT NULL CONSTRAINT DF_AuditLogs_CreatedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_AuditLogs PRIMARY KEY (AuditLogId),
+        CONSTRAINT FK_AuditLogs_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId)
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_AuditLogs_CreatedAt' AND object_id = OBJECT_ID(N'dbo.AuditLogs'))
+BEGIN
+    CREATE NONCLUSTERED INDEX IX_AuditLogs_CreatedAt ON dbo.AuditLogs (CreatedAt DESC);
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_AuditLogs_UserEmail' AND object_id = OBJECT_ID(N'dbo.AuditLogs'))
+BEGIN
+    CREATE NONCLUSTERED INDEX IX_AuditLogs_UserEmail ON dbo.AuditLogs (UserEmail);
+END
+GO
+
+-- -----------------------------------------------------------------------------
+-- Forgot-password reset tokens. TokenHash is a SHA-256 hex digest of the raw
+-- token that goes out in the email link - the raw value is never stored, same
+-- defense-in-depth reasoning as PasswordHash on dbo.Users. Requesting a new
+-- reset invalidates any still-outstanding token for that user (UsedAt set on
+-- the old row) so only the most recently requested link ever works.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.PasswordResetTokens', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.PasswordResetTokens
+    (
+        TokenId    UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_PasswordResetTokens_TokenId DEFAULT NEWID(),
+        UserId     UNIQUEIDENTIFIER NOT NULL,
+        TokenHash  NVARCHAR(64)     NOT NULL,
+        ExpiresAt  DATETIME2(3)     NOT NULL,
+        UsedAt     DATETIME2(3)     NULL,
+        CreatedAt  DATETIME2(3)     NOT NULL CONSTRAINT DF_PasswordResetTokens_CreatedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_PasswordResetTokens PRIMARY KEY (TokenId),
+        CONSTRAINT FK_PasswordResetTokens_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT UQ_PasswordResetTokens_TokenHash UNIQUE (TokenHash)
+    );
+END
+GO
+
+-- Filtered index: requires QUOTED_IDENTIFIER ON for this session/connection.
+SET QUOTED_IDENTIFIER ON;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_PasswordResetTokens_UserId' AND object_id = OBJECT_ID(N'dbo.PasswordResetTokens'))
+BEGIN
+    CREATE NONCLUSTERED INDEX IX_PasswordResetTokens_UserId ON dbo.PasswordResetTokens (UserId) WHERE UsedAt IS NULL;
+END
+GO

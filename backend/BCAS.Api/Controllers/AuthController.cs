@@ -17,12 +17,31 @@ public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
     private readonly AuthCookieOptions _cookieOptions;
+    private readonly FrontendOptions _frontendOptions;
+    private readonly IAuditLogService _auditLogService;
 
-    public AuthController(IAuthService authService, IOptions<AuthCookieOptions> cookieOptions)
+    public AuthController(
+        IAuthService authService,
+        IOptions<AuthCookieOptions> cookieOptions,
+        IOptions<FrontendOptions> frontendOptions,
+        IAuditLogService auditLogService)
     {
         _authService = authService;
         _cookieOptions = cookieOptions.Value;
+        _frontendOptions = frontendOptions.Value;
+        _auditLogService = auditLogService;
     }
+
+    /// <summary>
+    /// Where the reset-password link should point: the configured frontend
+    /// origin if set (needed in local dev, where Vite and the API are
+    /// different origins), else this same request's own origin (correct in
+    /// production, where the API serves the SPA itself - see FrontendOptions).
+    /// </summary>
+    private string FrontendBaseUrl =>
+        !string.IsNullOrWhiteSpace(_frontendOptions.BaseUrl)
+            ? _frontendOptions.BaseUrl!
+            : $"{Request.Scheme}://{Request.Host}";
 
     /// <summary>
     /// The two cookie attributes that must match between Login (Append) and
@@ -88,6 +107,15 @@ public class AuthController : ControllerBase
                 Expires = result.ExpiresAtUtc,
             });
 
+            // Staff accountability log, not applicant usage telemetry - an
+            // Applicant logging in isn't an administrative action, and at
+            // real volume it would bury the staff activity this log exists
+            // to surface. See AuditLogService's summary comment.
+            if (result.User.Role != "Applicant")
+            {
+                await _auditLogService.LogAsync(result.User.UserId, result.User.Email, "Login", cancellationToken: cancellationToken);
+            }
+
             return Ok(result.User);
         }
         catch (InvalidCredentialsException ex)
@@ -97,6 +125,42 @@ public class AuthController : ControllerBase
                 Title = "Login failed",
                 Detail = ex.Message,
                 Status = StatusCodes.Status401Unauthorized,
+            });
+        }
+    }
+
+    /// <summary>
+    /// Always returns 204 regardless of whether the email matches an
+    /// account - an email is only actually sent when it does (no-enumeration,
+    /// same reasoning as Login's generic failure message).
+    /// </summary>
+    [HttpPost("forgot-password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
+    {
+        await _authService.ForgotPasswordAsync(request.Email, FrontendBaseUrl, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Sets a new password from a valid reset-email link/token.</summary>
+    [HttpPost("reset-password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _authService.ResetPasswordAsync(request.Token, request.NewPassword, cancellationToken);
+            return NoContent();
+        }
+        catch (InvalidOrExpiredResetTokenException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Reset link invalid",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
             });
         }
     }

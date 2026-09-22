@@ -13,13 +13,16 @@ public class AdminController : ControllerBase
 {
     private readonly IStaffProvisioningService _staffProvisioningService;
     private readonly IUserManagementService _userManagementService;
+    private readonly IAuditLogService _auditLogService;
 
     public AdminController(
         IStaffProvisioningService staffProvisioningService,
-        IUserManagementService userManagementService)
+        IUserManagementService userManagementService,
+        IAuditLogService auditLogService)
     {
         _staffProvisioningService = staffProvisioningService;
         _userManagementService = userManagementService;
+        _auditLogService = auditLogService;
     }
 
     /// <summary>
@@ -40,6 +43,7 @@ public class AdminController : ControllerBase
         try
         {
             var response = await _staffProvisioningService.CreateStaffAsync(request, cancellationToken);
+            await _auditLogService.LogAsync(User, "StaffCreated", $"Created {response.Role} account {response.Email}", cancellationToken);
             return CreatedAtAction(nameof(CreateStaff), new { id = response.UserId }, response);
         }
         catch (InvalidRoleException ex)
@@ -88,6 +92,11 @@ public class AdminController : ControllerBase
         try
         {
             var response = await _userManagementService.SetActiveStatusAsync(userId, request.IsActive!.Value, cancellationToken);
+            await _auditLogService.LogAsync(
+                User,
+                response.IsActive ? "UserActivated" : "UserDeactivated",
+                $"{response.Email} ({response.Role})",
+                cancellationToken);
             return Ok(response);
         }
         catch (UserNotFoundException ex)
@@ -121,6 +130,7 @@ public class AdminController : ControllerBase
         try
         {
             var response = await _userManagementService.UpdateUserAsync(userId, request, cancellationToken);
+            await _auditLogService.LogAsync(User, "UserUpdated", $"Updated {response.Email} ({response.Role})", cancellationToken);
             return Ok(response);
         }
         catch (InvalidRoleException ex)
