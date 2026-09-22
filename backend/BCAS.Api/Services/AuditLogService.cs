@@ -26,10 +26,12 @@ namespace BCAS.Api.Services;
 public class AuditLogService : IAuditLogService
 {
     private readonly IAuditLogRepository _repository;
+    private readonly ILogger<AuditLogService> _logger;
 
-    public AuditLogService(IAuditLogRepository repository)
+    public AuditLogService(IAuditLogRepository repository, ILogger<AuditLogService> logger)
     {
         _repository = repository;
+        _logger = logger;
     }
 
     public Task LogAsync(ClaimsPrincipal actor, string action, string? details = null, CancellationToken cancellationToken = default)
@@ -46,11 +48,25 @@ public class AuditLogService : IAuditLogService
             // authenticated request) still get logged by email alone.
         }
 
-        return _repository.InsertAsync(userId, email, action, details, cancellationToken);
+        return LogAsync(userId, email, action, details, cancellationToken);
     }
 
-    public Task LogAsync(Guid? userId, string userEmail, string action, string? details = null, CancellationToken cancellationToken = default) =>
-        _repository.InsertAsync(userId, userEmail, action, details, cancellationToken);
+    public async Task LogAsync(Guid? userId, string userEmail, string action, string? details = null, CancellationToken cancellationToken = default)
+    {
+        // A logging failure (most commonly: this table doesn't exist yet on
+        // an environment where the migration hasn't been run) must never
+        // break the real action it's recording - same philosophy as
+        // NotificationDispatchService for emails. This bug already broke
+        // login in production once before this try/catch existed.
+        try
+        {
+            await _repository.InsertAsync(userId, userEmail, action, details, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to write audit log entry ({Action}) for {Email}", action, userEmail);
+        }
+    }
 
     public Task<IReadOnlyList<AuditLogEntry>> SearchAsync(
         string? email, int limit, int offset, CancellationToken cancellationToken = default) =>
