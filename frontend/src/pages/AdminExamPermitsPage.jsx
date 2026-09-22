@@ -30,6 +30,7 @@ export default function AdminExamPermitsPage() {
   const [loadError, setLoadError] = useState(null);
   const [pendingReleaseUserId, setPendingReleaseUserId] = useState(null);
   const [releaseError, setReleaseError] = useState(null);
+  const [search, setSearch] = useState("");
 
   const loadPermits = useCallback(async () => {
     setIsLoading(true);
@@ -61,8 +62,14 @@ export default function AdminExamPermitsPage() {
     }
   }
 
-  const pending = permits.filter((p) => !p.isReleased);
-  const released = permits.filter((p) => p.isReleased);
+  const filtered = search.trim()
+    ? permits.filter((p) => {
+        const q = search.trim().toLowerCase();
+        return p.applicantName.toLowerCase().includes(q) || p.applicantEmail.toLowerCase().includes(q);
+      })
+    : permits;
+  const pending = filtered.filter((p) => !p.isReleased);
+  const released = filtered.filter((p) => p.isReleased);
 
   return (
     <AppLayout title="Exam Permits">
@@ -82,6 +89,16 @@ export default function AdminExamPermitsPage() {
           </p>
         )}
 
+        {!isLoading && permits.length > 0 && (
+          <input
+            type="search"
+            className="ui-datatable-search admin-exam-permits-search"
+            placeholder="Search by applicant name or email"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        )}
+
         {isLoading ? (
           <p>Loading...</p>
         ) : permits.length === 0 ? (
@@ -93,7 +110,7 @@ export default function AdminExamPermitsPage() {
             <Card>
               <h2>Pending Release ({pending.length})</h2>
               {pending.length === 0 ? (
-                <p>Nothing waiting on release.</p>
+                <p>{search.trim() ? "No matches in Pending Release." : "Nothing waiting on release."}</p>
               ) : (
                 <ul className="permit-list">
                   {pending.map((permit) => (
@@ -136,7 +153,7 @@ export default function AdminExamPermitsPage() {
             <Card>
               <h2>Released ({released.length})</h2>
               {released.length === 0 ? (
-                <p>No permits released yet.</p>
+                <p>{search.trim() ? "No matches in Released." : "No permits released yet."}</p>
               ) : (
                 <ul className="permit-list">
                   {released.map((permit) => (

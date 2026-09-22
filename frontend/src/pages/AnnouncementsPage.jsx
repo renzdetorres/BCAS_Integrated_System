@@ -3,6 +3,7 @@ import { getActiveAnnouncements } from "../api/announcementApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
+import EmptyState from "../components/ui/EmptyState.jsx";
 import "./AnnouncementsPage.css";
 
 function formatDate(isoDate) {
@@ -50,7 +51,9 @@ export default function AnnouncementsPage() {
           </p>
         )}
 
-        {!isLoading && !errorMessage && announcements.length === 0 && <p>No active announcements right now.</p>}
+        {!isLoading && !errorMessage && announcements.length === 0 && (
+          <EmptyState icon="bell" title="No active announcements" message="Check back later for updates from BCAS." />
+        )}
 
         {!isLoading && !errorMessage && announcements.length > 0 && (
           <ul className="announcements-list">

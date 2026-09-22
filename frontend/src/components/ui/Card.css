@@ -21,15 +21,17 @@
 }
 
 /* Stat tiles read as a small ledger, not analytics widgets: a plain label
-   over a serif figure, separated by a rule rather than four identical
-   shadowed cards in a row. */
+   over a serif figure inside a flat bordered tile, not four identical
+   shadowed cards - and not a colored accent bar either, since that's the
+   same "border-t-4" cliché from every dashboard template regardless of
+   what color it's painted. */
 .ui-stat-card {
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-width: 0;
   box-shadow: none;
-  border-top: 3px solid var(--color-primary);
+  border: 1px solid var(--color-border);
   padding: 16px 20px;
 }
 

@@ -1,0 +1,80 @@
+/* Shared button-weight vocabulary - existing tokens only.
+   Introduced to fix an app-wide inconsistency: "Edit" actions were reusing
+   the amber/warning status color as if editing were risky, and consequential
+   actions (Archive, Deactivate) often carried the same visual weight as a
+   routine primary submit. These classes are additive - existing raw
+   `<button type="submit">` styling on individual pages is untouched, so
+   nothing that already worked changes unless a page opts in. */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  line-height: 1.2;
+  cursor: pointer;
+  border: 1px solid transparent;
+  text-decoration: none;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Primary: the one main action per screen/section. */
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+
+/* Secondary: neutral actions like Edit - visually subordinate to primary,
+   not colored as a warning. */
+.btn-secondary {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-bg);
+  border-color: var(--color-primary);
+}
+
+/* Danger-outline: a consequential but not-yet-committed action (e.g.
+   Archive, Deactivate as a trigger before a confirm dialog) - reads as
+   "be careful" without shouting as loud as a solid red button. */
+.btn-danger {
+  background: var(--color-surface);
+  color: var(--color-status-red-text);
+  border-color: var(--color-status-red-bg);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--color-status-red-bg);
+}
+
+/* Danger-solid: reserved for the actual destructive commit step (inside a
+   ConfirmDialog), never a first-click trigger. */
+.btn-danger-solid {
+  background: var(--color-status-red-text);
+  color: var(--color-white);
+}
+
+.btn-danger-solid:hover:not(:disabled) {
+  background: var(--color-status-red-dark);
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+}

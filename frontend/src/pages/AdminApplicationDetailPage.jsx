@@ -189,70 +189,109 @@ export default function AdminApplicationDetailPage() {
 
         {!isLoading && !errorMessage && application && (
           <>
-            <div className="admin-app-detail-card">
-              <div className="admin-app-detail-header">
-                <span className={`category-badge category-${application.category.toLowerCase()}`}>
-                  {application.category}
-                </span>
-                <StatusBadge status={application.status} adminContext />
-                {application.isArchived && <StatusBadge status="Inactive" label="Archived" />}
-              </div>
-              <h1>{application.applicantName}</h1>
-              <p className="admin-app-detail-email">{application.applicantEmail}</p>
+            {/* One record overview, not three separate cards for identity,
+                workflow state, and history - a registrar reads all three
+                together to understand "where this record stands" before
+                touching either action below. Sections divided by a rule,
+                same dossier pattern used on the scholarship review pages. */}
+            <div className="admin-app-detail-card admin-app-dossier">
+              <div className="admin-app-dossier-section">
+                <div className="admin-app-detail-header">
+                  <span className={`category-badge category-${application.category.toLowerCase()}`}>
+                    {application.category}
+                  </span>
+                  <StatusBadge status={application.status} adminContext />
+                  {application.isArchived && <StatusBadge status="Inactive" label="Archived" />}
+                </div>
+                <p className="admin-app-detail-name">{application.applicantName}</p>
+                <p className="admin-app-detail-email">{application.applicantEmail}</p>
 
-              <dl className="admin-app-detail-list">
-                {application.category === "Admission" ? (
-                  <>
-                    <div>
-                      <dt>Application Type</dt>
-                      <dd>{application.applicationType}</dd>
-                    </div>
-                    <div>
-                      <dt>Course Applied For</dt>
-                      <dd>{application.courseAppliedFor}</dd>
-                    </div>
-                    {application.previousSchool && (
+                <dl className="admin-app-detail-list">
+                  {application.category === "Admission" ? (
+                    <>
                       <div>
-                        <dt>Previous School</dt>
-                        <dd>{application.previousSchool}</dd>
+                        <dt>Application Type</dt>
+                        <dd>{application.applicationType}</dd>
                       </div>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <dt>Scholarship</dt>
-                      <dd>{application.scholarshipName}</dd>
-                    </div>
-                    <div>
-                      <dt>Scholarship Type</dt>
-                      <dd>{application.scholarshipType}</dd>
-                    </div>
-                    <div>
-                      <dt>Grade Average</dt>
-                      <dd>{application.gradeAverage}</dd>
-                    </div>
-                  </>
-                )}
-                <div>
-                  <dt>Submitted</dt>
-                  <dd>{formatDateTime(application.submittedAt)}</dd>
-                </div>
-                <div>
-                  <dt>Last Updated</dt>
-                  <dd>{formatDateTime(application.updatedAt)}</dd>
-                </div>
-              </dl>
-            </div>
+                      <div>
+                        <dt>Course Applied For</dt>
+                        <dd>{application.courseAppliedFor}</dd>
+                      </div>
+                      {application.previousSchool && (
+                        <div>
+                          <dt>Previous School</dt>
+                          <dd>{application.previousSchool}</dd>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <dt>Scholarship</dt>
+                        <dd>{application.scholarshipName}</dd>
+                      </div>
+                      <div>
+                        <dt>Scholarship Type</dt>
+                        <dd>{application.scholarshipType}</dd>
+                      </div>
+                      <div>
+                        <dt>Grade Average</dt>
+                        <dd>{application.gradeAverage}</dd>
+                      </div>
+                    </>
+                  )}
+                  <div>
+                    <dt>Submitted</dt>
+                    <dd>{formatDateTime(application.submittedAt)}</dd>
+                  </div>
+                  <div>
+                    <dt>Last Updated</dt>
+                    <dd>{formatDateTime(application.updatedAt)}</dd>
+                  </div>
+                </dl>
+              </div>
 
-            <div className="admin-app-detail-card">
-              <h2>Workflow Status</h2>
-              <WorkflowStepper steps={application.steps} labels={stepLabels} />
-              {application.remarks && (
-                <p className="admin-app-detail-remarks">
-                  <strong>Remarks:</strong> {application.remarks}
+              <div className="admin-app-dossier-section">
+                <h2>Workflow Status</h2>
+                <WorkflowStepper steps={application.steps} labels={stepLabels} />
+                {application.remarks && (
+                  <p className="admin-app-detail-remarks">
+                    <strong>Remarks:</strong> {application.remarks}
+                  </p>
+                )}
+              </div>
+
+              <div className="admin-app-dossier-section">
+                <h2>Status History</h2>
+                <p className="admin-app-detail-subtitle">
+                  Every status change recorded for this application, oldest first.
                 </p>
-              )}
+
+                {isLoadingHistory && <p>Loading...</p>}
+                {historyError && (
+                  <p className="form-error" role="alert">
+                    {historyError}
+                  </p>
+                )}
+                {!isLoadingHistory && !historyError && statusHistory.length === 0 && <p>No status changes recorded yet.</p>}
+
+                {!isLoadingHistory && !historyError && statusHistory.length > 0 && (
+                  <ul className="admin-app-status-history">
+                    {statusHistory.map((entry) => (
+                      <li key={entry.historyId}>
+                        <div className="admin-app-status-history-line">
+                          <strong>{entry.fromStatus ? `${entry.fromStatus} → ${entry.toStatus}` : `${entry.toStatus} (submitted)`}</strong>
+                          <span>{formatDateTime(entry.changedAt)}</span>
+                        </div>
+                        <div className="admin-app-status-history-meta">
+                          by {entry.changedByName ?? "the applicant"}
+                          {entry.remarks && <> &mdash; {entry.remarks}</>}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
 
             <div className="admin-app-detail-card">
@@ -309,38 +348,6 @@ export default function AdminApplicationDetailPage() {
             </div>
 
             <div className="admin-app-detail-card">
-              <h2>Status History</h2>
-              <p className="admin-app-detail-subtitle">
-                Every status change recorded for this application, oldest first.
-              </p>
-
-              {isLoadingHistory && <p>Loading...</p>}
-              {historyError && (
-                <p className="form-error" role="alert">
-                  {historyError}
-                </p>
-              )}
-              {!isLoadingHistory && !historyError && statusHistory.length === 0 && <p>No status changes recorded yet.</p>}
-
-              {!isLoadingHistory && !historyError && statusHistory.length > 0 && (
-                <ul className="admin-app-status-history">
-                  {statusHistory.map((entry) => (
-                    <li key={entry.historyId}>
-                      <div className="admin-app-status-history-line">
-                        <strong>{entry.fromStatus ? `${entry.fromStatus} → ${entry.toStatus}` : `${entry.toStatus} (submitted)`}</strong>
-                        <span>{formatDateTime(entry.changedAt)}</span>
-                      </div>
-                      <div className="admin-app-status-history-meta">
-                        by {entry.changedByName ?? "the applicant"}
-                        {entry.remarks && <> &mdash; {entry.remarks}</>}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div className="admin-app-detail-card">
               <h2>Records Archive</h2>
               {application.isArchived ? (
                 <>
@@ -380,7 +387,7 @@ export default function AdminApplicationDetailPage() {
                       />
                     </div>
 
-                    <button type="submit" disabled={isArchiving}>
+                    <button type="submit" className="archive-submit-button" disabled={isArchiving}>
                       {isArchiving ? "Archiving..." : "Archive Application"}
                     </button>
                   </form>

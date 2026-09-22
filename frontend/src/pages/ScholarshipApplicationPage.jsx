@@ -89,6 +89,30 @@ export default function ScholarshipApplicationPage() {
   return (
     <AppLayout title="Scholarship Application">
       <Card className="scholarship-card">
+        <h2>My Scholarship Applications</h2>
+        {isLoading && <p>Loading...</p>}
+        {!isLoading && applications.length === 0 && (
+          <p>No applications submitted yet. Use the form below to apply.</p>
+        )}
+        {!isLoading && applications.length > 0 && (
+          <ul className="scholarship-list">
+            {applications.map((application) => (
+              <li key={application.applicationId}>
+                <div className="scholarship-list-header">
+                  <span className="scholarship-name">{application.scholarshipName}</span>
+                  <StatusBadge status={application.status} />
+                </div>
+                <p className="scholarship-meta">
+                  {application.scholarshipType} &middot; Grade average {application.gradeAverage} &middot;
+                  Submitted {formatDate(application.submittedAt)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      <Card className="scholarship-card">
         <h2>Submit Scholarship Application</h2>
 
         {errorMessage && (
@@ -147,28 +171,6 @@ export default function ScholarshipApplicationPage() {
               {isSubmitting ? "Submitting..." : "Submit Application"}
             </button>
           </form>
-        )}
-      </Card>
-
-      <Card className="scholarship-card">
-        <h2>My Scholarship Applications</h2>
-        {isLoading && <p>Loading...</p>}
-        {!isLoading && applications.length === 0 && <p>No applications submitted yet.</p>}
-        {!isLoading && applications.length > 0 && (
-          <ul className="scholarship-list">
-            {applications.map((application) => (
-              <li key={application.applicationId}>
-                <div className="scholarship-list-header">
-                  <span className="scholarship-name">{application.scholarshipName}</span>
-                  <StatusBadge status={application.status} />
-                </div>
-                <p className="scholarship-meta">
-                  {application.scholarshipType} &middot; Grade average {application.gradeAverage} &middot;
-                  Submitted {formatDate(application.submittedAt)}
-                </p>
-              </li>
-            ))}
-          </ul>
         )}
       </Card>
     </AppLayout>

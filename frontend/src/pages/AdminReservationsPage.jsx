@@ -110,6 +110,7 @@ export default function AdminReservationsPage() {
   const [reservations, setReservations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
+  const [search, setSearch] = useState("");
 
   const loadReservations = useCallback(async () => {
     setIsLoading(true);
@@ -132,8 +133,14 @@ export default function AdminReservationsPage() {
     setReservations((prev) => prev.map((r) => (r.applicationId === updated.applicationId ? updated : r)));
   }
 
-  const unreserved = reservations.filter((r) => !r.isReserved);
-  const reserved = reservations.filter((r) => r.isReserved);
+  const filtered = search.trim()
+    ? reservations.filter((r) => {
+        const q = search.trim().toLowerCase();
+        return r.applicantName.toLowerCase().includes(q) || r.applicantEmail.toLowerCase().includes(q);
+      })
+    : reservations;
+  const unreserved = filtered.filter((r) => !r.isReserved);
+  const reserved = filtered.filter((r) => r.isReserved);
 
   return (
     <AppLayout title="Reservations">
@@ -148,6 +155,16 @@ export default function AdminReservationsPage() {
           </p>
         )}
 
+        {!isLoading && reservations.length > 0 && (
+          <input
+            type="search"
+            className="ui-datatable-search admin-reservations-search"
+            placeholder="Search by applicant name or email"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        )}
+
         {isLoading ? (
           <p>Loading...</p>
         ) : reservations.length === 0 ? (
@@ -159,7 +176,7 @@ export default function AdminReservationsPage() {
             <Card>
               <h2>Unreserved ({unreserved.length})</h2>
               {unreserved.length === 0 ? (
-                <p>Every approved applicant has reserved their slot.</p>
+                <p>{search.trim() ? "No matches in Unreserved." : "Every approved applicant has reserved their slot."}</p>
               ) : (
                 <ul className="reservation-list">
                   {unreserved.map((reservation) => (
@@ -176,7 +193,7 @@ export default function AdminReservationsPage() {
             <Card>
               <h2>Reserved ({reserved.length})</h2>
               {reserved.length === 0 ? (
-                <p>No reservations recorded yet.</p>
+                <p>{search.trim() ? "No matches in Reserved." : "No reservations recorded yet."}</p>
               ) : (
                 <ul className="reservation-list">
                   {reserved.map((reservation) => (

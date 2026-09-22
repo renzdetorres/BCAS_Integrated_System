@@ -4,32 +4,35 @@
   color: var(--color-text-primary);
 }
 
-.ah-workflow-stepper {
-  list-style: none;
+.ah-review-section .tracking-stepper {
+  margin-bottom: 12px;
+}
+
+/* The dossier: one continuous case file the Academic Head reads top to
+   bottom before deciding, sections divided by a rule rather than each
+   living in its own shadowed card - same pattern as the Evaluator's
+   screening page for this record, one step earlier in the workflow. */
+.ah-dossier {
+  padding: 4px 24px;
+}
+
+.ah-dossier-section {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ah-dossier-section:first-child {
+  padding-top: 20px;
+}
+
+.ah-dossier-section:last-child {
+  border-bottom: none;
+}
+
+.ah-dossier-section h2 {
   margin: 0 0 12px;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.ah-workflow-step {
-  padding: 6px 14px;
-  border-radius: 999px;
-  background: var(--color-status-gray-bg);
-  color: var(--color-status-gray-text);
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.ah-workflow-step-current {
-  background: var(--color-status-amber-bg);
-  color: var(--color-status-amber-text);
-}
-
-.ah-workflow-step-done {
-  background: var(--color-status-green-bg);
-  color: var(--color-status-green-text);
+  font-size: 1rem;
+  color: var(--color-text-primary);
 }
 
 .ah-status-line {
