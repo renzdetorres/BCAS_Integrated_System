@@ -13,10 +13,12 @@ namespace BCAS.Api.Controllers;
 public class AdminExamSchedulesController : ControllerBase
 {
     private readonly IAdminExamScheduleService _examScheduleService;
+    private readonly IAuditLogService _auditLogService;
 
-    public AdminExamSchedulesController(IAdminExamScheduleService examScheduleService)
+    public AdminExamSchedulesController(IAdminExamScheduleService examScheduleService, IAuditLogService auditLogService)
     {
         _examScheduleService = examScheduleService;
+        _auditLogService = auditLogService;
     }
 
     /// <summary>Admin-only: every exam schedule (offered or not), each with the applicants assigned to it.</summary>
@@ -43,6 +45,8 @@ public class AdminExamSchedulesController : ControllerBase
         try
         {
             var schedule = await _examScheduleService.CreateAsync(request, cancellationToken);
+            await _auditLogService.LogAsync(
+                User, "ExamScheduleCreated", $"{schedule.DayType} {schedule.ExamDate} {schedule.ExamTime} ({schedule.Venue})", cancellationToken);
             return CreatedAtAction(nameof(GetAll), new { id = schedule.ExamScheduleId }, schedule);
         }
         catch (InvalidDayTypeException ex)
@@ -72,6 +76,11 @@ public class AdminExamSchedulesController : ControllerBase
         try
         {
             var schedule = await _examScheduleService.SetOfferedAsync(examScheduleId, request.IsOffered!.Value, cancellationToken);
+            await _auditLogService.LogAsync(
+                User,
+                request.IsOffered.Value ? "ExamScheduleOffered" : "ExamScheduleUnoffered",
+                $"{schedule.DayType} {schedule.ExamDate} {schedule.ExamTime}",
+                cancellationToken);
             return Ok(schedule);
         }
         catch (ExamScheduleNotFoundException ex)

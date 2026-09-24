@@ -158,7 +158,7 @@ export default function AdminReservationsPage() {
         {!isLoading && reservations.length > 0 && (
           <input
             type="search"
-            className="ui-datatable-search admin-reservations-search"
+            className="ui-input ui-datatable-search admin-reservations-search"
             placeholder="Search by applicant name or email"
             value={search}
             onChange={(event) => setSearch(event.target.value)}

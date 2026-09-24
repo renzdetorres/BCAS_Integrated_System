@@ -66,6 +66,7 @@ export const NAV_ITEMS_BY_ROLE = {
       items: [
         { to: "/admin/users", label: "Account Management", icon: "users" },
         { to: "/admin/staff", label: "Provision Staff", icon: "user-plus" },
+        { to: "/admin/audit-logs", label: "Activity Log", icon: "history" },
       ],
     },
   ],
@@ -131,4 +132,14 @@ export const ROLE_LABELS = {
   Evaluator: "Evaluator Portal",
   AcademicHead: "Academic Head Portal",
   SupportStaff: "Support Staff Portal",
+};
+
+// Same roles, without "Portal" - for compact spots like the TopBar's role
+// tag where the sidebar's fuller label would wrap or crowd the user menu.
+export const ROLE_SHORT_LABELS = {
+  Applicant: "Applicant",
+  Admin: "Admin / Registrar",
+  Evaluator: "Evaluator",
+  AcademicHead: "Academic Head",
+  SupportStaff: "Support Staff",
 };

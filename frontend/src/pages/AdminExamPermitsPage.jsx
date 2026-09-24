@@ -92,7 +92,7 @@ export default function AdminExamPermitsPage() {
         {!isLoading && permits.length > 0 && (
           <input
             type="search"
-            className="ui-datatable-search admin-exam-permits-search"
+            className="ui-input ui-datatable-search admin-exam-permits-search"
             placeholder="Search by applicant name or email"
             value={search}
             onChange={(event) => setSearch(event.target.value)}

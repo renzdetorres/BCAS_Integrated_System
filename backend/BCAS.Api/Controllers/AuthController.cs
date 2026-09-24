@@ -7,6 +7,7 @@ using BCAS.Api.Models;
 using BCAS.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace BCAS.Api.Controllers;
 
@@ -15,11 +16,41 @@ namespace BCAS.Api.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly AuthCookieOptions _cookieOptions;
+    private readonly FrontendOptions _frontendOptions;
+    private readonly IAuditLogService _auditLogService;
 
-    public AuthController(IAuthService authService)
+    public AuthController(
+        IAuthService authService,
+        IOptions<AuthCookieOptions> cookieOptions,
+        IOptions<FrontendOptions> frontendOptions,
+        IAuditLogService auditLogService)
     {
         _authService = authService;
+        _cookieOptions = cookieOptions.Value;
+        _frontendOptions = frontendOptions.Value;
+        _auditLogService = auditLogService;
     }
+
+    /// <summary>
+    /// Where the reset-password link should point: the configured frontend
+    /// origin if set (needed in local dev, where Vite and the API are
+    /// different origins), else this same request's own origin (correct in
+    /// production, where the API serves the SPA itself - see FrontendOptions).
+    /// </summary>
+    private string FrontendBaseUrl =>
+        !string.IsNullOrWhiteSpace(_frontendOptions.BaseUrl)
+            ? _frontendOptions.BaseUrl!
+            : $"{Request.Scheme}://{Request.Host}";
+
+    /// <summary>
+    /// The two cookie attributes that must match between Login (Append) and
+    /// Logout (Delete) for the browser to treat them as the same cookie - see
+    /// AuthCookieOptions.RequireHttps for why this is configurable rather
+    /// than hardcoded.
+    /// </summary>
+    private (bool Secure, SameSiteMode SameSite) CookieSecurity =>
+        _cookieOptions.RequireHttps ? (true, SameSiteMode.None) : (false, SameSiteMode.Lax);
 
     /// <summary>
     /// Public self-service registration. Always creates an Applicant account;
@@ -66,20 +97,24 @@ public class AuthController : ControllerBase
         {
             var result = await _authService.LoginAsync(request, cancellationToken);
 
+            var (secure, sameSite) = CookieSecurity;
             Response.Cookies.Append(AuthConstants.AuthCookieName, result.Token, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
-                // None (not Lax): the frontend (http://localhost:5173 in dev)
-                // and this API (https://localhost:7100) differ in scheme, which
-                // browsers treat as cross-site under the schemeful-same-site
-                // rule even though the host is the same - a Lax cookie is
-                // never sent back on the SPA's subsequent fetch() calls, so
-                // every authenticated request 401s immediately after login.
-                SameSite = SameSiteMode.None,
+                Secure = secure,
+                SameSite = sameSite,
                 Path = "/",
                 Expires = result.ExpiresAtUtc,
             });
+
+            // Staff accountability log, not applicant usage telemetry - an
+            // Applicant logging in isn't an administrative action, and at
+            // real volume it would bury the staff activity this log exists
+            // to surface. See AuditLogService's summary comment.
+            if (result.User.Role != "Applicant")
+            {
+                await _auditLogService.LogAsync(result.User.UserId, result.User.Email, "Login", cancellationToken: cancellationToken);
+            }
 
             return Ok(result.User);
         }
@@ -95,6 +130,42 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
+    /// Always returns 204 regardless of whether the email matches an
+    /// account - an email is only actually sent when it does (no-enumeration,
+    /// same reasoning as Login's generic failure message).
+    /// </summary>
+    [HttpPost("forgot-password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
+    {
+        await _authService.ForgotPasswordAsync(request.Email, FrontendBaseUrl, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>Sets a new password from a valid reset-email link/token.</summary>
+    [HttpPost("reset-password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _authService.ResetPasswordAsync(request.Token, request.NewPassword, cancellationToken);
+            return NoContent();
+        }
+        catch (InvalidOrExpiredResetTokenException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Reset link invalid",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+    }
+
+    /// <summary>
     /// Clears the auth cookie server-side, invalidating the client's session.
     /// Idempotent - safe to call even when no cookie is present.
     /// </summary>
@@ -102,13 +173,12 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public IActionResult Logout()
     {
+        var (secure, sameSite) = CookieSecurity;
         Response.Cookies.Delete(AuthConstants.AuthCookieName, new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
-            // Must match the attributes the cookie was set with (see Login)
-            // for the browser to recognize this as clearing the same cookie.
-            SameSite = SameSiteMode.None,
+            Secure = secure,
+            SameSite = sameSite,
             Path = "/",
         });
 

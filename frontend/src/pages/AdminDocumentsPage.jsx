@@ -81,7 +81,7 @@ export default function AdminDocumentsPage() {
 
   return (
     <AppLayout title="Document Verification Log">
-      <Card>
+      <Card tier="data">
         <p className="admin-documents-subtitle">
           Every document submitted across all applicants, with verification status and, for a
           flagged or rejected document, the reason given. This is a read-only record - Support

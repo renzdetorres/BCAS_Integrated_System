@@ -153,7 +153,7 @@ export default function AdminApplicationsPage() {
           ]}
           extraToolbar={
             <input
-              className="ui-datatable-search"
+              className="ui-input ui-datatable-search"
               type="text"
               placeholder="Filter by program / scholarship"
               value={filters.program}

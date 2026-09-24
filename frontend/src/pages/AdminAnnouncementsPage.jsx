@@ -10,6 +10,8 @@ import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import ConfirmDialog from "../components/ui/ConfirmDialog.jsx";
+import Button from "../components/ui/Button.jsx";
+import FormField from "../components/ui/FormField.jsx";
 import "./AdminAnnouncementsPage.css";
 
 const initialCreateForm = { category: "Admission", title: "", body: "" };
@@ -122,43 +124,36 @@ export default function AdminAnnouncementsPage() {
         )}
 
         <form onSubmit={handleCreate} noValidate>
-          <div className="form-row">
-            <label htmlFor="category">Category</label>
-            <select
-              id="category"
-              value={createForm.category}
-              onChange={(event) => setCreateForm((prev) => ({ ...prev, category: event.target.value }))}
-            >
-              <option value="Admission">Admission</option>
-              <option value="Scholarship">Scholarship</option>
-            </select>
-          </div>
-          <div className="form-row">
-            <label htmlFor="title">Title</label>
-            <input
-              id="title"
-              type="text"
-              required
-              maxLength={200}
-              value={createForm.title}
-              onChange={(event) => setCreateForm((prev) => ({ ...prev, title: event.target.value }))}
-            />
-          </div>
-          <div className="form-row">
-            <label htmlFor="body">Body</label>
-            <textarea
-              id="body"
-              rows={4}
-              required
-              maxLength={2000}
-              value={createForm.body}
-              onChange={(event) => setCreateForm((prev) => ({ ...prev, body: event.target.value }))}
-            />
-          </div>
+          <FormField as="select" id="category" label="Category"
+            value={createForm.category}
+            onChange={(event) => setCreateForm((prev) => ({ ...prev, category: event.target.value }))}
+          >
+            <option value="Admission">Admission</option>
+            <option value="Scholarship">Scholarship</option>
+          </FormField>
+          <FormField
+            id="title"
+            label="Title"
+            type="text"
+            required
+            maxLength={200}
+            value={createForm.title}
+            onChange={(event) => setCreateForm((prev) => ({ ...prev, title: event.target.value }))}
+          />
+          <FormField
+            as="textarea"
+            id="body"
+            label="Body"
+            rows={4}
+            required
+            maxLength={2000}
+            value={createForm.body}
+            onChange={(event) => setCreateForm((prev) => ({ ...prev, body: event.target.value }))}
+          />
 
-          <button type="submit" disabled={isCreating}>
+          <Button type="submit" disabled={isCreating}>
             {isCreating ? "Creating..." : "Create Announcement"}
-          </button>
+          </Button>
         </form>
       </Card>
 
@@ -189,9 +184,10 @@ export default function AdminAnnouncementsPage() {
                 <p className="admin-announcements-title">{announcement.title}</p>
                 <p className="admin-announcements-body">{announcement.body}</p>
                 <div className="row-actions">
-                  <button
+                  <Button
                     type="button"
-                    className={announcement.isActive ? "toggle-deactivate" : "toggle-activate"}
+                    tone={announcement.isActive ? "secondary" : "primary"}
+                    size="sm"
                     onClick={() => handleToggle(announcement)}
                     disabled={pendingToggleId === announcement.announcementId}
                   >
@@ -200,7 +196,7 @@ export default function AdminAnnouncementsPage() {
                       : announcement.isActive
                         ? "Deactivate"
                         : "Post"}
-                  </button>
+                  </Button>
                 </div>
               </li>
             ))}

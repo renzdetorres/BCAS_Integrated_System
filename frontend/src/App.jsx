@@ -5,6 +5,8 @@ import RequireAuth from "./components/RequireAuth.jsx";
 import RequireRole from "./components/RequireRole.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
+import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 import PortalRouter from "./pages/PortalRouter.jsx";
 import ProvisionStaffPage from "./pages/ProvisionStaffPage.jsx";
 import ManageUsersPage from "./pages/ManageUsersPage.jsx";
@@ -43,6 +45,7 @@ import AdminExamSchedulesPage from "./pages/AdminExamSchedulesPage.jsx";
 import AdminExamPermitsPage from "./pages/AdminExamPermitsPage.jsx";
 import AdminScholarshipsPage from "./pages/AdminScholarshipsPage.jsx";
 import AdminReservationsPage from "./pages/AdminReservationsPage.jsx";
+import AdminAuditLogsPage from "./pages/AdminAuditLogsPage.jsx";
 
 export default function App() {
   return (
@@ -52,6 +55,8 @@ export default function App() {
           <Routes>
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route element={<RequireAuth />}>
               <Route path="/portal" element={<PortalRouter />} />
               <Route path="/announcements" element={<AnnouncementsRouter />} />
@@ -71,6 +76,7 @@ export default function App() {
                 <Route path="/admin/exam-permits" element={<AdminExamPermitsPage />} />
                 <Route path="/admin/scholarships" element={<AdminScholarshipsPage />} />
                 <Route path="/admin/reservations" element={<AdminReservationsPage />} />
+                <Route path="/admin/audit-logs" element={<AdminAuditLogsPage />} />
               </Route>
               <Route element={<RequireRole allowedRoles={["Evaluator"]} />}>
                 <Route

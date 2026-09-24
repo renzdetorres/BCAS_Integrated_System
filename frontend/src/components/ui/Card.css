@@ -20,6 +20,26 @@
   color: var(--color-text-primary);
 }
 
+/* Data container: a table/dense list a staff member scans repeatedly - reads
+   as a records panel, not a floating widget. Matches the treatment already
+   used for the Applications table. No colored top rule - same reasoning as
+   the stat tile below: a "border-t-4" accent stripe is the generic
+   dashboard-template tell regardless of which token paints it. */
+.ui-card--data {
+  box-shadow: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 18px 20px;
+}
+
+/* Action panel: something the viewer is meant to act on now. A tinted
+   background reads as "different" without a colored border stripe - the
+   same non-border approach NextActionBanner already uses (its own
+   distinction comes from a CTA button and serif copy, not a gold rule). */
+.ui-card--action {
+  background: var(--color-primary-tint);
+}
+
 /* Stat tiles read as a small ledger, not analytics widgets: a plain label
    over a serif figure inside a flat bordered tile, not four identical
    shadowed cards - and not a colored accent bar either, since that's the

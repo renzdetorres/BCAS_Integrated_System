@@ -91,7 +91,12 @@ export default function LoginPage() {
               </div>
 
               <div className="input-group">
-                <label htmlFor="password">Password</label>
+                <div className="input-group-label-row">
+                  <label htmlFor="password">Password</label>
+                  <Link className="input-group-aside-link" to="/forgot-password">
+                    Forgot password?
+                  </Link>
+                </div>
                 <div className="input-with-icon has-toggle">
                   <Icon name="lock" size={18} className="input-icon" />
                   <input

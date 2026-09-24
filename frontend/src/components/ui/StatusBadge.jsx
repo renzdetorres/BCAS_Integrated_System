@@ -1,3 +1,4 @@
+import Icon from "./Icon.jsx";
 import "./StatusBadge.css";
 
 // Maps every real status/verdict/flag value used across the system
@@ -42,6 +43,18 @@ const LABEL_OVERRIDES = {
   NotEligible: "Not Eligible",
 };
 
+// One icon per tone, not per status value - the tone already carries the
+// meaning (approved/pending/rejected/inactive/under-review), so the icon
+// reinforces that same signal for a quick scan rather than illustrating
+// each of the ~20 status strings individually.
+const ICON_BY_TONE = {
+  green: "check",
+  amber: "clock",
+  red: "x",
+  gray: "dash",
+  purple: "eye",
+};
+
 /**
  * Status pill using only the five palette tones (green/red/amber/gray/purple).
  * `adminContext` renders "UnderReview" as purple instead of amber, per the
@@ -53,5 +66,10 @@ export default function StatusBadge({ status, adminContext = false, label }) {
     adminContext && status === "UnderReview" ? "purple" : TONE_BY_VALUE[status] ?? "gray";
   const text = label ?? LABEL_OVERRIDES[status] ?? status;
 
-  return <span className={`status-badge status-badge-${tone}`}>{text}</span>;
+  return (
+    <span className={`status-badge status-badge-${tone}`}>
+      <Icon name={ICON_BY_TONE[tone]} size={11} className="status-badge-icon" />
+      {text}
+    </span>
+  );
 }
