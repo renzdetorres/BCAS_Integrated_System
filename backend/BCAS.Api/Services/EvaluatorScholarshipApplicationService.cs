@@ -12,6 +12,7 @@ public class EvaluatorScholarshipApplicationService : IEvaluatorScholarshipAppli
     private readonly IApplicantDocumentRepository _documentRepository;
     private readonly IApplicationStatusHistoryRepository _statusHistoryRepository;
     private readonly INotificationDispatchService _notificationDispatchService;
+    private readonly IScholarshipApplicationRepository _scholarshipApplicationRepository;
     private readonly ILogger<EvaluatorScholarshipApplicationService> _logger;
 
     public EvaluatorScholarshipApplicationService(
@@ -19,12 +20,14 @@ public class EvaluatorScholarshipApplicationService : IEvaluatorScholarshipAppli
         IApplicantDocumentRepository documentRepository,
         IApplicationStatusHistoryRepository statusHistoryRepository,
         INotificationDispatchService notificationDispatchService,
+        IScholarshipApplicationRepository scholarshipApplicationRepository,
         ILogger<EvaluatorScholarshipApplicationService> logger)
     {
         _applicationRepository = applicationRepository;
         _documentRepository = documentRepository;
         _statusHistoryRepository = statusHistoryRepository;
         _notificationDispatchService = notificationDispatchService;
+        _scholarshipApplicationRepository = scholarshipApplicationRepository;
         _logger = logger;
     }
 
@@ -143,6 +146,15 @@ public class EvaluatorScholarshipApplicationService : IEvaluatorScholarshipAppli
         var applicantFirstName = current.ApplicantName.Split(' ', 2)[0];
         await _notificationDispatchService.NotifyScholarshipResultAsync(
             current.UserId, current.ApplicantEmail, applicantFirstName, request.Decision, current.ScholarshipName, cancellationToken);
+
+        // Scholarship waitlist: release the slot back on rejection - the
+        // Academic Head's dedicated decision flow is the other of the two
+        // paths a scholarship application can reach "Rejected" through, see
+        // AdminApplicationsService.UpdateStatusAsync for the Admin override.
+        if (request.Decision == "Rejected")
+        {
+            await _scholarshipApplicationRepository.ReleaseSlotByApplicationIdAsync(applicationId, cancellationToken);
+        }
 
         _logger.LogInformation(
             "Scholarship application {ApplicationId} decided as {Decision} by {DecidedByUserId}",

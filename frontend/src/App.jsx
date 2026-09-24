@@ -46,6 +46,11 @@ import AdminExamPermitsPage from "./pages/AdminExamPermitsPage.jsx";
 import AdminScholarshipsPage from "./pages/AdminScholarshipsPage.jsx";
 import AdminReservationsPage from "./pages/AdminReservationsPage.jsx";
 import AdminAuditLogsPage from "./pages/AdminAuditLogsPage.jsx";
+import AdminDuplicateApplicantsPage from "./pages/AdminDuplicateApplicantsPage.jsx";
+import InquiriesPage from "./pages/InquiriesPage.jsx";
+import InquiryDetailPage from "./pages/InquiryDetailPage.jsx";
+import StaffInquiriesPage from "./pages/StaffInquiriesPage.jsx";
+import StaffInquiryDetailPage from "./pages/StaffInquiryDetailPage.jsx";
 
 export default function App() {
   return (
@@ -63,6 +68,7 @@ export default function App() {
               <Route element={<RequireRole allowedRoles={["Admin"]} />}>
                 <Route path="/admin/staff" element={<ProvisionStaffPage />} />
                 <Route path="/admin/users" element={<ManageUsersPage />} />
+                <Route path="/admin/duplicate-applicants" element={<AdminDuplicateApplicantsPage />} />
                 <Route path="/admin/notification-settings" element={<NotificationSettingsPage />} />
                 <Route path="/admin/settings" element={<AdminSettingsPage />} />
                 <Route path="/admin/applications" element={<AdminApplicationsPage />} />
@@ -112,6 +118,12 @@ export default function App() {
                 <Route path="/exam-schedule" element={<ExamSchedulePage />} />
                 <Route path="/exam-permit" element={<ExamPermitPage />} />
                 <Route path="/application-tracking" element={<ApplicationTrackingPage />} />
+                <Route path="/inquiries" element={<InquiriesPage />} />
+                <Route path="/inquiries/:threadId" element={<InquiryDetailPage />} />
+              </Route>
+              <Route element={<RequireRole allowedRoles={["SupportStaff", "Admin"]} />}>
+                <Route path="/staff/inquiries" element={<StaffInquiriesPage />} />
+                <Route path="/staff/inquiries/:threadId" element={<StaffInquiryDetailPage />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/login" replace />} />

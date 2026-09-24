@@ -1,3 +1,4 @@
+using BCAS.Api.Constants;
 using BCAS.Api.Data;
 using BCAS.Api.Exceptions;
 using BCAS.Api.Mapping;
@@ -163,4 +164,62 @@ public class AdminReportsService : IAdminReportsService
 
         return result.ToContractResponse();
     }
+
+    public async Task<ApplicationTrendResponse> GetApplicationTrendAsync(
+        string? program, int weeks, CancellationToken cancellationToken = default)
+    {
+        var clampedWeeks = Math.Clamp(weeks <= 0 ? ReportTrendConstants.DefaultTrendWeeks : weeks, 1, ReportTrendConstants.MaxTrendWeeks);
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var currentWeekStart = today.AddDays(-DayOfWeekOffset(today));
+        var sinceWeekStart = currentWeekStart.AddDays(-7 * (clampedWeeks - 1));
+
+        var rows = await _reportsRepository.GetWeeklyApplicationCountsAsync(sinceWeekStart, program, cancellationToken);
+        var countsByWeek = rows
+            .GroupBy(r => r.WeekStart)
+            .ToDictionary(
+                g => g.Key,
+                g => (
+                    Admission: g.Where(r => r.Category == "Admission").Sum(r => r.Count),
+                    Scholarship: g.Where(r => r.Category == "Scholarship").Sum(r => r.Count)));
+
+        var weekly = new List<WeeklyTrendPointResponse>(clampedWeeks);
+        for (var weekStart = sinceWeekStart; weekStart <= currentWeekStart; weekStart = weekStart.AddDays(7))
+        {
+            var counts = countsByWeek.TryGetValue(weekStart, out var found) ? found : (Admission: 0, Scholarship: 0);
+            weekly.Add(new WeeklyTrendPointResponse
+            {
+                WeekStart = weekStart,
+                AdmissionCount = counts.Admission,
+                ScholarshipCount = counts.Scholarship,
+            });
+        }
+
+        return new ApplicationTrendResponse { Weekly = weekly };
+    }
+
+    public async Task<ApplicationFunnelResponse> GetApplicationFunnelAsync(string? program, CancellationToken cancellationToken = default)
+    {
+        var admissionCounts = await _reportsRepository.GetAdmissionFunnelCountsAsync(program, cancellationToken);
+        var scholarshipCounts = await _reportsRepository.GetScholarshipFunnelCountsAsync(cancellationToken);
+
+        return new ApplicationFunnelResponse
+        {
+            AdmissionFunnel = ProjectOntoStageOrder(admissionCounts, ReportTrendConstants.AdmissionFunnelStages),
+            ScholarshipFunnel = ProjectOntoStageOrder(scholarshipCounts, ReportTrendConstants.ScholarshipFunnelStages),
+        };
+    }
+
+    private static IReadOnlyList<FunnelStageCountResponse> ProjectOntoStageOrder(
+        IReadOnlyList<(string Status, int Count)> counts, IReadOnlyList<string> stageOrder)
+    {
+        var countByStatus = counts.ToDictionary(c => c.Status, c => c.Count, StringComparer.Ordinal);
+        return stageOrder
+            .Select(stage => new FunnelStageCountResponse { Stage = stage, Count = countByStatus.GetValueOrDefault(stage) })
+            .ToList();
+    }
+
+    /// <summary>Days to subtract from `date` to reach that week's Monday (DayOfWeek.Sunday = 0, so Sunday needs -6, not -0).</summary>
+    private static int DayOfWeekOffset(DateOnly date) =>
+        date.DayOfWeek == DayOfWeek.Sunday ? 6 : (int)date.DayOfWeek - 1;
 }

@@ -34,4 +34,31 @@ public interface IAdminReportsRepository
     /// <summary>A single scholarship application's result-report row by id, or null if no such application exists.</summary>
     Task<ScholarshipResultListItem?> GetScholarshipResultByApplicationIdAsync(
         Guid applicationId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Non-archived admission and scholarship applications submitted at or
+    /// after sinceWeekStart, one row per (week bucket, category) with the
+    /// count submitted that week. Weeks bucket to their Monday-ish start via
+    /// SQL Server's DATEDIFF(WEEK, 0, ...) convention, consistently
+    /// regardless of server DATEFIRST setting. program narrows Admission
+    /// rows only (course, partial match, matching every other report here) -
+    /// Scholarship rows are never filtered by it, since scholarships aren't
+    /// tied to a department/program.
+    /// </summary>
+    Task<IReadOnlyList<(DateOnly WeekStart, string Category, int Count)>> GetWeeklyApplicationCountsAsync(
+        DateOnly sinceWeekStart, string? program, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// How many distinct non-archived admission applications ever reached
+    /// each status (ApplicationStatusHistory.ToStatus), optionally narrowed
+    /// by program (course, partial match). An application that skipped a
+    /// stage (the Admin status override allows a non-adjacent forward jump)
+    /// correctly never counts toward a stage it never actually passed
+    /// through.
+    /// </summary>
+    Task<IReadOnlyList<(string Status, int Count)>> GetAdmissionFunnelCountsAsync(
+        string? program, CancellationToken cancellationToken = default);
+
+    /// <summary>Same as GetAdmissionFunnelCountsAsync, for non-archived scholarship applications - never program-filtered.</summary>
+    Task<IReadOnlyList<(string Status, int Count)>> GetScholarshipFunnelCountsAsync(CancellationToken cancellationToken = default);
 }

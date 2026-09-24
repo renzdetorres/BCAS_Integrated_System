@@ -11,6 +11,13 @@
   z-index: 30;
 }
 
+@media (max-width: 640px) {
+  .topbar {
+    padding: 0 12px;
+    gap: 8px;
+  }
+}
+
 .topbar-menu-button {
   display: none;
   align-items: center;
@@ -78,11 +85,14 @@
   text-align: center;
 }
 
-/* Shared dropdown-panel chrome (announcements, user menu). */
+/* Shared dropdown-panel chrome (announcements, user menu). max-width keeps
+   either panel from overflowing the left edge on a narrow phone, where
+   "right: 0" alone would let a fixed-width panel run off-screen. */
 .topbar-panel {
   position: absolute;
   right: 0;
   top: calc(100% + 6px);
+  max-width: calc(100vw - 24px);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -91,7 +101,7 @@
 }
 
 .topbar-notif-panel {
-  width: 320px;
+  width: min(320px, calc(100vw - 24px));
 }
 
 .topbar-panel-header {
@@ -198,6 +208,20 @@
   flex-direction: column;
   align-items: flex-start;
   line-height: 1.25;
+}
+
+/* Below ~640px, the sidebar is already collapsed behind the hamburger and
+   the page title is the thing that needs the room - name+role text is
+   redundant with what's one tap away in the menu, so it drops first. */
+@media (max-width: 640px) {
+  .topbar-user-text {
+    display: none;
+  }
+
+  .topbar-user-button {
+    padding: 5px;
+    gap: 0;
+  }
 }
 
 .topbar-user-name {

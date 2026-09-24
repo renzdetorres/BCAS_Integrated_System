@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { searchApplications } from "../api/adminApplicationsApi.js";
+import { ARCHIVABLE_STATUSES, bulkArchiveApplications, searchApplications } from "../api/adminApplicationsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import { useToast } from "../context/ToastContext.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import DataTable from "../components/ui/DataTable.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
@@ -9,6 +10,7 @@ import { StatCard } from "../components/ui/Card.jsx";
 import "./AdminApplicationsPage.css";
 
 const TERMINAL_STATUSES = new Set(["Approved", "Rejected"]);
+const ARCHIVABLE_STATUS_SET = new Set(ARCHIVABLE_STATUSES);
 
 const initialFilters = { search: "", status: "", category: "", program: "" };
 
@@ -33,10 +35,14 @@ function formatDate(isoDateTime) {
 
 export default function AdminApplicationsPage() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [filters, setFilters] = useState(initialFilters);
   const [applications, setApplications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
+
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [isBulkArchiving, setIsBulkArchiving] = useState(false);
 
   const loadApplications = useCallback(async (activeFilters) => {
     setIsLoading(true);
@@ -56,7 +62,84 @@ export default function AdminApplicationsPage() {
     return () => clearTimeout(timeout);
   }, [filters, loadApplications]);
 
+  const archivableApplications = applications.filter(
+    (row) => !row.isArchived && ARCHIVABLE_STATUS_SET.has(row.status),
+  );
+  const archivableIds = new Set(archivableApplications.map((row) => row.applicationId));
+  const selectedArchivableIds = Array.from(selectedIds).filter((id) => archivableIds.has(id));
+  const allArchivableSelected =
+    archivableApplications.length > 0 && archivableApplications.every((row) => selectedIds.has(row.applicationId));
+
+  function toggleSelect(applicationId, event) {
+    event.stopPropagation();
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(applicationId)) {
+        next.delete(applicationId);
+      } else {
+        next.add(applicationId);
+      }
+      return next;
+    });
+  }
+
+  function toggleSelectAll(event) {
+    event.stopPropagation();
+    setSelectedIds(
+      allArchivableSelected ? new Set() : new Set(archivableApplications.map((row) => row.applicationId)),
+    );
+  }
+
+  async function handleBulkArchive() {
+    setIsBulkArchiving(true);
+    setErrorMessage(null);
+    try {
+      const items = applications
+        .filter((row) => selectedArchivableIds.includes(row.applicationId))
+        .map((row) => ({ applicationId: row.applicationId, category: row.category }));
+
+      const result = await bulkArchiveApplications(items);
+      setSelectedIds(new Set());
+      await loadApplications(filters);
+
+      if (result.failures.length === 0) {
+        showToast(`${result.succeededCount} application${result.succeededCount === 1 ? "" : "s"} archived.`);
+      } else {
+        showToast(
+          `${result.succeededCount} archived, ${result.failures.length} couldn't be archived (already handled elsewhere).`,
+        );
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof ApiError ? error.message : "Failed to archive the selected applications.");
+    } finally {
+      setIsBulkArchiving(false);
+    }
+  }
+
   const columns = [
+    {
+      key: "select",
+      header: (
+        <input
+          type="checkbox"
+          checked={allArchivableSelected}
+          onChange={toggleSelectAll}
+          onClick={(event) => event.stopPropagation()}
+          disabled={archivableApplications.length === 0}
+          aria-label="Select all archivable applications"
+        />
+      ),
+      render: (row) =>
+        !row.isArchived && ARCHIVABLE_STATUS_SET.has(row.status) ? (
+          <input
+            type="checkbox"
+            checked={selectedIds.has(row.applicationId)}
+            onChange={(event) => toggleSelect(row.applicationId, event)}
+            onClick={(event) => event.stopPropagation()}
+            aria-label={`Select ${row.applicantName}'s application`}
+          />
+        ) : null,
+    },
     {
       key: "applicant",
       header: "Applicant",
@@ -117,6 +200,27 @@ export default function AdminApplicationsPage() {
             not the full archive.
           </p>
         </section>
+      )}
+
+      {selectedArchivableIds.length > 0 && (
+        <div className="admin-applications-bulk-bar">
+          <span className="admin-applications-bulk-count">
+            {selectedArchivableIds.length} selected
+          </span>
+          <div className="row-actions">
+            <button type="button" className="bulk-archive-button" onClick={handleBulkArchive} disabled={isBulkArchiving}>
+              {isBulkArchiving ? "Archiving..." : "Archive Selected"}
+            </button>
+            <button
+              type="button"
+              className="bulk-clear-button"
+              onClick={() => setSelectedIds(new Set())}
+              disabled={isBulkArchiving}
+            >
+              Clear
+            </button>
+          </div>
+        </div>
       )}
 
       <div className="admin-applications-panel">

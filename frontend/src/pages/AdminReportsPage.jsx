@@ -4,6 +4,8 @@ import {
   exportEnrollmentList,
   exportEnrollmentSummary,
   exportSectionFiles,
+  getApplicationFunnel,
+  getApplicationTrend,
   getEnrollmentList,
   getEnrollmentSummary,
   getScholarshipApplicantList,
@@ -17,6 +19,7 @@ import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import BarChart from "../components/ui/BarChart.jsx";
+import TrendChart from "../components/ui/TrendChart.jsx";
 import "./AdminReportsPage.css";
 
 const REPORTS = [
@@ -27,7 +30,29 @@ const REPORTS = [
   { key: "scholarshipQualification", category: "Scholarship", label: "Qualified / Not Qualified" },
   { key: "scholarshipResults", category: "Scholarship", label: "Scholarship Results" },
   { key: "scholarshipSlots", category: "Scholarship", label: "Scholarship Slot Report" },
+  { key: "applicationTrend", category: "Trends", label: "Applications per Week" },
+  { key: "applicationFunnel", category: "Trends", label: "Funnel / Drop-off" },
 ];
+
+const TREND_SERIES = [
+  { key: "admission", label: "Admission", color: "var(--color-primary)" },
+  { key: "scholarship", label: "Scholarship", color: "var(--color-accent)" },
+];
+
+function formatWeekLabel(isoDate) {
+  return new Date(isoDate).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+const FUNNEL_STAGE_LABELS = {
+  Submitted: "Submitted",
+  UnderReview: "Under Review",
+  DocumentsVerified: "Documents Verified",
+  EligibilityScreening: "Eligibility Screening",
+  Evaluation: "Evaluation",
+  Result: "Result",
+  Approved: "Approved",
+  Rejected: "Rejected",
+};
 
 function formatDate(isoDateTime) {
   if (!isoDateTime) return "—";
@@ -635,6 +660,125 @@ function ScholarshipSlotsReport() {
   );
 }
 
+function ApplicationTrendReport() {
+  const [weeks, setWeeks] = useState(12);
+  const [trend, setTrend] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { errorMessage, runReport } = useReportError();
+
+  const load = useCallback(
+    async (activeWeeks) => {
+      setIsLoading(true);
+      const data = await runReport(() => getApplicationTrend({ weeks: activeWeeks }));
+      if (data) setTrend(data);
+      setIsLoading(false);
+    },
+    [runReport],
+  );
+
+  useEffect(() => {
+    load(weeks);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const chartData = trend?.weekly.map((point) => ({
+    label: formatWeekLabel(point.weekStart),
+    values: { admission: point.admissionCount, scholarship: point.scholarshipCount },
+  }));
+
+  const totalAdmission = trend?.weekly.reduce((sum, p) => sum + p.admissionCount, 0) ?? 0;
+  const totalScholarship = trend?.weekly.reduce((sum, p) => sum + p.scholarshipCount, 0) ?? 0;
+
+  return (
+    <Card className="report-card">
+      <h2>Applications per Week</h2>
+      <p className="report-subtitle">
+        Admission and Scholarship applications submitted each week, most recent {weeks} weeks. Useful for spotting
+        intake volume trends - a snapshot total doesn't show whether this week is busier than last.
+      </p>
+
+      <form
+        className="report-filters"
+        onSubmit={(event) => {
+          event.preventDefault();
+          load(weeks);
+        }}
+      >
+        <select value={weeks} onChange={(event) => setWeeks(Number(event.target.value))}>
+          <option value={4}>Last 4 weeks</option>
+          <option value={8}>Last 8 weeks</option>
+          <option value={12}>Last 12 weeks</option>
+          <option value={26}>Last 26 weeks</option>
+        </select>
+        <button type="submit">Apply</button>
+      </form>
+
+      <ReportError message={errorMessage} />
+
+      {isLoading ? (
+        <p>Loading...</p>
+      ) : (
+        <>
+          <p className="report-total">
+            Total: <strong>{totalAdmission}</strong> Admission, <strong>{totalScholarship}</strong> Scholarship
+          </p>
+          <TrendChart data={chartData} series={TREND_SERIES} emptyMessage="No applications in this period." />
+        </>
+      )}
+    </Card>
+  );
+}
+
+function ApplicationFunnelReport() {
+  const [funnel, setFunnel] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { errorMessage, runReport } = useReportError();
+
+  useEffect(() => {
+    (async () => {
+      setIsLoading(true);
+      const data = await runReport(() => getApplicationFunnel());
+      if (data) setFunnel(data);
+      setIsLoading(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <Card className="report-card">
+      <h2>Funnel / Drop-off</h2>
+      <p className="report-subtitle">
+        How many applications ever reached each stage of the workflow, in order. The gap between two bars is how
+        many applications dropped off between those stages - not every Submitted application reaches a final
+        decision.
+      </p>
+
+      <ReportError message={errorMessage} />
+
+      {isLoading ? (
+        <p>Loading...</p>
+      ) : funnel ? (
+        <div className="report-summary-columns">
+          <div>
+            <h3>Admission</h3>
+            <BarChart
+              data={funnel.admissionFunnel.map((s) => ({ label: FUNNEL_STAGE_LABELS[s.stage] ?? s.stage, value: s.count }))}
+              emptyMessage="No admission applications yet."
+            />
+          </div>
+          <div>
+            <h3>Scholarship</h3>
+            <BarChart
+              data={funnel.scholarshipFunnel.map((s) => ({ label: FUNNEL_STAGE_LABELS[s.stage] ?? s.stage, value: s.count }))}
+              emptyMessage="No scholarship applications yet."
+            />
+          </div>
+        </div>
+      ) : null}
+    </Card>
+  );
+}
+
 const REPORT_COMPONENTS = {
   enrollmentList: EnrollmentListReport,
   enrollmentSummary: EnrollmentSummaryReport,
@@ -643,6 +787,8 @@ const REPORT_COMPONENTS = {
   scholarshipQualification: ScholarshipQualificationReport,
   scholarshipResults: ScholarshipResultsReport,
   scholarshipSlots: ScholarshipSlotsReport,
+  applicationTrend: ApplicationTrendReport,
+  applicationFunnel: ApplicationFunnelReport,
 };
 
 export default function AdminReportsPage() {
@@ -657,7 +803,7 @@ export default function AdminReportsPage() {
         </p>
 
         <nav className="admin-reports-nav">
-          {["Admission", "Scholarship"].map((category) => (
+          {["Admission", "Scholarship", "Trends"].map((category) => (
             <div key={category} className="admin-reports-nav-group">
               <span className="admin-reports-nav-label">{category}</span>
               <div className="admin-reports-nav-buttons">

@@ -32,6 +32,8 @@ const PATHS = {
   dash: "M5 12h14",
   user: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8c0-3.9 3.1-7 7-7s7 3.1 7 7",
   "graduation-cap": "M12 3 2 8l10 5 10-5-10-5ZM6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5",
+  copy: "M9 9h12v12H9ZM4 4h11v11H4Z",
+  message: "M4 5h16v11H8l-4 4Z",
 };
 
 export default function Icon({ name, size = 18, className = "" }) {

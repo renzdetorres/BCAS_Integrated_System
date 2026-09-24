@@ -4,7 +4,13 @@ namespace BCAS.Api.Data;
 
 public interface IScholarshipRepository
 {
-    /// <summary>Active scholarships with at least one remaining slot, for applicants to browse.</summary>
+    /// <summary>
+    /// Every active scholarship, for applicants to browse and apply to -
+    /// including a full one (RemainingSlots = 0), since submitting to one
+    /// now joins its waitlist instead of being blocked. Slots-available
+    /// ones sort first (then by name) so a full scholarship reads as the
+    /// less-preferred option without being hidden outright.
+    /// </summary>
     Task<IReadOnlyList<Scholarship>> GetAvailableAsync(CancellationToken cancellationToken = default);
 
     /// <summary>Every scholarship regardless of active status or remaining slots, for the Evaluator slots view (read-only).</summary>

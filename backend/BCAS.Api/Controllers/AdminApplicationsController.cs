@@ -193,4 +193,71 @@ public class AdminApplicationsController : ControllerBase
             });
         }
     }
+
+    /// <summary>
+    /// Admin-only: archives every listed application in one call, each
+    /// succeeding or failing independently (see
+    /// AdminApplicationsService.BulkArchiveAsync) - for clearing a whole
+    /// filtered page of completed records at once instead of one row at a
+    /// time. Always returns 200; check the response body's Failures list
+    /// for any rows that couldn't be archived (e.g. already archived, or
+    /// not yet in a completed status).
+    /// </summary>
+    [HttpPost("bulk-archive")]
+    [ProducesResponseType(typeof(BulkOperationResultResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<BulkOperationResultResponse>> BulkArchive(
+        [FromBody] BulkArchiveRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _applicationsService.BulkArchiveAsync(request, User.GetUserId(), cancellationToken);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Admin-only: promotes a Waitlisted scholarship application into a
+    /// freshly-available slot - atomically reserves it and moves the
+    /// application to "Submitted", where it re-enters the ordinary
+    /// Evaluator screening workflow.
+    /// </summary>
+    [HttpPost("{applicationId:guid}/promote-from-waitlist")]
+    [ProducesResponseType(typeof(AdminApplicationListItemResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AdminApplicationListItemResponse>> PromoteFromWaitlist(
+        Guid applicationId,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var promoted = await _applicationsService.PromoteFromWaitlistAsync(applicationId, User.GetUserId(), cancellationToken);
+            return Ok(promoted);
+        }
+        catch (ScholarshipApplicationNotWaitlistedException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Not waitlisted",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (ScholarshipNotAvailableException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "No slot available",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (ApplicationNotFoundException ex)
+        {
+            return NotFound(new ProblemDetails
+            {
+                Title = "Application not found",
+                Detail = ex.Message,
+                Status = StatusCodes.Status404NotFound,
+            });
+        }
+    }
 }

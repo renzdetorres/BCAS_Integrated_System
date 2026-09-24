@@ -20,6 +20,7 @@ public class AuthService : IAuthService
     private readonly ITokenService _tokenService;
     private readonly IPasswordResetTokenRepository _resetTokenRepository;
     private readonly IEmailSender _emailSender;
+    private readonly IDuplicateApplicantService _duplicateApplicantService;
     private readonly IHostEnvironment _environment;
     private readonly ILogger<AuthService> _logger;
 
@@ -28,6 +29,7 @@ public class AuthService : IAuthService
         ITokenService tokenService,
         IPasswordResetTokenRepository resetTokenRepository,
         IEmailSender emailSender,
+        IDuplicateApplicantService duplicateApplicantService,
         IHostEnvironment environment,
         ILogger<AuthService> logger)
     {
@@ -35,6 +37,7 @@ public class AuthService : IAuthService
         _tokenService = tokenService;
         _resetTokenRepository = resetTokenRepository;
         _emailSender = emailSender;
+        _duplicateApplicantService = duplicateApplicantService;
         _environment = environment;
         _logger = logger;
     }
@@ -60,6 +63,11 @@ public class AuthService : IAuthService
             cancellationToken);
 
         _logger.LogInformation("Applicant account created for {Email}", user.Email);
+
+        // Runs after the account already exists and never throws (see the
+        // interface doc) - a duplicate-detection hiccup must not turn into
+        // a failed registration.
+        await _duplicateApplicantService.DetectAndFlagAsync(user.UserId, user.FirstName, user.LastName, cancellationToken);
 
         return user.ToProfileResponse();
     }

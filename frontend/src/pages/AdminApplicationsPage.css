@@ -59,3 +59,51 @@
   color: var(--color-text-secondary);
   font-size: 0.8rem;
 }
+
+.admin-applications-bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  flex-wrap: wrap;
+}
+
+.admin-applications-bulk-count {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.row-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.bulk-archive-button,
+.bulk-clear-button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bulk-archive-button {
+  background: var(--color-status-amber-bg);
+  color: var(--color-status-amber-text);
+}
+
+.bulk-clear-button {
+  background: var(--color-status-gray-bg);
+  color: var(--color-status-gray-text);
+}
+
+.bulk-archive-button:disabled,
+.bulk-clear-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
