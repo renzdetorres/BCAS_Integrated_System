@@ -64,6 +64,10 @@ export const getScholarshipResultList = (filters) => getJson("/api/admin/reports
 
 export const getScholarshipSlotReport = () => getJson("/api/admin/reports/scholarship/slots");
 
+export const getApplicationTrend = (filters) => getJson("/api/admin/reports/trend/applications", filters);
+
+export const getApplicationFunnel = (filters) => getJson("/api/admin/reports/trend/funnel", filters);
+
 export async function getScholarshipContract(applicationId) {
   const response = await fetch(`${API_BASE_URL}/api/admin/reports/scholarship/${applicationId}/contract`, {
     method: "GET",

@@ -6,6 +6,7 @@ import {
   getApplicationStatusHistory,
   getValidNextAdmissionStatuses,
   getValidNextScholarshipStatuses,
+  promoteFromWaitlist,
   searchApplications,
   updateApplicationStatus,
 } from "../api/adminApplicationsApi.js";
@@ -39,6 +40,9 @@ export default function AdminApplicationDetailPage() {
   const [archiveReason, setArchiveReason] = useState("");
   const [isArchiving, setIsArchiving] = useState(false);
   const [archiveError, setArchiveError] = useState(null);
+
+  const [isPromoting, setIsPromoting] = useState(false);
+  const [promoteError, setPromoteError] = useState(null);
 
   const [statusHistory, setStatusHistory] = useState([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
@@ -127,6 +131,22 @@ export default function AdminApplicationDetailPage() {
     }
   }
 
+  async function handlePromoteFromWaitlist() {
+    setPromoteError(null);
+    setIsPromoting(true);
+
+    try {
+      const promoted = await promoteFromWaitlist(applicationId);
+      setApplication(promoted);
+      setStatusForm({ status: promoted.status, remarks: promoted.remarks ?? "" });
+      loadStatusHistory();
+    } catch (error) {
+      setPromoteError(error instanceof ApiError ? error.message : "Failed to promote this application from the waitlist.");
+    } finally {
+      setIsPromoting(false);
+    }
+  }
+
   async function handleArchiveSubmit(event) {
     event.preventDefault();
     setArchiveError(null);
@@ -159,6 +179,7 @@ export default function AdminApplicationDetailPage() {
     : [];
   const stepLabels = application?.category === "Admission" ? ADMISSION_STEP_LABELS : SCHOLARSHIP_STEP_LABELS;
   const canArchive = application && !application.isArchived && ARCHIVABLE_STATUSES.includes(application.status);
+  const isWaitlisted = application?.category === "Scholarship" && application.status === "Waitlisted";
 
   return (
     <AppLayout
@@ -294,11 +315,34 @@ export default function AdminApplicationDetailPage() {
               </div>
             </div>
 
+            {isWaitlisted && (
+              <div className="admin-app-detail-card">
+                <h2>Waitlist</h2>
+                <p className="admin-app-detail-subtitle">
+                  This scholarship was full when the applicant applied, so the application is holding a place on
+                  the waitlist instead of a reserved slot. Promoting it only succeeds if a slot has actually opened
+                  up since (another applicant was rejected or archived) - it then reserves that slot and moves the
+                  application into the regular screening workflow, starting at Submitted.
+                </p>
+
+                {promoteError && (
+                  <p className="form-error" role="alert">
+                    {promoteError}
+                  </p>
+                )}
+
+                <button type="button" onClick={handlePromoteFromWaitlist} disabled={isPromoting}>
+                  {isPromoting ? "Promoting..." : "Promote from Waitlist"}
+                </button>
+              </div>
+            )}
+
             <div className="admin-app-detail-card">
               <h2>Update Status</h2>
               <p className="admin-app-detail-subtitle">
-                Authorized staff can set this application to any status in its workflow and attach an optional
-                remark.
+                {isWaitlisted
+                  ? "Waitlisted applications can only move forward through the dedicated Promote from Waitlist action above, which reserves a slot atomically - this generic control is disabled while waitlisted."
+                  : "Authorized staff can set this application to any status in its workflow and attach an optional remark."}
               </p>
 
               {savedMessage && (
@@ -319,6 +363,7 @@ export default function AdminApplicationDetailPage() {
                     id="status"
                     name="status"
                     value={statusForm.status}
+                    disabled={isWaitlisted}
                     onChange={(event) => setStatusForm((prev) => ({ ...prev, status: event.target.value }))}
                   >
                     {statusOptions.map((option) => (
@@ -341,7 +386,7 @@ export default function AdminApplicationDetailPage() {
                   />
                 </div>
 
-                <button type="submit" disabled={isSaving}>
+                <button type="submit" disabled={isSaving || isWaitlisted}>
                   {isSaving ? "Saving..." : "Update Status"}
                 </button>
               </form>

@@ -30,7 +30,10 @@ export const NAV_ITEMS_BY_ROLE = {
     },
     {
       section: null,
-      items: [{ to: "/announcements", label: "Announcements", icon: "bell" }],
+      items: [
+        { to: "/announcements", label: "Announcements", icon: "bell" },
+        { to: "/inquiries", label: "Inquiries", icon: "message" },
+      ],
     },
   ],
   Admin: [
@@ -55,7 +58,10 @@ export const NAV_ITEMS_BY_ROLE = {
     },
     {
       section: "Communications",
-      items: [{ to: "/admin/announcements", label: "Announcements", icon: "bell" }],
+      items: [
+        { to: "/admin/announcements", label: "Announcements", icon: "bell" },
+        { to: "/staff/inquiries", label: "Inquiries", icon: "message" },
+      ],
     },
     {
       section: "Reports",
@@ -65,6 +71,7 @@ export const NAV_ITEMS_BY_ROLE = {
       section: "Administration",
       items: [
         { to: "/admin/users", label: "Account Management", icon: "users" },
+        { to: "/admin/duplicate-applicants", label: "Duplicate Applicants", icon: "copy" },
         { to: "/admin/staff", label: "Provision Staff", icon: "user-plus" },
         { to: "/admin/audit-logs", label: "Activity Log", icon: "history" },
       ],
@@ -107,7 +114,10 @@ export const NAV_ITEMS_BY_ROLE = {
     },
     {
       section: null,
-      items: [{ to: "/support-staff/applicants", label: "Applicant Records", icon: "users" }],
+      items: [
+        { to: "/support-staff/applicants", label: "Applicant Records", icon: "users" },
+        { to: "/staff/inquiries", label: "Inquiries", icon: "message" },
+      ],
     },
   ],
 };

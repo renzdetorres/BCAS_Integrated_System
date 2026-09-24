@@ -1288,3 +1288,204 @@ BEGIN
     CREATE NONCLUSTERED INDEX IX_PasswordResetTokens_UserId ON dbo.PasswordResetTokens (UserId) WHERE UsedAt IS NULL;
 END
 GO
+
+-- -----------------------------------------------------------------------------
+-- Scholarship waitlist. Two behavior changes, no new table:
+--
+-- 1. Submitting into a scholarship with zero RemainingSlots no longer
+--    throws - the application is created with Status = 'Waitlisted' instead
+--    (see ScholarshipApplicationRepository.CreateAsync). 'Waitlisted' is
+--    deliberately left OUT of ScholarshipWorkflowConstants.StageRank, so
+--    IsForwardTransition never treats it as part of the ordered
+--    Submitted->...->Result workflow - the only way out of it is the
+--    dedicated PromoteFromWaitlistAsync path (atomic slot-reserve +
+--    status flip), never the generic Admin status-override endpoint.
+-- 2. A slot is now released back (RemainingSlots + 1, capped at TotalSlots)
+--    when an application that had reserved one is Rejected - both via the
+--    Admin override (AdminApplicationsService.UpdateStatusAsync) and the
+--    Academic Head's final-decision flow
+--    (EvaluatorScholarshipApplicationService.RecordFinalDecisionAsync).
+--    Previously a slot taken at submission was never freed by anything in
+--    the codebase, so a full scholarship's slots only ever went down - a
+--    waitlist promoting into a slot that can never reopen would be
+--    pointless without this half of the fix.
+-- -----------------------------------------------------------------------------
+IF EXISTS (
+    SELECT 1 FROM sys.check_constraints
+    WHERE name = N'CK_ScholarshipApplications_Status' AND parent_object_id = OBJECT_ID(N'dbo.ScholarshipApplications')
+)
+BEGIN
+    ALTER TABLE dbo.ScholarshipApplications DROP CONSTRAINT CK_ScholarshipApplications_Status;
+END
+GO
+
+ALTER TABLE dbo.ScholarshipApplications
+    ADD CONSTRAINT CK_ScholarshipApplications_Status CHECK (Status IN (
+        N'Waitlisted', N'Submitted', N'DocumentsVerified', N'EligibilityScreening', N'Evaluation', N'Result', N'Approved', N'Rejected'
+    ));
+GO
+
+-- -----------------------------------------------------------------------------
+-- Duplicate-applicant detection.
+--
+-- Self-service registration only collects a name and email (see
+-- RegisterRequest) - email uniqueness is already enforced, but nothing
+-- previously caught the same person (or an impersonator) registering a
+-- second account under a slightly different name. Right after a new
+-- Applicant account is created, DuplicateApplicantService compares its name
+-- against every existing Applicant using SQL Server's built-in DIFFERENCE()
+-- (a SOUNDEX-based closeness score, 0-4) on both first and last name - close
+-- enough to catch typos and nickname spellings ("Jon"/"John") without
+-- requiring an exact match. A hit never blocks registration or merges
+-- anything automatically; it only inserts a row here for Admin/Registrar to
+-- review, since fully-automated merging on a phonetic match alone would be
+-- too blunt an instrument (common Filipino names can plausibly score a
+-- "close match" against an unrelated person) - a human makes the actual
+-- call via the ResolveFlagAsync path, which is the only way a flag leaves
+-- 'Open'.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.PotentialDuplicateApplicants', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.PotentialDuplicateApplicants
+    (
+        FlagId              UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_PotentialDuplicateApplicants_FlagId DEFAULT NEWID(),
+        NewUserId           UNIQUEIDENTIFIER NOT NULL,
+        MatchedUserId       UNIQUEIDENTIFIER NOT NULL,
+        MatchReason         NVARCHAR(200)    NOT NULL,
+        Status              NVARCHAR(20)     NOT NULL CONSTRAINT DF_PotentialDuplicateApplicants_Status DEFAULT (N'Open'),
+        DetectedAt          DATETIME2(3)     NOT NULL CONSTRAINT DF_PotentialDuplicateApplicants_DetectedAt DEFAULT SYSUTCDATETIME(),
+        ReviewedByUserId    UNIQUEIDENTIFIER NULL,
+        ReviewedAt          DATETIME2(3)     NULL,
+        ReviewNotes         NVARCHAR(500)    NULL,
+        CONSTRAINT PK_PotentialDuplicateApplicants PRIMARY KEY (FlagId),
+        CONSTRAINT FK_PotentialDuplicateApplicants_NewUser FOREIGN KEY (NewUserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT FK_PotentialDuplicateApplicants_MatchedUser FOREIGN KEY (MatchedUserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT FK_PotentialDuplicateApplicants_ReviewedBy FOREIGN KEY (ReviewedByUserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT CK_PotentialDuplicateApplicants_Status CHECK (Status IN (N'Open', N'Dismissed', N'ConfirmedDuplicate'))
+    );
+
+    CREATE NONCLUSTERED INDEX IX_PotentialDuplicateApplicants_Status ON dbo.PotentialDuplicateApplicants (Status);
+END
+GO
+
+-- -----------------------------------------------------------------------------
+-- Deadline reminders.
+--
+-- Notification Settings already had the Admin-level trigger toggle
+-- infrastructure (NotificationTriggerConfigs) and, for applicant-facing
+-- event types, the per-applicant opt-in one (NotificationPreferences) - but
+-- nothing proactively reminded anyone of anything. DeadlineReminderBackgroundService
+-- now runs periodically and covers three reminders, none of which needed a
+-- new applicant-facing endpoint, just a background check and the existing
+-- toggle UI picking up the new rows below automatically:
+--
+-- 1. ExamReminder (applicant, NotificationEventTypes.ExamReminder): an
+--    applicant with a confirmed exam exactly 3 days away.
+-- 2. MissingDocumentReminder (applicant, NotificationEventTypes.
+--    MissingDocumentReminder): a required document type still not uploaded
+--    5+ days after the applicant's admission application was submitted.
+-- 3. DocumentBacklogDigest (Support Staff/Admin only - not an applicant
+--    preference, since it's not about the applicant's own notifications):
+--    a digest sent once daily to active Support Staff/Admin accounts
+--    whenever any document has sat in ApplicantDocuments.Status = 'Pending'
+--    for 5+ days without being reviewed.
+--
+-- SentReminders is a plain send-once ledger keyed by (ReminderType,
+-- SubjectKey) so the background job's periodic re-checks never re-send the
+-- same reminder - SubjectKey means something different per ReminderType
+-- (an applicant+exam-schedule pair for ExamReminder, an applicant+document
+-- type pair for MissingDocumentReminder, a calendar date for
+-- DocumentBacklogDigest, which is allowed to re-fire once per day while the
+-- backlog persists). See DeadlineReminderService for exactly how each key
+-- is built.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.SentReminders', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.SentReminders
+    (
+        ReminderType    NVARCHAR(50)  NOT NULL,
+        SubjectKey      NVARCHAR(200) NOT NULL,
+        SentAt          DATETIME2(3)  NOT NULL CONSTRAINT DF_SentReminders_SentAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_SentReminders PRIMARY KEY (ReminderType, SubjectKey)
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.NotificationTriggerConfigs WHERE TriggerKey = N'ExamReminder')
+    INSERT INTO dbo.NotificationTriggerConfigs (TriggerKey, DisplayName, Description, IsEnabled) VALUES
+        (N'ExamReminder', N'Upcoming Exam Reminders', N'Notifies an applicant by email 3 days before their scheduled entrance exam.', 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.NotificationTriggerConfigs WHERE TriggerKey = N'MissingDocumentReminder')
+    INSERT INTO dbo.NotificationTriggerConfigs (TriggerKey, DisplayName, Description, IsEnabled) VALUES
+        (N'MissingDocumentReminder', N'Missing Document Reminders', N'Notifies an applicant by email when a required document is still missing 5+ days after they applied.', 1);
+IF NOT EXISTS (SELECT 1 FROM dbo.NotificationTriggerConfigs WHERE TriggerKey = N'DocumentBacklogDigest')
+    INSERT INTO dbo.NotificationTriggerConfigs (TriggerKey, DisplayName, Description, IsEnabled) VALUES
+        (N'DocumentBacklogDigest', N'Document Review Backlog Digest (Staff)', N'Notifies Support Staff/Admin by email when documents have been awaiting review for 5+ days.', 1);
+GO
+
+-- -----------------------------------------------------------------------------
+-- Two-way applicant inquiries.
+--
+-- Announcements only ever broadcasts one-way (staff -> every applicant).
+-- Nothing let an applicant ask a follow-up question - e.g. about why a
+-- document was flagged - without phoning the office. InquiryThreads/
+-- InquiryMessages is a lightweight ticket/thread per applicant: the
+-- applicant opens a thread with an initial message, and either side can
+-- keep replying. IsFromStaff on each message is recorded at post time
+-- (rather than derived later from the sender's role, which could
+-- theoretically change) so a thread's read-back never has to re-resolve
+-- "was this person staff when they wrote this."
+--
+-- HasUnreadForApplicant/HasUnreadForStaff are simple two-state flags, not a
+-- per-message read receipt - "the other side posted since I last opened
+-- this thread" is all the staff queue and the applicant's own list need to
+-- surface, and both are cleared by the read side's own GetDetailAsync call.
+-- Status flips to 'Closed' only via a deliberate staff action
+-- (CloseAsync); an applicant replying to a Closed thread reopens it
+-- automatically (PostMessageAsync), so closing never traps an applicant
+-- who still has something to say.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.InquiryThreads', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.InquiryThreads
+    (
+        ThreadId                UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_InquiryThreads_ThreadId DEFAULT NEWID(),
+        UserId                  UNIQUEIDENTIFIER NOT NULL,
+        Subject                 NVARCHAR(200)    NOT NULL,
+        Status                  NVARCHAR(20)     NOT NULL CONSTRAINT DF_InquiryThreads_Status DEFAULT (N'Open'),
+        HasUnreadForApplicant   BIT              NOT NULL CONSTRAINT DF_InquiryThreads_HasUnreadForApplicant DEFAULT (0),
+        HasUnreadForStaff       BIT              NOT NULL CONSTRAINT DF_InquiryThreads_HasUnreadForStaff DEFAULT (1),
+        CreatedAt               DATETIME2(3)     NOT NULL CONSTRAINT DF_InquiryThreads_CreatedAt DEFAULT SYSUTCDATETIME(),
+        UpdatedAt                DATETIME2(3)    NOT NULL CONSTRAINT DF_InquiryThreads_UpdatedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_InquiryThreads PRIMARY KEY (ThreadId),
+        CONSTRAINT FK_InquiryThreads_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT CK_InquiryThreads_Status CHECK (Status IN (N'Open', N'Closed'))
+    );
+
+    CREATE NONCLUSTERED INDEX IX_InquiryThreads_UserId ON dbo.InquiryThreads (UserId);
+    CREATE NONCLUSTERED INDEX IX_InquiryThreads_Status_UpdatedAt ON dbo.InquiryThreads (Status, UpdatedAt DESC);
+END
+GO
+
+IF OBJECT_ID(N'dbo.InquiryMessages', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.InquiryMessages
+    (
+        MessageId       UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_InquiryMessages_MessageId DEFAULT NEWID(),
+        ThreadId        UNIQUEIDENTIFIER NOT NULL,
+        SenderUserId    UNIQUEIDENTIFIER NOT NULL,
+        IsFromStaff     BIT              NOT NULL,
+        Body            NVARCHAR(2000)   NOT NULL,
+        CreatedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_InquiryMessages_CreatedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_InquiryMessages PRIMARY KEY (MessageId),
+        CONSTRAINT FK_InquiryMessages_Threads FOREIGN KEY (ThreadId) REFERENCES dbo.InquiryThreads (ThreadId),
+        CONSTRAINT FK_InquiryMessages_Users FOREIGN KEY (SenderUserId) REFERENCES dbo.Users (UserId)
+    );
+
+    CREATE NONCLUSTERED INDEX IX_InquiryMessages_ThreadId ON dbo.InquiryMessages (ThreadId, CreatedAt ASC);
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.NotificationTriggerConfigs WHERE TriggerKey = N'InquiryReply')
+    INSERT INTO dbo.NotificationTriggerConfigs (TriggerKey, DisplayName, Description, IsEnabled) VALUES
+        (N'InquiryReply', N'Inquiry Reply Alerts', N'Notifies an applicant by email when Support Staff/Admin reply to their inquiry thread.', 1);
+GO

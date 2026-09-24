@@ -42,4 +42,10 @@ public interface IAcademicHeadReportsService
 
     /// <summary>Unscoped - same data an Admin-Registrar sees (BISAASS-37); scholarships have no department dimension.</summary>
     Task<IReadOnlyList<AdminScholarshipResponse>> GetScholarshipSlotReportAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Weekly trend - the Admission series is scoped to the caller's Department, the Scholarship series is unscoped. Throws AcademicHeadDepartmentNotAssignedException if the caller has no Department set.</summary>
+    Task<ApplicationTrendResponse> GetApplicationTrendAsync(Guid academicHeadUserId, int weeks, CancellationToken cancellationToken = default);
+
+    /// <summary>Funnel - the Admission funnel is scoped to the caller's Department, the Scholarship funnel is unscoped. Throws AcademicHeadDepartmentNotAssignedException if the caller has no Department set.</summary>
+    Task<ApplicationFunnelResponse> GetApplicationFunnelAsync(Guid academicHeadUserId, CancellationToken cancellationToken = default);
 }

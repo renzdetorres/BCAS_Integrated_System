@@ -100,6 +100,46 @@ public class SupportStaffDocumentsController : ControllerBase
     }
 
     /// <summary>
+    /// Support Staff-only: applies the same review (Status + an optional
+    /// shared Reason) to every listed document in one call - for triaging a
+    /// whole filtered page of the verification queue at once. Always
+    /// returns 200; check the response body's Failures list for any
+    /// documents that couldn't be reviewed (not found, or already
+    /// Verified/Rejected).
+    /// </summary>
+    [HttpPost("bulk-review")]
+    [ProducesResponseType(typeof(BulkOperationResultResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<BulkOperationResultResponse>> BulkReview(
+        [FromBody] BulkReviewDocumentsRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var result = await _documentsService.BulkReviewDocumentsAsync(request, User.GetUserId(), cancellationToken);
+            return Ok(result);
+        }
+        catch (InvalidDocumentReviewStatusException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Invalid review status",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (DocumentReviewReasonRequiredException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Reason required",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+    }
+
+    /// <summary>
     /// Support Staff-only: the Document Archive (BISAASS-54) - every
     /// archived document, most recently updated first, optionally narrowed
     /// by search (applicant name/email) and/or documentType. Kept separate

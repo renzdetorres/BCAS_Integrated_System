@@ -25,6 +25,8 @@ builder.Services.AddSingleton<IDbConnectionFactory, SqlConnectionFactory>();
 builder.Services.AddSingleton<ITokenService, TokenService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
+builder.Services.AddScoped<IDuplicateApplicantRepository, DuplicateApplicantRepository>();
+builder.Services.AddScoped<IDuplicateApplicantService, DuplicateApplicantService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IStaffProvisioningService, StaffProvisioningService>();
 builder.Services.AddScoped<IUserManagementService, UserManagementService>();
@@ -91,6 +93,12 @@ builder.Services.AddScoped<INotificationPreferenceRepository, NotificationPrefer
 builder.Services.AddScoped<INotificationPreferenceService, NotificationPreferenceService>();
 builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
 builder.Services.AddScoped<INotificationDispatchService, NotificationDispatchService>();
+builder.Services.AddScoped<IDeadlineReminderRepository, DeadlineReminderRepository>();
+builder.Services.AddScoped<IDeadlineReminderService, DeadlineReminderService>();
+builder.Services.AddHostedService<DeadlineReminderBackgroundService>();
+builder.Services.AddScoped<IInquiryRepository, InquiryRepository>();
+builder.Services.AddScoped<IApplicantInquiryService, ApplicantInquiryService>();
+builder.Services.AddScoped<IStaffInquiryService, StaffInquiryService>();
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -57,6 +57,8 @@ export default function ScholarshipApplicationPage() {
     };
   }, []);
 
+  const selectedScholarship = scholarships.find((s) => String(s.scholarshipId) === form.scholarshipId);
+
   function handleChange(event) {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -145,11 +147,19 @@ export default function ScholarshipApplicationPage() {
               >
                 {scholarships.map((s) => (
                   <option key={s.scholarshipId} value={s.scholarshipId}>
-                    {s.name} ({s.scholarshipType}) - {s.remainingSlots} slot
-                    {s.remainingSlots === 1 ? "" : "s"} left
+                    {s.name} ({s.scholarshipType}) -{" "}
+                    {s.remainingSlots > 0
+                      ? `${s.remainingSlots} slot${s.remainingSlots === 1 ? "" : "s"} left`
+                      : "full, join waitlist"}
                   </option>
                 ))}
               </select>
+              {selectedScholarship && selectedScholarship.remainingSlots === 0 && (
+                <p className="form-hint">
+                  This scholarship is currently full. Applying will place you on its waitlist - if a slot opens up
+                  later, your application moves automatically into the regular screening workflow.
+                </p>
+              )}
             </div>
 
             <div className="form-row">

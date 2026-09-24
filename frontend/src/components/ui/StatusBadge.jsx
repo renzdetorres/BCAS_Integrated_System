@@ -22,14 +22,17 @@ const TONE_BY_VALUE = {
 
   Pending: "amber",
   Submitted: "amber",
+  Waitlisted: "amber",
   DocumentsVerified: "amber",
   EligibilityScreening: "amber",
   Evaluation: "amber",
   Result: "amber",
   Draft: "amber",
+  Open: "amber",
 
   NotUploaded: "gray",
   Inactive: "gray",
+  Closed: "gray",
 
   UnderReview: "amber",
 };
