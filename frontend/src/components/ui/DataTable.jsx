@@ -10,6 +10,10 @@ import "./DataTable.css";
  *
  * columns: [{ key, header, render?(row), accessor?(row), sortable? }]
  * filters: [{ key, label, value, onChange, options: [{ value, label }] }]
+ * extraToolbar: a ReactNode for a filter shape the standard search/select
+ * controls don't cover (e.g. a second free-text field) - rendered inline in
+ * the same toolbar row so a scanning registrar reads it as one filter bar,
+ * not a second control stacked above the table.
  */
 export default function DataTable({
   columns,
@@ -17,6 +21,7 @@ export default function DataTable({
   getRowKey = (row) => row.id,
   search,
   filters = [],
+  extraToolbar = null,
   onExport,
   isLoading = false,
   errorMessage = null,
@@ -52,7 +57,7 @@ export default function DataTable({
     );
   }
 
-  const hasToolbar = Boolean(search) || filters.length > 0 || Boolean(onExport);
+  const hasToolbar = Boolean(search) || filters.length > 0 || Boolean(extraToolbar) || Boolean(onExport);
 
   return (
     <div className="ui-datatable">
@@ -84,6 +89,7 @@ export default function DataTable({
                 ))}
               </select>
             ))}
+            {extraToolbar}
           </div>
           {onExport ? (
             <Button type="button" tone="secondary" size="sm" onClick={onExport}>

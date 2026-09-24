@@ -30,10 +30,7 @@ export const NAV_ITEMS_BY_ROLE = {
     },
     {
       section: null,
-      items: [
-        { to: "/announcements", label: "Announcements", icon: "bell" },
-        { to: "/profile", label: "Settings", icon: "settings" },
-      ],
+      items: [{ to: "/announcements", label: "Announcements", icon: "bell" }],
     },
   ],
   Admin: [
@@ -45,7 +42,7 @@ export const NAV_ITEMS_BY_ROLE = {
       section: "Admissions",
       items: [
         { to: "/admin/applications", label: "Applications", icon: "doc" },
-        { to: "/admin/documents", label: "Document Verification", icon: "folder" },
+        { to: "/admin/documents", label: "Document Verification Log", icon: "folder" },
         { to: "/admin/exam-schedules", label: "Exam Schedules", icon: "calendar" },
         { to: "/admin/exam-permits", label: "Exam Permits", icon: "ticket" },
         { to: "/admin/reservations", label: "Reservations", icon: "bookmark" },
@@ -70,8 +67,6 @@ export const NAV_ITEMS_BY_ROLE = {
         { to: "/admin/users", label: "Account Management", icon: "users" },
         { to: "/admin/staff", label: "Provision Staff", icon: "user-plus" },
         { to: "/admin/audit-logs", label: "Activity Log", icon: "history" },
-        { to: "/admin/notification-settings", label: "Notification Settings", icon: "mail" },
-        { to: "/admin/settings", label: "System Settings", icon: "settings" },
       ],
     },
   ],
@@ -81,7 +76,6 @@ export const NAV_ITEMS_BY_ROLE = {
       items: [
         { to: "/portal", label: "Dashboard", icon: "home", end: true },
         { to: "/evaluator/scholarship-slots", label: "Scholarship Slots", icon: "award" },
-        { to: "/evaluator/settings", label: "Settings", icon: "settings" },
       ],
     },
   ],
@@ -98,10 +92,6 @@ export const NAV_ITEMS_BY_ROLE = {
         { to: "/academic-head/reports", label: "Reports", icon: "chart" },
       ],
     },
-    {
-      section: null,
-      items: [{ to: "/academic-head/settings", label: "Settings", icon: "settings" }],
-    },
   ],
   SupportStaff: [
     {
@@ -117,12 +107,23 @@ export const NAV_ITEMS_BY_ROLE = {
     },
     {
       section: null,
-      items: [
-        { to: "/support-staff/applicants", label: "Applicant Records", icon: "users" },
-        { to: "/support-staff/settings", label: "Settings", icon: "settings" },
-      ],
+      items: [{ to: "/support-staff/applicants", label: "Applicant Records", icon: "users" }],
     },
   ],
+};
+
+// The profile dropdown's own menu (TopBar), separate from primary sidebar
+// nav - account-level settings live here for every role instead of
+// competing for space with the actual work the sidebar is for.
+export const PROFILE_MENU_BY_ROLE = {
+  Applicant: [{ to: "/profile", label: "Settings", icon: "settings" }],
+  Admin: [
+    { to: "/admin/notification-settings", label: "Notification Settings", icon: "mail" },
+    { to: "/admin/settings", label: "System Settings", icon: "settings" },
+  ],
+  Evaluator: [{ to: "/evaluator/settings", label: "Settings", icon: "settings" }],
+  AcademicHead: [{ to: "/academic-head/settings", label: "Settings", icon: "settings" }],
+  SupportStaff: [{ to: "/support-staff/settings", label: "Settings", icon: "settings" }],
 };
 
 export const ROLE_LABELS = {

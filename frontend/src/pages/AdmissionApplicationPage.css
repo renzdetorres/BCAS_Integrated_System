@@ -31,7 +31,7 @@
 .form-row select:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(27, 67, 50, 0.15);
+  box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
 }
 
 .form-error {

@@ -7,7 +7,7 @@
   justify-content: flex-end;
   padding: 56px;
   background: url("/images/bcas-campus.png") center / cover no-repeat;
-  color: #ffffff;
+  color: var(--color-white);
   overflow: hidden;
 }
 
@@ -33,7 +33,7 @@
 
 .auth-showcase-mark {
   display: block;
-  color: #ffffff;
+  color: var(--color-white);
   font-family: var(--font-serif);
   font-size: 28px;
   font-weight: 700;

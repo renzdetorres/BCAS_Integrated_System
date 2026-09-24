@@ -79,7 +79,7 @@ export default function ApplicantDashboardPage() {
 
   if (isLoading) {
     return (
-      <AppLayout title={`Welcome back, ${session.firstName}!`}>
+      <AppLayout title={`${session.firstName}'s Application`}>
         <Card>
           <p>Loading...</p>
         </Card>
@@ -89,7 +89,7 @@ export default function ApplicantDashboardPage() {
 
   if (errorMessage) {
     return (
-      <AppLayout title={`Welcome back, ${session.firstName}!`}>
+      <AppLayout title={`${session.firstName}'s Application`}>
         <Card>
           <p className="form-error" role="alert">
             {errorMessage}
@@ -128,7 +128,7 @@ export default function ApplicantDashboardPage() {
   }
 
   return (
-    <AppLayout title={`Welcome back, ${session.firstName}!`}>
+    <AppLayout title={`${session.firstName}'s Application`}>
       {nextAction && <NextActionBanner {...nextAction} />}
 
       <div className="applicant-dashboard-grid">
@@ -161,12 +161,18 @@ export default function ApplicantDashboardPage() {
                   />
                   {outstandingDocs.length > 0 && (
                     <ul className="applicant-outstanding-list">
-                      {outstandingDocs.map((doc) => (
-                        <li key={doc.documentType}>
-                          <span>{DOCUMENT_TYPE_LABELS[doc.documentType] ?? doc.documentType}</span>
-                          <StatusBadge status={doc.status === "NotSubmitted" ? "NotUploaded" : doc.status} />
-                        </li>
-                      ))}
+                      {outstandingDocs.map((doc) => {
+                        const needsAttention = doc.status === "Flagged" || doc.status === "Rejected";
+                        return (
+                          <li
+                            key={doc.documentType}
+                            className={needsAttention ? "applicant-outstanding-flagged" : undefined}
+                          >
+                            <span>{DOCUMENT_TYPE_LABELS[doc.documentType] ?? doc.documentType}</span>
+                            <StatusBadge status={doc.status === "NotSubmitted" ? "NotUploaded" : doc.status} />
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </div>
@@ -197,7 +203,7 @@ export default function ApplicantDashboardPage() {
         </div>
 
         <div className="applicant-dashboard-aside">
-          <Card>
+          <Card className="ui-card-flat">
             <h2>Upcoming Deadlines</h2>
             {deadlines.length === 0 ? (
               <p className="dashboard-meta">No upcoming deadlines.</p>
@@ -214,7 +220,7 @@ export default function ApplicantDashboardPage() {
             )}
           </Card>
 
-          <Card>
+          <Card className="ui-card-flat">
             <div className="applicant-announcements-header">
               <h2>Announcements</h2>
               <Link to="/announcements">View all</Link>

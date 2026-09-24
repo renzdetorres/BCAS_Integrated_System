@@ -117,6 +117,15 @@
   color: var(--color-text-primary);
 }
 
+/* A document the registrar sent back needs the family to act - it should
+   read differently at a glance from one that's simply still pending, not
+   just carry a differently-colored badge in an otherwise identical row. */
+.applicant-outstanding-flagged {
+  background: var(--color-status-red-bg);
+  border-left: 3px solid var(--color-status-red-text);
+  padding-left: 9px;
+}
+
 .applicant-scholarship-list {
   list-style: none;
   margin: 0;

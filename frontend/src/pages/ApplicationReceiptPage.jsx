@@ -5,6 +5,8 @@ import { APPLICATION_TYPES } from "../api/admissionApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
+import BcasSeal from "../components/ui/BcasSeal.jsx";
 import "./ApplicationReceiptPage.css";
 
 function formatTimestamp(isoDateTime) {
@@ -73,8 +75,13 @@ export default function ApplicationReceiptPage() {
 
       {!isLoading && application && (
         <Card className="receipt">
-          <p className="receipt-eyebrow">BCAS Application Confirmation Receipt</p>
-          <p className="receipt-application-id">{application.applicationId}</p>
+          <div className="receipt-letterhead">
+            <BcasSeal size={40} />
+            <div>
+              <p className="receipt-eyebrow">BCAS Application Confirmation Receipt</p>
+              <p className="receipt-application-id">{application.applicationId}</p>
+            </div>
+          </div>
 
           <dl className="receipt-details">
             <div>
@@ -83,7 +90,9 @@ export default function ApplicationReceiptPage() {
             </div>
             <div>
               <dt>Status</dt>
-              <dd>{application.status}</dd>
+              <dd>
+                <StatusBadge status={application.status} />
+              </dd>
             </div>
 
             {application.category === "Admission" && (

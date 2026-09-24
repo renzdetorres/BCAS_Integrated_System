@@ -5,6 +5,15 @@
   padding: 24px;
 }
 
+/* For reference material sitting alongside a primary record (e.g. an
+   applicant's deadlines/announcements next to their actual application
+   status) - flush border instead of a shadow, so every panel on a page
+   doesn't read as the same weight regardless of what it holds. */
+.ui-card-flat {
+  box-shadow: none;
+  border: 1px solid var(--color-border);
+}
+
 .ui-card h2 {
   margin: 0 0 16px;
   font: var(--text-h2);
@@ -13,32 +22,36 @@
 
 /* Data container: a table/dense list a staff member scans repeatedly - reads
    as a records panel, not a floating widget. Matches the treatment already
-   used for the Applications table. */
+   used for the Applications table. No colored top rule - same reasoning as
+   the stat tile below: a "border-t-4" accent stripe is the generic
+   dashboard-template tell regardless of which token paints it. */
 .ui-card--data {
   box-shadow: none;
   border: 1px solid var(--color-border);
-  border-top: 3px solid var(--color-primary);
   border-radius: var(--radius-sm);
   padding: 18px 20px;
 }
 
-/* Action panel: something the viewer is meant to act on now - the gold rule
-   is the same "act on this" signal as the sidebar's active link. */
+/* Action panel: something the viewer is meant to act on now. A tinted
+   background reads as "different" without a colored border stripe - the
+   same non-border approach NextActionBanner already uses (its own
+   distinction comes from a CTA button and serif copy, not a gold rule). */
 .ui-card--action {
-  border-left: 4px solid var(--color-accent);
-  border-radius: var(--radius-sm) var(--radius-md) var(--radius-md) var(--radius-md);
+  background: var(--color-primary-tint);
 }
 
 /* Stat tiles read as a small ledger, not analytics widgets: a plain label
-   over a serif figure, separated by a rule rather than four identical
-   shadowed cards in a row. */
+   over a serif figure inside a flat bordered tile, not four identical
+   shadowed cards - and not a colored accent bar either, since that's the
+   same "border-t-4" cliché from every dashboard template regardless of
+   what color it's painted. */
 .ui-stat-card {
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-width: 0;
   box-shadow: none;
-  border-top: 3px solid var(--color-primary);
+  border: 1px solid var(--color-border);
   padding: 16px 20px;
 }
 

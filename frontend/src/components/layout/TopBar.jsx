@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useSession } from "../../context/SessionContext.jsx";
 import { useLogout } from "../../hooks/useLogout.js";
 import { getActiveAnnouncements } from "../../api/announcementApi.js";
-import { ROLE_SHORT_LABELS } from "../../config/navigation.js";
+import { PROFILE_MENU_BY_ROLE, ROLE_SHORT_LABELS } from "../../config/navigation.js";
 import Icon from "../ui/Icon.jsx";
 import "./TopBar.css";
 
@@ -37,6 +37,7 @@ export default function TopBar({ onMenuClick }) {
   const [announcements, setAnnouncements] = useState([]);
   const userRef = useOutsideClick(() => setMenuOpen(false));
   const notifRef = useOutsideClick(() => setNotifOpen(false));
+  const profileMenuItems = PROFILE_MENU_BY_ROLE[session.role] ?? [];
 
   useEffect(() => {
     getActiveAnnouncements()
@@ -114,7 +115,14 @@ export default function TopBar({ onMenuClick }) {
 
         {menuOpen ? (
           <div className="topbar-panel topbar-menu">
-            <button type="button" className="topbar-menu-item" onClick={handleLogout}>
+            {profileMenuItems.map((item) => (
+              <Link key={item.to} to={item.to} className="topbar-menu-item" onClick={() => setMenuOpen(false)}>
+                <Icon name={item.icon} size={16} />
+                {item.label}
+              </Link>
+            ))}
+            {profileMenuItems.length > 0 ? <div className="topbar-menu-divider" /> : null}
+            <button type="button" className="topbar-menu-item topbar-menu-item-danger" onClick={handleLogout}>
               <Icon name="logout" size={16} />
               Log Out
             </button>

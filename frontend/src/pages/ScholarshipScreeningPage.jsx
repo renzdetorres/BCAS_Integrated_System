@@ -10,19 +10,8 @@ import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
+import WorkflowStepper, { SCHOLARSHIP_STEP_LABELS } from "../components/WorkflowStepper.jsx";
 import "./ScholarshipScreeningPage.css";
-
-const STAGE_LABELS = {
-  Submitted: "Submitted",
-  DocumentsVerified: "Documents Verified",
-  EligibilityScreening: "Eligibility Screening",
-  Evaluation: "Evaluation",
-  Result: "Result",
-};
-
-function stageLabel(stage) {
-  return STAGE_LABELS[stage] ?? stage;
-}
 
 function formatDateTime(isoDateTime) {
   return new Date(isoDateTime).toLocaleString(undefined, {
@@ -113,24 +102,17 @@ export default function ScholarshipScreeningPage() {
           <>
             <Card className="screening-section">
               <h2>Workflow</h2>
-              <ol className="workflow-stepper">
-                {application.workflowStages.map((stage) => {
+              <WorkflowStepper
+                steps={application.workflowStages.map((stage, index) => {
                   const currentIndex = application.workflowStages.indexOf(application.status);
-                  const stageIndex = application.workflowStages.indexOf(stage);
-                  const isCurrent = stage === application.status;
-                  const isDone = currentIndex >= 0 && stageIndex < currentIndex;
-                  return (
-                    <li
-                      key={stage}
-                      className={
-                        isCurrent ? "workflow-step workflow-step-current" : isDone ? "workflow-step workflow-step-done" : "workflow-step"
-                      }
-                    >
-                      {stageLabel(stage)}
-                    </li>
-                  );
+                  return {
+                    step: stage,
+                    isCurrent: stage === application.status,
+                    isComplete: currentIndex >= 0 && index < currentIndex,
+                  };
                 })}
-              </ol>
+                labels={SCHOLARSHIP_STEP_LABELS}
+              />
               {!application.workflowStages.includes(application.status) && (
                 <p className="workflow-final-note">
                   Status is <strong>{application.status}</strong> - a final decision outside this workflow.
@@ -150,68 +132,76 @@ export default function ScholarshipScreeningPage() {
               )}
             </Card>
 
-            <Card className="screening-section">
-              <h2>Applicant</h2>
-              <dl className="screening-detail-list">
-                <div>
-                  <dt>Name</dt>
-                  <dd>{application.applicantName}</dd>
-                </div>
-                <div>
-                  <dt>Email</dt>
-                  <dd>{application.applicantEmail}</dd>
-                </div>
-                <div>
-                  <dt>BCASian</dt>
-                  <dd>{application.isBcasian === null ? "Unknown" : application.isBcasian ? "Yes" : "No"}</dd>
-                </div>
-              </dl>
-            </Card>
+            {/* One case file, not five identical floating cards: the evaluator
+                reads all of this before deciding anything, so it reads as
+                consecutive pages of one dossier - a divider between
+                sections, not a repeated card shell. Only the Workflow
+                strip above (process state) and the Record Verdict form
+                below (the actual decision) stay as their own cards,
+                because those are the two moments that aren't reading. */}
+            <Card className="screening-dossier">
+              <div className="screening-dossier-section">
+                <h2>Applicant</h2>
+                <dl className="screening-detail-list">
+                  <div>
+                    <dt>Name</dt>
+                    <dd>{application.applicantName}</dd>
+                  </div>
+                  <div>
+                    <dt>Email</dt>
+                    <dd>{application.applicantEmail}</dd>
+                  </div>
+                  <div>
+                    <dt>BCASian</dt>
+                    <dd>{application.isBcasian === null ? "Unknown" : application.isBcasian ? "Yes" : "No"}</dd>
+                  </div>
+                </dl>
+              </div>
 
-            <Card className="screening-section">
-              <h2>Scholarship Requirements Check</h2>
-              <dl className="screening-detail-list">
-                <div>
-                  <dt>Scholarship</dt>
-                  <dd>
-                    {application.scholarshipName} ({application.scholarshipType})
-                  </dd>
-                </div>
-                <div>
-                  <dt>Applicant Grade Average</dt>
-                  <dd>{application.gradeAverage}</dd>
-                </div>
-                <div>
-                  <dt>Minimum Grade Required</dt>
-                  <dd>{application.minimumGradeAverage ?? "Not set"}</dd>
-                </div>
-                <div>
-                  <dt>Meets Requirement</dt>
-                  <dd>
-                    {application.meetsMinimumGrade === null ? (
-                      "N/A"
-                    ) : (
-                      <StatusBadge
-                        status={application.meetsMinimumGrade ? "Eligible" : "NotEligible"}
-                        label={application.meetsMinimumGrade ? "Yes" : "No"}
-                      />
-                    )}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Application Status</dt>
-                  <dd>{application.status}</dd>
-                </div>
-                <div>
-                  <dt>Submitted</dt>
-                  <dd>{formatDateTime(application.submittedAt)}</dd>
-                </div>
-              </dl>
-            </Card>
+              <div className="screening-dossier-section">
+                <h2>Scholarship Requirements Check</h2>
+                <dl className="screening-detail-list">
+                  <div>
+                    <dt>Scholarship</dt>
+                    <dd>
+                      {application.scholarshipName} ({application.scholarshipType})
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Applicant Grade Average</dt>
+                    <dd>{application.gradeAverage}</dd>
+                  </div>
+                  <div>
+                    <dt>Minimum Grade Required</dt>
+                    <dd>{application.minimumGradeAverage ?? "Not set"}</dd>
+                  </div>
+                  <div>
+                    <dt>Meets Requirement</dt>
+                    <dd>
+                      {application.meetsMinimumGrade === null ? (
+                        "N/A"
+                      ) : (
+                        <StatusBadge
+                          status={application.meetsMinimumGrade ? "Eligible" : "NotEligible"}
+                          label={application.meetsMinimumGrade ? "Yes" : "No"}
+                        />
+                      )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Application Status</dt>
+                    <dd>{application.status}</dd>
+                  </div>
+                  <div>
+                    <dt>Submitted</dt>
+                    <dd>{formatDateTime(application.submittedAt)}</dd>
+                  </div>
+                </dl>
+              </div>
 
-            <Card className="screening-section">
-              <h2>Eligibility Rules</h2>
-              <ul className="rules-list">
+              <div className="screening-dossier-section">
+                <h2>Eligibility Rules</h2>
+                <ul className="rules-list">
                 <li className="rules-item">
                   <span className="rules-item-label">Top 1 (free all, no entrance exam, no interview)</span>
                   <span className={application.eligibilityRules.isTopOne ? "rules-badge-yes" : "rules-badge-no"}>
@@ -284,45 +274,46 @@ export default function ScholarshipScreeningPage() {
                   </ul>
                 </div>
               )}
-            </Card>
+              </div>
 
-            <Card className="screening-section">
-              <h2>Submitted Documents</h2>
-              {application.documents.length === 0 ? (
-                <p>No documents uploaded yet.</p>
-              ) : (
-                <ul className="document-list">
-                  {application.documents.map((document) => (
-                    <li key={document.documentType} className="document-row">
-                      <div>
-                        <span className="document-type">{document.documentType}</span>
-                        <span className="document-filename">{document.fileName}</span>
-                      </div>
-                      <div className="document-status-group">
-                        <StatusBadge status={document.status} />
-                        {document.flaggedReason && (
-                          <span className="document-flagged-reason">{document.flaggedReason}</span>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+              <div className="screening-dossier-section">
+                <h2>Submitted Documents</h2>
+                {application.documents.length === 0 ? (
+                  <p>No documents uploaded yet.</p>
+                ) : (
+                  <ul className="document-list">
+                    {application.documents.map((document) => (
+                      <li key={document.documentType} className="document-row">
+                        <div>
+                          <span className="document-type">{document.documentType}</span>
+                          <span className="document-filename">{document.fileName}</span>
+                        </div>
+                        <div className="document-status-group">
+                          <StatusBadge status={document.status} />
+                          {document.flaggedReason && (
+                            <span className="document-flagged-reason">{document.flaggedReason}</span>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {application.screening && (
+                <div className="screening-dossier-section">
+                  <h2>Current Verdict</h2>
+                  <p className="screening-current-verdict">
+                    <StatusBadge status={application.screening.verdict} /> by{" "}
+                    {application.screening.evaluatedByName} on{" "}
+                    {formatDateTime(application.screening.evaluatedAt)}
+                  </p>
+                  {application.screening.remarks && (
+                    <p className="screening-current-remarks">"{application.screening.remarks}"</p>
+                  )}
+                </div>
               )}
             </Card>
-
-            {application.screening && (
-              <Card className="screening-section">
-                <h2>Current Verdict</h2>
-                <p className="screening-current-verdict">
-                  <StatusBadge status={application.screening.verdict} /> by{" "}
-                  {application.screening.evaluatedByName} on{" "}
-                  {formatDateTime(application.screening.evaluatedAt)}
-                </p>
-                {application.screening.remarks && (
-                  <p className="screening-current-remarks">"{application.screening.remarks}"</p>
-                )}
-              </Card>
-            )}
 
             <Card className="screening-section">
               <h2>Record Verdict</h2>

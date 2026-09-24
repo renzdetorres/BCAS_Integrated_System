@@ -1,4 +1,5 @@
 @import "./tokens.css";
+@import "./buttons.css";
 @import "./forms.css";
 
 *,
@@ -38,10 +39,13 @@ p {
 
 a {
   color: inherit;
+  transition: background var(--motion-standard), color var(--motion-standard), border-color var(--motion-standard);
 }
 
 button {
   font-family: inherit;
+  transition: background var(--motion-standard), color var(--motion-standard), border-color var(--motion-standard),
+    box-shadow var(--motion-standard);
 }
 
 input,
@@ -49,4 +53,33 @@ select,
 textarea {
   font-family: inherit;
   font-size: 14px;
+  transition: border-color var(--motion-standard), box-shadow var(--motion-standard);
+}
+
+/* A deliberate, on-brand keyboard-focus ring for anything that isn't a
+   form field (those already have their own green ring on :focus, set per
+   form - see tokens.css). Its absence was the actual gap: every button
+   and link was falling back to whatever the browser draws by default,
+   which reads as unfinished rather than as a designed state. Mouse clicks
+   don't get it - :focus-visible only fires for keyboard/assistive nav. */
+a:focus-visible,
+button:focus-visible,
+[tabindex]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-accent-focus-ring);
+  border-radius: var(--radius-sm);
+}
+
+/* Shared category-pill color modifiers - identical rules were previously
+   hand-rolled in 5 separate page CSS files (Announcements x3, Application
+   Detail, Archive) under the same class names, risking drift if the
+   mapping ever changed in only one of them. */
+.category-admission {
+  background: var(--color-status-amber-bg);
+  color: var(--color-status-amber-text);
+}
+
+.category-scholarship {
+  background: var(--color-status-purple-bg);
+  color: var(--color-status-purple-text);
 }

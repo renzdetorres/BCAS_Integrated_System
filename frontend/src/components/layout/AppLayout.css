@@ -47,11 +47,17 @@
   border-bottom: 1px solid var(--color-border);
 }
 
+/* Page titles are the one heading in the app that isn't the serif brand
+   voice: bold/uppercase/sans, per the page-title type role in tokens.css.
+   Scoped to AppLayout's own title (not a blanket h1 override) so the
+   contract document and auth screens keep their serif headings. The
+   weight/case/tracking alone carries the distinction - no accent-colored
+   bar next to it, since that reads as decoration repeated on every page
+   rather than something that means anything. */
 .app-layout-header h1 {
-  font: var(--text-h1);
-  position: relative;
-  padding-left: 14px;
-  border-left: 4px solid var(--color-accent);
+  font: var(--text-page-title);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .app-layout-actions {

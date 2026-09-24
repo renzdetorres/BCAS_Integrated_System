@@ -83,6 +83,38 @@ export default function AdmissionApplicationPage() {
 
   return (
     <AppLayout title="My Application">
+      {/* Applications-you-already-have leads for a returning applicant (the
+          more frequent visit); the submit form is still one scroll away,
+          not hidden - a first-time applicant just sees a brief empty note
+          above it instead of the list being absent entirely. */}
+      <Card className="admission-card">
+        <h2>My Applications</h2>
+        {isLoading && <p>Loading...</p>}
+        {!isLoading && applications.length === 0 && (
+          <p>No applications submitted yet. Use the form below to submit one.</p>
+        )}
+        {!isLoading && applications.length > 0 && (
+          <ul className="admission-list">
+            {applications.map((application) => (
+              <li key={application.applicationId}>
+                <div className="admission-list-header">
+                  <span className="admission-type">
+                    {APPLICATION_TYPES.find((t) => t.value === application.applicationType)?.label ??
+                      application.applicationType}
+                  </span>
+                  <StatusBadge status={application.status} />
+                </div>
+                <p className="admission-course">{application.courseAppliedFor}</p>
+                <p className="admission-meta">
+                  Previous school: {application.previousSchool} &middot; Submitted{" "}
+                  {formatDate(application.submittedAt)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
       <Card className="admission-card">
         <h2>Submit Admission Application</h2>
 
@@ -143,32 +175,6 @@ export default function AdmissionApplicationPage() {
             {isSubmitting ? "Submitting..." : "Submit Application"}
           </button>
         </form>
-      </Card>
-
-      <Card className="admission-card">
-        <h2>My Applications</h2>
-        {isLoading && <p>Loading...</p>}
-        {!isLoading && applications.length === 0 && <p>No applications submitted yet.</p>}
-        {!isLoading && applications.length > 0 && (
-          <ul className="admission-list">
-            {applications.map((application) => (
-              <li key={application.applicationId}>
-                <div className="admission-list-header">
-                  <span className="admission-type">
-                    {APPLICATION_TYPES.find((t) => t.value === application.applicationType)?.label ??
-                      application.applicationType}
-                  </span>
-                  <StatusBadge status={application.status} />
-                </div>
-                <p className="admission-course">{application.courseAppliedFor}</p>
-                <p className="admission-meta">
-                  Previous school: {application.previousSchool} &middot; Submitted{" "}
-                  {formatDate(application.submittedAt)}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
       </Card>
     </AppLayout>
   );

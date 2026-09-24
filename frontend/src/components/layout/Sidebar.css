@@ -4,7 +4,10 @@
   left: 0;
   bottom: 0;
   width: var(--sidebar-width);
-  background: var(--color-primary);
+  /* Same two greens already in the palette, applied as a barely-there
+     depth gradient instead of one flat fill - a flat solid panel reads
+     like an unfinished background color, not a surface. */
+  background: linear-gradient(165deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
   display: flex;
   flex-direction: column;
   z-index: 40;
@@ -28,7 +31,7 @@
 }
 
 .sidebar-brand-mark {
-  color: #ffffff;
+  color: var(--color-white);
   font-family: var(--font-serif);
   font-size: 20px;
   font-weight: 700;
@@ -80,7 +83,7 @@
 
 .sidebar-link:hover {
   background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  color: var(--color-white);
 }
 
 .sidebar-link-active {

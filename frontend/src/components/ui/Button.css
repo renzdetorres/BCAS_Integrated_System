@@ -52,11 +52,11 @@
 
 .ui-button-danger {
   background: var(--color-status-red-text);
-  color: #ffffff;
+  color: var(--color-white);
 }
 
 .ui-button-danger:hover:not(:disabled) {
-  background: #a32a2a;
+  background: var(--color-status-red-dark);
 }
 
 .ui-button-ghost {

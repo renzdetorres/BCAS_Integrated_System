@@ -5,8 +5,7 @@
   gap: 16px;
   flex-wrap: wrap;
   background: var(--color-surface);
-  border-left: 4px solid var(--color-accent);
-  border-radius: var(--radius-sm) var(--radius-md) var(--radius-md) var(--radius-sm);
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
   padding: 16px 24px;
 }

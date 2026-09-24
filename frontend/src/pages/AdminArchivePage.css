@@ -43,12 +43,3 @@
   white-space: nowrap;
 }
 
-.category-admission {
-  background: var(--color-status-amber-bg);
-  color: var(--color-status-amber-text);
-}
-
-.category-scholarship {
-  background: var(--color-status-purple-bg);
-  color: var(--color-status-purple-text);
-}

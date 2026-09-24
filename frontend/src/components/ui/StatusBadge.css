@@ -1,3 +1,8 @@
+/* A tone-matched icon plus a subtly-bordered tag, not a dot-plus-pill chip -
+   deliberately not the shape every SaaS status indicator (Linear, Vercel,
+   GitHub Checks) uses for the same idea. The icon carries meaning beyond
+   color alone (WCAG color-not-only), and the tight radius matches the
+   document-like shape scale the rest of the app already commits to. */
 .status-badge {
   display: inline-flex;
   align-items: center;

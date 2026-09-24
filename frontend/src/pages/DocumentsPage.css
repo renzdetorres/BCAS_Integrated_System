@@ -4,6 +4,12 @@
   font-size: 0.85rem;
 }
 
+.documents-progress {
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
 .form-error {
   color: var(--color-status-red-text);
   background: var(--color-status-red-bg);
@@ -38,6 +44,17 @@
   padding-bottom: 0;
 }
 
+/* A document sent back needs the applicant to act - it should read
+   differently at a glance from one that's simply still pending, not just
+   carry a differently-colored badge in an otherwise identical row. */
+.documents-list li.documents-item-flagged {
+  padding: 12px 12px 16px;
+  margin: 0 -12px;
+  background: var(--color-status-red-bg);
+  border-left: 3px solid var(--color-status-red-text);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
 .documents-list-header {
   display: flex;
   align-items: center;
@@ -60,7 +77,8 @@
 .documents-flag-reason {
   margin: 0 0 8px;
   color: var(--color-status-red-text);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
+  line-height: 1.4;
 }
 
 .documents-upload-button {
