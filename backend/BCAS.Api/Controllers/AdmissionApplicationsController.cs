@@ -63,6 +63,15 @@ public class AdmissionApplicationsController : ControllerBase
                 Status = StatusCodes.Status400BadRequest,
             });
         }
+        catch (InvalidDepartmentException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Invalid department",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
         catch (ProfileIncompleteException ex)
         {
             return BadRequest(new ProblemDetails

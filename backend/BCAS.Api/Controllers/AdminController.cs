@@ -43,7 +43,7 @@ public class AdminController : ControllerBase
         try
         {
             var response = await _staffProvisioningService.CreateStaffAsync(request, cancellationToken);
-            await _auditLogService.LogAsync(User, "StaffCreated", $"Created {response.Role} account {response.Email}", cancellationToken);
+            await _auditLogService.LogAsync(User, "StaffCreated", $"Created {response.Role} account {response.Email}{DepartmentSuffix(response)}", cancellationToken);
             return CreatedAtAction(nameof(CreateStaff), new { id = response.UserId }, response);
         }
         catch (InvalidRoleException ex)
@@ -51,6 +51,15 @@ public class AdminController : ControllerBase
             return BadRequest(new ProblemDetails
             {
                 Title = "Invalid role",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (InvalidDepartmentException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Invalid department",
                 Detail = ex.Message,
                 Status = StatusCodes.Status400BadRequest,
             });
@@ -130,7 +139,7 @@ public class AdminController : ControllerBase
         try
         {
             var response = await _userManagementService.UpdateUserAsync(userId, request, cancellationToken);
-            await _auditLogService.LogAsync(User, "UserUpdated", $"Updated {response.Email} ({response.Role})", cancellationToken);
+            await _auditLogService.LogAsync(User, "UserUpdated", $"Updated {response.Email} ({response.Role}){DepartmentSuffix(response)}", cancellationToken);
             return Ok(response);
         }
         catch (InvalidRoleException ex)
@@ -138,6 +147,15 @@ public class AdminController : ControllerBase
             return BadRequest(new ProblemDetails
             {
                 Title = "Invalid role",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (InvalidDepartmentException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Invalid department",
                 Detail = ex.Message,
                 Status = StatusCodes.Status400BadRequest,
             });
@@ -161,4 +179,9 @@ public class AdminController : ControllerBase
             });
         }
     }
+
+    // Department assignments decide what an Academic Head can see, so the
+    // audit trail records them alongside the account change itself.
+    private static string DepartmentSuffix(UserProfileResponse response) =>
+        string.IsNullOrEmpty(response.Department) ? string.Empty : $", department: {response.Department}";
 }

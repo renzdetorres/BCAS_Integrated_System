@@ -167,9 +167,10 @@ public class EvaluatorScholarshipApplicationService : IEvaluatorScholarshipAppli
 
     public async Task<IReadOnlyList<EvaluatorQueueApplicationResponse>> GetReadyForDecisionAsync(
         int take,
+        string department,
         CancellationToken cancellationToken = default)
     {
-        var applications = await _applicationRepository.GetReadyForDecisionAsync(take, cancellationToken);
+        var applications = await _applicationRepository.GetReadyForDecisionAsync(take, department, cancellationToken);
         return applications.Select(a => a.ToResponse()).ToList();
     }
 

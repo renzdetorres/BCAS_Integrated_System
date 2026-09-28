@@ -99,6 +99,30 @@ export async function updateApplicationStatus(applicationId, { category, status,
   return data;
 }
 
+/**
+ * Files an admission application under a department - which decides the
+ * Academic Head who sees this applicant (and their scholarship
+ * applications). Admission applications only; a scholarship application
+ * follows its applicant's admission application.
+ */
+export async function setApplicationDepartment(applicationId, department) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/applications/${applicationId}/department`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ department }),
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const message = resolveErrorMessage(response, data, "Failed to update the department. Please try again.");
+    throw new ApiError(message, response.status);
+  }
+
+  return data;
+}
+
 export async function getApplicationStatusHistory(applicationId, category) {
   const params = new URLSearchParams({ category });
   const response = await fetch(`${API_BASE_URL}/api/admin/applications/${applicationId}/status-history?${params}`, {

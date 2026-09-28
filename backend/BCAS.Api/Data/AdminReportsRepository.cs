@@ -13,8 +13,17 @@ public class AdminReportsRepository : IAdminReportsRepository
         _connectionFactory = connectionFactory;
     }
 
+    // Matches a scholarship application to a department through its
+    // applicant's latest admission application (vw_ApplicantDepartments) -
+    // scholarships themselves are school-wide. Expects the query to alias
+    // dbo.ScholarshipApplications as sa and to bind @Department.
+    private const string ScholarshipDepartmentFilter = @"
+  AND (@Department IS NULL OR EXISTS (
+      SELECT 1 FROM dbo.vw_ApplicantDepartments dept
+      WHERE dept.UserId = sa.UserId AND dept.Department = @Department))";
+
     public async Task<IReadOnlyList<EnrollmentListItem>> GetEnrollmentListAsync(
-        string? program, string? applicationType, CancellationToken cancellationToken = default)
+        string? program, string? applicationType, string? department = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
@@ -29,11 +38,13 @@ JOIN dbo.AdmissionReservations r ON r.ApplicationId = a.ApplicationId
 WHERE a.Status = N'Approved' AND r.IsReserved = 1
   AND (@Program IS NULL OR a.CourseAppliedFor LIKE '%' + @Program + '%')
   AND (@ApplicationType IS NULL OR a.ApplicationType = @ApplicationType)
+  AND (@Department IS NULL OR a.Department = @Department)
 ORDER BY a.CourseAppliedFor ASC, u.LastName ASC, u.FirstName ASC;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.Add(new SqlParameter("@Program", SqlDbType.NVarChar, 200) { Value = (object?)NullIfEmpty(program) ?? DBNull.Value });
         command.Parameters.Add(new SqlParameter("@ApplicationType", SqlDbType.NVarChar, 20) { Value = (object?)NullIfEmpty(applicationType) ?? DBNull.Value });
+        AddDepartmentParameter(command, department);
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
@@ -59,7 +70,7 @@ ORDER BY a.CourseAppliedFor ASC, u.LastName ASC, u.FirstName ASC;";
     }
 
     public async Task<IReadOnlyList<ScholarshipApplicantListItem>> GetScholarshipApplicantListAsync(
-        string? scholarshipName, string? status, CancellationToken cancellationToken = default)
+        string? scholarshipName, string? status, string? department = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
@@ -71,12 +82,13 @@ FROM dbo.ScholarshipApplications sa
 JOIN dbo.Users u ON u.UserId = sa.UserId
 JOIN dbo.Scholarships sc ON sc.ScholarshipId = sa.ScholarshipId
 WHERE (@ScholarshipName IS NULL OR sc.Name LIKE '%' + @ScholarshipName + '%')
-  AND (@Status IS NULL OR sa.Status = @Status)
+  AND (@Status IS NULL OR sa.Status = @Status)" + ScholarshipDepartmentFilter + @"
 ORDER BY sa.SubmittedAt DESC;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.Add(new SqlParameter("@ScholarshipName", SqlDbType.NVarChar, 200) { Value = (object?)NullIfEmpty(scholarshipName) ?? DBNull.Value });
         command.Parameters.Add(new SqlParameter("@Status", SqlDbType.NVarChar, 30) { Value = (object?)NullIfEmpty(status) ?? DBNull.Value });
+        AddDepartmentParameter(command, department);
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
@@ -101,7 +113,7 @@ ORDER BY sa.SubmittedAt DESC;";
     }
 
     public async Task<IReadOnlyList<ScholarshipQualificationListItem>> GetScholarshipQualificationListAsync(
-        string? verdict, CancellationToken cancellationToken = default)
+        string? verdict, string? department = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
@@ -114,11 +126,12 @@ JOIN dbo.ScholarshipApplications sa ON sa.ApplicationId = s.ApplicationId
 JOIN dbo.Users u ON u.UserId = sa.UserId
 JOIN dbo.Scholarships sc ON sc.ScholarshipId = sa.ScholarshipId
 JOIN dbo.Users eu ON eu.UserId = s.EvaluatedByUserId
-WHERE (@Verdict IS NULL OR s.Verdict = @Verdict)
+WHERE (@Verdict IS NULL OR s.Verdict = @Verdict)" + ScholarshipDepartmentFilter + @"
 ORDER BY s.EvaluatedAt DESC;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.Add(new SqlParameter("@Verdict", SqlDbType.NVarChar, 20) { Value = (object?)NullIfEmpty(verdict) ?? DBNull.Value });
+        AddDepartmentParameter(command, department);
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
@@ -142,7 +155,7 @@ ORDER BY s.EvaluatedAt DESC;";
     }
 
     public async Task<IReadOnlyList<ScholarshipResultListItem>> GetScholarshipResultListAsync(
-        string? decision, CancellationToken cancellationToken = default)
+        string? decision, string? department = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
@@ -153,11 +166,12 @@ JOIN dbo.Scholarships sc ON sc.ScholarshipId = sa.ScholarshipId
 LEFT JOIN dbo.ScholarshipFinalDecisions fd ON fd.ApplicationId = sa.ApplicationId
 LEFT JOIN dbo.Users du ON du.UserId = fd.DecidedByUserId
 WHERE sa.Status IN (N'Approved', N'Rejected')
-  AND (@Decision IS NULL OR COALESCE(fd.Decision, sa.Status) = @Decision)
+  AND (@Decision IS NULL OR COALESCE(fd.Decision, sa.Status) = @Decision)" + ScholarshipDepartmentFilter + @"
 ORDER BY sa.SubmittedAt DESC;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.Add(new SqlParameter("@Decision", SqlDbType.NVarChar, 20) { Value = (object?)NullIfEmpty(decision) ?? DBNull.Value });
+        AddDepartmentParameter(command, department);
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
@@ -221,20 +235,21 @@ SELECT
     }
 
     public async Task<IReadOnlyList<(DateOnly WeekStart, string Category, int Count)>> GetWeeklyApplicationCountsAsync(
-        DateOnly sinceWeekStart, string? program, CancellationToken cancellationToken = default)
+        DateOnly sinceWeekStart, string? program, string? department = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
 WITH Combined AS (
-    SELECT a.SubmittedAt, N'Admission' AS Category, a.CourseAppliedFor AS Program
+    SELECT a.SubmittedAt, N'Admission' AS Category, a.CourseAppliedFor AS Program, a.Department
     FROM dbo.AdmissionApplications a
     WHERE a.IsArchived = 0
 
     UNION ALL
 
-    SELECT sa.SubmittedAt, N'Scholarship' AS Category, CAST(NULL AS NVARCHAR(200)) AS Program
+    SELECT sa.SubmittedAt, N'Scholarship' AS Category, CAST(NULL AS NVARCHAR(200)) AS Program, d.Department
     FROM dbo.ScholarshipApplications sa
+    LEFT JOIN dbo.vw_ApplicantDepartments d ON d.UserId = sa.UserId
     WHERE sa.IsArchived = 0
 )
 SELECT
@@ -244,12 +259,14 @@ SELECT
 FROM Combined
 WHERE SubmittedAt >= @Since
   AND (@Program IS NULL OR Category = N'Scholarship' OR Program LIKE '%' + @Program + '%')
+  AND (@Department IS NULL OR Department = @Department)
 GROUP BY DATEADD(WEEK, DATEDIFF(WEEK, 0, SubmittedAt), 0), Category
 ORDER BY WeekStart ASC;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.Add(new SqlParameter("@Since", SqlDbType.Date) { Value = sinceWeekStart.ToDateTime(TimeOnly.MinValue) });
         command.Parameters.Add(new SqlParameter("@Program", SqlDbType.NVarChar, 200) { Value = (object?)NullIfEmpty(program) ?? DBNull.Value });
+        AddDepartmentParameter(command, department);
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
@@ -266,7 +283,7 @@ ORDER BY WeekStart ASC;";
     }
 
     public async Task<IReadOnlyList<(string Status, int Count)>> GetAdmissionFunnelCountsAsync(
-        string? program, CancellationToken cancellationToken = default)
+        string? program, string? department = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
@@ -276,15 +293,18 @@ FROM dbo.ApplicationStatusHistory h
 JOIN dbo.AdmissionApplications a ON a.ApplicationId = h.ApplicationId
 WHERE h.Category = N'Admission' AND a.IsArchived = 0
   AND (@Program IS NULL OR a.CourseAppliedFor LIKE '%' + @Program + '%')
+  AND (@Department IS NULL OR a.Department = @Department)
 GROUP BY h.ToStatus;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.Add(new SqlParameter("@Program", SqlDbType.NVarChar, 200) { Value = (object?)NullIfEmpty(program) ?? DBNull.Value });
+        AddDepartmentParameter(command, department);
 
         return await ReadFunnelCountsAsync(command, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<(string Status, int Count)>> GetScholarshipFunnelCountsAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<(string Status, int Count)>> GetScholarshipFunnelCountsAsync(
+        string? department = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
@@ -292,10 +312,11 @@ GROUP BY h.ToStatus;";
 SELECT h.ToStatus, COUNT(DISTINCT h.ApplicationId) AS Cnt
 FROM dbo.ApplicationStatusHistory h
 JOIN dbo.ScholarshipApplications sa ON sa.ApplicationId = h.ApplicationId
-WHERE h.Category = N'Scholarship' AND sa.IsArchived = 0
+WHERE h.Category = N'Scholarship' AND sa.IsArchived = 0" + ScholarshipDepartmentFilter + @"
 GROUP BY h.ToStatus;";
 
         await using var command = new SqlCommand(sql, connection);
+        AddDepartmentParameter(command, department);
         return await ReadFunnelCountsAsync(command, cancellationToken);
     }
 
@@ -312,6 +333,9 @@ GROUP BY h.ToStatus;";
 
         return results;
     }
+
+    private static void AddDepartmentParameter(SqlCommand command, string? department) =>
+        command.Parameters.Add(new SqlParameter("@Department", SqlDbType.NVarChar, 100) { Value = (object?)NullIfEmpty(department) ?? DBNull.Value });
 
     private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

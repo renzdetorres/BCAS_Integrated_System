@@ -159,6 +159,13 @@ export default function AdminApplicationsPage() {
       render: (row) => row.courseAppliedFor ?? row.scholarshipName,
     },
     {
+      key: "department",
+      header: "Department",
+      accessor: (row) => row.department ?? "",
+      sortable: true,
+      render: (row) => row.department ?? <span className="applications-department-missing">Unassigned</span>,
+    },
+    {
       key: "status",
       header: "Status",
       accessor: (row) => row.status,

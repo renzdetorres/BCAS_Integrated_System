@@ -3,6 +3,13 @@ using BCAS.Api.Models;
 namespace BCAS.Api.Data;
 
 /// <summary>Admin-Registrar reporting suite (BISAASS-37) - all reads, no writes.</summary>
+/// <remarks>
+/// Every read takes an optional department: when set, it keeps only
+/// applicants in that department (an Academic Head's scope) - admission
+/// rows by their own Department, scholarship rows by their applicant's
+/// latest admission application (vw_ApplicantDepartments). Null leaves the
+/// report school-wide, as an Admin-Registrar sees it.
+/// </remarks>
 public interface IAdminReportsRepository
 {
     /// <summary>
@@ -13,15 +20,15 @@ public interface IAdminReportsRepository
     /// per Section reports, which all derive from this same set.
     /// </summary>
     Task<IReadOnlyList<EnrollmentListItem>> GetEnrollmentListAsync(
-        string? program, string? applicationType, CancellationToken cancellationToken = default);
+        string? program, string? applicationType, string? department = null, CancellationToken cancellationToken = default);
 
     /// <summary>Every scholarship application regardless of status, optionally narrowed by scholarship name (partial match) and/or status.</summary>
     Task<IReadOnlyList<ScholarshipApplicantListItem>> GetScholarshipApplicantListAsync(
-        string? scholarshipName, string? status, CancellationToken cancellationToken = default);
+        string? scholarshipName, string? status, string? department = null, CancellationToken cancellationToken = default);
 
     /// <summary>Every eligibility screening verdict, optionally narrowed by verdict (Qualified/NotQualified).</summary>
     Task<IReadOnlyList<ScholarshipQualificationListItem>> GetScholarshipQualificationListAsync(
-        string? verdict, CancellationToken cancellationToken = default);
+        string? verdict, string? department = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Scholarship applications with a final Status of Approved or
@@ -29,7 +36,7 @@ public interface IAdminReportsRepository
     /// ScholarshipFinalDecisions row when one exists, else Status itself).
     /// </summary>
     Task<IReadOnlyList<ScholarshipResultListItem>> GetScholarshipResultListAsync(
-        string? decision, CancellationToken cancellationToken = default);
+        string? decision, string? department = null, CancellationToken cancellationToken = default);
 
     /// <summary>A single scholarship application's result-report row by id, or null if no such application exists.</summary>
     Task<ScholarshipResultListItem?> GetScholarshipResultByApplicationIdAsync(
@@ -43,10 +50,10 @@ public interface IAdminReportsRepository
     /// regardless of server DATEFIRST setting. program narrows Admission
     /// rows only (course, partial match, matching every other report here) -
     /// Scholarship rows are never filtered by it, since scholarships aren't
-    /// tied to a department/program.
+    /// tied to a program (department still applies to both).
     /// </summary>
     Task<IReadOnlyList<(DateOnly WeekStart, string Category, int Count)>> GetWeeklyApplicationCountsAsync(
-        DateOnly sinceWeekStart, string? program, CancellationToken cancellationToken = default);
+        DateOnly sinceWeekStart, string? program, string? department = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// How many distinct non-archived admission applications ever reached
@@ -57,8 +64,9 @@ public interface IAdminReportsRepository
     /// through.
     /// </summary>
     Task<IReadOnlyList<(string Status, int Count)>> GetAdmissionFunnelCountsAsync(
-        string? program, CancellationToken cancellationToken = default);
+        string? program, string? department = null, CancellationToken cancellationToken = default);
 
-    /// <summary>Same as GetAdmissionFunnelCountsAsync, for non-archived scholarship applications - never program-filtered.</summary>
-    Task<IReadOnlyList<(string Status, int Count)>> GetScholarshipFunnelCountsAsync(CancellationToken cancellationToken = default);
+    /// <summary>Same as GetAdmissionFunnelCountsAsync, for non-archived scholarship applications - never program-filtered, but department-filtered when one is given.</summary>
+    Task<IReadOnlyList<(string Status, int Count)>> GetScholarshipFunnelCountsAsync(
+        string? department = null, CancellationToken cancellationToken = default);
 }

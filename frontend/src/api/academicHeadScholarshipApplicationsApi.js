@@ -11,11 +11,13 @@ export async function getApplicationsReadyForDecision() {
     credentials: "include",
   });
 
+  const data = await response.json().catch(() => null);
+
   if (!response.ok) {
-    throw new ApiError(resolveErrorMessage(response, null, "Failed to load applications."), response.status);
+    throw new ApiError(resolveErrorMessage(response, data, "Failed to load applications."), response.status);
   }
 
-  return response.json();
+  return data;
 }
 
 export async function getScholarshipApplicationDetail(applicationId) {

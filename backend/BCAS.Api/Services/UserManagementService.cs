@@ -48,7 +48,7 @@ public class UserManagementService : IUserManagementService
             request.LastName.Trim(),
             normalizedEmail,
             request.Role,
-            NullIfEmpty(request.Department),
+            DepartmentRules.ForRole(request.Role, request.Department),
             cancellationToken) ?? throw new UserNotFoundException(userId);
 
         _logger.LogInformation("Account {UserId} updated: Email={Email}, Role={Role}", user.UserId, user.Email, user.RoleName);

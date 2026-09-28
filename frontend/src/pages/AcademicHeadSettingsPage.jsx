@@ -21,6 +21,7 @@ function toForm(profile) {
 
 export default function AcademicHeadSettingsPage() {
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "" });
+  const [department, setDepartment] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -36,7 +37,10 @@ export default function AcademicHeadSettingsPage() {
 
     getMyAcademicHeadProfile()
       .then((profile) => {
-        if (!cancelled) setForm(toForm(profile));
+        if (!cancelled) {
+          setForm(toForm(profile));
+          setDepartment(profile.department ?? null);
+        }
       })
       .catch((error) => {
         if (!cancelled) {
@@ -125,6 +129,10 @@ export default function AcademicHeadSettingsPage() {
         <Card className="ah-settings-card">
           <h2>Profile</h2>
           <p className="ah-settings-subtitle">You can update your name and email at any time.</p>
+          <p className="ah-settings-department">
+            Assigned department: <strong>{department ?? "Not assigned yet"}</strong>
+            <span>Only an Admin-Registrar can change this, in Manage Accounts.</span>
+          </p>
 
           {savedMessage && (
             <p className="form-success" role="status">

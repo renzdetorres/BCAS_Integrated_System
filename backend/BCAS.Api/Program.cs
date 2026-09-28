@@ -80,6 +80,8 @@ builder.Services.AddScoped<IAdminReportsService, AdminReportsService>();
 builder.Services.AddScoped<IAcademicHeadScholarshipsService, AcademicHeadScholarshipsService>();
 builder.Services.AddScoped<IAcademicHeadAnnouncementService, AcademicHeadAnnouncementService>();
 builder.Services.AddScoped<IAcademicHeadReportsService, AcademicHeadReportsService>();
+builder.Services.AddScoped<IDepartmentScopeRepository, DepartmentScopeRepository>();
+builder.Services.AddScoped<IAcademicHeadScopeService, AcademicHeadScopeService>();
 builder.Services.AddScoped<IAcademicHeadSettingsService, AcademicHeadSettingsService>();
 builder.Services.AddScoped<ISupportStaffDashboardRepository, SupportStaffDashboardRepository>();
 builder.Services.AddScoped<ISupportStaffDashboardService, SupportStaffDashboardService>();

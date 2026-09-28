@@ -6,9 +6,11 @@ export async function getAdminDashboard() {
     credentials: "include",
   });
 
+  const data = await response.json().catch(() => null);
+
   if (!response.ok) {
-    throw new ApiError(resolveErrorMessage(response, null, "Failed to load dashboard."), response.status);
+    throw new ApiError(resolveErrorMessage(response, data, "Failed to load dashboard."), response.status);
   }
 
-  return response.json();
+  return data;
 }

@@ -120,3 +120,15 @@
 .edit-row select.edit-input {
   max-width: 160px;
 }
+
+/* An Academic Head with no department sees nothing at all - flagged so an
+   Admin notices it in the list rather than hearing about it from them. */
+.department-missing {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-status-amber-bg);
+  color: var(--color-status-amber-text);
+  font-size: 12px;
+  font-weight: 600;
+}

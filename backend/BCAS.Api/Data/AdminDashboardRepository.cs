@@ -13,7 +13,7 @@ public class AdminDashboardRepository : IAdminDashboardRepository
         _connectionFactory = connectionFactory;
     }
 
-    public async Task<AdmissionAnalytics> GetAnalyticsAsync(CancellationToken cancellationToken = default)
+    public async Task<AdmissionAnalytics> GetAnalyticsAsync(string? department = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
@@ -24,9 +24,11 @@ SELECT
     SUM(CASE WHEN Status IN (N'Submitted', N'UnderReview') THEN 1 ELSE 0 END) AS PendingCount,
     SUM(CASE WHEN Status = N'Approved' THEN 1 ELSE 0 END) AS ApprovedCount,
     SUM(CASE WHEN Status = N'Rejected' THEN 1 ELSE 0 END) AS RejectedCount
-FROM dbo.AdmissionApplications;";
+FROM dbo.AdmissionApplications
+WHERE @Department IS NULL OR Department = @Department;";
 
         await using var command = new SqlCommand(sql, connection);
+        AddDepartmentParameter(command, department);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         await reader.ReadAsync(cancellationToken);
 
@@ -40,17 +42,19 @@ FROM dbo.AdmissionApplications;";
         };
     }
 
-    public async Task<IReadOnlyList<ProgramApplicantCount>> GetByProgramAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<ProgramApplicantCount>> GetByProgramAsync(string? department = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
 SELECT CourseAppliedFor AS Program, COUNT(*) AS Count
 FROM dbo.AdmissionApplications
+WHERE @Department IS NULL OR Department = @Department
 GROUP BY CourseAppliedFor
 ORDER BY COUNT(*) DESC, CourseAppliedFor ASC;";
 
         await using var command = new SqlCommand(sql, connection);
+        AddDepartmentParameter(command, department);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
         var counts = new List<ProgramApplicantCount>();
@@ -66,7 +70,8 @@ ORDER BY COUNT(*) DESC, CourseAppliedFor ASC;";
         return counts;
     }
 
-    public async Task<IReadOnlyList<RecentAdmissionApplication>> GetRecentAsync(int take, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<RecentAdmissionApplication>> GetRecentAsync(
+        int take, string? department = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
@@ -75,10 +80,12 @@ SELECT TOP (@Take)
     a.ApplicationId, u.FirstName, u.LastName, a.ApplicationType, a.CourseAppliedFor, a.Status, a.SubmittedAt
 FROM dbo.AdmissionApplications a
 JOIN dbo.Users u ON u.UserId = a.UserId
+WHERE @Department IS NULL OR a.Department = @Department
 ORDER BY a.SubmittedAt DESC;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.Add(new SqlParameter("@Take", SqlDbType.Int) { Value = take });
+        AddDepartmentParameter(command, department);
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
@@ -98,4 +105,7 @@ ORDER BY a.SubmittedAt DESC;";
 
         return applications;
     }
+
+    private static void AddDepartmentParameter(SqlCommand command, string? department) =>
+        command.Parameters.Add(new SqlParameter("@Department", SqlDbType.NVarChar, 100) { Value = (object?)department ?? DBNull.Value });
 }

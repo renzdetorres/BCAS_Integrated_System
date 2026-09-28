@@ -9,6 +9,7 @@ public static class AdmissionApplicationMappingExtensions
         ApplicationId = application.ApplicationId,
         ApplicationType = application.ApplicationType,
         CourseAppliedFor = application.CourseAppliedFor,
+        Department = application.Department,
         PreviousSchool = application.PreviousSchool,
         Status = application.Status,
         SubmittedAt = application.SubmittedAt,

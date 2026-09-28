@@ -6,6 +6,8 @@ import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import DataTable from "../components/ui/DataTable.jsx";
+import EmptyState from "../components/ui/EmptyState.jsx";
+import { useAcademicHeadDepartment } from "../hooks/useAcademicHeadDepartment.js";
 import "./AcademicHeadDashboardPage.css";
 
 function formatDate(isoDateTime) {
@@ -28,6 +30,8 @@ export default function AcademicHeadDashboardPage() {
   const [oversight, setOversight] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
+  const { department, isLoading: isDepartmentLoading } = useAcademicHeadDepartment();
+  const noDepartment = !isDepartmentLoading && !department;
 
   useEffect(() => {
     let cancelled = false;
@@ -84,14 +88,27 @@ export default function AcademicHeadDashboardPage() {
   ];
 
   return (
-    <AppLayout title="Decision Queue">
-      {isLoading && (
+    <AppLayout
+      title="Decision Queue"
+      actions={department ? <span className="department-scope-chip">{department} department</span> : null}
+    >
+      {noDepartment && (
+        <Card>
+          <EmptyState
+            icon="users"
+            title="No department assigned yet"
+            message="You'll see applicants, decisions, and reports once an Admin-Registrar assigns you to a department in Manage Accounts."
+          />
+        </Card>
+      )}
+
+      {!noDepartment && isLoading && (
         <Card>
           <p>Loading...</p>
         </Card>
       )}
 
-      {errorMessage && (
+      {!noDepartment && errorMessage && (
         <Card>
           <p className="form-error" role="alert">
             {errorMessage}
@@ -99,7 +116,7 @@ export default function AcademicHeadDashboardPage() {
         </Card>
       )}
 
-      {!isLoading && !errorMessage && (
+      {!noDepartment && !isLoading && !errorMessage && (
         <>
           <Card>
             <div className="ah-queue-header">
@@ -109,7 +126,9 @@ export default function AcademicHeadDashboardPage() {
                   ? "Nothing is waiting on your approval right now."
                   : `${queue.length} scholarship application${
                       queue.length === 1 ? "" : "s"
-                    } have completed screening and evaluation - review each before confirming Approved or Rejected.`}
+                    } from your department ${
+                      queue.length === 1 ? "has" : "have"
+                    } completed screening and evaluation. Review each before confirming Approved or Rejected.`}
               </p>
             </div>
             <DataTable
@@ -125,8 +144,8 @@ export default function AcademicHeadDashboardPage() {
             <Card className="ah-oversight-card">
               <h3>Admissions Context</h3>
               <p className="dashboard-meta">
-                Read-only, from Admin-Registrar's admissions pipeline - for context only, not something you manage
-                here.
+                Read-only admissions figures for {department ? `the ${department} department` : "your department"}, for
+                context only - not something you manage here.
               </p>
               <dl className="ah-oversight-figures">
                 <div>

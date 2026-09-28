@@ -36,6 +36,19 @@ public interface IAdminApplicationsService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Admin-only: files an admission application under a department
+    /// (DepartmentConstants), which decides which Academic Head sees it and
+    /// every scholarship application from the same applicant. Throws
+    /// InvalidDepartmentException for an unknown department or a
+    /// scholarship application (its department is derived, never set), or
+    /// ApplicationNotFoundException if no application has that id.
+    /// </summary>
+    Task<AdminApplicationListItemResponse> SetDepartmentAsync(
+        Guid applicationId,
+        string department,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Admin-only (BISAASS-56): every recorded status change for one
     /// application, oldest first, plus who made each change (null for the
     /// initial submission). Throws ApplicationNotFoundException if no

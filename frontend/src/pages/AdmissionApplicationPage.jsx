@@ -6,6 +6,7 @@ import {
   submitAdmissionApplication,
 } from "../api/admissionApi.js";
 import { ApiError } from "../api/apiClient.js";
+import { DEPARTMENT_OPTIONS } from "../config/departments.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
@@ -13,6 +14,7 @@ import "./AdmissionApplicationPage.css";
 
 const initialForm = {
   applicationType: APPLICATION_TYPES[0].value,
+  department: "",
   courseAppliedFor: "",
   previousSchool: "",
 };
@@ -64,6 +66,12 @@ export default function AdmissionApplicationPage() {
     event.preventDefault();
     setErrorMessage(null);
     setProfileIncomplete(false);
+
+    if (!form.department) {
+      setErrorMessage("Choose the department you are applying to.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -104,7 +112,10 @@ export default function AdmissionApplicationPage() {
                   </span>
                   <StatusBadge status={application.status} />
                 </div>
-                <p className="admission-course">{application.courseAppliedFor}</p>
+                <p className="admission-course">
+                  {application.courseAppliedFor}
+                  {application.department ? ` · ${application.department}` : ""}
+                </p>
                 <p className="admission-meta">
                   Previous school: {application.previousSchool} &middot; Submitted{" "}
                   {formatDate(application.submittedAt)}
@@ -142,6 +153,20 @@ export default function AdmissionApplicationPage() {
               {APPLICATION_TYPES.map((type) => (
                 <option key={type.value} value={type.value}>
                   {type.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-row">
+            <label htmlFor="department">Department</label>
+            <select id="department" name="department" required value={form.department} onChange={handleChange}>
+              <option value="" disabled>
+                Select a department
+              </option>
+              {DEPARTMENT_OPTIONS.map((department) => (
+                <option key={department} value={department}>
+                  {department}
                 </option>
               ))}
             </select>

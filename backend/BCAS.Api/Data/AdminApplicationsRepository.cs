@@ -156,7 +156,13 @@ SELECT
     h.ApplicationId, h.UserId, u.FirstName, u.LastName, u.Email,
     h.Category, h.ApplicationType, h.CourseAppliedFor, h.PreviousSchool,
     h.ScholarshipName, h.ScholarshipType, h.GradeAverage, h.Status, h.Remarks, h.SubmittedAt, h.UpdatedAt,
-    h.IsArchived, h.ArchivedAt, h.ArchivedByUserId, h.ArchiveReason";
+    h.IsArchived, h.ArchivedAt, h.ArchivedByUserId, h.ArchiveReason,
+    -- An admission application's own department; a scholarship
+    -- application's is its applicant's latest admission application's.
+    CASE WHEN h.Category = N'Admission'
+        THEN (SELECT x.Department FROM dbo.AdmissionApplications x WHERE x.ApplicationId = h.ApplicationId)
+        ELSE (SELECT d.Department FROM dbo.vw_ApplicantDepartments d WHERE d.UserId = h.UserId)
+    END AS Department";
 
     private static AdminApplicationListItem MapItem(SqlDataReader reader) => new()
     {
@@ -179,6 +185,7 @@ SELECT
         ArchivedAt = reader.IsDBNull(reader.GetOrdinal("ArchivedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("ArchivedAt")),
         ArchivedByUserId = reader.IsDBNull(reader.GetOrdinal("ArchivedByUserId")) ? null : reader.GetGuid(reader.GetOrdinal("ArchivedByUserId")),
         ArchiveReason = reader.IsDBNull(reader.GetOrdinal("ArchiveReason")) ? null : reader.GetString(reader.GetOrdinal("ArchiveReason")),
+        Department = reader.IsDBNull(reader.GetOrdinal("Department")) ? null : reader.GetString(reader.GetOrdinal("Department")),
     };
 
     private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

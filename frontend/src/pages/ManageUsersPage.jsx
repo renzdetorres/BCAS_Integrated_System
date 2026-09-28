@@ -91,8 +91,12 @@ export default function ManageUsersPage() {
   }
 
   async function handleEditSave(userId) {
-    setIsSaving(true);
     setErrorMessage(null);
+    if (editForm.role === "AcademicHead" && !editForm.department) {
+      setErrorMessage("Assign the Academic Head to a department before saving.");
+      return;
+    }
+    setIsSaving(true);
     try {
       const updated = await updateUser(userId, editForm);
       setUsers((prev) => prev.map((u) => (u.userId === updated.userId ? updated : u)));
@@ -190,9 +194,12 @@ export default function ManageUsersPage() {
                           name="department"
                           value={editForm.department}
                           onChange={handleEditChange}
-                          aria-label="Department"
+                          aria-label="Assigned department"
+                          required
                         >
-                          <option value="">Select a department</option>
+                          <option value="" disabled>
+                            Select a department
+                          </option>
                           {DEPARTMENT_OPTIONS.map((department) => (
                             <option key={department} value={department}>
                               {department}
@@ -227,7 +234,15 @@ export default function ManageUsersPage() {
                     </td>
                     <td>{user.email}</td>
                     <td>{user.role}</td>
-                    <td>{user.department ?? "—"}</td>
+                    <td>
+                      {user.role === "AcademicHead" && !user.department ? (
+                        <span className="department-missing" title="This Academic Head sees no applicants until a department is assigned">
+                          Not assigned
+                        </span>
+                      ) : (
+                        user.department ?? "—"
+                      )}
+                    </td>
                     <td>
                       <StatusBadge status={user.isActive ? "Active" : "Inactive"} label={user.isActive ? "Active" : "Deactivated"} />
                     </td>

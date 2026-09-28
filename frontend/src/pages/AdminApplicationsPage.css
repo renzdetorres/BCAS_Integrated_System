@@ -107,3 +107,9 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Unassigned applicants are invisible to every Academic Head - worth a glance. */
+.applications-department-missing {
+  color: var(--color-status-amber-text);
+  font-weight: 500;
+}

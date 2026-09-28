@@ -15,11 +15,11 @@ public class AdminDashboardService : IAdminDashboardService
         _dashboardRepository = dashboardRepository;
     }
 
-    public async Task<AdminDashboardResponse> GetDashboardAsync(CancellationToken cancellationToken = default)
+    public async Task<AdminDashboardResponse> GetDashboardAsync(string? department = null, CancellationToken cancellationToken = default)
     {
-        var analytics = await _dashboardRepository.GetAnalyticsAsync(cancellationToken);
-        var byProgram = await _dashboardRepository.GetByProgramAsync(cancellationToken);
-        var recent = await _dashboardRepository.GetRecentAsync(RecentApplicationsCount, cancellationToken);
+        var analytics = await _dashboardRepository.GetAnalyticsAsync(department, cancellationToken);
+        var byProgram = await _dashboardRepository.GetByProgramAsync(department, cancellationToken);
+        var recent = await _dashboardRepository.GetRecentAsync(RecentApplicationsCount, department, cancellationToken);
 
         return new AdminDashboardResponse
         {

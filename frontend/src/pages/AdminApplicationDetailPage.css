@@ -217,3 +217,40 @@
   font-size: 0.8rem;
   color: var(--color-text-secondary);
 }
+
+.admin-app-department-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-app-department-form select {
+  min-height: 32px;
+  padding: 4px 28px 4px 10px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.admin-app-department-note {
+  display: block;
+  margin-top: 4px;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+.admin-app-department-missing {
+  color: var(--color-status-amber-text);
+}
+
+.admin-app-detail-list dd .form-error {
+  display: block;
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  font-weight: 500;
+}

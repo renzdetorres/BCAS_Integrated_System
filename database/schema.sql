@@ -1489,3 +1489,53 @@ IF NOT EXISTS (SELECT 1 FROM dbo.NotificationTriggerConfigs WHERE TriggerKey = N
     INSERT INTO dbo.NotificationTriggerConfigs (TriggerKey, DisplayName, Description, IsEnabled) VALUES
         (N'InquiryReply', N'Inquiry Reply Alerts', N'Notifies an applicant by email when Support Staff/Admin reply to their inquiry thread.', 1);
 GO
+
+-- -----------------------------------------------------------------------------
+-- Department-Scoped Academic Head Access
+-- BISAASS-49 gave dbo.Users a free-text Department for Academic Heads and
+-- matched it against AdmissionApplications.CourseAppliedFor with a LIKE -
+-- but Admins assign departments from a fixed list (College, Senior High
+-- School, High School, Elementary) while applicants type their course
+-- freely, so the two almost never matched. This ties applicants to a
+-- department explicitly instead:
+--   * AdmissionApplications.Department - chosen by the applicant from the
+--     same fixed list on the admission form (DepartmentConstants), and
+--     correctable by an Admin-Registrar. Nullable: every application
+--     submitted before this change stays NULL ("Unassigned") until an
+--     Admin sets it, and is visible to no Academic Head until then.
+--   * vw_ApplicantDepartments - one row per applicant who has a department
+--     on any admission application, carrying the department from their
+--     most recent one. Scholarship applications have no department of
+--     their own (a scholarship is school-wide), so an applicant's
+--     scholarship applications belong to whichever department their
+--     latest admission application is in.
+-- An Academic Head then sees only applicants whose department equals
+-- their own Users.Department - their decision queue, application detail,
+-- final decisions, dashboard, and every report (enforced server-side).
+-- -----------------------------------------------------------------------------
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.AdmissionApplications') AND name = N'Department'
+)
+BEGIN
+    ALTER TABLE dbo.AdmissionApplications ADD Department NVARCHAR(100) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_AdmissionApplications_Department' AND object_id = OBJECT_ID(N'dbo.AdmissionApplications'))
+    CREATE NONCLUSTERED INDEX IX_AdmissionApplications_Department ON dbo.AdmissionApplications (Department, UserId);
+GO
+
+CREATE OR ALTER VIEW dbo.vw_ApplicantDepartments
+AS
+    SELECT latest.UserId, latest.Department
+    FROM (
+        SELECT
+            a.UserId,
+            a.Department,
+            ROW_NUMBER() OVER (PARTITION BY a.UserId ORDER BY a.SubmittedAt DESC) AS rn
+        FROM dbo.AdmissionApplications a
+        WHERE a.Department IS NOT NULL
+    ) latest
+    WHERE latest.rn = 1;
+GO

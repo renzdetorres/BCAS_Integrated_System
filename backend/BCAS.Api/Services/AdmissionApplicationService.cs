@@ -49,6 +49,14 @@ public class AdmissionApplicationService : IAdmissionApplicationService
             throw new InvalidApplicationTypeException(request.ApplicationType);
         }
 
+        if (string.IsNullOrWhiteSpace(request.Department))
+        {
+            throw InvalidDepartmentException.RequiredForApplication();
+        }
+
+        request.Department = DepartmentConstants.Normalize(request.Department)
+            ?? throw new InvalidDepartmentException(request.Department);
+
         if (!await _profileRepository.ExistsAsync(userId, cancellationToken))
         {
             throw new ProfileIncompleteException();
