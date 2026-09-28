@@ -1,59 +1,73 @@
 :root {
-  /* Brand */
+  /* Brand - the BCAS forest green and seal gold. The green is the one
+     accent the UI acts with; gold is reserved for brand moments (seal,
+     motto, notification count) so it keeps meaning something. */
   --color-primary: #1b4332;
-  --color-primary-dark: #143726;
+  --color-primary-dark: #12301f;
   --color-primary-light: #2d6a4f;
   --color-accent: #d9a441;
-  --color-accent-dark: #b6842e;
+  --color-accent-dark: #946a1f;
 
-  /* Surfaces */
-  --color-bg: #eef1ec;
+  /* Surfaces - a near-neutral canvas with the faintest green cast, so white
+     panels lift off it by value alone instead of needing heavy shadows. */
+  --color-bg: #f4f5f2;
   --color-surface: #ffffff;
-  --color-border: #e2e6df;
+  --color-surface-subtle: #f9faf8;
+  --color-border: #e3e6e0;
+  --color-border-strong: #cfd4cc;
   --color-white: #ffffff;
 
-  /* Text */
-  --color-text-primary: #1a1a1a;
-  --color-text-secondary: #6b7280;
-  --color-text-inverse: #f5f7f4;
+  /* Text - ink tinted toward the brand green rather than a cool slate gray,
+     so body copy and the palette read as one family. All pass 4.5:1 on
+     both surface and bg. */
+  --color-text-primary: #16211b;
+  --color-text-secondary: #56635b;
+  --color-text-tertiary: #66716a;
+  --color-text-inverse: #f6f8f5;
 
   /* Status */
-  --color-status-green-bg: #e3f5e9;
-  --color-status-green-text: #1e7e40;
-  --color-status-red-bg: #fbe6e6;
-  --color-status-red-text: #c53030;
-  --color-status-red-dark: #a32a2a;
-  --color-status-amber-bg: #fdf1d6;
-  --color-status-amber-text: #a3690f;
-  --color-status-gray-bg: #eceef0;
-  --color-status-gray-text: #5a6169;
-  --color-status-purple-bg: #ece5f9;
-  --color-status-purple-text: #6b3fa0;
+  --color-status-green-bg: #e6f4ea;
+  --color-status-green-text: #1b6b3a;
+  --color-status-red-bg: #fbeaea;
+  --color-status-red-text: #b42828;
+  --color-status-red-dark: #8f1f1f;
+  --color-status-amber-bg: #fcf1dc;
+  --color-status-amber-text: #8f5a0b;
+  --color-status-gray-bg: #eef0ed;
+  --color-status-gray-text: #535c56;
+  --color-status-purple-bg: #efe9f8;
+  --color-status-purple-text: #5f3a92;
 
-  /* Shape - tighter, more document/institutional than a rounded consumer app */
-  --radius-sm: 4px;
-  --radius-md: 6px;
+  /* Shape - one documented scale: small tags 6px, controls 8px, containers
+     12px, pills (counts, avatars) full. */
+  --radius-sm: 6px;
+  --radius-md: 8px;
   --radius-lg: 12px;
-  --shadow-card: 0 1px 2px rgba(16, 24, 16, 0.05), 0 4px 10px rgba(16, 24, 16, 0.06);
+  --radius-full: 999px;
 
-  /* Type - Lora (serif) for headings/brand marks, system sans for everything
-     read in bulk (tables, forms, body copy) so data stays fast to scan.
-     Two body sizes exist on purpose: "comfortable" for screens an applicant
-     reads once and acts on (auth, their own dashboard), "dense" for screens
-     staff scan repeatedly all day (tables, queues, reports). */
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-serif: "Lora", Georgia, "Times New Roman", serif;
+  /* Depth - every shadow is tinted toward the green ink, carries a real
+     offset, and pairs a tight contact shadow with a soft ambient one. */
+  --shadow-xs: 0 1px 2px rgba(18, 48, 31, 0.06);
+  --shadow-card: 0 1px 2px rgba(18, 48, 31, 0.05), 0 2px 8px -2px rgba(18, 48, 31, 0.06);
+  --shadow-raised: 0 1px 3px rgba(18, 48, 31, 0.08), 0 12px 28px -8px rgba(18, 48, 31, 0.18);
+  --shadow-overlay: 0 2px 6px rgba(18, 48, 31, 0.08), 0 24px 56px -12px rgba(18, 48, 31, 0.3);
 
-  --text-display: 600 32px/1.25 var(--font-serif);
-  /* Page titles (AppLayout's h1 only) read as a section header, not a
-     brand mark: bold/uppercase/sans, distinct from the serif h2 used on
-     card and subsection headings. */
-  --text-page-title: 800 26px/1.2 var(--font-sans);
+  /* Type - Source Serif 4 carries the institutional voice (page titles,
+     display headings, brand marks); IBM Plex Sans carries everything read
+     in bulk (tables, forms, cards) so data stays fast to scan, with real
+     tabular figures for counts and dates. Two body sizes exist on purpose:
+     "comfortable" for screens an applicant reads once and acts on, "dense"
+     for screens staff scan repeatedly all day. */
+  --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-serif: "Source Serif 4 Variable", "Source Serif 4", Georgia, "Times New Roman", serif;
+
+  --text-display: 600 34px/1.15 var(--font-serif);
+  --text-page-title: 600 28px/1.2 var(--font-serif);
   --text-h1: 600 22px/1.3 var(--font-serif);
-  --text-h2: 600 17px/1.35 var(--font-serif);
+  --text-h2: 600 15.5px/1.4 var(--font-sans);
   --text-body-comfortable: 400 15.5px/1.6 var(--font-sans);
-  --text-body: 400 14px/1.5 var(--font-sans);
-  --text-dense: 400 13.5px/1.4 var(--font-sans);
+  --text-body: 400 14px/1.55 var(--font-sans);
+  --text-dense: 400 13.5px/1.45 var(--font-sans);
   --text-caption: 500 12.5px/1.4 var(--font-sans);
 
   /* Spacing scale used throughout - not enforced by a utility class, just
@@ -67,23 +81,25 @@
   --space-8: 32px;
   --space-12: 48px;
 
-  /* Motion - used sparingly and only where state actually changes
-     (a progress fill, a step becoming current), never as page decoration. */
-  --motion-standard: 220ms ease;
+  /* Motion - used sparingly and only where state actually changes (a panel
+     opening, a press, a step becoming current), never as page decoration.
+     Strong custom ease-out: movement starts immediately, settles softly. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --motion-fast: 140ms var(--ease-out);
+  --motion-standard: 200ms var(--ease-out);
 
-  /* Tint of the primary green for subtle fills (stripe rows, hover states)
-     - was previously hand-rolled as rgba(27,67,50,x) inline in a dozen places. */
+  /* Tint of the primary green for subtle fills (row hover, selected states). */
   --color-primary-tint: rgba(27, 67, 50, 0.05);
-  /* Focus ring tint - was hand-rolled as rgba(27,67,50,0.15) in 8 separate
-     page CSS files. */
-  --color-primary-focus-ring: rgba(27, 67, 50, 0.15);
-  /* Gold focus ring for non-input controls (buttons, links, nav) - inputs
-     keep their own green ring (you're editing this field); gold matches
-     the "actionable" meaning it already carries on the sidebar's active
-     link and other interactive affordances. */
-  --color-accent-focus-ring: rgba(217, 164, 65, 0.45);
+  --color-primary-tint-strong: rgba(27, 67, 50, 0.09);
+  /* Focus ring for form fields - you're editing this field. */
+  --color-primary-focus-ring: rgba(45, 106, 79, 0.2);
+  /* Focus ring for non-input controls (buttons, links, nav). */
+  --color-accent-focus-ring: rgba(45, 106, 79, 0.45);
 
   /* Layout */
-  --sidebar-width: 248px;
-  --topbar-height: 64px;
+  --sidebar-width: 256px;
+  --topbar-height: 60px;
+  --content-max-width: 1440px;
 }

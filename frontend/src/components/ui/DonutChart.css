@@ -10,9 +10,11 @@
 }
 
 .ui-donutchart-center-value {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 26px;
-  font-weight: 700;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
   fill: var(--color-text-primary);
 }
 
@@ -54,6 +56,6 @@
 .ui-donutchart-legend-value {
   font-variant-numeric: tabular-nums;
   font-size: 13.5px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--color-text-primary);
 }

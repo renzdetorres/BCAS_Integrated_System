@@ -14,38 +14,64 @@ body,
   height: 100%;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
 body {
   margin: 0;
   background: var(--color-bg);
   color: var(--color-text-primary);
   font-family: var(--font-sans);
+  font-size: 14px;
   font-weight: 400;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "kern", "liga";
+  caret-color: var(--color-primary-light);
 }
 
+/* Headings default to the sans UI voice - a card or subsection heading is
+   a label for the data under it, not a brand moment. The serif is opted
+   into explicitly (page titles, auth/display headings, brand marks) so it
+   stays special instead of appearing on every panel. */
 h1,
 h2,
 h3,
 h4 {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--color-text-primary);
+  text-wrap: balance;
+}
+
+h1 {
+  font-family: var(--font-serif);
+  letter-spacing: -0.015em;
 }
 
 p {
   margin: 0;
+  text-wrap: pretty;
 }
 
 a {
   color: inherit;
-  transition: background var(--motion-standard), color var(--motion-standard), border-color var(--motion-standard);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  transition: background-color var(--motion-standard), color var(--motion-standard),
+    border-color var(--motion-standard);
 }
 
 button {
   font-family: inherit;
-  transition: background var(--motion-standard), color var(--motion-standard), border-color var(--motion-standard),
-    box-shadow var(--motion-standard);
+  transition: background-color var(--motion-standard), color var(--motion-standard),
+    border-color var(--motion-standard), box-shadow var(--motion-standard), transform var(--motion-fast);
 }
 
 input,
@@ -53,21 +79,68 @@ select,
 textarea {
   font-family: inherit;
   font-size: 14px;
-  transition: border-color var(--motion-standard), box-shadow var(--motion-standard);
+  transition: border-color var(--motion-standard), box-shadow var(--motion-standard),
+    background-color var(--motion-standard);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-tertiary);
+  opacity: 1;
+}
+
+/* Tables, counts, dates and IDs line up column-to-column. */
+table,
+time,
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: rgba(45, 106, 79, 0.18);
+  color: var(--color-text-primary);
+}
+
+/* Thin, quiet scrollbars for inner scroll regions (tables, panels, nav). */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border: 3px solid transparent;
+  border-radius: var(--radius-full);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-text-tertiary);
 }
 
 /* A deliberate, on-brand keyboard-focus ring for anything that isn't a
-   form field (those already have their own green ring on :focus, set per
-   form - see tokens.css). Its absence was the actual gap: every button
-   and link was falling back to whatever the browser draws by default,
-   which reads as unfinished rather than as a designed state. Mouse clicks
-   don't get it - :focus-visible only fires for keyboard/assistive nav. */
+   form field (those have their own ring on :focus, see forms.css). Offset
+   so it never collides with a control's own border. Mouse clicks don't get
+   it - :focus-visible only fires for keyboard/assistive nav. */
 a:focus-visible,
 button:focus-visible,
-[tabindex]:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px var(--color-accent-focus-ring);
+[tabindex]:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
   border-radius: var(--radius-sm);
+}
+
+/* Anything pressable gets a small physical push, confirming the click
+   landed before the result does. */
+.btn:active:not(:disabled),
+.ui-button:active:not(:disabled),
+button[type="submit"]:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 /* Shared category-pill color modifiers - identical rules were previously
@@ -82,4 +155,98 @@ button:focus-visible,
 .category-scholarship {
   background: var(--color-status-purple-bg);
   color: var(--color-status-purple-text);
+}
+
+/* Full-screen state while the session check is in flight. */
+.app-boot {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  animation: ui-fade-in 300ms 150ms var(--ease-out) both;
+}
+
+.app-boot-spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary-light);
+  animation: app-boot-spin 0.6s linear infinite;
+}
+
+@keyframes app-boot-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Shared entrance for anchored panels (dropdowns, popovers). Keyframes, not
+   transitions, because these mount fresh each time they open. */
+@keyframes ui-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ui-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ui-dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .btn:active:not(:disabled),
+  .ui-button:active:not(:disabled),
+  button[type="submit"]:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* Names the department an Academic Head's page is scoped to - sits in the
+   page header's actions slot so it's read alongside the title. */
+.department-scope-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 4px 12px;
+  border: 1px solid rgba(45, 106, 79, 0.2);
+  border-radius: var(--radius-full);
+  background: var(--color-primary-tint);
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
 }

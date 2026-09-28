@@ -66,6 +66,8 @@ export default function TopBar({ onMenuClick }) {
           className="topbar-icon-button"
           onClick={() => setNotifOpen((open) => !open)}
           aria-label="Announcements"
+          aria-haspopup="true"
+          aria-expanded={notifOpen}
         >
           <Icon name="bell" size={19} />
           {announcements.length > 0 ? (
@@ -102,6 +104,8 @@ export default function TopBar({ onMenuClick }) {
           type="button"
           className="topbar-user-button"
           onClick={() => setMenuOpen((open) => !open)}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
         >
           <span className="topbar-avatar">{initials(session.firstName, session.lastName)}</span>
           <span className="topbar-user-text">

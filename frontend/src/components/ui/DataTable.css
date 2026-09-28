@@ -13,14 +13,40 @@
 }
 
 .ui-datatable-toolbar-controls {
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.ui-datatable-search {
-  min-width: 220px;
+/* Filters sit on one line at desktop: the shared .ui-input/.ui-select are
+   full-width by default (right for a form), which inside a wrapping
+   toolbar would stack every control on its own row. */
+.ui-datatable-toolbar .ui-input,
+.ui-datatable-toolbar .ui-select {
+  width: auto;
+  flex: 0 1 auto;
+}
+
+.ui-datatable-toolbar .ui-select {
+  min-width: 150px;
+  padding-right: 32px;
+}
+
+.ui-datatable-toolbar .ui-datatable-search {
+  flex: 1 1 240px;
+  min-width: 200px;
+  max-width: 360px;
+}
+
+@media (max-width: 640px) {
+  .ui-datatable-toolbar .ui-input,
+  .ui-datatable-toolbar .ui-select,
+  .ui-datatable-toolbar .ui-datatable-search {
+    flex: 1 1 100%;
+    max-width: none;
+  }
 }
 
 .ui-datatable-scroll {
@@ -31,27 +57,22 @@
   width: 100%;
   border-collapse: collapse;
   font: var(--text-dense);
+  font-variant-numeric: tabular-nums;
 }
 
+/* Column headers recede: small, quiet, on a barely-there fill, so the
+   eye lands on the records, not the chrome around them. */
 .ui-datatable-table th {
   text-align: left;
-  padding: 11px 16px;
+  padding: 10px 16px;
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--color-primary-dark);
-  background: rgba(27, 67, 50, 0.05);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-subtle);
   border-bottom: 1px solid var(--color-border);
   white-space: nowrap;
-}
-
-.ui-datatable-table th:first-child {
-  border-top-left-radius: var(--radius-sm);
-}
-
-.ui-datatable-table th:last-child {
-  border-top-right-radius: var(--radius-sm);
 }
 
 .ui-datatable-th-sortable {
@@ -59,20 +80,24 @@
   user-select: none;
 }
 
+.ui-datatable-th-sortable:hover {
+  color: var(--color-text-primary);
+}
+
 .ui-datatable-sort-arrow {
-  color: var(--color-text-secondary);
+  color: var(--color-text-tertiary);
 }
 
 .ui-datatable-table td {
-  padding: 10px 16px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--color-border);
   color: var(--color-text-primary);
   vertical-align: middle;
-  transition: background var(--motion-standard);
+  transition: background-color var(--motion-fast);
 }
 
-.ui-datatable-table tbody tr:nth-child(even) td {
-  background: rgba(27, 67, 50, 0.02);
+.ui-datatable-table tbody tr:last-child td {
+  border-bottom: none;
 }
 
 .ui-datatable-row-clickable {
@@ -80,12 +105,12 @@
 }
 
 .ui-datatable-row-clickable:hover td {
-  background: rgba(217, 164, 65, 0.12);
+  background: var(--color-primary-tint);
 }
 
 .ui-datatable-empty {
   text-align: center;
-  padding: 32px 16px;
+  padding: 40px 16px;
   color: var(--color-text-secondary);
 }
 
