@@ -38,7 +38,8 @@ public class AdminDashboardService : IAdminDashboardService
             SubmittedThisWeek = analytics.SubmittedThisWeek,
             UnassignedCount = analytics.UnassignedCount,
             PendingDocumentsCount = pendingDocuments,
-            ByProgram = byProgram.Select(p => p.ToResponse()).ToList(),
+            ByProgram = byProgram.Programs.Select(p => p.ToResponse()).ToList(),
+            OtherProgramApplicants = byProgram.OtherApplicants,
             ByDepartment = byDepartment.Select(d => d.ToResponse()).ToList(),
             RecentApplications = recent.Select(a => a.ToResponse()).ToList(),
             Scholarship = new ScholarshipDashboardSummaryResponse

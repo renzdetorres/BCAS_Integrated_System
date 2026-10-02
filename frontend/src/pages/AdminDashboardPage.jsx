@@ -15,13 +15,17 @@ const WORKSPACES = [
   { value: "scholarship", label: "Scholarship", icon: "award" },
 ];
 
-// The chart shows the top programs by name; the long tail folds into one
-// "Other" bar so a new program never pushes the chart off the panel.
+// The scholarship chart shows the top scholarships by name; the long tail
+// folds into one "Other" bar so a new one never pushes the chart off the panel.
 const MAX_PROGRAM_BARS = 8;
 
-function programBars(byProgram) {
+function programBars(byProgram, workspace) {
   const sorted = [...(byProgram ?? [])].sort((a, b) => b.count - a.count);
-  if (sorted.length <= MAX_PROGRAM_BARS) return sorted.map((p) => ({ label: p.program, value: p.count }));
+  // Admission is always exactly the four College programs (the server
+  // returns all four, zero-filled), so there is nothing to fold.
+  if (workspace === "admission" || sorted.length <= MAX_PROGRAM_BARS) {
+    return sorted.map((p) => ({ label: p.program, value: p.count }));
+  }
   const top = sorted.slice(0, MAX_PROGRAM_BARS - 1).map((p) => ({ label: p.program, value: p.count }));
   const rest = sorted.slice(MAX_PROGRAM_BARS - 1);
   return [...top, { label: `Other (${rest.length} more)`, value: rest.reduce((sum, p) => sum + p.count, 0) }];
@@ -345,11 +349,18 @@ export default function AdminDashboardPage() {
               <span className="dash-panel-aside">Unique applicants</span>
             </div>
             <BarChart
-              data={programBars(view.byProgram)}
+              data={programBars(view.byProgram, workspace)}
               caption={`${workspaceLabel} applicants by ${workspace === "scholarship" ? "scholarship" : "program"}`}
               unit="applicants"
               emptyMessage={`No ${workspaceLabel.toLowerCase()} applicants yet.`}
             />
+            {workspace === "admission" && view.otherProgramApplicants > 0 && (
+              <p className="dash-panel-note">
+                {view.otherProgramApplicants.toLocaleString()}{" "}
+                {view.otherProgramApplicants === 1 ? "applicant applied" : "applicants applied"} for a course outside BSIT,
+                BSBA, BSA and BSED (older applications).
+              </p>
+            )}
           </section>
 
           <section className="dash-panel dash-departments" aria-labelledby="dash-departments-title">
