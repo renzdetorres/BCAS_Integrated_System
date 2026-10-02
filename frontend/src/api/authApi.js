@@ -20,18 +20,34 @@ export async function registerApplicant({ firstName, lastName, email, password }
 }
 
 export async function loginUser({ email, password }) {
-  const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    // Required so the browser stores/sends the HttpOnly auth cookie the API sets.
-    credentials: "include",
-    body: JSON.stringify({ email, password }),
-  });
+  let response;
+  try {
+    response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      // Required so the browser stores/sends the HttpOnly auth cookie the API sets.
+      credentials: "include",
+      body: JSON.stringify({ email, password }),
+    });
+  } catch {
+    // fetch only rejects when no response arrived at all: the API isn't
+    // running, isn't at this address, or the browser blocked the call.
+    throw new ApiError(
+      `Can't reach the server at ${API_BASE_URL}. Check that the API is running, then try again.`,
+      0
+    );
+  }
 
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = extractErrorMessage(data) ?? "Login failed. Please try again.";
+    // A 5xx has no message of its own to show: say it's the server, not the
+    // credentials, and where to look.
+    const fallback =
+      response.status >= 500
+        ? `The server hit an error (HTTP ${response.status}). Your email and password were not the problem - check the API console for the cause.`
+        : "Login failed. Please try again.";
+    const message = extractErrorMessage(data) ?? fallback;
     throw new ApiError(message, response.status);
   }
 
