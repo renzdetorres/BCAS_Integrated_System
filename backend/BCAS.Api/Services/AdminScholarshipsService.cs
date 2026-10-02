@@ -8,10 +8,15 @@ namespace BCAS.Api.Services;
 public class AdminScholarshipsService : IAdminScholarshipsService
 {
     private readonly IScholarshipRepository _scholarshipRepository;
+    private readonly ISemesterService _semesterService;
+    private readonly ISuperAdminGuard _superAdminGuard;
 
-    public AdminScholarshipsService(IScholarshipRepository scholarshipRepository)
+    public AdminScholarshipsService(
+        IScholarshipRepository scholarshipRepository, ISemesterService semesterService, ISuperAdminGuard superAdminGuard)
     {
         _scholarshipRepository = scholarshipRepository;
+        _semesterService = semesterService;
+        _superAdminGuard = superAdminGuard;
     }
 
     public async Task<IReadOnlyList<AdminScholarshipResponse>> GetAllAsync(CancellationToken cancellationToken = default)
@@ -29,8 +34,10 @@ public class AdminScholarshipsService : IAdminScholarshipsService
     }
 
     public async Task<AdminScholarshipResponse> UpdateAsync(
-        int scholarshipId, UpdateScholarshipRequest request, CancellationToken cancellationToken = default)
+        int scholarshipId, UpdateScholarshipRequest request, Guid? forcedByUserId = null, CancellationToken cancellationToken = default)
     {
+        await EnsureNotLockedAsync(forcedByUserId, cancellationToken);
+
         var existing = await _scholarshipRepository.GetByIdAsync(scholarshipId, cancellationToken)
             ?? throw new ScholarshipNotFoundException(scholarshipId);
 
@@ -47,11 +54,35 @@ public class AdminScholarshipsService : IAdminScholarshipsService
         return updated.ToAdminResponse();
     }
 
-    public async Task<AdminScholarshipResponse> SetActiveStatusAsync(int scholarshipId, bool isActive, CancellationToken cancellationToken = default)
+    public async Task<AdminScholarshipResponse> SetActiveStatusAsync(
+        int scholarshipId, bool isActive, Guid? forcedByUserId = null, CancellationToken cancellationToken = default)
     {
+        if (!isActive)
+        {
+            await EnsureNotLockedAsync(forcedByUserId, cancellationToken);
+        }
+
         var updated = await _scholarshipRepository.SetActiveStatusAsync(scholarshipId, isActive, cancellationToken)
             ?? throw new ScholarshipNotFoundException(scholarshipId);
 
         return updated.ToAdminResponse();
+    }
+
+    /// <summary>
+    /// Changing a scholarship's terms mid-semester would change them under
+    /// applicants already in its pipeline, so edits and deactivation wait
+    /// for the semester to end - unless a Super Admin forces them.
+    /// </summary>
+    private async Task EnsureNotLockedAsync(Guid? forcedByUserId, CancellationToken cancellationToken)
+    {
+        var ongoing = await _semesterService.GetOngoingAsync(cancellationToken);
+        if (ongoing is null) return;
+
+        if (forcedByUserId is null)
+        {
+            throw new ScholarshipLockedException(ongoing.Name, ongoing.EndDate);
+        }
+
+        await _superAdminGuard.EnsureAsync(forcedByUserId.Value, "force-edit a scholarship during an ongoing semester", cancellationToken);
     }
 }

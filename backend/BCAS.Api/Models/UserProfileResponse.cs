@@ -16,4 +16,7 @@ public class UserProfileResponse
 
     /// <summary>Free-text department/program name (BISAASS-49). Null unless set for an AcademicHead account.</summary>
     public string? Department { get; set; }
+
+    /// <summary>True for an Admin who may override locks (see User.IsSuperAdmin).</summary>
+    public bool IsSuperAdmin { get; set; }
 }

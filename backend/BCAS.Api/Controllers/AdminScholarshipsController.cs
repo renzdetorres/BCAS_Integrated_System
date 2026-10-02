@@ -1,4 +1,5 @@
 using BCAS.Api.Exceptions;
+using BCAS.Api.Extensions;
 using BCAS.Api.Models;
 using BCAS.Api.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -45,20 +46,46 @@ public class AdminScholarshipsController : ControllerBase
     /// <summary>
     /// Admin-only: updates a scholarship's name, type, total slots, and
     /// minimum grade average. Total slots can't be set below the number of
-    /// slots already occupied by accepted applications.
+    /// slots already occupied by accepted applications. Locked during an
+    /// ongoing semester (409); a Super Admin can pass force=true to override.
     /// </summary>
     [HttpPut("{scholarshipId:int}")]
     [ProducesResponseType(typeof(AdminScholarshipResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<AdminScholarshipResponse>> Update(
-        int scholarshipId, [FromBody] UpdateScholarshipRequest request, CancellationToken cancellationToken)
+        int scholarshipId,
+        [FromBody] UpdateScholarshipRequest request,
+        [FromQuery] bool force,
+        CancellationToken cancellationToken)
     {
         try
         {
-            var updated = await _scholarshipsService.UpdateAsync(scholarshipId, request, cancellationToken);
-            await _auditLogService.LogAsync(User, "ScholarshipUpdated", $"\"{updated.Name}\"", cancellationToken);
+            var updated = await _scholarshipsService.UpdateAsync(
+                scholarshipId, request, force ? User.GetUserId() : null, cancellationToken);
+            await _auditLogService.LogAsync(
+                User, force ? "ScholarshipForceUpdated" : "ScholarshipUpdated", $"\"{updated.Name}\"", cancellationToken);
             return Ok(updated);
+        }
+        catch (ScholarshipLockedException ex)
+        {
+            return Conflict(new ProblemDetails
+            {
+                Title = "Scholarship locked",
+                Detail = ex.Message,
+                Status = StatusCodes.Status409Conflict,
+            });
+        }
+        catch (SuperAdminRequiredException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Super Admin required",
+                Detail = ex.Message,
+                Status = StatusCodes.Status403Forbidden,
+            });
         }
         catch (InvalidTotalSlotsException ex)
         {
@@ -84,23 +111,49 @@ public class AdminScholarshipsController : ControllerBase
     /// Admin-only: activates or deactivates a scholarship without deleting
     /// it. A deactivated scholarship immediately stops appearing in the
     /// applicant-facing catalog and can no longer be applied against.
+    /// Deactivating is locked during an ongoing semester (409); a Super
+    /// Admin can pass force=true to override.
     /// </summary>
     [HttpPatch("{scholarshipId:int}/status")]
     [ProducesResponseType(typeof(AdminScholarshipResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<AdminScholarshipResponse>> SetActiveStatus(
-        int scholarshipId, [FromBody] SetActiveStatusRequest request, CancellationToken cancellationToken)
+        int scholarshipId,
+        [FromBody] SetActiveStatusRequest request,
+        [FromQuery] bool force,
+        CancellationToken cancellationToken)
     {
         try
         {
-            var updated = await _scholarshipsService.SetActiveStatusAsync(scholarshipId, request.IsActive!.Value, cancellationToken);
+            var updated = await _scholarshipsService.SetActiveStatusAsync(
+                scholarshipId, request.IsActive!.Value, force ? User.GetUserId() : null, cancellationToken);
             await _auditLogService.LogAsync(
                 User,
-                updated.IsActive ? "ScholarshipActivated" : "ScholarshipDeactivated",
+                updated.IsActive ? "ScholarshipActivated" : force ? "ScholarshipForceDeactivated" : "ScholarshipDeactivated",
                 $"\"{updated.Name}\"",
                 cancellationToken);
             return Ok(updated);
+        }
+        catch (ScholarshipLockedException ex)
+        {
+            return Conflict(new ProblemDetails
+            {
+                Title = "Scholarship locked",
+                Detail = ex.Message,
+                Status = StatusCodes.Status409Conflict,
+            });
+        }
+        catch (SuperAdminRequiredException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Super Admin required",
+                Detail = ex.Message,
+                Status = StatusCodes.Status403Forbidden,
+            });
         }
         catch (ScholarshipNotFoundException ex)
         {

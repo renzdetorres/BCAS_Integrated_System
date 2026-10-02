@@ -1,4 +1,5 @@
 using BCAS.Api.Exceptions;
+using BCAS.Api.Extensions;
 using BCAS.Api.Models;
 using BCAS.Api.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -108,6 +109,15 @@ public class AdminController : ControllerBase
                 cancellationToken);
             return Ok(response);
         }
+        catch (InvalidSuperAdminChangeException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Super Admin change not allowed",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
         catch (UserNotFoundException ex)
         {
             return NotFound(new ProblemDetails
@@ -160,6 +170,15 @@ public class AdminController : ControllerBase
                 Status = StatusCodes.Status400BadRequest,
             });
         }
+        catch (InvalidSuperAdminChangeException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Super Admin change not allowed",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
         catch (UserNotFoundException ex)
         {
             return NotFound(new ProblemDetails
@@ -176,6 +195,61 @@ public class AdminController : ControllerBase
                 Title = "Email already registered",
                 Detail = ex.Message,
                 Status = StatusCodes.Status409Conflict,
+            });
+        }
+    }
+
+    /// <summary>
+    /// Super Admin only: grants or revokes Super Admin on an Admin account.
+    /// A Super Admin can force-edit scholarships during an ongoing semester
+    /// and manage semesters. The last active Super Admin can't be revoked.
+    /// </summary>
+    [HttpPatch("users/{userId:guid}/super-admin")]
+    [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UserProfileResponse>> SetSuperAdmin(
+        Guid userId,
+        [FromBody] SetSuperAdminRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await _userManagementService.SetSuperAdminAsync(
+                User.GetUserId(), userId, request.IsSuperAdmin!.Value, cancellationToken);
+            await _auditLogService.LogAsync(
+                User,
+                response.IsSuperAdmin ? "SuperAdminGranted" : "SuperAdminRevoked",
+                response.Email,
+                cancellationToken);
+            return Ok(response);
+        }
+        catch (SuperAdminRequiredException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Super Admin required",
+                Detail = ex.Message,
+                Status = StatusCodes.Status403Forbidden,
+            });
+        }
+        catch (InvalidSuperAdminChangeException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Super Admin change not allowed",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (UserNotFoundException ex)
+        {
+            return NotFound(new ProblemDetails
+            {
+                Title = "Account not found",
+                Detail = ex.Message,
+                Status = StatusCodes.Status404NotFound,
             });
         }
     }

@@ -93,6 +93,15 @@ public class AcademicHeadScholarshipsController : ControllerBase
                 Status = StatusCodes.Status400BadRequest,
             });
         }
+        catch (ScholarshipLockedException ex)
+        {
+            return Conflict(new ProblemDetails
+            {
+                Title = "Scholarship locked",
+                Detail = ex.Message,
+                Status = StatusCodes.Status409Conflict,
+            });
+        }
         catch (ScholarshipNotFoundException ex)
         {
             return NotFound(new ProblemDetails
@@ -126,6 +135,15 @@ public class AcademicHeadScholarshipsController : ControllerBase
         catch (AcademicHeadNotAuthorizedException ex)
         {
             return NotAuthorized(ex);
+        }
+        catch (ScholarshipLockedException ex)
+        {
+            return Conflict(new ProblemDetails
+            {
+                Title = "Scholarship locked",
+                Detail = ex.Message,
+                Status = StatusCodes.Status409Conflict,
+            });
         }
         catch (ScholarshipNotFoundException ex)
         {

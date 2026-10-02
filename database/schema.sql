@@ -1539,3 +1539,57 @@ AS
     ) latest
     WHERE latest.rn = 1;
 GO
+
+-- -----------------------------------------------------------------------------
+-- Semester lock + Super Admin
+-- Scholarships can't be edited or deactivated while a semester is ongoing
+-- (today, Philippine time, falls between a semester's StartDate and EndDate
+-- inclusive) - changing a scholarship's terms mid-semester would change
+-- them under applicants already in its pipeline. A Super Admin can force
+-- an edit through the lock; every forced edit is written to the audit log.
+--   * Users.IsSuperAdmin - an Admin who may override locks and manage
+--     semesters. Granted by another Super Admin in Manage Accounts. So the
+--     system is never left without one, the earliest-created active Admin
+--     becomes Super Admin when no active Super Admin exists.
+--   * Semesters - the school calendar the lock reads. Managed by a Super
+--     Admin in System Settings.
+-- -----------------------------------------------------------------------------
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.Users') AND name = N'IsSuperAdmin'
+)
+BEGIN
+    ALTER TABLE dbo.Users ADD IsSuperAdmin BIT NOT NULL CONSTRAINT DF_Users_IsSuperAdmin DEFAULT (0);
+END
+GO
+
+IF NOT EXISTS (
+    SELECT 1 FROM dbo.Users u JOIN dbo.Roles r ON r.RoleId = u.RoleId
+    WHERE u.IsSuperAdmin = 1 AND u.IsActive = 1 AND r.RoleName = N'Admin'
+)
+BEGIN
+    UPDATE dbo.Users SET IsSuperAdmin = 1
+    WHERE UserId = (
+        SELECT TOP 1 u.UserId FROM dbo.Users u JOIN dbo.Roles r ON r.RoleId = u.RoleId
+        WHERE r.RoleName = N'Admin' AND u.IsActive = 1
+        ORDER BY u.CreatedAt ASC
+    );
+END
+GO
+
+IF OBJECT_ID(N'dbo.Semesters', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Semesters
+    (
+        SemesterId       INT IDENTITY(1,1) NOT NULL,
+        Name             NVARCHAR(100)     NOT NULL,
+        StartDate        DATE              NOT NULL,
+        EndDate          DATE              NOT NULL,
+        CreatedByUserId  UNIQUEIDENTIFIER  NULL,
+        CreatedAt        DATETIME2(3)      NOT NULL CONSTRAINT DF_Semesters_CreatedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_Semesters PRIMARY KEY (SemesterId),
+        CONSTRAINT FK_Semesters_CreatedBy FOREIGN KEY (CreatedByUserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT CK_Semesters_Dates CHECK (EndDate >= StartDate)
+    );
+END
+GO

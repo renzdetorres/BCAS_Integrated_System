@@ -17,4 +17,10 @@ public class User
     /// AcademicHead accounts - null for every other role until set.
     /// </summary>
     public string? Department { get; set; }
+
+    /// <summary>
+    /// An Admin who may override locks, e.g. force-edit a scholarship during
+    /// an ongoing semester. Granted by another Super Admin.
+    /// </summary>
+    public bool IsSuperAdmin { get; set; }
 }

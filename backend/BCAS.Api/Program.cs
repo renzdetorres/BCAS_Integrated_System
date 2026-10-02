@@ -82,6 +82,9 @@ builder.Services.AddScoped<IAcademicHeadAnnouncementService, AcademicHeadAnnounc
 builder.Services.AddScoped<IAcademicHeadReportsService, AcademicHeadReportsService>();
 builder.Services.AddScoped<IDepartmentScopeRepository, DepartmentScopeRepository>();
 builder.Services.AddScoped<IAcademicHeadScopeService, AcademicHeadScopeService>();
+builder.Services.AddScoped<ISemesterRepository, SemesterRepository>();
+builder.Services.AddScoped<ISemesterService, SemesterService>();
+builder.Services.AddScoped<ISuperAdminGuard, SuperAdminGuard>();
 builder.Services.AddScoped<IAcademicHeadSettingsService, AcademicHeadSettingsService>();
 builder.Services.AddScoped<ISupportStaffDashboardRepository, SupportStaffDashboardRepository>();
 builder.Services.AddScoped<ISupportStaffDashboardService, SupportStaffDashboardService>();

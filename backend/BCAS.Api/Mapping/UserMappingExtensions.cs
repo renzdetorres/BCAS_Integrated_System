@@ -13,5 +13,6 @@ public static class UserMappingExtensions
         Role = user.RoleName,
         IsActive = user.IsActive,
         Department = user.Department,
+        IsSuperAdmin = user.IsSuperAdmin,
     };
 }

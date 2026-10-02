@@ -9,22 +9,30 @@ namespace BCAS.Api.Services;
 public class UserManagementService : IUserManagementService
 {
     private readonly IUserRepository _userRepository;
+    private readonly ISuperAdminGuard _superAdminGuard;
     private readonly ILogger<UserManagementService> _logger;
 
-    public UserManagementService(IUserRepository userRepository, ILogger<UserManagementService> logger)
+    public UserManagementService(IUserRepository userRepository, ISuperAdminGuard superAdminGuard, ILogger<UserManagementService> logger)
     {
         _userRepository = userRepository;
+        _superAdminGuard = superAdminGuard;
         _logger = logger;
     }
 
     public async Task<IReadOnlyList<UserProfileResponse>> ListUsersAsync(CancellationToken cancellationToken = default)
     {
+        await _userRepository.EnsureSuperAdminExistsAsync(cancellationToken);
         var users = await _userRepository.GetAllAsync(cancellationToken);
         return users.Select(u => u.ToProfileResponse()).ToList();
     }
 
     public async Task<UserProfileResponse> SetActiveStatusAsync(Guid userId, bool isActive, CancellationToken cancellationToken = default)
     {
+        if (!isActive)
+        {
+            await EnsureNotLastSuperAdminAsync(userId, "deactivate", cancellationToken);
+        }
+
         var user = await _userRepository.SetActiveStatusAsync(userId, isActive, cancellationToken)
             ?? throw new UserNotFoundException(userId);
 
@@ -38,6 +46,11 @@ public class UserManagementService : IUserManagementService
         if (!AuthConstants.AllRoles.Contains(request.Role))
         {
             throw new InvalidRoleException(request.Role, AuthConstants.AllRoles);
+        }
+
+        if (request.Role != "Admin")
+        {
+            await EnsureNotLastSuperAdminAsync(userId, "move to another role", cancellationToken);
         }
 
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
@@ -54,6 +67,46 @@ public class UserManagementService : IUserManagementService
         _logger.LogInformation("Account {UserId} updated: Email={Email}, Role={Role}", user.UserId, user.Email, user.RoleName);
 
         return user.ToProfileResponse();
+    }
+
+    public async Task<UserProfileResponse> SetSuperAdminAsync(
+        Guid callerUserId, Guid userId, bool isSuperAdmin, CancellationToken cancellationToken = default)
+    {
+        await _superAdminGuard.EnsureAsync(callerUserId, "grant or revoke Super Admin", cancellationToken);
+
+        var target = await _userRepository.GetByIdAsync(userId, cancellationToken) ?? throw new UserNotFoundException(userId);
+        if (isSuperAdmin && (target.RoleName != "Admin" || !target.IsActive))
+        {
+            throw new InvalidSuperAdminChangeException("Only an active Admin-Registrar account can be made a Super Admin.");
+        }
+
+        if (!isSuperAdmin)
+        {
+            await EnsureNotLastSuperAdminAsync(userId, "revoke", cancellationToken);
+        }
+
+        var updated = await _userRepository.SetSuperAdminAsync(userId, isSuperAdmin, cancellationToken)
+            ?? throw new UserNotFoundException(userId);
+
+        _logger.LogInformation("Account {Email} set to IsSuperAdmin={IsSuperAdmin}", updated.Email, updated.IsSuperAdmin);
+        return updated.ToProfileResponse();
+    }
+
+    /// <summary>
+    /// A Super Admin is the only one who can override the semester lock or
+    /// grant Super Admin, so the last active one can't be removed from that
+    /// position by any route - revoke, deactivate or role change.
+    /// </summary>
+    private async Task EnsureNotLastSuperAdminAsync(Guid userId, string action, CancellationToken cancellationToken)
+    {
+        var target = await _userRepository.GetByIdAsync(userId, cancellationToken);
+        if (target is not { IsSuperAdmin: true, IsActive: true, RoleName: "Admin" }) return;
+
+        if (await _userRepository.CountActiveSuperAdminsAsync(cancellationToken) <= 1)
+        {
+            throw new InvalidSuperAdminChangeException(
+                $"You can't {action} the only Super Admin. Make another Admin a Super Admin first.");
+        }
     }
 
     private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

@@ -76,3 +76,21 @@ export async function setUserActiveStatus(userId, isActive) {
 
   return data;
 }
+
+/** Super Admin only: grants or revokes Super Admin on an Admin account. */
+export async function setUserSuperAdmin(userId, isSuperAdmin) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/super-admin`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ isSuperAdmin }),
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new ApiError(resolveErrorMessage(response, data, "Failed to change Super Admin access."), response.status);
+  }
+
+  return data;
+}
