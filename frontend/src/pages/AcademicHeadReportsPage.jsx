@@ -16,19 +16,21 @@ import {
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
+import EmptyState from "../components/ui/EmptyState.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
+import { useAcademicHeadDepartment } from "../hooks/useAcademicHeadDepartment.js";
 import BarChart from "../components/ui/BarChart.jsx";
 import TrendChart from "../components/ui/TrendChart.jsx";
 import "./AcademicHeadReportsPage.css";
 
 const REPORTS = [
-  { key: "enrollmentList", category: "Admission (your department)", label: "Enrollment List" },
-  { key: "enrollmentSummary", category: "Admission (your department)", label: "Summary of Enrollment" },
-  { key: "sectionFiles", category: "Admission (your department)", label: "File per Section" },
-  { key: "scholarshipApplicants", category: "Scholarship (school-wide)", label: "Scholarship Applicant List" },
-  { key: "scholarshipQualification", category: "Scholarship (school-wide)", label: "Qualified / Not Qualified" },
-  { key: "scholarshipResults", category: "Scholarship (school-wide)", label: "Scholarship Results" },
-  { key: "scholarshipSlots", category: "Scholarship (school-wide)", label: "Scholarship Slot Report" },
+  { key: "enrollmentList", category: "Admission", label: "Enrollment List" },
+  { key: "enrollmentSummary", category: "Admission", label: "Summary of Enrollment" },
+  { key: "sectionFiles", category: "Admission", label: "File per Section" },
+  { key: "scholarshipApplicants", category: "Scholarship", label: "Scholarship Applicant List" },
+  { key: "scholarshipQualification", category: "Scholarship", label: "Qualified / Not Qualified" },
+  { key: "scholarshipResults", category: "Scholarship", label: "Scholarship Results" },
+  { key: "scholarshipSlots", category: "Scholarship", label: "Scholarship Slot Report" },
   { key: "applicationTrend", category: "Trends", label: "Applications per Week" },
   { key: "applicationFunnel", category: "Trends", label: "Funnel / Drop-off" },
 ];
@@ -370,7 +372,7 @@ function ScholarshipApplicantListReport() {
   return (
     <Card className="report-card">
       <h2>Scholarship Applicant List</h2>
-      <p className="report-subtitle">School-wide - scholarships aren't tied to any department.</p>
+      <p className="report-subtitle">Scholarship applications from applicants in your department.</p>
 
       <form
         className="report-filters"
@@ -457,7 +459,7 @@ function ScholarshipQualificationReport() {
   return (
     <Card className="report-card">
       <h2>Qualified / Not Qualified Applicants</h2>
-      <p className="report-subtitle">School-wide - scholarships aren't tied to any department.</p>
+      <p className="report-subtitle">Eligibility screening results for applicants in your department.</p>
 
       <form
         className="report-filters"
@@ -537,7 +539,7 @@ function ScholarshipResultsReport() {
   return (
     <Card className="report-card">
       <h2>Scholarship Results</h2>
-      <p className="report-subtitle">School-wide - scholarships aren't tied to any department.</p>
+      <p className="report-subtitle">Final scholarship decisions for applicants in your department.</p>
 
       <form
         className="report-filters"
@@ -609,7 +611,10 @@ function ScholarshipSlotsReport() {
   return (
     <Card className="report-card">
       <h2>Scholarship Slot Report</h2>
-      <p className="report-subtitle">School-wide - scholarships aren't tied to any department.</p>
+      <p className="report-subtitle">
+        School-wide: slots belong to each scholarship, which every department shares, so this one isn't scoped to
+        your department.
+      </p>
 
       <ReportError message={errorMessage} />
 
@@ -683,8 +688,7 @@ function ApplicationTrendReport() {
     <Card className="report-card">
       <h2>Applications per Week</h2>
       <p className="report-subtitle">
-        Admission applications in your department, plus school-wide Scholarship applications, submitted each week,
-        most recent {weeks} weeks.
+        Admission and Scholarship applications from your department submitted each week, most recent {weeks} weeks.
       </p>
 
       <form
@@ -738,8 +742,7 @@ function ApplicationFunnelReport() {
     <Card className="report-card">
       <h2>Funnel / Drop-off</h2>
       <p className="report-subtitle">
-        How many applications ever reached each stage of the workflow, in order - Admission scoped to your
-        department, Scholarship school-wide.
+        How many applications from your department ever reached each stage of the workflow, in order.
       </p>
 
       <ReportError message={errorMessage} />
@@ -749,14 +752,14 @@ function ApplicationFunnelReport() {
       ) : funnel ? (
         <div className="report-summary-columns">
           <div>
-            <h3>Admission (your department)</h3>
+            <h3>Admission</h3>
             <BarChart
               data={funnel.admissionFunnel.map((s) => ({ label: FUNNEL_STAGE_LABELS[s.stage] ?? s.stage, value: s.count }))}
               emptyMessage="No admission applications yet."
             />
           </div>
           <div>
-            <h3>Scholarship (school-wide)</h3>
+            <h3>Scholarship</h3>
             <BarChart
               data={funnel.scholarshipFunnel.map((s) => ({ label: FUNNEL_STAGE_LABELS[s.stage] ?? s.stage, value: s.count }))}
               emptyMessage="No scholarship applications yet."
@@ -784,12 +787,30 @@ export default function AcademicHeadReportsPage() {
   const [activeReport, setActiveReport] = useState("enrollmentList");
   const ActiveComponent = REPORT_COMPONENTS[activeReport];
   const categories = [...new Set(REPORTS.map((report) => report.category))];
+  const { department, isLoading: isDepartmentLoading } = useAcademicHeadDepartment();
+
+  if (!isDepartmentLoading && !department) {
+    return (
+      <AppLayout title="Reports">
+        <Card>
+          <EmptyState
+            icon="chart"
+            title="No department assigned yet"
+            message="Reports cover the applicants in your department. Ask an Admin-Registrar to assign you one in Manage Accounts."
+          />
+        </Card>
+      </AppLayout>
+    );
+  }
 
   return (
-    <AppLayout title="Reports">
+    <AppLayout
+      title="Reports"
+      actions={department ? <span className="department-scope-chip">{department} department</span> : null}
+    >
         <p className="ah-reports-subtitle">
-          Admission reports are scoped to your assigned department. Scholarship reports are school-wide, since
-          scholarships aren't tied to any department.
+          Every report covers applicants in your assigned department only, except the Scholarship Slot Report,
+          which describes the school-wide scholarship catalog.
         </p>
 
         <nav className="ah-reports-nav">

@@ -36,13 +36,13 @@ public class AcademicHeadScholarshipsService : IAcademicHeadScholarshipsService
         int scholarshipId, UpdateScholarshipRequest request, CancellationToken cancellationToken = default)
     {
         await EnsureAuthorizedAsync(cancellationToken);
-        return await _scholarshipsService.UpdateAsync(scholarshipId, request, cancellationToken);
+        return await _scholarshipsService.UpdateAsync(scholarshipId, request, cancellationToken: cancellationToken);
     }
 
     public async Task<AdminScholarshipResponse> SetActiveStatusAsync(int scholarshipId, bool isActive, CancellationToken cancellationToken = default)
     {
         await EnsureAuthorizedAsync(cancellationToken);
-        return await _scholarshipsService.SetActiveStatusAsync(scholarshipId, isActive, cancellationToken);
+        return await _scholarshipsService.SetActiveStatusAsync(scholarshipId, isActive, cancellationToken: cancellationToken);
     }
 
     private async Task EnsureAuthorizedAsync(CancellationToken cancellationToken)

@@ -8,9 +8,11 @@ import {
   getValidNextScholarshipStatuses,
   promoteFromWaitlist,
   searchApplications,
+  setApplicationDepartment,
   updateApplicationStatus,
 } from "../api/adminApplicationsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import { DEPARTMENT_OPTIONS } from "../config/departments.js";
 import WorkflowStepper, { ADMISSION_STEP_LABELS, SCHOLARSHIP_STEP_LABELS } from "../components/WorkflowStepper.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
@@ -41,6 +43,11 @@ export default function AdminApplicationDetailPage() {
   const [isArchiving, setIsArchiving] = useState(false);
   const [archiveError, setArchiveError] = useState(null);
 
+  const [departmentDraft, setDepartmentDraft] = useState("");
+  const [isSavingDepartment, setIsSavingDepartment] = useState(false);
+  const [departmentMessage, setDepartmentMessage] = useState(null);
+  const [departmentError, setDepartmentError] = useState(null);
+
   const [isPromoting, setIsPromoting] = useState(false);
   const [promoteError, setPromoteError] = useState(null);
 
@@ -59,6 +66,7 @@ export default function AdminApplicationDetailPage() {
         setApplication(found);
         if (found) {
           setStatusForm({ status: found.status, remarks: found.remarks ?? "" });
+          setDepartmentDraft(found.department ?? "");
         }
       })
       .catch((error) => {
@@ -101,6 +109,23 @@ export default function AdminApplicationDetailPage() {
   }, [applicationId, application?.category]);
 
   useEffect(() => loadStatusHistory(), [loadStatusHistory]);
+
+  async function handleDepartmentSubmit(event) {
+    event.preventDefault();
+    setDepartmentError(null);
+    setDepartmentMessage(null);
+    setIsSavingDepartment(true);
+
+    try {
+      const updated = await setApplicationDepartment(applicationId, departmentDraft);
+      setApplication(updated);
+      setDepartmentMessage(`Filed under ${updated.department}.`);
+    } catch (error) {
+      setDepartmentError(error instanceof ApiError ? error.message : "Failed to update the department.");
+    } finally {
+      setIsSavingDepartment(false);
+    }
+  }
 
   async function handleStatusSubmit(event) {
     event.preventDefault();
@@ -261,6 +286,62 @@ export default function AdminApplicationDetailPage() {
                       </div>
                     </>
                   )}
+                  <div>
+                    <dt>Department</dt>
+                    <dd>
+                      {application.category === "Admission" ? (
+                        <form className="admin-app-department-form" onSubmit={handleDepartmentSubmit}>
+                          <select
+                            aria-label="Department"
+                            value={departmentDraft}
+                            onChange={(event) => {
+                              setDepartmentDraft(event.target.value);
+                              setDepartmentMessage(null);
+                            }}
+                            disabled={isSavingDepartment}
+                          >
+                            <option value="" disabled>
+                              Unassigned
+                            </option>
+                            {DEPARTMENT_OPTIONS.map((department) => (
+                              <option key={department} value={department}>
+                                {department}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="submit"
+                            className="btn btn-secondary btn-sm"
+                            disabled={
+                              isSavingDepartment || !departmentDraft || departmentDraft === (application.department ?? "")
+                            }
+                          >
+                            {isSavingDepartment ? "Saving..." : "Save"}
+                          </button>
+                        </form>
+                      ) : (
+                        <>
+                          {application.department ?? <span className="admin-app-department-missing">Unassigned</span>}
+                          <span className="admin-app-department-note">From the applicant's admission application</span>
+                        </>
+                      )}
+                      {application.category === "Admission" && !application.department && !departmentMessage && (
+                        <span className="admin-app-department-note">
+                          No Academic Head can see this applicant until a department is set.
+                        </span>
+                      )}
+                      {departmentMessage && (
+                        <span className="admin-app-department-note" role="status">
+                          {departmentMessage}
+                        </span>
+                      )}
+                      {departmentError && (
+                        <span className="form-error" role="alert">
+                          {departmentError}
+                        </span>
+                      )}
+                    </dd>
+                  </div>
                   <div>
                     <dt>Submitted</dt>
                     <dd>{formatDateTime(application.submittedAt)}</dd>

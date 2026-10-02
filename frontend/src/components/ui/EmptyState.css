@@ -4,7 +4,7 @@
   align-items: center;
   text-align: center;
   gap: 4px;
-  padding: 36px 16px;
+  padding: 44px 16px;
 }
 
 .empty-state-icon {
@@ -13,27 +13,29 @@
   justify-content: center;
   width: 48px;
   height: 48px;
-  border-radius: var(--radius-md);
-  background: var(--color-bg);
-  color: var(--color-text-secondary);
-  margin-bottom: 8px;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-xs);
+  color: var(--color-text-tertiary);
+  margin-bottom: 12px;
 }
 
 .empty-state-title {
   margin: 0;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 15px;
   color: var(--color-text-primary);
 }
 
 .empty-state-message {
-  margin: 4px 0 0;
-  font-size: 0.85rem;
+  margin: 2px 0 0;
+  font-size: 13.5px;
   color: var(--color-text-secondary);
-  max-width: 380px;
-  line-height: 1.5;
+  max-width: 400px;
+  line-height: 1.55;
 }
 
 .empty-state-action {
-  margin-top: 14px;
+  margin-top: 16px;
 }

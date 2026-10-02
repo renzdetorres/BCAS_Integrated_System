@@ -5,6 +5,9 @@ public class AdminApplicationListItem
 {
     public Guid ApplicationId { get; set; }
     public Guid UserId { get; set; }
+
+    /// <summary>Which department's Academic Head sees this application; null while unassigned.</summary>
+    public string? Department { get; set; }
     public string ApplicantName { get; set; } = string.Empty;
     public string ApplicantEmail { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;

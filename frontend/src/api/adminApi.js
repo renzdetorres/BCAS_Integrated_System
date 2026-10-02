@@ -3,9 +3,10 @@ import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 export const STAFF_ROLES = ["Evaluator", "SupportStaff", "AcademicHead", "Admin"];
 export const ALL_ROLES = ["Applicant", ...STAFF_ROLES];
 
-// The department/level an Academic Head oversees - scopes which admission
-// reports they can see (see AcademicHeadReportsService).
-export const DEPARTMENT_OPTIONS = ["College", "Senior High School", "High School", "Elementary"];
+// The department an Academic Head is assigned to - scopes every applicant
+// they can see (see AcademicHeadScopeService). Lives in config/ because the
+// applicant's admission form picks from the same list.
+export { DEPARTMENT_OPTIONS } from "../config/departments.js";
 
 export async function provisionStaff({ firstName, lastName, email, password, role, department }) {
   const response = await fetch(`${API_BASE_URL}/api/admin/staff`, {
@@ -71,6 +72,24 @@ export async function setUserActiveStatus(userId, isActive) {
   if (!response.ok) {
     const message = resolveErrorMessage(response, data, "Failed to update account status. Please try again.");
     throw new ApiError(message, response.status);
+  }
+
+  return data;
+}
+
+/** Super Admin only: grants or revokes Super Admin on an Admin account. */
+export async function setUserSuperAdmin(userId, isSuperAdmin) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/super-admin`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ isSuperAdmin }),
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new ApiError(resolveErrorMessage(response, data, "Failed to change Super Admin access."), response.status);
   }
 
   return data;

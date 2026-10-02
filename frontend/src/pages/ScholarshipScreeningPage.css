@@ -263,18 +263,16 @@
   color: var(--color-text-primary);
 }
 
-/* Same left-flag language as StatusBadge, not a second pill convention for
-   the same kind of yes/no/unknown result. */
+/* Same tag language as StatusBadge, not a second pill convention for the
+   same kind of yes/no/unknown result. */
 .rules-badge-yes,
 .rules-badge-no,
 .rules-badge-unknown {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  padding: 3px 9px 3px 8px;
-  border-left: 3px solid currentColor;
-  border-radius: 0 2px 2px 0;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  border-radius: var(--radius-sm);
   white-space: nowrap;
 }
 

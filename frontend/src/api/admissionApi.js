@@ -18,12 +18,12 @@ export async function getMyAdmissionApplications() {
   return response.json();
 }
 
-export async function submitAdmissionApplication({ applicationType, courseAppliedFor, previousSchool }) {
+export async function submitAdmissionApplication({ applicationType, department, courseAppliedFor, previousSchool }) {
   const response = await fetch(`${API_BASE_URL}/api/admission-applications`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ applicationType, courseAppliedFor, previousSchool }),
+    body: JSON.stringify({ applicationType, department, courseAppliedFor, previousSchool }),
   });
 
   const data = await response.json().catch(() => null);

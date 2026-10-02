@@ -20,18 +20,26 @@ public class AdminApplicationsRepository : IAdminApplicationsRepository
         string? category,
         string? program,
         bool? archived = null,
+        string? department = null,
         CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
         const string sql = SelectColumns + @"
 FROM dbo.vw_ApplicationHistory h
-JOIN dbo.Users u ON u.UserId = h.UserId
-WHERE (@Search IS NULL OR u.FirstName LIKE '%' + @Search + '%' OR u.LastName LIKE '%' + @Search + '%' OR u.Email LIKE '%' + @Search + '%')
+JOIN dbo.Users u ON u.UserId = h.UserId" + DepartmentApply + @"
+WHERE (@Search IS NULL
+       OR u.FirstName LIKE '%' + @Search + '%' OR u.LastName LIKE '%' + @Search + '%'
+       OR (u.FirstName + N' ' + u.LastName) LIKE '%' + @Search + '%'
+       OR u.Email LIKE '%' + @Search + '%'
+       OR h.CourseAppliedFor LIKE '%' + @Search + '%' OR h.ScholarshipName LIKE '%' + @Search + '%')
   AND (@Status IS NULL OR h.Status = @Status)
   AND (@Category IS NULL OR h.Category = @Category)
   AND (@Program IS NULL OR h.CourseAppliedFor LIKE '%' + @Program + '%' OR h.ScholarshipName LIKE '%' + @Program + '%')
   AND (@Archived IS NULL OR h.IsArchived = @Archived)
+  AND (@Department IS NULL
+       OR (@Department = N'Unassigned' AND dep.Department IS NULL)
+       OR dep.Department = @Department)
 ORDER BY h.SubmittedAt DESC;";
 
         await using var command = new SqlCommand(sql, connection);
@@ -40,6 +48,7 @@ ORDER BY h.SubmittedAt DESC;";
         command.Parameters.Add(new SqlParameter("@Category", SqlDbType.NVarChar, 20) { Value = (object?)NullIfEmpty(category) ?? DBNull.Value });
         command.Parameters.Add(new SqlParameter("@Program", SqlDbType.NVarChar, 200) { Value = (object?)NullIfEmpty(program) ?? DBNull.Value });
         command.Parameters.Add(new SqlParameter("@Archived", SqlDbType.Bit) { Value = (object?)archived ?? DBNull.Value });
+        command.Parameters.Add(new SqlParameter("@Department", SqlDbType.NVarChar, 100) { Value = (object?)NullIfEmpty(department) ?? DBNull.Value });
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
@@ -58,7 +67,7 @@ ORDER BY h.SubmittedAt DESC;";
 
         const string sql = SelectColumns + @"
 FROM dbo.vw_ApplicationHistory h
-JOIN dbo.Users u ON u.UserId = h.UserId
+JOIN dbo.Users u ON u.UserId = h.UserId" + DepartmentApply + @"
 WHERE h.ApplicationId = @ApplicationId;";
 
         await using var command = new SqlCommand(sql, connection);
@@ -156,7 +165,20 @@ SELECT
     h.ApplicationId, h.UserId, u.FirstName, u.LastName, u.Email,
     h.Category, h.ApplicationType, h.CourseAppliedFor, h.PreviousSchool,
     h.ScholarshipName, h.ScholarshipType, h.GradeAverage, h.Status, h.Remarks, h.SubmittedAt, h.UpdatedAt,
-    h.IsArchived, h.ArchivedAt, h.ArchivedByUserId, h.ArchiveReason";
+    h.IsArchived, h.ArchivedAt, h.ArchivedByUserId, h.ArchiveReason,
+    dep.Department";
+
+    // An admission application's own department; a scholarship
+    // application's is its applicant's latest admission application's.
+    // Applied as a row source (alias dep) so both the select list and the
+    // search's department filter read the same value.
+    private const string DepartmentApply = @"
+CROSS APPLY (
+    SELECT CASE WHEN h.Category = N'Admission'
+        THEN (SELECT x.Department FROM dbo.AdmissionApplications x WHERE x.ApplicationId = h.ApplicationId)
+        ELSE (SELECT d.Department FROM dbo.vw_ApplicantDepartments d WHERE d.UserId = h.UserId)
+    END AS Department
+) dep";
 
     private static AdminApplicationListItem MapItem(SqlDataReader reader) => new()
     {
@@ -179,6 +201,7 @@ SELECT
         ArchivedAt = reader.IsDBNull(reader.GetOrdinal("ArchivedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("ArchivedAt")),
         ArchivedByUserId = reader.IsDBNull(reader.GetOrdinal("ArchivedByUserId")) ? null : reader.GetGuid(reader.GetOrdinal("ArchivedByUserId")),
         ArchiveReason = reader.IsDBNull(reader.GetOrdinal("ArchiveReason")) ? null : reader.GetString(reader.GetOrdinal("ArchiveReason")),
+        Department = reader.IsDBNull(reader.GetOrdinal("Department")) ? null : reader.GetString(reader.GetOrdinal("Department")),
     };
 
     private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

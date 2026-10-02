@@ -14,6 +14,7 @@ public class AdminApplicationsService : IAdminApplicationsService
     private readonly IApplicationStatusHistoryRepository _statusHistoryRepository;
     private readonly INotificationDispatchService _notificationDispatchService;
     private readonly IScholarshipApplicationRepository _scholarshipApplicationRepository;
+    private readonly IDepartmentScopeRepository _departmentScopeRepository;
 
     public AdminApplicationsService(
         IAdminApplicationsRepository applicationsRepository,
@@ -21,8 +22,10 @@ public class AdminApplicationsService : IAdminApplicationsService
         IApplicantDocumentService documentService,
         IApplicationStatusHistoryRepository statusHistoryRepository,
         INotificationDispatchService notificationDispatchService,
-        IScholarshipApplicationRepository scholarshipApplicationRepository)
+        IScholarshipApplicationRepository scholarshipApplicationRepository,
+        IDepartmentScopeRepository departmentScopeRepository)
     {
+        _departmentScopeRepository = departmentScopeRepository;
         _applicationsRepository = applicationsRepository;
         _examScheduleRepository = examScheduleRepository;
         _documentService = documentService;
@@ -37,9 +40,10 @@ public class AdminApplicationsService : IAdminApplicationsService
         string? category,
         string? program,
         bool? archived = null,
+        string? department = null,
         CancellationToken cancellationToken = default)
     {
-        var items = await _applicationsRepository.SearchAsync(search, status, category, program, archived, cancellationToken);
+        var items = await _applicationsRepository.SearchAsync(search, status, category, program, archived, department, cancellationToken);
 
         // Cached per applicant (UserId) rather than per application, since
         // the same applicant can have more than one application and these
@@ -133,6 +137,35 @@ public class AdminApplicationsService : IAdminApplicationsService
         {
             await _scholarshipApplicationRepository.ReleaseSlotByApplicationIdAsync(applicationId, cancellationToken);
         }
+
+        var steps = await BuildStepsAsync(
+            updated, new Dictionary<Guid, DocumentChecklistResponse?>(), new Dictionary<Guid, bool>(), cancellationToken);
+        return updated.ToResponse(steps);
+    }
+
+    public async Task<AdminApplicationListItemResponse> SetDepartmentAsync(
+        Guid applicationId,
+        string department,
+        CancellationToken cancellationToken = default)
+    {
+        var normalized = DepartmentConstants.Normalize(department)
+            ?? throw new InvalidDepartmentException(department);
+
+        var existing = await _applicationsRepository.GetByIdAsync(applicationId, cancellationToken)
+            ?? throw new ApplicationNotFoundException(applicationId);
+
+        if (existing.Category != "Admission")
+        {
+            throw InvalidDepartmentException.NotSettableOnScholarship();
+        }
+
+        if (!await _departmentScopeRepository.SetAdmissionApplicationDepartmentAsync(applicationId, normalized, cancellationToken))
+        {
+            throw new ApplicationNotFoundException(applicationId);
+        }
+
+        var updated = await _applicationsRepository.GetByIdAsync(applicationId, cancellationToken)
+            ?? throw new ApplicationNotFoundException(applicationId);
 
         var steps = await BuildStepsAsync(
             updated, new Dictionary<Guid, DocumentChecklistResponse?>(), new Dictionary<Guid, bool>(), cancellationToken);

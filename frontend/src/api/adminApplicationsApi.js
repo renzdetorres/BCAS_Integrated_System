@@ -60,8 +60,9 @@ export function getValidNextScholarshipStatuses(currentStatus) {
   return SCHOLARSHIP_STATUSES.filter((status) => SCHOLARSHIP_STAGE_RANK[status] > currentRank);
 }
 
-export async function searchApplications({ search, status, category, program, archived } = {}) {
+export async function searchApplications({ search, status, category, program, archived, department } = {}) {
   const params = new URLSearchParams();
+  if (department) params.set("department", department);
   if (search) params.set("search", search);
   if (status) params.set("status", status);
   if (category) params.set("category", category);
@@ -93,6 +94,30 @@ export async function updateApplicationStatus(applicationId, { category, status,
 
   if (!response.ok) {
     const message = resolveErrorMessage(response, data, "Failed to update the application's status. Please try again.");
+    throw new ApiError(message, response.status);
+  }
+
+  return data;
+}
+
+/**
+ * Files an admission application under a department - which decides the
+ * Academic Head who sees this applicant (and their scholarship
+ * applications). Admission applications only; a scholarship application
+ * follows its applicant's admission application.
+ */
+export async function setApplicationDepartment(applicationId, department) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/applications/${applicationId}/department`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ department }),
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const message = resolveErrorMessage(response, data, "Failed to update the department. Please try again.");
     throw new ApiError(message, response.status);
   }
 

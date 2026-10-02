@@ -21,21 +21,23 @@ public class AdmissionApplicationRepository : IAdmissionApplicationRepository
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
-INSERT INTO dbo.AdmissionApplications (UserId, ApplicationType, CourseAppliedFor, PreviousSchool)
+INSERT INTO dbo.AdmissionApplications (UserId, ApplicationType, CourseAppliedFor, Department, PreviousSchool)
 OUTPUT
     inserted.ApplicationId,
     inserted.UserId,
     inserted.ApplicationType,
     inserted.CourseAppliedFor,
+    inserted.Department,
     inserted.PreviousSchool,
     inserted.Status,
     inserted.SubmittedAt
-VALUES (@UserId, @ApplicationType, @CourseAppliedFor, @PreviousSchool);";
+VALUES (@UserId, @ApplicationType, @CourseAppliedFor, @Department, @PreviousSchool);";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.Add(new SqlParameter("@UserId", SqlDbType.UniqueIdentifier) { Value = userId });
         command.Parameters.Add(new SqlParameter("@ApplicationType", SqlDbType.NVarChar, 20) { Value = request.ApplicationType });
         command.Parameters.Add(new SqlParameter("@CourseAppliedFor", SqlDbType.NVarChar, 200) { Value = request.CourseAppliedFor });
+        command.Parameters.Add(new SqlParameter("@Department", SqlDbType.NVarChar, 100) { Value = (object?)request.Department ?? DBNull.Value });
         command.Parameters.Add(new SqlParameter("@PreviousSchool", SqlDbType.NVarChar, 200) { Value = request.PreviousSchool });
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -48,7 +50,7 @@ VALUES (@UserId, @ApplicationType, @CourseAppliedFor, @PreviousSchool);";
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
-SELECT ApplicationId, UserId, ApplicationType, CourseAppliedFor, PreviousSchool, Status, SubmittedAt
+SELECT ApplicationId, UserId, ApplicationType, CourseAppliedFor, Department, PreviousSchool, Status, SubmittedAt
 FROM dbo.AdmissionApplications
 WHERE UserId = @UserId
 ORDER BY SubmittedAt DESC;";
@@ -73,6 +75,7 @@ ORDER BY SubmittedAt DESC;";
         UserId = reader.GetGuid(reader.GetOrdinal("UserId")),
         ApplicationType = reader.GetString(reader.GetOrdinal("ApplicationType")),
         CourseAppliedFor = reader.GetString(reader.GetOrdinal("CourseAppliedFor")),
+        Department = reader.IsDBNull(reader.GetOrdinal("Department")) ? null : reader.GetString(reader.GetOrdinal("Department")),
         PreviousSchool = reader.GetString(reader.GetOrdinal("PreviousSchool")),
         Status = reader.GetString(reader.GetOrdinal("Status")),
         SubmittedAt = reader.GetDateTime(reader.GetOrdinal("SubmittedAt")),

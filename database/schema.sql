@@ -1489,3 +1489,107 @@ IF NOT EXISTS (SELECT 1 FROM dbo.NotificationTriggerConfigs WHERE TriggerKey = N
     INSERT INTO dbo.NotificationTriggerConfigs (TriggerKey, DisplayName, Description, IsEnabled) VALUES
         (N'InquiryReply', N'Inquiry Reply Alerts', N'Notifies an applicant by email when Support Staff/Admin reply to their inquiry thread.', 1);
 GO
+
+-- -----------------------------------------------------------------------------
+-- Department-Scoped Academic Head Access
+-- BISAASS-49 gave dbo.Users a free-text Department for Academic Heads and
+-- matched it against AdmissionApplications.CourseAppliedFor with a LIKE -
+-- but Admins assign departments from a fixed list (College, Senior High
+-- School, High School, Elementary) while applicants type their course
+-- freely, so the two almost never matched. This ties applicants to a
+-- department explicitly instead:
+--   * AdmissionApplications.Department - chosen by the applicant from the
+--     same fixed list on the admission form (DepartmentConstants), and
+--     correctable by an Admin-Registrar. Nullable: every application
+--     submitted before this change stays NULL ("Unassigned") until an
+--     Admin sets it, and is visible to no Academic Head until then.
+--   * vw_ApplicantDepartments - one row per applicant who has a department
+--     on any admission application, carrying the department from their
+--     most recent one. Scholarship applications have no department of
+--     their own (a scholarship is school-wide), so an applicant's
+--     scholarship applications belong to whichever department their
+--     latest admission application is in.
+-- An Academic Head then sees only applicants whose department equals
+-- their own Users.Department - their decision queue, application detail,
+-- final decisions, dashboard, and every report (enforced server-side).
+-- -----------------------------------------------------------------------------
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.AdmissionApplications') AND name = N'Department'
+)
+BEGIN
+    ALTER TABLE dbo.AdmissionApplications ADD Department NVARCHAR(100) NULL;
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_AdmissionApplications_Department' AND object_id = OBJECT_ID(N'dbo.AdmissionApplications'))
+    CREATE NONCLUSTERED INDEX IX_AdmissionApplications_Department ON dbo.AdmissionApplications (Department, UserId);
+GO
+
+CREATE OR ALTER VIEW dbo.vw_ApplicantDepartments
+AS
+    SELECT latest.UserId, latest.Department
+    FROM (
+        SELECT
+            a.UserId,
+            a.Department,
+            ROW_NUMBER() OVER (PARTITION BY a.UserId ORDER BY a.SubmittedAt DESC) AS rn
+        FROM dbo.AdmissionApplications a
+        WHERE a.Department IS NOT NULL
+    ) latest
+    WHERE latest.rn = 1;
+GO
+
+-- -----------------------------------------------------------------------------
+-- Semester lock + Super Admin
+-- Scholarships can't be edited or deactivated while a semester is ongoing
+-- (today, Philippine time, falls between a semester's StartDate and EndDate
+-- inclusive) - changing a scholarship's terms mid-semester would change
+-- them under applicants already in its pipeline. A Super Admin can force
+-- an edit through the lock; every forced edit is written to the audit log.
+--   * Users.IsSuperAdmin - an Admin who may override locks and manage
+--     semesters. Granted by another Super Admin in Manage Accounts. So the
+--     system is never left without one, the earliest-created active Admin
+--     becomes Super Admin when no active Super Admin exists.
+--   * Semesters - the school calendar the lock reads. Managed by a Super
+--     Admin in System Settings.
+-- -----------------------------------------------------------------------------
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'dbo.Users') AND name = N'IsSuperAdmin'
+)
+BEGIN
+    ALTER TABLE dbo.Users ADD IsSuperAdmin BIT NOT NULL CONSTRAINT DF_Users_IsSuperAdmin DEFAULT (0);
+END
+GO
+
+IF NOT EXISTS (
+    SELECT 1 FROM dbo.Users u JOIN dbo.Roles r ON r.RoleId = u.RoleId
+    WHERE u.IsSuperAdmin = 1 AND u.IsActive = 1 AND r.RoleName = N'Admin'
+)
+BEGIN
+    UPDATE dbo.Users SET IsSuperAdmin = 1
+    WHERE UserId = (
+        SELECT TOP 1 u.UserId FROM dbo.Users u JOIN dbo.Roles r ON r.RoleId = u.RoleId
+        WHERE r.RoleName = N'Admin' AND u.IsActive = 1
+        ORDER BY u.CreatedAt ASC
+    );
+END
+GO
+
+IF OBJECT_ID(N'dbo.Semesters', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Semesters
+    (
+        SemesterId       INT IDENTITY(1,1) NOT NULL,
+        Name             NVARCHAR(100)     NOT NULL,
+        StartDate        DATE              NOT NULL,
+        EndDate          DATE              NOT NULL,
+        CreatedByUserId  UNIQUEIDENTIFIER  NULL,
+        CreatedAt        DATETIME2(3)      NOT NULL CONSTRAINT DF_Semesters_CreatedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_Semesters PRIMARY KEY (SemesterId),
+        CONSTRAINT FK_Semesters_CreatedBy FOREIGN KEY (CreatedByUserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT CK_Semesters_Dates CHECK (EndDate >= StartDate)
+    );
+END
+GO

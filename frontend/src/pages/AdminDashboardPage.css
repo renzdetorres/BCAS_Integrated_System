@@ -1,68 +1,786 @@
-.form-error {
-  color: var(--color-status-red-text);
-  background: var(--color-status-red-bg);
+/* Admin dashboard - the registrar's landing screen. It opens with what needs
+   doing (a briefing sentence), then the record: figures on a ledger, the
+   department breakdown once, the latest applications, and shortcuts. */
+
+
+/* ---- Workspace switch (lives in the top bar) -------------------------- */
+
+.dash-switch {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 3px;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  padding: 10px 12px;
-  font-size: 0.85rem;
+  background: var(--color-surface-subtle);
 }
 
-.admin-stat-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 16px;
+/* One thumb slides between the options rather than two buttons swapping
+   fills, so the change reads as a single control moving. */
+.dash-switch-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  border-radius: 6px;
+  background: var(--color-primary);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), var(--shadow-xs);
+  transform: translateX(calc(var(--switch-index, 0) * 100%));
+  transition: transform 220ms var(--ease-out);
 }
 
-.admin-dashboard-charts {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-  gap: 24px;
-  align-items: start;
+.dash-switch-option {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 14px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 180ms var(--ease-out);
 }
 
-.admin-dashboard-recent {
-  display: grid;
+.dash-switch-option:hover {
+  color: var(--color-text-primary);
 }
 
-@media (max-width: 900px) {
-  .admin-dashboard-charts {
-    grid-template-columns: 1fr;
+.dash-switch-option-active,
+.dash-switch-option-active:hover {
+  color: var(--color-text-inverse);
+}
+
+@media (max-width: 480px) {
+  .dash-switch-option {
+    padding: 0 10px;
+  }
+
+  .dash-switch-option svg {
+    display: none;
   }
 }
 
-.admin-recent-list {
+
+/* ---- Intro: the briefing sentence -------------------------------------- */
+
+/* The page opens with what needs doing, set in the serif display voice -
+   not a title plus a row of metric cards. Counts live inside the sentence. */
+.dash-intro {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px 32px;
+  flex-wrap: wrap;
+  padding-bottom: 4px;
+}
+
+.dash-intro-text {
+  flex: 1 1 520px;
+  min-width: 0;
+  max-width: 820px;
+}
+
+.dash-intro-meta {
+  margin: 0 0 10px;
+  font-size: 13.5px;
+  color: var(--color-text-secondary);
+}
+
+.dash-intro-title {
+  margin: 0;
+  font-size: clamp(22px, 2vw, 28px);
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--color-text-primary);
+  text-wrap: balance;
+}
+
+/* Emphasis in the same family, never a second face: the one clause that
+   carries the day's work reads heavier and in the brand green. */
+.dash-intro-title em {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.dash-intro-cta {
+  min-height: 42px;
+  padding: 10px 14px 10px 18px;
+  flex-shrink: 0;
+}
+
+/* ---- Layout -------------------------------------------------------------- */
+
+/* Asymmetric: the wide column holds the record (figures, latest
+   applications); the rail holds what to act on and where to go. */
+.dash-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 384px);
+  grid-template-areas:
+    "ledger attention"
+    "programs departments"
+    "recent shortcuts";
+  align-items: start;
+  gap: 20px;
+}
+
+/* Stretches to the rail's height; the decision mix settles at the bottom
+   so the two panels in the first row always end on the same line. */
+.dash-ledger {
+  grid-area: ledger;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.dash-attention {
+  grid-area: attention;
+  align-self: stretch;
+}
+
+.dash-departments {
+  grid-area: departments;
+}
+
+.dash-recent {
+  grid-area: recent;
+}
+
+.dash-programs {
+  grid-area: programs;
+  align-self: stretch;
+}
+
+.dash-shortcuts {
+  grid-area: shortcuts;
+}
+
+.dash-layout > * {
+  animation: ui-fade-in 260ms var(--ease-out) both;
+}
+
+.dash-panel {
+  min-width: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  padding: 22px 24px;
+}
+
+.dash-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.dash-panel-title {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--color-text-primary);
+}
+
+.dash-panel > .dash-panel-title {
+  margin-bottom: 12px;
+}
+
+.dash-panel-aside {
+  font-size: 12.5px;
+  color: var(--color-text-tertiary);
+}
+
+.dash-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary-light);
+  text-decoration: none;
+}
+
+.dash-link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.dash-empty {
+  margin: 0;
+  padding: 28px 0 8px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+/* ---- Ledger: figures on hairlines, not four boxed tiles ------------------ */
+
+.dash-figures {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+}
+
+.dash-figures > div {
+  min-width: 0;
+  padding: 2px 20px;
+  border-left: 1px solid var(--color-border);
+}
+
+.dash-figures > div:first-child {
+  padding-left: 0;
+  border-left: none;
+}
+
+.dash-figures dt {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.dash-figures dd {
+  margin: 6px 0 4px;
+  font-size: clamp(26px, 2.3vw, 34px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.dash-figure-note {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--color-text-tertiary);
+}
+
+.dash-figure-note-up {
+  color: var(--color-status-green-text);
+  font-weight: 500;
+}
+
+/* Decision mix: one strip, three reserved status colours in a fixed
+   order (approved, pending, rejected) so green and red never touch. */
+.dash-mix {
+  margin: 22px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
+}
+
+.dash-mix-bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+}
+
+.dash-mix-segment {
+  min-width: 4px;
+  flex-basis: 0;
+  transform-origin: left;
+  animation: dash-grow 700ms 120ms var(--ease-out) both;
+}
+
+.dash-mix-approved {
+  background: var(--color-status-green-text);
+}
+
+.dash-mix-pending {
+  background: var(--color-accent);
+}
+
+.dash-mix-rejected {
+  background: var(--color-status-red-text);
+}
+
+.dash-mix-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 22px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.dash-mix-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.dash-mix-item strong {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.dash-mix-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+/* ---- Needs attention: the worklist --------------------------------------- */
+
+.dash-attention ul,
+.dash-shortcuts ul,
+.dash-dept-list {
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+.dash-attention li + li {
+  border-top: 1px solid var(--color-border);
+}
+
+.dash-task {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin: 0 -10px;
+  padding: 12px 10px;
+  border-radius: var(--radius-md);
+  color: inherit;
+  text-decoration: none;
+  transition: background-color var(--motion-fast);
+}
+
+.dash-task:hover {
+  background: var(--color-surface-subtle);
+}
+
+.dash-task-count {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-task-count-amber {
+  color: var(--color-status-amber-text);
+}
+
+.dash-task-count-red {
+  color: var(--color-status-red-text);
+}
+
+.dash-task-count-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-full);
+  background: var(--color-status-green-bg);
+  color: var(--color-status-green-text);
+}
+
+.dash-task-text {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 2px;
+  min-width: 0;
 }
 
-.admin-recent-list li {
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.admin-recent-list li:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.admin-recent-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.admin-recent-name {
+.dash-task-label {
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-text-primary);
 }
 
-.admin-recent-meta {
-  margin: 0;
+.dash-task-detail {
+  font-size: 12.5px;
   color: var(--color-text-secondary);
-  font-size: 0.8rem;
+}
+
+.dash-task-clear .dash-task-label {
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.dash-task-chevron,
+.dash-shortcut-chevron {
+  color: var(--color-text-tertiary);
+  transition: transform var(--motion-fast), color var(--motion-fast);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dash-task:hover .dash-task-chevron,
+  .dash-shortcut:hover .dash-shortcut-chevron {
+    color: var(--color-primary-light);
+    transform: translateX(2px);
+  }
+}
+
+/* ---- Departments: each figure once, as a ranked ledger row ---------------- */
+
+.dash-dept {
+  display: grid;
+  grid-template-columns: 9.5em minmax(40px, 1fr) 3em 2.6em;
+  align-items: center;
+  gap: 12px;
+  margin: 0 -10px;
+  padding: 9px 10px;
+  border-radius: var(--radius-md);
+  color: inherit;
+  text-decoration: none;
+  font-size: 13.5px;
+  transition: background-color var(--motion-fast);
+}
+
+.dash-dept:hover {
+  background: var(--color-surface-subtle);
+}
+
+.dash-dept-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-primary);
+}
+
+.dash-dept-track {
+  display: block;
+  height: 8px;
+}
+
+/* The one authored motion on the page: each bar grows to its share once,
+   staggered down the list, so the ranking is read as it resolves. */
+.dash-dept-bar {
+  display: block;
+  height: 100%;
+  width: calc(var(--bar-scale) * 100%);
+  min-width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: var(--color-primary-light);
+  transform-origin: left;
+  animation: dash-grow 640ms var(--ease-out) both;
+  animation-delay: calc(var(--bar-index, 0) * 55ms + 80ms);
+}
+
+.dash-dept:hover .dash-dept-bar {
+  background: var(--color-primary);
+}
+
+.dash-dept-count {
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.dash-dept-share {
+  text-align: right;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-tertiary);
+}
+
+.dash-dept-unassigned .dash-dept-name,
+.dash-dept-unassigned .dash-dept-count {
+  color: var(--color-status-amber-text);
+}
+
+.dash-dept-unassigned .dash-dept-bar {
+  background: var(--color-accent);
+}
+
+@keyframes dash-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* ---- Latest applications ------------------------------------------------- */
+
+.dash-table-scroll {
+  overflow-x: auto;
+  margin: 0 -24px -22px;
+}
+
+.dash-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.dash-table th {
+  padding: 9px 16px;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface-subtle);
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.dash-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  vertical-align: middle;
+}
+
+.dash-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.dash-table th:first-child,
+.dash-table td:first-child {
+  padding-left: 24px;
+}
+
+.dash-table th:last-child,
+.dash-table td:last-child {
+  padding-right: 24px;
+}
+
+.dash-table tbody tr {
+  cursor: pointer;
+  transition: background-color var(--motion-fast);
+}
+
+.dash-table tbody tr:hover td {
+  background: var(--color-surface-subtle);
+}
+
+.dash-table tbody tr:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: -2px;
+}
+
+.dash-table-name {
+  display: block;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.dash-table-sub {
+  display: block;
+  margin-top: 1px;
+  font-size: 12.5px;
+  color: var(--color-text-tertiary);
+}
+
+.dash-table td:has(.status-badge),
+.dash-table-date {
+  white-space: nowrap;
+}
+
+.dash-table-date {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-date-short {
+  display: none;
+}
+
+.dash-unassigned-text {
+  color: var(--color-status-amber-text);
+}
+
+/* ---- Shortcuts: a plain link list, not an icon-card grid ----------------- */
+
+.dash-shortcut {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 -10px;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: 14px;
+  text-decoration: none;
+  transition: background-color var(--motion-fast);
+}
+
+.dash-shortcut > svg:first-child {
+  color: var(--color-primary-light);
+}
+
+.dash-shortcut-chevron {
+  margin-left: auto;
+}
+
+.dash-shortcut:hover {
+  background: var(--color-surface-subtle);
+}
+
+/* ---- Loading ----------------------------------------------------------- */
+
+.dash-skeleton {
+  border-radius: var(--radius-lg);
+  background: linear-gradient(90deg, var(--color-border) 0%, var(--color-surface-subtle) 50%, var(--color-border) 100%);
+  background-size: 200% 100%;
+  animation: dash-shimmer 1.4s linear infinite;
+  opacity: 0.7;
+}
+
+.dash-skeleton-ledger {
+  grid-area: ledger;
+  height: 190px;
+}
+
+.dash-skeleton-rail {
+  grid-area: attention;
+  height: 190px;
+}
+
+.dash-skeleton-departments {
+  grid-area: recent;
+  height: 320px;
+}
+
+@keyframes dash-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-dept-bar,
+  .dash-mix-segment,
+  .dash-skeleton {
+    animation: none;
+  }
+}
+
+/* ---- Responsive -------------------------------------------------------- */
+
+@media (max-width: 1180px) {
+  .dash-ledger {
+    align-self: start;
+  }
+
+  .dash-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "ledger ledger"
+      "attention departments"
+      "programs programs"
+      "recent recent"
+      "shortcuts shortcuts";
+  }
+
+  .dash-shortcuts ul {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 24px;
+  }
+}
+
+@media (max-width: 760px) {
+  .dash-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "ledger"
+      "attention"
+      "departments"
+      "programs"
+      "recent"
+      "shortcuts";
+    gap: 16px;
+  }
+
+  .dash-panel {
+    padding: 18px;
+  }
+
+  .dash-table-scroll {
+    margin: 0 -18px -18px;
+  }
+
+  .dash-table th:first-child,
+  .dash-table td:first-child {
+    padding-left: 18px;
+  }
+
+  .dash-table th:last-child,
+  .dash-table td:last-child {
+    padding-right: 18px;
+  }
+
+  .dash-figures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 18px;
+  }
+
+  .dash-figures > div:nth-child(odd) {
+    padding-left: 0;
+    border-left: none;
+  }
+
+  .dash-intro-cta {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .dash-shortcuts ul {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dash-date-full {
+    display: none;
+  }
+
+  .dash-date-short {
+    display: inline;
+  }
+
+  /* The table keeps applicant, status and date; department drops out. */
+  .dash-table th:nth-child(2),
+  .dash-table td:nth-child(2) {
+    display: none;
+  }
+}
+
+.dash-mix-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.dash-mix-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.dash-mix-total {
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-tertiary);
 }

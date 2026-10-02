@@ -8,13 +8,13 @@ using Microsoft.AspNetCore.Mvc;
 namespace BCAS.Api.Controllers;
 
 /// <summary>
-/// Academic Head reporting suite, scoped to the caller's own department
-/// (BISAASS-49). The three Admission reports (Enrollment List, Summary of
-/// Enrollment, File per Section) are forced-filtered server-side to the
-/// caller's Users.Department - no program filter is accepted from the
-/// client. The four Scholarship reports match AdminReportsController
-/// (BISAASS-37) exactly and are unscoped, since scholarships aren't tied to
-/// any department in this system.
+/// Academic Head reporting suite, scoped server-side to the caller's
+/// assigned department (Users.Department) - no program or department
+/// filter is accepted from the client. Admission reports cover their
+/// department's admission applications; Scholarship reports cover
+/// scholarship applications from applicants in their department. Only the
+/// Scholarship Slot Report stays school-wide, since it describes the
+/// scholarship catalog rather than any applicant.
 /// </summary>
 [Authorize(Roles = "AcademicHead")]
 [ApiController]
@@ -133,37 +133,61 @@ public class AcademicHeadReportsController : ControllerBase
         }
     }
 
-    /// <summary>Scholarship Report: Scholarship Applicant List - unscoped, matches AdminReportsController (BISAASS-37).</summary>
+    /// <summary>Scholarship Report: Scholarship Applicant List, scoped to the caller's department.</summary>
     [HttpGet("scholarship/applicant-list")]
     [ProducesResponseType(typeof(IReadOnlyList<ScholarshipApplicantListItemResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<ScholarshipApplicantListItemResponse>>> GetScholarshipApplicantList(
         [FromQuery] string? scholarshipName, [FromQuery] string? status, CancellationToken cancellationToken)
     {
-        var items = await _reportsService.GetScholarshipApplicantListAsync(scholarshipName, status, cancellationToken);
-        return Ok(items);
+        try
+        {
+            var items = await _reportsService.GetScholarshipApplicantListAsync(User.GetUserId(), scholarshipName, status, cancellationToken);
+            return Ok(items);
+        }
+        catch (AcademicHeadDepartmentNotAssignedException ex)
+        {
+            return DepartmentNotAssigned(ex);
+        }
     }
 
-    /// <summary>Scholarship Report: Qualified/Not Qualified Applicants - unscoped, matches AdminReportsController (BISAASS-37).</summary>
+    /// <summary>Scholarship Report: Qualified/Not Qualified Applicants, scoped to the caller's department.</summary>
     [HttpGet("scholarship/qualification")]
     [ProducesResponseType(typeof(IReadOnlyList<ScholarshipQualificationListItemResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<ScholarshipQualificationListItemResponse>>> GetScholarshipQualificationList(
         [FromQuery] string? verdict, CancellationToken cancellationToken)
     {
-        var items = await _reportsService.GetScholarshipQualificationListAsync(verdict, cancellationToken);
-        return Ok(items);
+        try
+        {
+            var items = await _reportsService.GetScholarshipQualificationListAsync(User.GetUserId(), verdict, cancellationToken);
+            return Ok(items);
+        }
+        catch (AcademicHeadDepartmentNotAssignedException ex)
+        {
+            return DepartmentNotAssigned(ex);
+        }
     }
 
-    /// <summary>Scholarship Report: Scholarship Results - unscoped, matches AdminReportsController (BISAASS-37).</summary>
+    /// <summary>Scholarship Report: Scholarship Results, scoped to the caller's department.</summary>
     [HttpGet("scholarship/results")]
     [ProducesResponseType(typeof(IReadOnlyList<ScholarshipResultListItemResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IReadOnlyList<ScholarshipResultListItemResponse>>> GetScholarshipResultList(
         [FromQuery] string? decision, CancellationToken cancellationToken)
     {
-        var items = await _reportsService.GetScholarshipResultListAsync(decision, cancellationToken);
-        return Ok(items);
+        try
+        {
+            var items = await _reportsService.GetScholarshipResultListAsync(User.GetUserId(), decision, cancellationToken);
+            return Ok(items);
+        }
+        catch (AcademicHeadDepartmentNotAssignedException ex)
+        {
+            return DepartmentNotAssigned(ex);
+        }
     }
 
-    /// <summary>Scholarship Report: Scholarship Slot Report - unscoped, matches AdminReportsController (BISAASS-37).</summary>
+    /// <summary>Scholarship Report: Scholarship Slot Report - school-wide, since it describes the scholarship catalog rather than applicants.</summary>
     [HttpGet("scholarship/slots")]
     [ProducesResponseType(typeof(IReadOnlyList<AdminScholarshipResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<AdminScholarshipResponse>>> GetScholarshipSlotReport(CancellationToken cancellationToken)
@@ -172,7 +196,7 @@ public class AcademicHeadReportsController : ControllerBase
         return Ok(slots);
     }
 
-    /// <summary>Trend Report: applications submitted per week - the Admission series scoped to the caller's department, the Scholarship series unscoped.</summary>
+    /// <summary>Trend Report: applications submitted per week, both series scoped to the caller's department.</summary>
     [HttpGet("trend/applications")]
     [ProducesResponseType(typeof(ApplicationTrendResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -189,7 +213,7 @@ public class AcademicHeadReportsController : ControllerBase
         }
     }
 
-    /// <summary>Trend Report: funnel stage counts - the Admission funnel scoped to the caller's department, the Scholarship funnel unscoped.</summary>
+    /// <summary>Trend Report: funnel stage counts, both funnels scoped to the caller's department.</summary>
     [HttpGet("trend/funnel")]
     [ProducesResponseType(typeof(ApplicationFunnelResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

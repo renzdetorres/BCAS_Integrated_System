@@ -1,36 +1,61 @@
+/* The one "do this next" moment on a dashboard: a tinted panel with the
+   prompt in the serif voice and a single primary action. */
 .next-action-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 16px 24px;
   flex-wrap: wrap;
-  background: var(--color-surface);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
-  padding: 16px 24px;
+  background: linear-gradient(180deg, var(--color-primary-tint) 0%, rgba(27, 67, 50, 0.02) 100%), var(--color-surface);
+  border: 1px solid rgba(45, 106, 79, 0.18);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  padding: 18px 20px 18px 24px;
 }
 
 .next-action-banner p {
   margin: 0;
   color: var(--color-text-primary);
-  font-family: var(--font-serif);
-  font-size: 1.02rem;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
   line-height: 1.4;
   max-width: 640px;
 }
 
 .next-action-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   flex-shrink: 0;
-  padding: 10px 20px;
+  min-height: 38px;
+  padding: 8px 14px 8px 18px;
   background: var(--color-primary);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), var(--shadow-xs);
   color: var(--color-text-inverse);
   border-radius: var(--radius-md);
-  font-size: 0.87rem;
+  font-size: 14px;
   font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
+  transition: background-color var(--motion-standard), transform var(--motion-fast);
+}
+
+.next-action-arrow {
+  transform: rotate(-90deg);
+  transition: transform var(--motion-standard);
 }
 
 .next-action-button:hover {
   background: var(--color-primary-dark);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .next-action-button:hover .next-action-arrow {
+    transform: rotate(-90deg) translateY(2px);
+  }
+}
+
+.next-action-button:active {
+  transform: scale(0.97);
 }

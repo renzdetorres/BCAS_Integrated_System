@@ -1,94 +1,601 @@
+/* The list view is its own panel: header, filter row, table, pagination.
+   Pages place it directly - wrapping it in a Card would double the border. */
 .ui-datatable {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  min-width: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
 }
 
-.ui-datatable-toolbar {
+/* ---- Header: page title, subtitle, actions ----------------------------- */
+
+.ui-datatable-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 12px 24px;
   flex-wrap: wrap;
+  padding: 22px 24px 18px;
 }
 
-.ui-datatable-toolbar-controls {
+.ui-datatable-heading {
+  min-width: 0;
+  flex: 1 1 320px;
+}
+
+.ui-datatable-title {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  color: var(--color-text-primary);
+}
+
+h2.ui-datatable-title {
+  font-size: 16px;
+}
+
+.ui-datatable-subtitle {
+  margin: 4px 0 0;
+  max-width: 70ch;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.ui-datatable-actions {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.ui-datatable-search {
-  min-width: 220px;
+/* ---- Filter row: dropdowns share the left half, search the right --------- */
+
+.ui-datatable-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 0 24px 16px;
 }
+
+.ui-datatable-header + .ui-datatable-toolbar {
+  padding-top: 0;
+}
+
+.ui-datatable > .ui-datatable-toolbar:first-child {
+  padding-top: 18px;
+}
+
+.ui-datatable-filters {
+  display: grid;
+  grid-template-columns: repeat(var(--filter-count, 1), minmax(0, 1fr));
+  gap: 12px;
+  min-width: 0;
+}
+
+.ui-datatable-filters > * {
+  width: 100%;
+  min-width: 0;
+}
+
+.ui-datatable-filters .ui-select {
+  padding-right: 32px;
+}
+
+/* With no dropdowns, search keeps the right half: the row's shape never
+   changes between pages. */
+.ui-datatable-toolbar-search-only .ui-datatable-search {
+  grid-column: 2;
+}
+
+.ui-datatable-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.ui-datatable-search .ui-input {
+  padding-left: 36px;
+}
+
+.ui-datatable-search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--color-text-tertiary);
+  pointer-events: none;
+}
+
+@media (max-width: 860px) {
+  .ui-datatable-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ui-datatable-toolbar-search-only .ui-datatable-search {
+    grid-column: auto;
+  }
+
+  .ui-datatable-search {
+    order: -1;
+  }
+}
+
+@media (max-width: 520px) {
+  .ui-datatable-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ui-datatable-header,
+  .ui-datatable-toolbar {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+/* ---- Table ---------------------------------------------------------- */
 
 .ui-datatable-scroll {
   overflow-x: auto;
+  border-top: 1px solid var(--color-border);
 }
 
 .ui-datatable-table {
   width: 100%;
   border-collapse: collapse;
   font: var(--text-dense);
+  font-variant-numeric: tabular-nums;
 }
 
 .ui-datatable-table th {
-  text-align: left;
-  padding: 11px 16px;
-  font-size: 11.5px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--color-primary-dark);
-  background: rgba(27, 67, 50, 0.05);
+  padding: 10px 16px;
+  background: var(--color-surface-subtle);
   border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 
-.ui-datatable-table th:first-child {
-  border-top-left-radius: var(--radius-sm);
-}
-
-.ui-datatable-table th:last-child {
-  border-top-right-radius: var(--radius-sm);
-}
-
-.ui-datatable-th-sortable {
-  cursor: pointer;
-  user-select: none;
-}
-
-.ui-datatable-sort-arrow {
-  color: var(--color-text-secondary);
-}
-
 .ui-datatable-table td {
-  padding: 10px 16px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--color-border);
   color: var(--color-text-primary);
   vertical-align: middle;
-  transition: background var(--motion-standard);
 }
 
-.ui-datatable-table tbody tr:nth-child(even) td {
-  background: rgba(27, 67, 50, 0.02);
+.ui-datatable-table th:first-child,
+.ui-datatable-table td:first-child {
+  padding-left: 24px;
+}
+
+.ui-datatable-table th:last-child,
+.ui-datatable-table td:last-child {
+  padding-right: 24px;
+}
+
+.ui-datatable-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ui-datatable-align-right {
+  text-align: right !important;
+}
+
+.ui-datatable-align-center {
+  text-align: center !important;
+}
+
+.ui-datatable-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: -4px -6px;
+  padding: 4px 6px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ui-datatable-sort:hover {
+  color: var(--color-text-primary);
+  background: var(--color-primary-tint);
+}
+
+.ui-datatable-sort-icon {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  opacity: 0.6;
+}
+
+.ui-datatable-sort-icon.is-sorted {
+  color: var(--color-primary-light);
+  opacity: 1;
 }
 
 .ui-datatable-row-clickable {
   cursor: pointer;
 }
 
-.ui-datatable-row-clickable:hover td {
-  background: rgba(217, 164, 65, 0.12);
+.ui-datatable-table tbody tr {
+  transition: background-color var(--motion-fast);
+}
+
+.ui-datatable-table tbody tr:hover td {
+  background: var(--color-surface-subtle);
 }
 
 .ui-datatable-empty {
   text-align: center;
-  padding: 32px 16px;
+  padding: 44px 16px !important;
   color: var(--color-text-secondary);
 }
 
 .ui-datatable-error {
   color: var(--color-status-red-text);
+}
+
+.ui-datatable-skeleton {
+  display: block;
+  height: 12px;
+  width: 70%;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--color-border) 0%, var(--color-surface-subtle) 50%, var(--color-border) 100%);
+  background-size: 200% 100%;
+  animation: ui-datatable-shimmer 1.4s linear infinite;
+}
+
+@keyframes ui-datatable-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-datatable-skeleton {
+    animation: none;
+  }
+}
+
+/* The Action column's button: quiet until hovered, never the row's colour. */
+.ui-datatable-row-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 5px 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color var(--motion-fast), background-color var(--motion-fast), transform var(--motion-fast);
+}
+
+.ui-datatable-row-action svg {
+  color: var(--color-primary-light);
+}
+
+.ui-datatable-row-action:hover {
+  border-color: var(--color-primary-light);
+  background: var(--color-primary-tint);
+}
+
+.ui-datatable-row-action:active {
+  transform: scale(0.97);
+}
+
+/* ---- Footer: count and pagination ------------------------------------- */
+
+.ui-datatable-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  flex-wrap: wrap;
+  padding: 12px 24px;
+  border-top: 1px solid var(--color-border);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.ui-datatable-count {
+  margin: 0;
+}
+
+.ui-datatable-count strong {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.ui-datatable-footer-note {
+  margin-right: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.ui-datatable-pager {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ui-datatable-page-size {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 8px;
+}
+
+.ui-datatable-page-size .ui-select {
+  width: auto;
+  min-height: 32px;
+  padding: 4px 28px 4px 10px;
+  font-size: 13px;
+}
+
+.ui-datatable-page-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.ui-datatable-page-button:hover:not(:disabled) {
+  border-color: var(--color-primary-light);
+  background: var(--color-primary-tint);
+}
+
+.ui-datatable-page-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ui-datatable-flip {
+  transform: rotate(180deg);
+}
+
+.ui-datatable-page-status {
+  min-width: 7.5em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Summary cards: full width under the header ----------------------- */
+
+.ui-datatable-summary-block {
+  padding: 0 24px 18px;
+}
+
+.ui-datatable-summary {
+  display: grid;
+  grid-template-columns: repeat(var(--summary-count, 3), minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ui-datatable-summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+}
+
+.ui-datatable-summary-label {
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+}
+
+.ui-datatable-summary-value {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.ui-datatable-summary-amber .ui-datatable-summary-value {
+  color: var(--color-status-amber-text);
+}
+
+.ui-datatable-summary-green .ui-datatable-summary-value {
+  color: var(--color-status-green-text);
+}
+
+.ui-datatable-summary-red .ui-datatable-summary-value {
+  color: var(--color-status-red-text);
+}
+
+.ui-datatable-skeleton-value {
+  width: 3em;
+  height: 22px;
+}
+
+.ui-datatable-summary-note {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  color: var(--color-text-tertiary);
+}
+
+@media (max-width: 720px) {
+  .ui-datatable-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .ui-datatable-summary-block {
+    padding: 0 16px 16px;
+  }
+}
+
+/* ---- Shared cells --------------------------------------------------------- */
+
+.ui-cell-person {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ui-cell-person-name {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  /* A name reads as one unit; the table scrolls sideways before it splits. */
+  white-space: nowrap;
+}
+
+.ui-cell-person-detail {
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+}
+
+.ui-cell-muted {
+  color: var(--color-text-tertiary);
+}
+
+.ui-datatable-notice {
+  padding: 0 24px 18px;
+}
+
+@media (max-width: 520px) {
+  .ui-datatable-notice {
+    padding: 0 16px 16px;
+  }
+}
+
+.ui-datatable-row-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.ui-datatable-row-action:disabled:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface);
+}
+
+.ui-datatable-text-filters {
+  display: grid;
+  grid-template-columns: repeat(var(--filter-count, 2), minmax(0, 1fr));
+  gap: 12px;
+  min-width: 0;
+}
+
+.ui-datatable-toolbar-search-only .ui-datatable-text-filters {
+  grid-column: 2;
+}
+
+@media (max-width: 520px) {
+  .ui-datatable-text-filters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- Embedded in a Card ---------------------------------------------------
+   Pages that still place the table inside a Card get the table without a
+   second border or doubled padding; its rows run edge to edge of the card. */
+.ui-card .ui-datatable {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.ui-card .ui-datatable-header,
+.ui-card .ui-datatable-toolbar,
+.ui-card .ui-datatable-summary-block,
+.ui-card .ui-datatable-notice {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.ui-card .ui-datatable > .ui-datatable-toolbar:first-child {
+  padding-top: 0;
+}
+
+.ui-card .ui-datatable-scroll {
+  margin: 0 -24px;
+}
+
+.ui-card .ui-datatable-footer {
+  margin: 0 -24px -24px;
+}
+
+.ui-datatable-nowrap {
+  white-space: nowrap;
+}
+
+/* ---- Phones: keep the Action column in reach -------------------------------
+   The table scrolls sideways; the Action column stays pinned to the right
+   edge (its button collapses to an icon, with the label kept for screen
+   readers), so the main thing you do with a row never scrolls out of view. */
+@media (max-width: 760px) {
+  .ui-datatable-action {
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    background: var(--color-surface);
+    box-shadow: -8px 0 8px -8px rgba(18, 48, 31, 0.18);
+  }
+
+  .ui-datatable-table th.ui-datatable-action {
+    background: var(--color-surface-subtle);
+  }
+
+  .ui-datatable-table tbody tr:hover td.ui-datatable-action {
+    background: var(--color-surface-subtle);
+  }
+
+  .ui-datatable-action .ui-datatable-row-action {
+    width: 40px;
+    min-height: 40px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .ui-datatable-action .ui-datatable-row-action-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .ui-datatable-table th:last-child,
+  .ui-datatable-table td:last-child {
+    padding-right: 12px;
+  }
+}
+
+/* The "data" card tier pads 18px 20px, not 24px, so its embedded table
+   pulls out by exactly that much to sit flush with the card's edge. */
+.ui-card--data .ui-datatable-scroll {
+  margin: 0 -20px;
+}
+
+.ui-card--data .ui-datatable-footer {
+  margin: 0 -20px -18px;
 }

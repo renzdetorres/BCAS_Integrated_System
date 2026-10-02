@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   DAY_TYPES,
   createExamSchedule,
@@ -8,28 +8,161 @@ import {
 import { ApiError } from "../api/apiClient.js";
 import { useToast } from "../context/ToastContext.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
-import Card from "../components/ui/Card.jsx";
 import ConfirmDialog from "../components/ui/ConfirmDialog.jsx";
+import DataTable, { PersonCell, RowAction } from "../components/ui/DataTable.jsx";
+import Icon from "../components/ui/Icon.jsx";
+import Modal from "../components/ui/Modal.jsx";
+import { formatCalendarDate as formatDate, formatDateTime, formatTime } from "../utils/format.js";
 import "./AdminExamSchedulesPage.css";
 
 const initialForm = { dayType: DAY_TYPES[0], examDate: "", examTime: "", venue: "", isOffered: true };
 
-function formatDate(isoDate) {
-  return new Date(`${isoDate}T00:00:00`).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+function scheduleLabel(schedule) {
+  return `${formatDate(schedule.examDate)} at ${formatTime(schedule.examTime)}`;
 }
 
-function formatDateTime(isoDateTime) {
-  return new Date(isoDateTime).toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+function AddScheduleModal({ open, onClose, onCreated }) {
+  const [form, setForm] = useState(initialForm);
+  const [isCreating, setIsCreating] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
+
+  useEffect(() => {
+    if (open) {
+      setForm(initialForm);
+      setErrorMessage(null);
+    }
+  }, [open]);
+
+  function handleChange(event) {
+    const { name, value, type, checked } = event.target;
+    setForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setErrorMessage(null);
+    if (!form.examDate || !form.examTime || !form.venue.trim()) {
+      setErrorMessage("Fill in the date, time and venue.");
+      return;
+    }
+    setIsCreating(true);
+    try {
+      await createExamSchedule(form);
+      onCreated(form);
+    } catch (error) {
+      setErrorMessage(error instanceof ApiError ? error.message : "Failed to create the exam schedule.");
+    } finally {
+      setIsCreating(false);
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      busy={isCreating}
+      title="Add exam schedule"
+      subtitle="Saturday slots are always selectable. Weekday slots also need a teacher available to assist."
+      footer={
+        <>
+          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isCreating}>
+            Cancel
+          </button>
+          <button type="submit" form="add-schedule-form" className="btn btn-primary" disabled={isCreating}>
+            {isCreating ? "Adding..." : "Add schedule"}
+          </button>
+        </>
+      }
+    >
+      <form id="add-schedule-form" onSubmit={handleSubmit} noValidate>
+        {errorMessage ? (
+          <p className="form-error" role="alert">
+            {errorMessage}
+          </p>
+        ) : null}
+        <div className="ui-field">
+          <label className="ui-label" htmlFor="dayType">
+            Day type
+          </label>
+          <select id="dayType" name="dayType" className="ui-select" value={form.dayType} onChange={handleChange} data-autofocus>
+            {DAY_TYPES.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="ui-field-row">
+          <div className="ui-field">
+            <label className="ui-label" htmlFor="examDate">
+              Exam date
+            </label>
+            <input id="examDate" name="examDate" type="date" className="ui-input" required value={form.examDate} onChange={handleChange} />
+          </div>
+          <div className="ui-field">
+            <label className="ui-label" htmlFor="examTime">
+              Exam time
+            </label>
+            <input id="examTime" name="examTime" type="time" className="ui-input" required value={form.examTime} onChange={handleChange} />
+          </div>
+        </div>
+        <div className="ui-field">
+          <label className="ui-label" htmlFor="venue">
+            Venue
+          </label>
+          <input
+            id="venue"
+            name="venue"
+            type="text"
+            className="ui-input"
+            required
+            placeholder="e.g. Main Building, Room 204"
+            value={form.venue}
+            onChange={handleChange}
+          />
+        </div>
+        {form.dayType === "Weekday" ? (
+          <label className="exam-offer-check">
+            <input type="checkbox" name="isOffered" checked={form.isOffered} onChange={handleChange} />
+            <span>
+              Offer this slot now
+              <small>Only when a teacher is available to assist.</small>
+            </span>
+          </label>
+        ) : null}
+      </form>
+    </Modal>
+  );
+}
+
+function ApplicantsModal({ schedule, onClose }) {
+  const applicants = schedule.assignedApplicants;
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={`Applicants for ${scheduleLabel(schedule)}`}
+      subtitle={`${schedule.venue} · ${applicants.length} applicant${applicants.length === 1 ? "" : "s"}`}
+      footer={
+        <button type="button" className="btn btn-secondary" onClick={onClose}>
+          Close
+        </button>
+      }
+    >
+      {applicants.length === 0 ? (
+        <p className="exam-empty">No applicant has picked this slot yet.</p>
+      ) : (
+        <ol className="exam-applicant-list">
+          {applicants.map((applicant) => (
+            <li key={applicant.applicantEmail}>
+              <PersonCell name={applicant.applicantName} detail={applicant.applicantEmail} />
+              <span className="exam-applicant-date">Picked {formatDateTime(applicant.selectedAt)}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </Modal>
+  );
 }
 
 export default function AdminExamSchedulesPage() {
@@ -39,11 +172,10 @@ export default function AdminExamSchedulesPage() {
   const [loadError, setLoadError] = useState(null);
   const [pendingToggleId, setPendingToggleId] = useState(null);
   const [unofferTarget, setUnofferTarget] = useState(null);
-
-  const [form, setForm] = useState(initialForm);
-  const [isCreating, setIsCreating] = useState(false);
-  const [createError, setCreateError] = useState(null);
-  const [createdMessage, setCreatedMessage] = useState(null);
+  const [isAdding, setIsAdding] = useState(false);
+  const [viewing, setViewing] = useState(null);
+  const [dayFilter, setDayFilter] = useState("");
+  const [offerFilter, setOfferFilter] = useState("");
 
   const loadSchedules = useCallback(async () => {
     setIsLoading(true);
@@ -62,39 +194,16 @@ export default function AdminExamSchedulesPage() {
     loadSchedules();
   }, [loadSchedules]);
 
-  function handleFormChange(event) {
-    const { name, value, type, checked } = event.target;
-    setForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
-  }
-
-  async function handleCreate(event) {
-    event.preventDefault();
-    setCreateError(null);
-    setCreatedMessage(null);
-    setIsCreating(true);
-    try {
-      await createExamSchedule(form);
-      setForm(initialForm);
-      setCreatedMessage("Exam schedule created.");
-      await loadSchedules();
-    } catch (error) {
-      setCreateError(error instanceof ApiError ? error.message : "Failed to create the exam schedule.");
-    } finally {
-      setIsCreating(false);
-    }
-  }
-
   async function applyToggleOffered(schedule) {
     setPendingToggleId(schedule.examScheduleId);
-    setLoadError(null);
     try {
       const updated = await setExamScheduleOffered(schedule.examScheduleId, !schedule.isOffered);
       setSchedules((prev) =>
-        prev.map((s) => (s.examScheduleId === updated.examScheduleId ? { ...s, isOffered: updated.isOffered } : s))
+        prev.map((s) => (s.examScheduleId === updated.examScheduleId ? { ...s, isOffered: updated.isOffered } : s)),
       );
-      showToast(`${formatDate(schedule.examDate)} at ${schedule.examTime} is now ${updated.isOffered ? "offered" : "not offered"}.`);
+      showToast(`${scheduleLabel(schedule)} is now ${updated.isOffered ? "offered" : "not offered"}.`);
     } catch (error) {
-      setLoadError(error instanceof ApiError ? error.message : "Failed to update the exam schedule.");
+      showToast(error instanceof ApiError ? error.message : "Failed to update the exam schedule.", "error");
     } finally {
       setPendingToggleId(null);
     }
@@ -114,169 +223,147 @@ export default function AdminExamSchedulesPage() {
     await applyToggleOffered(schedule);
   }
 
+  const rows = useMemo(
+    () =>
+      schedules.filter(
+        (s) =>
+          (!dayFilter || s.dayType === dayFilter) &&
+          (!offerFilter || (offerFilter === "offered" ? s.isOffered : !s.isOffered)),
+      ),
+    [schedules, dayFilter, offerFilter],
+  );
+
+  const columns = [
+    {
+      key: "when",
+      header: "Date & time",
+      accessor: (row) => `${row.examDate}T${row.examTime}`,
+      sortable: true,
+      render: (row) => <PersonCell name={formatDate(row.examDate)} detail={formatTime(row.examTime)} />,
+    },
+    {
+      key: "dayType",
+      header: "Day",
+      sortable: true,
+      render: (row) => <span className={`exam-daytype exam-daytype-${row.dayType.toLowerCase()}`}>{row.dayType}</span>,
+    },
+    { key: "venue", header: "Venue", sortable: true },
+    {
+      key: "applicants",
+      header: "Applicants",
+      align: "right",
+      accessor: (row) => row.assignedApplicants.length,
+      sortable: true,
+      searchable: false,
+    },
+    {
+      key: "offered",
+      header: "Availability",
+      accessor: (row) => (row.isOffered ? "Offered" : "Not offered"),
+      sortable: true,
+      render: (row) =>
+        row.dayType === "Weekday" ? (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={row.isOffered}
+            className="exam-switch"
+            onClick={(event) => {
+              event.stopPropagation();
+              handleToggleOffered(row);
+            }}
+            disabled={pendingToggleId === row.examScheduleId}
+          >
+            <span className="exam-switch-track" aria-hidden="true">
+              <span className="exam-switch-thumb" />
+            </span>
+            {row.isOffered ? "Offered" : "Not offered"}
+          </button>
+        ) : (
+          <span className="exam-always">Always offered</span>
+        ),
+    },
+    {
+      key: "action",
+      header: "Action",
+      align: "right",
+      searchable: false,
+      render: (row) => (
+        <RowAction
+          label="View applicants"
+          icon="users"
+          onClick={() => setViewing(row)}
+          ariaLabel={`View applicants for ${scheduleLabel(row)}`}
+        />
+      ),
+    },
+  ];
+
   return (
-    <AppLayout title="Exam Schedules">
-        <Card className="admin-exam-schedules-form-card">
-          <h2>Add Schedule</h2>
-          <p className="admin-exam-schedules-subtitle">
-            Saturday schedules are always selectable. Weekday schedules also need a teacher available to
-            assist - leave "Offered" checked only when one is.
-          </p>
+    <AppLayout>
+      <DataTable
+        title="Exam Schedules"
+        subtitle="Every entrance exam slot applicants can pick from, and who has picked each one."
+        actions={
+          <button type="button" className="btn btn-primary" onClick={() => setIsAdding(true)}>
+            <Icon name="plus" size={16} />
+            Add schedule
+          </button>
+        }
+        columns={columns}
+        rows={rows}
+        getRowKey={(row) => row.examScheduleId}
+        isLoading={isLoading}
+        errorMessage={loadError}
+        emptyMessage={schedules.length === 0 ? "No exam schedules yet. Add the first one." : "No schedules match these filters."}
+        searchPlaceholder="Search by venue"
+        filters={[
+          {
+            key: "dayType",
+            label: "All days",
+            value: dayFilter,
+            onChange: setDayFilter,
+            options: DAY_TYPES.map((type) => ({ value: type, label: type })),
+          },
+          {
+            key: "offered",
+            label: "Any availability",
+            value: offerFilter,
+            onChange: setOfferFilter,
+            options: [
+              { value: "offered", label: "Offered" },
+              { value: "not-offered", label: "Not offered" },
+            ],
+          },
+        ]}
+      />
 
-          {createdMessage && (
-            <p className="form-success" role="status">
-              {createdMessage}
-            </p>
-          )}
-          {createError && (
-            <p className="form-error" role="alert">
-              {createError}
-            </p>
-          )}
+      <AddScheduleModal
+        open={isAdding}
+        onClose={() => setIsAdding(false)}
+        onCreated={async (form) => {
+          setIsAdding(false);
+          showToast(`Exam schedule added for ${formatDate(form.examDate)}.`);
+          await loadSchedules();
+        }}
+      />
 
-          <form onSubmit={handleCreate} noValidate>
-            <div className="form-row-group">
-              <div className="form-row">
-                <label htmlFor="dayType">Day type</label>
-                <select id="dayType" name="dayType" value={form.dayType} onChange={handleFormChange}>
-                  {DAY_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-row">
-                <label htmlFor="examDate">Exam date</label>
-                <input
-                  id="examDate"
-                  name="examDate"
-                  type="date"
-                  required
-                  value={form.examDate}
-                  onChange={handleFormChange}
-                />
-              </div>
-              <div className="form-row">
-                <label htmlFor="examTime">Exam time</label>
-                <input
-                  id="examTime"
-                  name="examTime"
-                  type="time"
-                  required
-                  value={form.examTime}
-                  onChange={handleFormChange}
-                />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <label htmlFor="venue">Venue</label>
-              <input
-                id="venue"
-                name="venue"
-                type="text"
-                required
-                value={form.venue}
-                onChange={handleFormChange}
-              />
-            </div>
-
-            {form.dayType === "Weekday" && (
-              <label className="admin-exam-schedules-checkbox">
-                <input type="checkbox" name="isOffered" checked={form.isOffered} onChange={handleFormChange} />
-                Teacher available - offer this slot immediately
-              </label>
-            )}
-
-            <button type="submit" disabled={isCreating}>
-              {isCreating ? "Creating..." : "Add Schedule"}
-            </button>
-          </form>
-        </Card>
-
-        <Card>
-          <h2>All Schedules</h2>
-
-          {loadError && (
-            <p className="form-error" role="alert">
-              {loadError}
-            </p>
-          )}
-
-          {isLoading ? (
-            <p>Loading...</p>
-          ) : schedules.length === 0 ? (
-            <p>No exam schedules yet.</p>
-          ) : (
-            <ul className="schedule-list">
-              {schedules.map((schedule) => (
-                <li key={schedule.examScheduleId} className="schedule-row">
-                  <div className="schedule-header">
-                    <div>
-                      <span className={`daytype-badge daytype-${schedule.dayType.toLowerCase()}`}>
-                        {schedule.dayType}
-                      </span>
-                      <span className="schedule-datetime">
-                        {formatDate(schedule.examDate)} at {schedule.examTime}
-                      </span>
-                    </div>
-                    {schedule.dayType === "Weekday" && (
-                      <button
-                        type="button"
-                        className={schedule.isOffered ? "toggle-offered-on" : "toggle-offered-off"}
-                        onClick={() => handleToggleOffered(schedule)}
-                        disabled={pendingToggleId === schedule.examScheduleId}
-                      >
-                        {pendingToggleId === schedule.examScheduleId
-                          ? "Saving..."
-                          : schedule.isOffered
-                            ? "Offered"
-                            : "Not Offered"}
-                      </button>
-                    )}
-                  </div>
-                  <p className="schedule-venue">{schedule.venue}</p>
-
-                  <div className="schedule-applicants">
-                    <span className="schedule-applicants-count">
-                      {schedule.assignedApplicants.length} applicant
-                      {schedule.assignedApplicants.length === 1 ? "" : "s"} assigned
-                    </span>
-                    {schedule.assignedApplicants.length > 0 && (
-                      <ul className="applicant-list">
-                        {schedule.assignedApplicants.map((applicant) => (
-                          <li key={applicant.applicantEmail}>
-                            <span className="applicant-name">{applicant.applicantName}</span>
-                            <span className="applicant-email">{applicant.applicantEmail}</span>
-                            <span className="applicant-selected-at">
-                              Selected {formatDateTime(applicant.selectedAt)}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
+      {viewing ? <ApplicantsModal schedule={viewing} onClose={() => setViewing(null)} /> : null}
 
       <ConfirmDialog
         open={Boolean(unofferTarget)}
         title="Mark this schedule as not offered?"
         message={
           unofferTarget
-            ? `${formatDate(unofferTarget.examDate)} at ${unofferTarget.examTime} (${unofferTarget.venue}) will stop appearing as a choice to applicants.` +
+            ? `${scheduleLabel(unofferTarget)} (${unofferTarget.venue}) will stop appearing as a choice to applicants.` +
               (unofferTarget.assignedApplicants.length > 0
                 ? ` ${unofferTarget.assignedApplicants.length} applicant${
                     unofferTarget.assignedApplicants.length === 1 ? "" : "s"
-                  } already selected this slot and will keep it - only new selections are blocked.`
+                  } already picked this slot and will keep it; only new picks are blocked.`
                 : "")
             : ""
         }
-        confirmLabel="Mark Not Offered"
+        confirmLabel="Mark not offered"
         isSubmitting={pendingToggleId === unofferTarget?.examScheduleId}
         onConfirm={confirmUnoffer}
         onCancel={() => setUnofferTarget(null)}

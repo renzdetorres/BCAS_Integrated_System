@@ -12,7 +12,10 @@ namespace BCAS.Api.Controllers;
 /// application review (IEvaluatorScholarshipApplicationService - same
 /// academic records, submitted documents, and evaluation results an
 /// Evaluator sees) but adds the elevated authority to confirm the final
-/// Approved/Rejected decision, which an Evaluator cannot do.
+/// Approved/Rejected decision, which an Evaluator cannot do. Everything
+/// here is scoped to the caller's assigned department: the queue lists
+/// only their department's applicants, and another department's
+/// application answers 404 on detail and decision alike.
 /// </summary>
 [Authorize(Roles = "AcademicHead")]
 [ApiController]
@@ -22,19 +25,32 @@ public class AcademicHeadScholarshipApplicationsController : ControllerBase
     private const int ReadyForDecisionCount = 20;
 
     private readonly IEvaluatorScholarshipApplicationService _applicationService;
+    private readonly IAcademicHeadScopeService _scopeService;
 
-    public AcademicHeadScholarshipApplicationsController(IEvaluatorScholarshipApplicationService applicationService)
+    public AcademicHeadScholarshipApplicationsController(
+        IEvaluatorScholarshipApplicationService applicationService,
+        IAcademicHeadScopeService scopeService)
     {
         _applicationService = applicationService;
+        _scopeService = scopeService;
     }
 
-    /// <summary>Academic Head-only: applications that have reached "Result" and are awaiting a final decision.</summary>
+    /// <summary>Academic Head-only: applications in the caller's department that have reached "Result" and are awaiting a final decision.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<EvaluatorQueueApplicationResponse>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<EvaluatorQueueApplicationResponse>>> GetReadyForDecision(CancellationToken cancellationToken)
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<IReadOnlyList<EvaluatorQueueApplicationResponse>>> GetReadyForDecision(CancellationToken cancellationToken)
     {
-        var applications = await _applicationService.GetReadyForDecisionAsync(ReadyForDecisionCount, cancellationToken);
-        return Ok(applications);
+        try
+        {
+            var department = await _scopeService.GetAssignedDepartmentAsync(User.GetUserId(), cancellationToken);
+            var applications = await _applicationService.GetReadyForDecisionAsync(ReadyForDecisionCount, department, cancellationToken);
+            return Ok(applications);
+        }
+        catch (AcademicHeadDepartmentNotAssignedException ex)
+        {
+            return DepartmentNotAssigned(ex);
+        }
     }
 
     /// <summary>
@@ -52,8 +68,13 @@ public class AcademicHeadScholarshipApplicationsController : ControllerBase
     {
         try
         {
+            await EnsureInCallersDepartmentAsync(applicationId, cancellationToken);
             var detail = await _applicationService.GetDetailAsync(applicationId, cancellationToken);
             return Ok(detail);
+        }
+        catch (AcademicHeadDepartmentNotAssignedException ex)
+        {
+            return DepartmentNotAssigned(ex);
         }
         catch (ScholarshipApplicationNotFoundException ex)
         {
@@ -82,9 +103,14 @@ public class AcademicHeadScholarshipApplicationsController : ControllerBase
     {
         try
         {
+            await EnsureInCallersDepartmentAsync(applicationId, cancellationToken);
             var detail = await _applicationService.RecordFinalDecisionAsync(
                 applicationId, User.GetUserId(), request, cancellationToken);
             return Ok(detail);
+        }
+        catch (AcademicHeadDepartmentNotAssignedException ex)
+        {
+            return DepartmentNotAssigned(ex);
         }
         catch (InvalidFinalDecisionException ex)
         {
@@ -114,4 +140,18 @@ public class AcademicHeadScholarshipApplicationsController : ControllerBase
             });
         }
     }
+
+    private async Task EnsureInCallersDepartmentAsync(Guid applicationId, CancellationToken cancellationToken)
+    {
+        var department = await _scopeService.GetAssignedDepartmentAsync(User.GetUserId(), cancellationToken);
+        await _scopeService.EnsureScholarshipApplicationInDepartmentAsync(applicationId, department, cancellationToken);
+    }
+
+    private ObjectResult DepartmentNotAssigned(AcademicHeadDepartmentNotAssignedException ex) =>
+        StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails
+        {
+            Title = "No department assigned",
+            Detail = ex.Message,
+            Status = StatusCodes.Status400BadRequest,
+        });
 }

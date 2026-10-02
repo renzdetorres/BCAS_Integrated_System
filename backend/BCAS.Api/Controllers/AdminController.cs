@@ -1,4 +1,5 @@
 using BCAS.Api.Exceptions;
+using BCAS.Api.Extensions;
 using BCAS.Api.Models;
 using BCAS.Api.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -43,7 +44,7 @@ public class AdminController : ControllerBase
         try
         {
             var response = await _staffProvisioningService.CreateStaffAsync(request, cancellationToken);
-            await _auditLogService.LogAsync(User, "StaffCreated", $"Created {response.Role} account {response.Email}", cancellationToken);
+            await _auditLogService.LogAsync(User, "StaffCreated", $"Created {response.Role} account {response.Email}{DepartmentSuffix(response)}", cancellationToken);
             return CreatedAtAction(nameof(CreateStaff), new { id = response.UserId }, response);
         }
         catch (InvalidRoleException ex)
@@ -51,6 +52,15 @@ public class AdminController : ControllerBase
             return BadRequest(new ProblemDetails
             {
                 Title = "Invalid role",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (InvalidDepartmentException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Invalid department",
                 Detail = ex.Message,
                 Status = StatusCodes.Status400BadRequest,
             });
@@ -99,6 +109,15 @@ public class AdminController : ControllerBase
                 cancellationToken);
             return Ok(response);
         }
+        catch (InvalidSuperAdminChangeException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Super Admin change not allowed",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
         catch (UserNotFoundException ex)
         {
             return NotFound(new ProblemDetails
@@ -130,7 +149,7 @@ public class AdminController : ControllerBase
         try
         {
             var response = await _userManagementService.UpdateUserAsync(userId, request, cancellationToken);
-            await _auditLogService.LogAsync(User, "UserUpdated", $"Updated {response.Email} ({response.Role})", cancellationToken);
+            await _auditLogService.LogAsync(User, "UserUpdated", $"Updated {response.Email} ({response.Role}){DepartmentSuffix(response)}", cancellationToken);
             return Ok(response);
         }
         catch (InvalidRoleException ex)
@@ -138,6 +157,24 @@ public class AdminController : ControllerBase
             return BadRequest(new ProblemDetails
             {
                 Title = "Invalid role",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (InvalidDepartmentException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Invalid department",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (InvalidSuperAdminChangeException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Super Admin change not allowed",
                 Detail = ex.Message,
                 Status = StatusCodes.Status400BadRequest,
             });
@@ -161,4 +198,64 @@ public class AdminController : ControllerBase
             });
         }
     }
+
+    /// <summary>
+    /// Super Admin only: grants or revokes Super Admin on an Admin account.
+    /// A Super Admin can force-edit scholarships during an ongoing semester
+    /// and manage semesters. The last active Super Admin can't be revoked.
+    /// </summary>
+    [HttpPatch("users/{userId:guid}/super-admin")]
+    [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UserProfileResponse>> SetSuperAdmin(
+        Guid userId,
+        [FromBody] SetSuperAdminRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await _userManagementService.SetSuperAdminAsync(
+                User.GetUserId(), userId, request.IsSuperAdmin!.Value, cancellationToken);
+            await _auditLogService.LogAsync(
+                User,
+                response.IsSuperAdmin ? "SuperAdminGranted" : "SuperAdminRevoked",
+                response.Email,
+                cancellationToken);
+            return Ok(response);
+        }
+        catch (SuperAdminRequiredException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Super Admin required",
+                Detail = ex.Message,
+                Status = StatusCodes.Status403Forbidden,
+            });
+        }
+        catch (InvalidSuperAdminChangeException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Super Admin change not allowed",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (UserNotFoundException ex)
+        {
+            return NotFound(new ProblemDetails
+            {
+                Title = "Account not found",
+                Detail = ex.Message,
+                Status = StatusCodes.Status404NotFound,
+            });
+        }
+    }
+
+    // Department assignments decide what an Academic Head can see, so the
+    // audit trail records them alongside the account change itself.
+    private static string DepartmentSuffix(UserProfileResponse response) =>
+        string.IsNullOrEmpty(response.Department) ? string.Empty : $", department: {response.Department}";
 }

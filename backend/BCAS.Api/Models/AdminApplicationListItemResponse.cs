@@ -6,6 +6,13 @@ public class AdminApplicationListItemResponse
     public string ApplicantName { get; set; } = string.Empty;
     public string ApplicantEmail { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Which department's Academic Head sees this application - an admission
+    /// application's own, or for a scholarship application its applicant's
+    /// latest admission application's. Null while unassigned.
+    /// </summary>
+    public string? Department { get; set; }
     public string Status { get; set; } = string.Empty;
     public string? Remarks { get; set; }
     public DateTime SubmittedAt { get; set; }

@@ -1,3 +1,5 @@
+import { DEPARTMENT_OPTIONS } from "./departments.js";
+
 // Sidebar nav per role, grouped by actual area of work (not alphabetically),
 // built strictly from routes already registered in App.jsx. Groups exist only
 // where a role has enough distinct areas to benefit from them - a 3-item role
@@ -38,11 +40,24 @@ export const NAV_ITEMS_BY_ROLE = {
   ],
   Admin: [
     {
-      section: null,
-      items: [{ to: "/portal", label: "Dashboard", icon: "home", end: true }],
+      section: "Overview",
+      items: [{ to: "/portal", label: "Dashboard", icon: "grid", end: true }],
     },
     {
-      section: "Admissions",
+      // Each department opens the Applications list filtered to it. `query`
+      // makes the link active only while that filter is applied (see
+      // Sidebar's isItemActive), so it never double-highlights with
+      // Applications itself.
+      section: "Academic Categories",
+      variant: "categories",
+      items: DEPARTMENT_OPTIONS.map((department) => ({
+        to: "/admin/applications",
+        query: { department },
+        label: department,
+      })),
+    },
+    {
+      section: "Admission Management",
       items: [
         { to: "/admin/applications", label: "Applications", icon: "doc" },
         { to: "/admin/documents", label: "Document Verification Log", icon: "folder" },

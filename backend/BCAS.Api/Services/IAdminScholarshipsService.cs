@@ -13,9 +13,12 @@ public interface IAdminScholarshipsService
     /// <summary>
     /// Throws ScholarshipNotFoundException if no scholarship with that id
     /// exists, or InvalidTotalSlotsException if the new TotalSlots would
-    /// fall below the number of slots already occupied.
+    /// fall below the number of slots already occupied. During an ongoing
+    /// semester throws ScholarshipLockedException, unless forcedByUserId is
+    /// a Super Admin (else SuperAdminRequiredException).
     /// </summary>
-    Task<AdminScholarshipResponse> UpdateAsync(int scholarshipId, UpdateScholarshipRequest request, CancellationToken cancellationToken = default);
+    Task<AdminScholarshipResponse> UpdateAsync(
+        int scholarshipId, UpdateScholarshipRequest request, Guid? forcedByUserId = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Activates or deactivates a scholarship. A deactivated scholarship
@@ -23,7 +26,10 @@ public interface IAdminScholarshipsService
     /// (IScholarshipRepository.GetAvailableAsync already filters on
     /// IsActive) and new applications against it are rejected
     /// (ScholarshipApplicationService already checks IsActive) - no
-    /// further change was needed for either of those.
+    /// further change was needed for either of those. Deactivating is
+    /// locked during an ongoing semester, with the same Super Admin
+    /// override as UpdateAsync; activating never is.
     /// </summary>
-    Task<AdminScholarshipResponse> SetActiveStatusAsync(int scholarshipId, bool isActive, CancellationToken cancellationToken = default);
+    Task<AdminScholarshipResponse> SetActiveStatusAsync(
+        int scholarshipId, bool isActive, Guid? forcedByUserId = null, CancellationToken cancellationToken = default);
 }

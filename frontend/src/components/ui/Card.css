@@ -1,5 +1,8 @@
+/* Base container. A hairline plus a soft tinted shadow, so a white panel on
+   the off-white canvas reads as a surface without floating off the page. */
 .ui-card {
   background: var(--color-surface);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
   padding: 24px;
@@ -7,63 +10,54 @@
 
 /* For reference material sitting alongside a primary record (e.g. an
    applicant's deadlines/announcements next to their actual application
-   status) - flush border instead of a shadow, so every panel on a page
-   doesn't read as the same weight regardless of what it holds. */
+   status) - flush, no shadow, so every panel on a page doesn't read as the
+   same weight regardless of what it holds. */
 .ui-card-flat {
   box-shadow: none;
-  border: 1px solid var(--color-border);
 }
 
 .ui-card h2 {
   margin: 0 0 16px;
   font: var(--text-h2);
+  letter-spacing: -0.01em;
   color: var(--color-text-primary);
 }
 
 /* Data container: a table/dense list a staff member scans repeatedly - reads
-   as a records panel, not a floating widget. Matches the treatment already
-   used for the Applications table. No colored top rule - same reasoning as
-   the stat tile below: a "border-t-4" accent stripe is the generic
-   dashboard-template tell regardless of which token paints it. */
+   as a records panel, not a floating widget. */
 .ui-card--data {
-  box-shadow: none;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 18px 20px;
+  box-shadow: var(--shadow-xs);
+  padding: 20px;
 }
 
 /* Action panel: something the viewer is meant to act on now. A tinted
-   background reads as "different" without a colored border stripe - the
-   same non-border approach NextActionBanner already uses (its own
-   distinction comes from a CTA button and serif copy, not a gold rule). */
+   background reads as "different" without a colored border stripe. */
 .ui-card--action {
-  background: var(--color-primary-tint);
+  background: linear-gradient(180deg, var(--color-primary-tint) 0%, rgba(27, 67, 50, 0.02) 100%), var(--color-surface);
+  border-color: rgba(45, 106, 79, 0.18);
 }
 
-/* Stat tiles read as a small ledger, not analytics widgets: a plain label
-   over a serif figure inside a flat bordered tile, not four identical
-   shadowed cards - and not a colored accent bar either, since that's the
-   same "border-t-4" cliché from every dashboard template regardless of
-   what color it's painted. */
+/* Stat tiles read as a small ledger: a plain label over a large figure in
+   the UI face with tabular numerals, inside a flat bordered tile. */
 .ui-stat-card {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
   min-width: 0;
-  box-shadow: none;
-  border: 1px solid var(--color-border);
-  padding: 16px 20px;
+  box-shadow: var(--shadow-xs);
+  padding: 18px 20px;
 }
 
 .ui-stat-card-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
 }
 
 .ui-stat-card-label {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--color-text-secondary);
 }
 
@@ -71,23 +65,27 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
-  background: var(--color-bg);
-  font-size: 18px;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-tint);
+  color: var(--color-primary-light);
+  font-size: 16px;
   flex-shrink: 0;
 }
 
 .ui-stat-card-value {
-  font-family: var(--font-serif);
-  font-size: 28px;
-  font-weight: 700;
+  font-family: var(--font-sans);
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
   color: var(--color-text-primary);
 }
 
 .ui-stat-card-trend {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--color-primary-light);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
 }

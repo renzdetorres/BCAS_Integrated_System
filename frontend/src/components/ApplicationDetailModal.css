@@ -1,0 +1,65 @@
+.app-modal-status {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.app-modal-unassigned {
+  color: var(--color-status-amber-text);
+}
+
+.app-modal-muted {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 13.5px;
+}
+
+/* History as a vertical timeline: a dot per change on one thin rule. */
+.app-modal-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.app-modal-history li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 12px;
+  padding-bottom: 14px;
+}
+
+.app-modal-history li:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 14px;
+  bottom: 0;
+  width: 1px;
+  background: var(--color-border-strong);
+}
+
+.app-modal-history-dot {
+  width: 9px;
+  height: 9px;
+  margin: 5px 0 0 2px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-light);
+}
+
+.app-modal-history-line {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--color-text-secondary);
+}
+
+.app-modal-history-line strong {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.app-modal-history-meta {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--color-text-tertiary);
+}

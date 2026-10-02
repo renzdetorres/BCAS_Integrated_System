@@ -31,8 +31,9 @@ export async function createScholarship({ name, scholarshipType, totalSlots, min
   return data;
 }
 
-export async function updateScholarship(scholarshipId, { name, scholarshipType, totalSlots, minimumGradeAverage }) {
-  const response = await fetch(`${API_BASE_URL}/api/admin/scholarships/${scholarshipId}`, {
+/** `force` overrides the semester lock; the API only honours it for a Super Admin. */
+export async function updateScholarship(scholarshipId, { name, scholarshipType, totalSlots, minimumGradeAverage }, { force = false } = {}) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/scholarships/${scholarshipId}${force ? "?force=true" : ""}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -49,8 +50,8 @@ export async function updateScholarship(scholarshipId, { name, scholarshipType, 
   return data;
 }
 
-export async function setScholarshipActiveStatus(scholarshipId, isActive) {
-  const response = await fetch(`${API_BASE_URL}/api/admin/scholarships/${scholarshipId}/status`, {
+export async function setScholarshipActiveStatus(scholarshipId, isActive, { force = false } = {}) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/scholarships/${scholarshipId}/status${force ? "?force=true" : ""}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     credentials: "include",

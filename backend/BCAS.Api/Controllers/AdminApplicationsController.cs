@@ -14,10 +14,12 @@ namespace BCAS.Api.Controllers;
 public class AdminApplicationsController : ControllerBase
 {
     private readonly IAdminApplicationsService _applicationsService;
+    private readonly IAuditLogService _auditLogService;
 
-    public AdminApplicationsController(IAdminApplicationsService applicationsService)
+    public AdminApplicationsController(IAdminApplicationsService applicationsService, IAuditLogService auditLogService)
     {
         _applicationsService = applicationsService;
+        _auditLogService = auditLogService;
     }
 
     /// <summary>
@@ -27,9 +29,12 @@ public class AdminApplicationsController : ControllerBase
     /// or scholarship name; archived (BISAASS-35) narrows to only archived
     /// (true) or only non-archived (false) applications - omitted, this
     /// list is unfiltered by archive state, unchanged since BISAASS-28.
+    /// department narrows to one department (exact match), or to
+    /// applications with none when it is "Unassigned".
     /// Each item already carries its own full detail (applicant,
     /// type-specific fields, status), so selecting one from the list needs
-    /// no follow-up call.
+    /// no follow-up call. search also matches the full name and the
+    /// course or scholarship name.
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<AdminApplicationListItemResponse>), StatusCodes.Status200OK)]
@@ -39,9 +44,10 @@ public class AdminApplicationsController : ControllerBase
         [FromQuery] string? category,
         [FromQuery] string? program,
         [FromQuery] bool? archived,
+        [FromQuery] string? department,
         CancellationToken cancellationToken)
     {
-        var applications = await _applicationsService.SearchAsync(search, status, category, program, archived, cancellationToken);
+        var applications = await _applicationsService.SearchAsync(search, status, category, program, archived, department, cancellationToken);
         return Ok(applications);
     }
 
@@ -90,6 +96,53 @@ public class AdminApplicationsController : ControllerBase
             return BadRequest(new ProblemDetails
             {
                 Title = "Invalid status transition",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (ApplicationNotFoundException ex)
+        {
+            return NotFound(new ProblemDetails
+            {
+                Title = "Application not found",
+                Detail = ex.Message,
+                Status = StatusCodes.Status404NotFound,
+            });
+        }
+    }
+
+    /// <summary>
+    /// Admin-only: files an admission application under a department, which
+    /// decides which Academic Head can see the applicant (this application
+    /// and their scholarship applications). Used to assign applications
+    /// submitted before departments existed, or to correct a wrong choice.
+    /// Scholarship applications can't be set directly - they follow their
+    /// applicant's admission application.
+    /// </summary>
+    [HttpPatch("{applicationId:guid}/department")]
+    [ProducesResponseType(typeof(AdminApplicationListItemResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AdminApplicationListItemResponse>> SetDepartment(
+        Guid applicationId,
+        [FromBody] SetApplicationDepartmentRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var updated = await _applicationsService.SetDepartmentAsync(applicationId, request.Department, cancellationToken);
+            await _auditLogService.LogAsync(
+                User,
+                "ApplicationDepartmentSet",
+                $"Filed {updated.ApplicantName}'s admission application under {updated.Department}",
+                cancellationToken);
+            return Ok(updated);
+        }
+        catch (InvalidDepartmentException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Invalid department",
                 Detail = ex.Message,
                 Status = StatusCodes.Status400BadRequest,
             });

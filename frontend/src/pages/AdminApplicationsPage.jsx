@@ -1,18 +1,27 @@
-import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ARCHIVABLE_STATUSES, bulkArchiveApplications, searchApplications } from "../api/adminApplicationsApi.js";
 import { ApiError } from "../api/apiClient.js";
 import { useToast } from "../context/ToastContext.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
-import DataTable from "../components/ui/DataTable.jsx";
+import ApplicationDetailModal from "../components/ApplicationDetailModal.jsx";
+import DataTable, { RowAction } from "../components/ui/DataTable.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
-import { StatCard } from "../components/ui/Card.jsx";
+import { DEPARTMENT_OPTIONS } from "../config/departments.js";
 import "./AdminApplicationsPage.css";
 
 const TERMINAL_STATUSES = new Set(["Approved", "Rejected"]);
 const ARCHIVABLE_STATUS_SET = new Set(ARCHIVABLE_STATUSES);
 
-const initialFilters = { search: "", status: "", category: "", program: "" };
+// Filters live in the URL, so the sidebar's department links, the dashboard
+// and the top-bar search can all deep-link into a filtered list, and the
+// sidebar can tell which department view is active.
+const FILTER_KEYS = ["search", "status", "category", "program", "department"];
+
+const DEPARTMENT_FILTER_OPTIONS = [
+  ...DEPARTMENT_OPTIONS.map((department) => ({ value: department, label: department })),
+  { value: "Unassigned", label: "Unassigned" },
+];
 
 const STATUS_OPTIONS = [
   "Submitted",
@@ -34,15 +43,37 @@ function formatDate(isoDateTime) {
 }
 
 export default function AdminApplicationsPage() {
-  const navigate = useNavigate();
   const { showToast } = useToast();
-  const [filters, setFilters] = useState(initialFilters);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filterQuery = FILTER_KEYS.map((key) => searchParams.get(key) ?? "").join("\u0000");
+  // Keyed on the joined values so the debounced reload below only fires
+  // when a filter actually changes, not on every render.
+  const filters = useMemo(() => {
+    const values = filterQuery.split("\u0000");
+    return Object.fromEntries(FILTER_KEYS.map((key, index) => [key, values[index]]));
+  }, [filterQuery]);
+
+  function setFilter(key, value) {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (value) {
+          next.set(key, value);
+        } else {
+          next.delete(key);
+        }
+        return next;
+      },
+      { replace: true },
+    );
+  }
   const [applications, setApplications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
 
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [isBulkArchiving, setIsBulkArchiving] = useState(false);
+  const [viewing, setViewing] = useState(null);
 
   const loadApplications = useCallback(async (activeFilters) => {
     setIsLoading(true);
@@ -119,6 +150,8 @@ export default function AdminApplicationsPage() {
   const columns = [
     {
       key: "select",
+      searchable: false,
+      width: "44px",
       header: (
         <input
           type="checkbox"
@@ -159,6 +192,13 @@ export default function AdminApplicationsPage() {
       render: (row) => row.courseAppliedFor ?? row.scholarshipName,
     },
     {
+      key: "department",
+      header: "Department",
+      accessor: (row) => row.department ?? "",
+      sortable: true,
+      render: (row) => row.department ?? <span className="applications-department-missing">Unassigned</span>,
+    },
+    {
       key: "status",
       header: "Status",
       accessor: (row) => row.status,
@@ -172,100 +212,92 @@ export default function AdminApplicationsPage() {
       sortable: true,
       render: (row) => formatDate(row.submittedAt),
     },
+    {
+      key: "action",
+      header: "Action",
+      align: "right",
+      searchable: false,
+      render: (row) => (
+        <RowAction
+          label="View Application"
+          onClick={() => setViewing(row)}
+          ariaLabel={`View ${row.applicantName}'s ${row.category.toLowerCase()} application`}
+        />
+      ),
+    },
   ];
 
   const needsActionCount = applications.filter((row) => !TERMINAL_STATUSES.has(row.status)).length;
   const approvedCount = applications.filter((row) => row.status === "Approved").length;
   const rejectedCount = applications.filter((row) => row.status === "Rejected").length;
 
-  return (
-    <AppLayout title="Applications">
-      <p className="admin-applications-subtitle">
-        All admission and scholarship applications. Select one to view its full detail.
-      </p>
-
-      {errorMessage && (
-        <p className="form-error" role="alert">
-          {errorMessage}
-        </p>
-      )}
-
-      {!isLoading && !errorMessage && (
-        <section className="admin-applications-queue-summary">
-          <StatCard label="Needs Action" value={needsActionCount} />
-          <StatCard label="Approved" value={approvedCount} />
-          <StatCard label="Rejected" value={rejectedCount} />
-          <p className="admin-applications-queue-caption">
-            Counts reflect the {applications.length} application{applications.length === 1 ? "" : "s"} shown below,
-            not the full archive.
-          </p>
-        </section>
-      )}
-
-      {selectedArchivableIds.length > 0 && (
-        <div className="admin-applications-bulk-bar">
-          <span className="admin-applications-bulk-count">
-            {selectedArchivableIds.length} selected
-          </span>
-          <div className="row-actions">
-            <button type="button" className="bulk-archive-button" onClick={handleBulkArchive} disabled={isBulkArchiving}>
-              {isBulkArchiving ? "Archiving..." : "Archive Selected"}
-            </button>
-            <button
-              type="button"
-              className="bulk-clear-button"
-              onClick={() => setSelectedIds(new Set())}
-              disabled={isBulkArchiving}
-            >
-              Clear
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="admin-applications-panel">
-        <DataTable
-          columns={columns}
-          rows={applications}
-          getRowKey={(row) => row.applicationId}
-          isLoading={isLoading}
-          emptyMessage="No applications match these filters."
-          onRowClick={(row) => navigate(`/admin/applications/${row.applicationId}`)}
-          search={{
-            value: filters.search,
-            onChange: (value) => setFilters((prev) => ({ ...prev, search: value })),
-            placeholder: "Search by applicant name or email",
-          }}
-          filters={[
-            {
-              key: "category",
-              label: "All types",
-              value: filters.category,
-              onChange: (value) => setFilters((prev) => ({ ...prev, category: value })),
-              options: [
-                { value: "Admission", label: "Admission" },
-                { value: "Scholarship", label: "Scholarship" },
-              ],
-            },
-            {
-              key: "status",
-              label: "All statuses",
-              value: filters.status,
-              onChange: (value) => setFilters((prev) => ({ ...prev, status: value })),
-              options: STATUS_OPTIONS,
-            },
-          ]}
-          extraToolbar={
-            <input
-              className="ui-input ui-datatable-search"
-              type="text"
-              placeholder="Filter by program / scholarship"
-              value={filters.program}
-              onChange={(event) => setFilters((prev) => ({ ...prev, program: event.target.value }))}
-            />
-          }
-        />
+  const bulkActions =
+    selectedArchivableIds.length > 0 ? (
+      <div className="admin-applications-bulk" role="status">
+        <span className="admin-applications-bulk-count">{selectedArchivableIds.length} selected</span>
+        <button type="button" className="btn btn-secondary" onClick={() => setSelectedIds(new Set())} disabled={isBulkArchiving}>
+          Clear
+        </button>
+        <button type="button" className="btn btn-danger" onClick={handleBulkArchive} disabled={isBulkArchiving}>
+          {isBulkArchiving ? "Archiving..." : "Archive selected"}
+        </button>
       </div>
+    ) : null;
+
+  return (
+    <AppLayout>
+      <DataTable
+        title="Applications"
+        subtitle="Every admission and scholarship application. Select one to read it in full."
+        actions={bulkActions}
+        summary={[
+          { label: "Showing", value: applications.length.toLocaleString() },
+          { label: "Needs action", value: needsActionCount.toLocaleString(), tone: "amber" },
+          { label: "Approved", value: approvedCount.toLocaleString(), tone: "green" },
+          { label: "Rejected", value: rejectedCount.toLocaleString(), tone: "red" },
+        ]}
+        summaryNote={`Counts reflect the ${applications.length.toLocaleString()} application${applications.length === 1 ? "" : "s"} matching the filters below, not the full archive.`}
+        columns={columns}
+        rows={applications}
+        getRowKey={(row) => row.applicationId}
+        isLoading={isLoading}
+        errorMessage={errorMessage}
+        emptyMessage="No applications match these filters."
+        onRowClick={(row) => setViewing(row)}
+        search={{
+          value: filters.search,
+          onChange: (value) => setFilter("search", value),
+          placeholder: "Search by name, email, or program",
+        }}
+        filters={[
+          {
+            key: "category",
+            label: "All types",
+            value: filters.category,
+            onChange: (value) => setFilter("category", value),
+            options: [
+              { value: "Admission", label: "Admission" },
+              { value: "Scholarship", label: "Scholarship" },
+            ],
+          },
+          {
+            key: "status",
+            label: "All statuses",
+            value: filters.status,
+            onChange: (value) => setFilter("status", value),
+            options: STATUS_OPTIONS,
+          },
+          {
+            key: "department",
+            label: "All departments",
+            value: filters.department,
+            onChange: (value) => setFilter("department", value),
+            options: DEPARTMENT_FILTER_OPTIONS,
+          },
+        ]}
+      />
+
+      <ApplicationDetailModal application={viewing} onClose={() => setViewing(null)} />
     </AppLayout>
   );
 }

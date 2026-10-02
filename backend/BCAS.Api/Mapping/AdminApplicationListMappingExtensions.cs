@@ -11,6 +11,7 @@ public static class AdminApplicationListMappingExtensions
         ApplicantName = item.ApplicantName,
         ApplicantEmail = item.ApplicantEmail,
         Category = item.Category,
+        Department = item.Department,
         Status = item.Status,
         Remarks = item.Remarks,
         SubmittedAt = item.SubmittedAt,

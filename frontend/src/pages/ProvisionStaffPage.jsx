@@ -34,6 +34,11 @@ export default function ProvisionStaffPage() {
       return;
     }
 
+    if (form.role === "AcademicHead" && !form.department) {
+      setErrorMessage("Assign the Academic Head to a department.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const result = await provisionStaff(form);
@@ -127,15 +132,27 @@ export default function ProvisionStaffPage() {
 
           {form.role === "AcademicHead" && (
             <div className="form-row">
-              <label htmlFor="department">Department</label>
-              <select id="department" name="department" value={form.department} onChange={handleChange}>
-                <option value="">Select a department</option>
+              <label htmlFor="department">Assigned department</label>
+              <select
+                id="department"
+                name="department"
+                required
+                aria-describedby="department-hint"
+                value={form.department}
+                onChange={handleChange}
+              >
+                <option value="" disabled>
+                  Select a department
+                </option>
                 {DEPARTMENT_OPTIONS.map((department) => (
                   <option key={department} value={department}>
                     {department}
                   </option>
                 ))}
               </select>
+              <p id="department-hint" className="form-hint">
+                They will only see applicants, decisions, and reports for this department.
+              </p>
             </div>
           )}
 

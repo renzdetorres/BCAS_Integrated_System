@@ -1,20 +1,36 @@
+/* Sticky over scrolling content, so a light frost keeps it legible as
+   rows pass beneath instead of cutting them off with a hard white slab. */
 .topbar {
   height: var(--topbar-height);
-  background: var(--color-surface);
+  background: rgba(255, 255, 255, 0.86);
+  -webkit-backdrop-filter: saturate(1.6) blur(12px);
+  backdrop-filter: saturate(1.6) blur(12px);
   border-bottom: 1px solid var(--color-border);
   display: flex;
   align-items: center;
-  padding: 0 24px;
-  gap: 16px;
+  padding: 0 24px 0 32px;
+  gap: 8px;
   position: sticky;
   top: 0;
   z-index: 30;
 }
 
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .topbar {
+    background: var(--color-surface);
+  }
+}
+
+@media (max-width: 960px) {
+  .topbar {
+    padding: 0 16px;
+  }
+}
+
 @media (max-width: 640px) {
   .topbar {
     padding: 0 12px;
-    gap: 8px;
+    gap: 6px;
   }
 }
 
@@ -22,8 +38,9 @@
   display: none;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
+  margin-left: -6px;
   border: none;
   background: transparent;
   color: var(--color-text-primary);
@@ -32,7 +49,7 @@
 }
 
 .topbar-menu-button:hover {
-  background: var(--color-bg);
+  background: var(--color-primary-tint);
 }
 
 @media (max-width: 960px) {
@@ -52,80 +69,89 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border: none;
   background: transparent;
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
   border-radius: var(--radius-md);
   cursor: pointer;
 }
 
-.topbar-icon-button:hover {
-  background: var(--color-bg);
+.topbar-icon-button:hover,
+.topbar-icon-button[aria-expanded="true"] {
+  background: var(--color-primary-tint);
+  color: var(--color-text-primary);
 }
 
 .topbar-notif {
   position: relative;
 }
 
+/* Seal gold is kept for this one count - it's the only thing in the bar
+   asking for attention. The white ring separates it from the bell glyph. */
 .topbar-notif-badge {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  min-width: 15px;
-  height: 15px;
-  padding: 0 3px;
-  border-radius: 999px;
+  top: 5px;
+  right: 4px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: var(--radius-full);
   background: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-surface);
   color: var(--color-primary-dark);
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 700;
-  line-height: 15px;
+  line-height: 17px;
   text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Shared dropdown-panel chrome (announcements, user menu). max-width keeps
    either panel from overflowing the left edge on a narrow phone, where
-   "right: 0" alone would let a fixed-width panel run off-screen. */
+   "right: 0" alone would let a fixed-width panel run off-screen. Scales in
+   from its trigger's corner, not from its own center. */
 .topbar-panel {
   position: absolute;
   right: 0;
-  top: calc(100% + 6px);
+  top: calc(100% + 8px);
   max-width: calc(100vw - 24px);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  box-shadow: 0 8px 24px rgba(16, 24, 16, 0.14);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-overlay);
   z-index: 50;
+  overflow: hidden;
+  transform-origin: top right;
+  animation: ui-pop-in 160ms var(--ease-out);
 }
 
 .topbar-notif-panel {
-  width: min(320px, calc(100vw - 24px));
+  width: min(340px, calc(100vw - 24px));
 }
 
 .topbar-panel-header {
-  padding: 12px 16px;
-  font-family: var(--font-serif);
+  padding: 14px 16px 12px;
+  font-size: 14px;
   font-weight: 600;
-  font-size: 0.92rem;
   color: var(--color-text-primary);
   border-bottom: 1px solid var(--color-border);
 }
 
 .topbar-notif-empty {
   margin: 0;
-  padding: 20px 16px;
+  padding: 28px 16px;
   color: var(--color-text-secondary);
-  font-size: 0.85rem;
+  font-size: 13.5px;
   text-align: center;
 }
 
 .topbar-notif-list {
   list-style: none;
   margin: 0;
-  padding: 4px;
-  max-height: 320px;
+  padding: 6px;
+  max-height: 340px;
   overflow-y: auto;
 }
 
@@ -133,73 +159,79 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
 }
 
 .topbar-notif-list li:hover {
-  background: var(--color-bg);
+  background: var(--color-surface-subtle);
 }
 
 .topbar-notif-title {
-  font-size: 0.85rem;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--color-text-primary);
 }
 
 .topbar-notif-meta {
-  font-size: 0.75rem;
+  font-size: 12px;
   color: var(--color-text-secondary);
 }
 
 .topbar-panel-footer {
   display: block;
-  padding: 10px 16px;
+  padding: 11px 16px;
   border-top: 1px solid var(--color-border);
-  color: var(--color-primary);
-  font-size: 0.82rem;
+  background: var(--color-surface-subtle);
+  color: var(--color-primary-light);
+  font-size: 13px;
   font-weight: 600;
   text-align: center;
   text-decoration: none;
 }
 
 .topbar-panel-footer:hover {
-  background: var(--color-bg);
+  color: var(--color-primary);
+  background: var(--color-primary-tint);
 }
 
 .topbar-user {
   position: relative;
+  margin-left: 4px;
+  padding-left: 12px;
+  border-left: 1px solid var(--color-border);
 }
 
 .topbar-user-button {
   display: flex;
   align-items: center;
   gap: 10px;
-  border: 1px solid var(--color-border);
+  border: none;
   background: transparent;
   cursor: pointer;
-  padding: 5px 12px 5px 5px;
+  padding: 4px 10px 4px 4px;
   border-radius: var(--radius-md);
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
 }
 
-.topbar-user-button:hover {
-  background: var(--color-bg);
-  border-color: var(--color-accent);
+.topbar-user-button:hover,
+.topbar-user-button[aria-expanded="true"] {
+  background: var(--color-primary-tint);
 }
 
 .topbar-avatar {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
   background: var(--color-primary);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
   color: var(--color-white);
-  font-family: var(--font-serif);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   flex-shrink: 0;
 }
 
@@ -214,49 +246,54 @@
    the page title is the thing that needs the room - name+role text is
    redundant with what's one tap away in the menu, so it drops first. */
 @media (max-width: 640px) {
+  .topbar-user {
+    padding-left: 6px;
+  }
+
   .topbar-user-text {
     display: none;
   }
 
   .topbar-user-button {
-    padding: 5px;
+    padding: 3px;
     gap: 0;
+  }
+
+  .topbar-user-button > svg {
+    display: none;
   }
 }
 
 .topbar-user-name {
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--color-text-primary);
 }
 
 .topbar-user-role {
-  display: inline-block;
   margin-top: 1px;
-  padding: 1px 7px;
-  border-radius: var(--radius-sm);
-  background: var(--color-primary-tint);
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--color-primary);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
 }
 
 .topbar-menu {
-  min-width: 210px;
+  min-width: 220px;
   padding: 6px;
 }
 
 .topbar-menu-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
+  min-height: 38px;
   border: none;
   background: transparent;
-  padding: 9px 10px;
+  padding: 8px 10px;
   border-radius: var(--radius-md);
-  font-size: 14px;
+  font-size: 13.5px;
+  font-weight: 500;
   color: var(--color-text-primary);
   cursor: pointer;
   text-align: left;
@@ -264,8 +301,12 @@
   box-sizing: border-box;
 }
 
+.topbar-menu-item svg {
+  color: var(--color-text-secondary);
+}
+
 .topbar-menu-item:hover {
-  background: var(--color-bg);
+  background: var(--color-surface-subtle);
 }
 
 /* Account-level settings live above this rule; sign-out is a consequential,
@@ -277,10 +318,82 @@
   margin: 6px 4px;
 }
 
-.topbar-menu-item-danger {
+.topbar-menu-item-danger,
+.topbar-menu-item-danger svg {
   color: var(--color-status-red-text);
 }
 
 .topbar-menu-item-danger:hover {
   background: var(--color-status-red-bg);
+}
+
+.topbar-leading {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.topbar-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: min(300px, 32vw);
+  margin-left: 12px;
+}
+
+.topbar-search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--color-text-tertiary);
+  pointer-events: none;
+}
+
+.topbar-search input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px 0 36px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+  color: var(--color-text-primary);
+  font-size: 13.5px;
+}
+
+.topbar-search input:hover {
+  border-color: var(--color-border-strong);
+}
+
+.topbar-search input:focus {
+  outline: none;
+  border-color: var(--color-primary-light);
+  background: var(--color-surface);
+  box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
+}
+
+/* The workspace switch keeps the room on a narrow screen; search is one
+   sidebar tap away in Applications. */
+@media (max-width: 760px) {
+  .topbar-search {
+    display: none;
+  }
+}
+
+/* With the workspace switch and search sharing the bar, the name and role
+   give way first - the avatar still opens the same menu. */
+@media (max-width: 1100px) {
+  .topbar-leading ~ .topbar-user .topbar-user-text,
+  .topbar-search ~ .topbar-user .topbar-user-text {
+    display: none;
+  }
+
+  .topbar-leading ~ .topbar-user .topbar-user-button,
+  .topbar-search ~ .topbar-user .topbar-user-button {
+    padding: 4px;
+    gap: 4px;
+  }
+}
+
+.topbar-user-name,
+.topbar-user-role {
+  white-space: nowrap;
 }

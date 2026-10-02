@@ -1,45 +1,7 @@
-.admin-archive-subtitle {
-  margin: 0 0 20px;
+.admin-archive-reason {
+  display: block;
+  max-width: 34ch;
+  font-size: 13px;
+  line-height: 1.45;
   color: var(--color-text-secondary);
-  font-size: 0.9rem;
 }
-
-.admin-archive-extra-filter {
-  margin-bottom: 16px;
-}
-
-.form-error {
-  color: var(--color-status-red-text);
-  background: var(--color-status-red-bg);
-  border-radius: var(--radius-md);
-  padding: 10px 12px;
-  font-size: 0.85rem;
-  margin-bottom: 16px;
-}
-
-.admin-archive-cell {
-  display: flex;
-  flex-direction: column;
-}
-
-.admin-archive-name {
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.admin-archive-email {
-  color: var(--color-text-secondary);
-  font-size: 0.8rem;
-}
-
-.category-badge {
-  display: inline-block;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  padding: 4px 12px;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-

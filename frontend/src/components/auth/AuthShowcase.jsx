@@ -6,16 +6,19 @@ export default function AuthShowcase() {
     <section className="auth-showcase">
       <div className="auth-showcase-overlay" aria-hidden="true" />
       <div className="auth-showcase-brand">
-        <BcasSeal size={52} />
-        <div>
+        <BcasSeal size={44} />
+        <div className="auth-showcase-brand-text">
           <span className="auth-showcase-mark">BCAS</span>
-          <p className="auth-showcase-tagline">
-            Integrated Scholarship &amp; Admissions Application and Screening System
-          </p>
+          <span className="auth-showcase-tagline">Scholarship &amp; Admissions</span>
         </div>
       </div>
-      <p className="auth-showcase-motto">&ldquo;To climb the mountain, to kiss the cloud.&rdquo;</p>
-      <p className="auth-showcase-est">Serving students and their families since 2000.</p>
+      <div className="auth-showcase-footer">
+        <p className="auth-showcase-motto">&ldquo;To climb the mountain, to kiss the cloud.&rdquo;</p>
+        <p className="auth-showcase-est">
+          Integrated Scholarship &amp; Admissions Application and Screening System. Serving students and their
+          families since 2000.
+        </p>
+      </div>
     </section>
   );
 }

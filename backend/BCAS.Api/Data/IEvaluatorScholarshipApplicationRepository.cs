@@ -52,6 +52,11 @@ public interface IEvaluatorScholarshipApplicationRepository
         Guid decidedByUserId,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Applications at Status = 'Result', awaiting an Academic Head's decision, oldest first.</summary>
-    Task<IReadOnlyList<EvaluatorQueueApplication>> GetReadyForDecisionAsync(int take, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Applications at Status = 'Result', awaiting an Academic Head's
+    /// decision, oldest first - only those whose applicant is in the given
+    /// department (vw_ApplicantDepartments).
+    /// </summary>
+    Task<IReadOnlyList<EvaluatorQueueApplication>> GetReadyForDecisionAsync(
+        int take, string department, CancellationToken cancellationToken = default);
 }

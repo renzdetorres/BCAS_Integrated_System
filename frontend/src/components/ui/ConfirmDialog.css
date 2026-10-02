@@ -1,39 +1,46 @@
 .confirm-dialog-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(20, 30, 24, 0.45);
+  background: rgba(14, 30, 21, 0.42);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
   z-index: 100;
+  animation: ui-fade-in 180ms var(--ease-out);
 }
 
+/* Modals stay centered (they aren't anchored to a trigger), so the scale
+   runs from the middle. */
 .confirm-dialog {
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
   background: var(--color-surface);
-  border-radius: var(--radius-md);
-  box-shadow: 0 12px 32px rgba(16, 24, 16, 0.25);
-  padding: 22px 24px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-overlay);
+  padding: 24px;
+  animation: ui-dialog-in 220ms var(--ease-out);
 }
 
 .confirm-dialog h2 {
   margin: 0 0 8px;
-  font: var(--text-h2);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.35;
   color: var(--color-text-primary);
 }
 
 .confirm-dialog p {
   margin: 0;
   color: var(--color-text-secondary);
-  font-size: 0.92rem;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.55;
 }
 
 .confirm-dialog-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 22px;
+  margin-top: 24px;
 }

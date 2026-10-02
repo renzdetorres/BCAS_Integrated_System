@@ -32,7 +32,7 @@ public class UserRepository : IUserRepository
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
-SELECT u.UserId, u.FirstName, u.LastName, u.Email, u.PasswordHash, u.RoleId, r.RoleName, u.IsActive, u.CreatedAt, u.Department
+SELECT u.UserId, u.FirstName, u.LastName, u.Email, u.PasswordHash, u.RoleId, r.RoleName, u.IsActive, u.CreatedAt, u.Department, u.IsSuperAdmin
 FROM dbo.Users u
 JOIN dbo.Roles r ON r.RoleId = u.RoleId
 WHERE u.Email = @Email;";
@@ -49,7 +49,7 @@ WHERE u.Email = @Email;";
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
-SELECT u.UserId, u.FirstName, u.LastName, u.Email, u.PasswordHash, u.RoleId, r.RoleName, u.IsActive, u.CreatedAt, u.Department
+SELECT u.UserId, u.FirstName, u.LastName, u.Email, u.PasswordHash, u.RoleId, r.RoleName, u.IsActive, u.CreatedAt, u.Department, u.IsSuperAdmin
 FROM dbo.Users u
 JOIN dbo.Roles r ON r.RoleId = u.RoleId
 WHERE u.UserId = @UserId;";
@@ -104,7 +104,8 @@ OUTPUT
     @RoleName AS RoleName,
     inserted.IsActive,
     inserted.CreatedAt,
-    inserted.Department
+    inserted.Department,
+    inserted.IsSuperAdmin
 VALUES (@FirstName, @LastName, @Email, @PasswordHash, @RoleId, @Department);";
 
         await using var command = new SqlCommand(sql, connection);
@@ -137,7 +138,7 @@ VALUES (@FirstName, @LastName, @Email, @PasswordHash, @RoleId, @Department);";
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
-SELECT u.UserId, u.FirstName, u.LastName, u.Email, u.PasswordHash, u.RoleId, r.RoleName, u.IsActive, u.CreatedAt, u.Department
+SELECT u.UserId, u.FirstName, u.LastName, u.Email, u.PasswordHash, u.RoleId, r.RoleName, u.IsActive, u.CreatedAt, u.Department, u.IsSuperAdmin
 FROM dbo.Users u
 JOIN dbo.Roles r ON r.RoleId = u.RoleId
 ORDER BY u.CreatedAt DESC;";
@@ -172,7 +173,8 @@ OUTPUT
     r.RoleName,
     inserted.IsActive,
     inserted.CreatedAt,
-    inserted.Department
+    inserted.Department,
+    inserted.IsSuperAdmin
 FROM dbo.Users u
 JOIN dbo.Roles r ON r.RoleId = u.RoleId
 WHERE u.UserId = @UserId;";
@@ -214,7 +216,8 @@ OUTPUT
     @RoleName AS RoleName,
     inserted.IsActive,
     inserted.CreatedAt,
-    inserted.Department
+    inserted.Department,
+    inserted.IsSuperAdmin
 FROM dbo.Users u
 WHERE u.UserId = @UserId;";
 
@@ -263,7 +266,8 @@ OUTPUT
     r.RoleName,
     inserted.IsActive,
     inserted.CreatedAt,
-    inserted.Department
+    inserted.Department,
+    inserted.IsSuperAdmin
 FROM dbo.Users u
 JOIN dbo.Roles r ON r.RoleId = u.RoleId
 WHERE u.UserId = @UserId;";
@@ -301,6 +305,62 @@ WHERE UserId = @UserId;";
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
+    public async Task<User?> SetSuperAdminAsync(Guid userId, bool isSuperAdmin, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+UPDATE dbo.Users SET IsSuperAdmin = @IsSuperAdmin, UpdatedAt = SYSUTCDATETIME()
+WHERE UserId = @UserId;
+
+SELECT u.UserId, u.FirstName, u.LastName, u.Email, u.PasswordHash, u.RoleId, r.RoleName, u.IsActive, u.CreatedAt, u.Department, u.IsSuperAdmin
+FROM dbo.Users u
+JOIN dbo.Roles r ON r.RoleId = u.RoleId
+WHERE u.UserId = @UserId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@IsSuperAdmin", System.Data.SqlDbType.Bit) { Value = isSuperAdmin });
+        command.Parameters.Add(new SqlParameter("@UserId", System.Data.SqlDbType.UniqueIdentifier) { Value = userId });
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        return await reader.ReadAsync(cancellationToken) ? MapUser(reader) : null;
+    }
+
+    public async Task<int> CountActiveSuperAdminsAsync(CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+SELECT COUNT(*) FROM dbo.Users u
+JOIN dbo.Roles r ON r.RoleId = u.RoleId
+WHERE u.IsSuperAdmin = 1 AND u.IsActive = 1 AND r.RoleName = N'Admin';";
+
+        await using var command = new SqlCommand(sql, connection);
+        return (int)(await command.ExecuteScalarAsync(cancellationToken))!;
+    }
+
+    public async Task EnsureSuperAdminExistsAsync(CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        // Same rule as the schema migration, so a fresh install whose Admins
+        // were created after the migration ran still gets a Super Admin.
+        const string sql = @"
+IF NOT EXISTS (
+    SELECT 1 FROM dbo.Users u JOIN dbo.Roles r ON r.RoleId = u.RoleId
+    WHERE u.IsSuperAdmin = 1 AND u.IsActive = 1 AND r.RoleName = N'Admin'
+)
+    UPDATE dbo.Users SET IsSuperAdmin = 1, UpdatedAt = SYSUTCDATETIME()
+    WHERE UserId = (
+        SELECT TOP 1 u.UserId FROM dbo.Users u JOIN dbo.Roles r ON r.RoleId = u.RoleId
+        WHERE r.RoleName = N'Admin' AND u.IsActive = 1
+        ORDER BY u.CreatedAt ASC
+    );";
+
+        await using var command = new SqlCommand(sql, connection);
+        await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
     private static User MapUser(SqlDataReader reader) => new()
     {
         UserId = reader.GetGuid(reader.GetOrdinal("UserId")),
@@ -313,6 +373,7 @@ WHERE UserId = @UserId;";
         IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
         CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
         Department = reader.IsDBNull(reader.GetOrdinal("Department")) ? null : reader.GetString(reader.GetOrdinal("Department")),
+        IsSuperAdmin = reader.GetBoolean(reader.GetOrdinal("IsSuperAdmin")),
     };
 
     private static bool IsUniqueConstraintViolation(SqlException ex) =>

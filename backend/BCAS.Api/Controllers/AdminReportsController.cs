@@ -27,7 +27,7 @@ public class AdminReportsController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<EnrollmentListItemResponse>>> GetEnrollmentList(
         [FromQuery] string? program, [FromQuery] string? applicationType, CancellationToken cancellationToken)
     {
-        var items = await _reportsService.GetEnrollmentListAsync(program, applicationType, cancellationToken);
+        var items = await _reportsService.GetEnrollmentListAsync(program, applicationType, cancellationToken: cancellationToken);
         return Ok(items);
     }
 
@@ -37,7 +37,7 @@ public class AdminReportsController : ControllerBase
     public async Task<IActionResult> ExportEnrollmentList(
         [FromQuery] string? program, [FromQuery] string? applicationType, CancellationToken cancellationToken)
     {
-        var file = await _reportsService.ExportEnrollmentListAsync(program, applicationType, cancellationToken);
+        var file = await _reportsService.ExportEnrollmentListAsync(program, applicationType, cancellationToken: cancellationToken);
         return File(file, XlsxContentType, "enrollment-list.xlsx");
     }
 
@@ -83,7 +83,7 @@ public class AdminReportsController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<ScholarshipApplicantListItemResponse>>> GetScholarshipApplicantList(
         [FromQuery] string? scholarshipName, [FromQuery] string? status, CancellationToken cancellationToken)
     {
-        var items = await _reportsService.GetScholarshipApplicantListAsync(scholarshipName, status, cancellationToken);
+        var items = await _reportsService.GetScholarshipApplicantListAsync(scholarshipName, status, cancellationToken: cancellationToken);
         return Ok(items);
     }
 
@@ -93,7 +93,7 @@ public class AdminReportsController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<ScholarshipQualificationListItemResponse>>> GetScholarshipQualificationList(
         [FromQuery] string? verdict, CancellationToken cancellationToken)
     {
-        var items = await _reportsService.GetScholarshipQualificationListAsync(verdict, cancellationToken);
+        var items = await _reportsService.GetScholarshipQualificationListAsync(verdict, cancellationToken: cancellationToken);
         return Ok(items);
     }
 
@@ -103,7 +103,7 @@ public class AdminReportsController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<ScholarshipResultListItemResponse>>> GetScholarshipResultList(
         [FromQuery] string? decision, CancellationToken cancellationToken)
     {
-        var items = await _reportsService.GetScholarshipResultListAsync(decision, cancellationToken);
+        var items = await _reportsService.GetScholarshipResultListAsync(decision, cancellationToken: cancellationToken);
         return Ok(items);
     }
 
@@ -148,7 +148,7 @@ public class AdminReportsController : ControllerBase
     public async Task<ActionResult<ApplicationTrendResponse>> GetApplicationTrend(
         [FromQuery] string? program, [FromQuery] int weeks, CancellationToken cancellationToken)
     {
-        var trend = await _reportsService.GetApplicationTrendAsync(program, weeks, cancellationToken);
+        var trend = await _reportsService.GetApplicationTrendAsync(program, weeks, cancellationToken: cancellationToken);
         return Ok(trend);
     }
 
@@ -158,7 +158,7 @@ public class AdminReportsController : ControllerBase
     public async Task<ActionResult<ApplicationFunnelResponse>> GetApplicationFunnel(
         [FromQuery] string? program, CancellationToken cancellationToken)
     {
-        var funnel = await _reportsService.GetApplicationFunnelAsync(program, cancellationToken);
+        var funnel = await _reportsService.GetApplicationFunnelAsync(program, cancellationToken: cancellationToken);
         return Ok(funnel);
     }
 }

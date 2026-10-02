@@ -39,7 +39,7 @@ public class StaffProvisioningService : IStaffProvisioningService
             normalizedEmail,
             passwordHash,
             request.Role,
-            NullIfEmpty(request.Department),
+            DepartmentRules.ForRole(request.Role, request.Department),
             cancellationToken);
 
         _logger.LogInformation("Staff account created for {Email} with role {Role}", user.Email, user.RoleName);

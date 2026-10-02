@@ -18,15 +18,16 @@ public class AdminReportsService : IAdminReportsService
     }
 
     public async Task<IReadOnlyList<EnrollmentListItemResponse>> GetEnrollmentListAsync(
-        string? program, string? applicationType, CancellationToken cancellationToken = default)
+        string? program, string? applicationType, string? department = null, CancellationToken cancellationToken = default)
     {
-        var items = await _reportsRepository.GetEnrollmentListAsync(program, applicationType, cancellationToken);
+        var items = await _reportsRepository.GetEnrollmentListAsync(program, applicationType, department, cancellationToken);
         return items.Select(i => i.ToResponse()).ToList();
     }
 
-    public async Task<EnrollmentSummaryResponse> GetEnrollmentSummaryAsync(string? program = null, CancellationToken cancellationToken = default)
+    public async Task<EnrollmentSummaryResponse> GetEnrollmentSummaryAsync(
+        string? program = null, string? department = null, CancellationToken cancellationToken = default)
     {
-        var enrolled = await _reportsRepository.GetEnrollmentListAsync(program, null, cancellationToken);
+        var enrolled = await _reportsRepository.GetEnrollmentListAsync(program, null, department, cancellationToken);
 
         var byProgram = enrolled
             .GroupBy(e => e.CourseAppliedFor, StringComparer.Ordinal)
@@ -50,9 +51,10 @@ public class AdminReportsService : IAdminReportsService
         };
     }
 
-    public async Task<IReadOnlyList<SectionFileResponse>> GetSectionFilesAsync(string? program = null, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<SectionFileResponse>> GetSectionFilesAsync(
+        string? program = null, string? department = null, CancellationToken cancellationToken = default)
     {
-        var enrolled = await _reportsRepository.GetEnrollmentListAsync(program, null, cancellationToken);
+        var enrolled = await _reportsRepository.GetEnrollmentListAsync(program, null, department, cancellationToken);
 
         return enrolled
             .GroupBy(e => e.CourseAppliedFor, StringComparer.Ordinal)
@@ -66,9 +68,9 @@ public class AdminReportsService : IAdminReportsService
     }
 
     public async Task<byte[]> ExportEnrollmentListAsync(
-        string? program, string? applicationType, CancellationToken cancellationToken = default)
+        string? program, string? applicationType, string? department = null, CancellationToken cancellationToken = default)
     {
-        var items = await GetEnrollmentListAsync(program, applicationType, cancellationToken);
+        var items = await GetEnrollmentListAsync(program, applicationType, department, cancellationToken);
 
         var headers = new List<string> { "Applicant", "Email", "Type", "Program", "Previous School", "Submitted", "Reservation Fee", "Reserved At" };
         var rows = items.Select(i => (IReadOnlyList<string>)new List<string>
@@ -86,9 +88,10 @@ public class AdminReportsService : IAdminReportsService
         return XlsxWriter.Write("Enrollment List", headers, rows);
     }
 
-    public async Task<byte[]> ExportEnrollmentSummaryAsync(string? program = null, CancellationToken cancellationToken = default)
+    public async Task<byte[]> ExportEnrollmentSummaryAsync(
+        string? program = null, string? department = null, CancellationToken cancellationToken = default)
     {
-        var summary = await GetEnrollmentSummaryAsync(program, cancellationToken);
+        var summary = await GetEnrollmentSummaryAsync(program, department, cancellationToken);
 
         var headers = new List<string> { "Summary of Enrollment" };
         var rows = new List<IReadOnlyList<string>>
@@ -107,9 +110,10 @@ public class AdminReportsService : IAdminReportsService
         return XlsxWriter.Write("Enrollment Summary", headers, rows);
     }
 
-    public async Task<byte[]> ExportSectionFilesAsync(string? program = null, CancellationToken cancellationToken = default)
+    public async Task<byte[]> ExportSectionFilesAsync(
+        string? program = null, string? department = null, CancellationToken cancellationToken = default)
     {
-        var sections = await GetSectionFilesAsync(program, cancellationToken);
+        var sections = await GetSectionFilesAsync(program, department, cancellationToken);
 
         var headers = new List<string> { "File per Section" };
         var rows = new List<IReadOnlyList<string>>();
@@ -128,23 +132,23 @@ public class AdminReportsService : IAdminReportsService
     }
 
     public async Task<IReadOnlyList<ScholarshipApplicantListItemResponse>> GetScholarshipApplicantListAsync(
-        string? scholarshipName, string? status, CancellationToken cancellationToken = default)
+        string? scholarshipName, string? status, string? department = null, CancellationToken cancellationToken = default)
     {
-        var items = await _reportsRepository.GetScholarshipApplicantListAsync(scholarshipName, status, cancellationToken);
+        var items = await _reportsRepository.GetScholarshipApplicantListAsync(scholarshipName, status, department, cancellationToken);
         return items.Select(i => i.ToResponse()).ToList();
     }
 
     public async Task<IReadOnlyList<ScholarshipQualificationListItemResponse>> GetScholarshipQualificationListAsync(
-        string? verdict, CancellationToken cancellationToken = default)
+        string? verdict, string? department = null, CancellationToken cancellationToken = default)
     {
-        var items = await _reportsRepository.GetScholarshipQualificationListAsync(verdict, cancellationToken);
+        var items = await _reportsRepository.GetScholarshipQualificationListAsync(verdict, department, cancellationToken);
         return items.Select(i => i.ToResponse()).ToList();
     }
 
     public async Task<IReadOnlyList<ScholarshipResultListItemResponse>> GetScholarshipResultListAsync(
-        string? decision, CancellationToken cancellationToken = default)
+        string? decision, string? department = null, CancellationToken cancellationToken = default)
     {
-        var items = await _reportsRepository.GetScholarshipResultListAsync(decision, cancellationToken);
+        var items = await _reportsRepository.GetScholarshipResultListAsync(decision, department, cancellationToken);
         return items.Select(i => i.ToResponse()).ToList();
     }
 
@@ -166,7 +170,7 @@ public class AdminReportsService : IAdminReportsService
     }
 
     public async Task<ApplicationTrendResponse> GetApplicationTrendAsync(
-        string? program, int weeks, CancellationToken cancellationToken = default)
+        string? program, int weeks, string? department = null, CancellationToken cancellationToken = default)
     {
         var clampedWeeks = Math.Clamp(weeks <= 0 ? ReportTrendConstants.DefaultTrendWeeks : weeks, 1, ReportTrendConstants.MaxTrendWeeks);
 
@@ -174,7 +178,7 @@ public class AdminReportsService : IAdminReportsService
         var currentWeekStart = today.AddDays(-DayOfWeekOffset(today));
         var sinceWeekStart = currentWeekStart.AddDays(-7 * (clampedWeeks - 1));
 
-        var rows = await _reportsRepository.GetWeeklyApplicationCountsAsync(sinceWeekStart, program, cancellationToken);
+        var rows = await _reportsRepository.GetWeeklyApplicationCountsAsync(sinceWeekStart, program, department, cancellationToken);
         var countsByWeek = rows
             .GroupBy(r => r.WeekStart)
             .ToDictionary(
@@ -198,10 +202,11 @@ public class AdminReportsService : IAdminReportsService
         return new ApplicationTrendResponse { Weekly = weekly };
     }
 
-    public async Task<ApplicationFunnelResponse> GetApplicationFunnelAsync(string? program, CancellationToken cancellationToken = default)
+    public async Task<ApplicationFunnelResponse> GetApplicationFunnelAsync(
+        string? program, string? department = null, CancellationToken cancellationToken = default)
     {
-        var admissionCounts = await _reportsRepository.GetAdmissionFunnelCountsAsync(program, cancellationToken);
-        var scholarshipCounts = await _reportsRepository.GetScholarshipFunnelCountsAsync(cancellationToken);
+        var admissionCounts = await _reportsRepository.GetAdmissionFunnelCountsAsync(program, department, cancellationToken);
+        var scholarshipCounts = await _reportsRepository.GetScholarshipFunnelCountsAsync(department, cancellationToken);
 
         return new ApplicationFunnelResponse
         {

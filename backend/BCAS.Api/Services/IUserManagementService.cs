@@ -15,4 +15,11 @@ public interface IUserManagementService
     /// DuplicateEmailException.
     /// </summary>
     Task<UserProfileResponse> UpdateUserAsync(Guid userId, UpdateUserRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Grants or revokes Super Admin on an active Admin account. Caller must
+    /// be a Super Admin (SuperAdminRequiredException); the last active Super
+    /// Admin can't be revoked (InvalidSuperAdminChangeException).
+    /// </summary>
+    Task<UserProfileResponse> SetSuperAdminAsync(Guid callerUserId, Guid userId, bool isSuperAdmin, CancellationToken cancellationToken = default);
 }

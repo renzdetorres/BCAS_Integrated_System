@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useRef, useState } from "react";
+import Icon from "../components/ui/Icon.jsx";
 import "../components/ui/Toast.css";
 
 const ToastContext = createContext(undefined);
@@ -27,9 +28,12 @@ export function ToastProvider({ children }) {
       <div className="toast-viewport" role="status" aria-live="polite">
         {toasts.map((toast) => (
           <div key={toast.id} className={`toast toast-${toast.tone}`}>
-            <span>{toast.message}</span>
+            <span className="toast-icon" aria-hidden="true">
+              <Icon name={toast.tone === "error" ? "x" : "check"} size={13} />
+            </span>
+            <span className="toast-message">{toast.message}</span>
             <button type="button" className="toast-dismiss" onClick={() => dismiss(toast.id)} aria-label="Dismiss">
-              &times;
+              <Icon name="x" size={14} />
             </button>
           </div>
         ))}

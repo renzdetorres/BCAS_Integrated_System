@@ -262,6 +262,7 @@ WHEN NOT MATCHED THEN
     /// <summary>Applications that have reached the final workflow stage (Result) and are awaiting an Academic Head's decision, oldest first.</summary>
     public async Task<IReadOnlyList<EvaluatorQueueApplication>> GetReadyForDecisionAsync(
         int take,
+        string department,
         CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
@@ -272,11 +273,14 @@ SELECT TOP (@Take)
 FROM dbo.ScholarshipApplications sa
 JOIN dbo.Users u ON u.UserId = sa.UserId
 JOIN dbo.Scholarships sc ON sc.ScholarshipId = sa.ScholarshipId
+JOIN dbo.vw_ApplicantDepartments d ON d.UserId = sa.UserId
 WHERE sa.Status = N'Result'
+  AND d.Department = @Department
 ORDER BY sa.UpdatedAt ASC;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.Add(new SqlParameter("@Take", SqlDbType.Int) { Value = take });
+        command.Parameters.Add(new SqlParameter("@Department", SqlDbType.NVarChar, 100) { Value = department });
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 

@@ -6,8 +6,9 @@ export default function RequireAuth() {
 
   if (isLoading) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", padding: "48px" }}>
-        Loading...
+      <div className="app-boot" role="status">
+        <span className="app-boot-spinner" aria-hidden="true" />
+        Loading your workspace...
       </div>
     );
   }

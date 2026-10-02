@@ -58,4 +58,13 @@ public interface IUserRepository
         CancellationToken cancellationToken = default);
 
     Task UpdatePasswordHashAsync(Guid userId, string passwordHash, CancellationToken cancellationToken = default);
+
+    /// <summary>Grants or revokes Super Admin; returns the updated account, or null if it doesn't exist.</summary>
+    Task<User?> SetSuperAdminAsync(Guid userId, bool isSuperAdmin, CancellationToken cancellationToken = default);
+
+    /// <summary>Active Admin accounts that are Super Admins.</summary>
+    Task<int> CountActiveSuperAdminsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>If no active Admin is a Super Admin, makes the earliest-created active Admin one.</summary>
+    Task EnsureSuperAdminExistsAsync(CancellationToken cancellationToken = default);
 }

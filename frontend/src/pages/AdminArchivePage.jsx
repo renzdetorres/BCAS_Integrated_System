@@ -1,29 +1,22 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { searchApplications } from "../api/adminApplicationsApi.js";
+import { ARCHIVABLE_STATUSES, searchApplications } from "../api/adminApplicationsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import ApplicationDetailModal from "../components/ApplicationDetailModal.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
-import Card from "../components/ui/Card.jsx";
-import DataTable from "../components/ui/DataTable.jsx";
+import DataTable, { PersonCell, RowAction } from "../components/ui/DataTable.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
+import { DEPARTMENT_OPTIONS } from "../config/departments.js";
+import { formatDate } from "../utils/format.js";
 import "./AdminArchivePage.css";
 
-const initialFilters = { search: "", category: "", program: "" };
-
-function formatDate(isoDateTime) {
-  return new Date(isoDateTime).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
+const initialFilters = { search: "", category: "", status: "", department: "" };
 
 export default function AdminArchivePage() {
-  const navigate = useNavigate();
   const [filters, setFilters] = useState(initialFilters);
   const [applications, setApplications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [viewing, setViewing] = useState(null);
 
   const loadArchivedApplications = useCallback(async (activeFilters) => {
     setIsLoading(true);
@@ -43,32 +36,28 @@ export default function AdminArchivePage() {
     return () => clearTimeout(timeout);
   }, [filters, loadArchivedApplications]);
 
+  function setFilter(key, value) {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  }
+
   const columns = [
     {
       key: "applicant",
       header: "Applicant",
       accessor: (row) => row.applicantName,
       sortable: true,
-      render: (row) => (
-        <div className="admin-archive-cell">
-          <span className="admin-archive-name">{row.applicantName}</span>
-          <span className="admin-archive-email">{row.applicantEmail}</span>
-        </div>
-      ),
+      render: (row) => <PersonCell name={row.applicantName} detail={row.applicantEmail} />,
     },
     {
-      key: "category",
-      header: "Type",
-      accessor: (row) => row.category,
+      key: "program",
+      header: "Application",
+      accessor: (row) => row.courseAppliedFor ?? row.scholarshipName,
       sortable: true,
-      render: (row) => (
-        <span className={`category-badge category-${row.category.toLowerCase()}`}>{row.category}</span>
-      ),
+      render: (row) => <PersonCell name={row.courseAppliedFor ?? row.scholarshipName} detail={row.category} />,
     },
-    { key: "program", header: "Program", render: (row) => row.courseAppliedFor ?? row.scholarshipName },
     {
       key: "status",
-      header: "Status",
+      header: "Final status",
       accessor: (row) => row.status,
       sortable: true,
       render: (row) => <StatusBadge status={row.status} adminContext />,
@@ -80,60 +69,77 @@ export default function AdminArchivePage() {
       sortable: true,
       render: (row) => formatDate(row.archivedAt),
     },
-    { key: "archiveReason", header: "Reason", render: (row) => row.archiveReason ?? "—" },
+    {
+      key: "archiveReason",
+      header: "Reason",
+      render: (row) =>
+        row.archiveReason ? (
+          <span className="admin-archive-reason">{row.archiveReason}</span>
+        ) : (
+          <span className="ui-cell-muted">-</span>
+        ),
+    },
+    {
+      key: "action",
+      header: "Action",
+      align: "right",
+      searchable: false,
+      render: (row) => (
+        <RowAction
+          label="View record"
+          onClick={() => setViewing(row)}
+          ariaLabel={`View ${row.applicantName}'s archived ${row.category.toLowerCase()} application`}
+        />
+      ),
+    },
   ];
 
   return (
-    <AppLayout title="Records Archive">
-      <Card tier="data">
-        <p className="admin-archive-subtitle">
-          Completed/inactive admission and scholarship applications archived to support the school's document
-          disposal process. Nothing here is deleted - every record (and, for an Admission application, its
-          documents) remains retrievable for the school's 5-year retention practice.
-        </p>
+    <AppLayout>
+      <DataTable
+        title="Records Archive"
+        subtitle="Completed admission and scholarship applications moved out of the working list. Nothing here is deleted: every record, and an admission application's documents, stays retrievable for the school's 5-year retention."
+        columns={columns}
+        rows={applications}
+        getRowKey={(row) => row.applicationId}
+        isLoading={isLoading}
+        errorMessage={errorMessage}
+        emptyMessage="No archived records match these filters."
+        onRowClick={(row) => setViewing(row)}
+        search={{
+          value: filters.search,
+          onChange: (value) => setFilter("search", value),
+          placeholder: "Search by name, email, or program",
+        }}
+        filters={[
+          {
+            key: "category",
+            label: "All types",
+            value: filters.category,
+            onChange: (value) => setFilter("category", value),
+            options: [
+              { value: "Admission", label: "Admission" },
+              { value: "Scholarship", label: "Scholarship" },
+            ],
+          },
+          {
+            key: "status",
+            label: "Any final status",
+            value: filters.status,
+            onChange: (value) => setFilter("status", value),
+            options: ARCHIVABLE_STATUSES.map((status) => ({ value: status, label: status })),
+          },
+          {
+            key: "department",
+            label: "All departments",
+            value: filters.department,
+            onChange: (value) => setFilter("department", value),
+            options: [...DEPARTMENT_OPTIONS, "Unassigned"].map((d) => ({ value: d, label: d })),
+          },
+        ]}
+      />
 
-        {errorMessage && (
-          <p className="form-error" role="alert">
-            {errorMessage}
-          </p>
-        )}
-
-        <div className="admin-archive-extra-filter">
-          <input
-            className="ui-input ui-datatable-search"
-            type="text"
-            placeholder="Filter by program / scholarship"
-            value={filters.program}
-            onChange={(event) => setFilters((prev) => ({ ...prev, program: event.target.value }))}
-          />
-        </div>
-
-        <DataTable
-          columns={columns}
-          rows={applications}
-          getRowKey={(row) => row.applicationId}
-          isLoading={isLoading}
-          emptyMessage="No archived records match these filters."
-          onRowClick={(row) => navigate(`/admin/applications/${row.applicationId}`)}
-          search={{
-            value: filters.search,
-            onChange: (value) => setFilters((prev) => ({ ...prev, search: value })),
-            placeholder: "Search by applicant name or email",
-          }}
-          filters={[
-            {
-              key: "category",
-              label: "All types",
-              value: filters.category,
-              onChange: (value) => setFilters((prev) => ({ ...prev, category: value })),
-              options: [
-                { value: "Admission", label: "Admission" },
-                { value: "Scholarship", label: "Scholarship" },
-              ],
-            },
-          ]}
-        />
-      </Card>
+      <ApplicationDetailModal application={viewing} onClose={() => setViewing(null)} />
     </AppLayout>
   );
 }

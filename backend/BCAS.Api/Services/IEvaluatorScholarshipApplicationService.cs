@@ -54,8 +54,13 @@ public interface IEvaluatorScholarshipApplicationService
         RecordScholarshipFinalDecisionRequest request,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Applications at Status = 'Result', awaiting an Academic Head's decision, oldest first.</summary>
+    /// <summary>
+    /// Applications at Status = 'Result', awaiting an Academic Head's
+    /// decision, oldest first - only those whose applicant is in the given
+    /// department (the calling Academic Head's).
+    /// </summary>
     Task<IReadOnlyList<EvaluatorQueueApplicationResponse>> GetReadyForDecisionAsync(
         int take,
+        string department,
         CancellationToken cancellationToken = default);
 }
