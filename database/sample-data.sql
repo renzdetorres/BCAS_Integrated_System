@@ -378,6 +378,23 @@ WHERE EXISTS (SELECT 1 FROM dbo.ExamSchedules es WHERE es.ExamScheduleId = e.Exa
   AND NOT EXISTS (SELECT 1 FROM dbo.ExamScheduleSelections x WHERE x.UserId = u.UserId);
 
 -- -----------------------------------------------------------------------------
+-- Email: the sample addresses don't exist, so every sample account opts out
+-- of every notification type. Without this the reminder job keeps trying to
+-- email them (and logs an SMTP failure each time), and real mail would go
+-- to fake addresses wherever SMTP is configured.
+-- -----------------------------------------------------------------------------
+INSERT INTO dbo.NotificationPreferences (UserId, NotificationType, IsEnabled)
+SELECT u.UserId, t.NotificationType, 0
+FROM dbo.Users u
+CROSS JOIN (VALUES
+    (N'ApplicationReceived'), (N'DocumentFlagged'), (N'ExamSchedule'), (N'ExamPermitAvailable'),
+    (N'ApplicationResult'), (N'ScholarshipResult'), (N'Announcement'), (N'ExamReminder'),
+    (N'MissingDocumentReminder'), (N'InquiryReply')
+) t (NotificationType)
+WHERE u.Email LIKE N'%@sample.bcas.test'
+  AND NOT EXISTS (SELECT 1 FROM dbo.NotificationPreferences p WHERE p.UserId = u.UserId AND p.NotificationType = t.NotificationType);
+
+-- -----------------------------------------------------------------------------
 -- School calendar. Both semesters are outside today's date on purpose: an
 -- ongoing semester locks scholarship edits (see the semester lock), which
 -- would get in the way of trying things out.
