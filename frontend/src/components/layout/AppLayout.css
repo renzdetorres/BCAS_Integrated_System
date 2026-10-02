@@ -69,7 +69,6 @@
 .app-layout-header h1 {
   font: var(--text-page-title);
   letter-spacing: -0.02em;
-  font-variation-settings: "opsz" 48;
 }
 
 @media (max-width: 640px) {

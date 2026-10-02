@@ -15,4 +15,7 @@ public interface IAdminDocumentsRepository
         string? status,
         string? documentType,
         CancellationToken cancellationToken = default);
+
+    /// <summary>One document's stored file, or null if no such document exists.</summary>
+    Task<DocumentFile?> GetFileAsync(Guid documentId, CancellationToken cancellationToken = default);
 }

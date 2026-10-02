@@ -1,0 +1,56 @@
+.ui-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid;
+  border-radius: var(--radius-md);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.ui-notice-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ui-notice-title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.ui-notice-text {
+  margin-top: 2px;
+}
+
+.ui-notice-text p {
+  margin: 0;
+}
+
+.ui-notice-info {
+  background: var(--color-primary-tint);
+  border-color: rgba(45, 106, 79, 0.2);
+  color: var(--color-text-primary);
+}
+
+.ui-notice-info .ui-notice-icon {
+  color: var(--color-primary-light);
+}
+
+.ui-notice-warning {
+  background: var(--color-status-amber-bg);
+  border-color: rgba(143, 90, 11, 0.22);
+  color: var(--color-status-amber-text);
+}
+
+.ui-notice-danger {
+  background: var(--color-status-red-bg);
+  border-color: rgba(180, 40, 40, 0.2);
+  color: var(--color-status-red-text);
+}
+
+.ui-notice-success {
+  background: var(--color-status-green-bg);
+  border-color: rgba(27, 107, 58, 0.2);
+  color: var(--color-status-green-text);
+}

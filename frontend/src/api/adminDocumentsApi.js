@@ -22,3 +22,21 @@ export async function searchDocuments({ search, status, documentType } = {}) {
 
   return response.json();
 }
+
+/**
+ * One document's uploaded file as a Blob, for the in-page preview. Fetched
+ * with credentials (the auth cookie) rather than linked directly, so the
+ * file never needs a public URL.
+ */
+export async function getDocumentFile(documentId) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/documents/${documentId}/file`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to load this file."), response.status);
+  }
+
+  return response.blob();
+}

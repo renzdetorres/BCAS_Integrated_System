@@ -152,28 +152,35 @@ OUTPUT inserted.ApplicationId, inserted.UserId, inserted.ScholarshipId, inserted
        inserted.GradeAverage, inserted.Status, inserted.SubmittedAt
 WHERE ApplicationId = @ApplicationId;";
 
-            await using var updateCommand = new SqlCommand(updateSql, connection, transaction);
-            updateCommand.Parameters.Add(new SqlParameter("@ApplicationId", SqlDbType.UniqueIdentifier) { Value = applicationId });
-
-            await using var updateReader = await updateCommand.ExecuteReaderAsync(cancellationToken);
-            await updateReader.ReadAsync(cancellationToken);
-
-            // Same reasoning as InsertApplicationAsync: UPDATE...OUTPUT has
-            // no ScholarshipName column (it isn't stored on this table), so
-            // build the object field-by-field rather than reuse
-            // MapApplication (which expects a joined ScholarshipName column
-            // from GetByUserIdAsync's SELECT, not present here).
-            var application = new ScholarshipApplication
+            // The reader must be scoped (and disposed) before CommitAsync
+            // below - SQL Server refuses to commit a transaction while a
+            // DataReader from it is still open.
+            ScholarshipApplication application;
+            await using (var updateCommand = new SqlCommand(updateSql, connection, transaction))
             {
-                ApplicationId = updateReader.GetGuid(updateReader.GetOrdinal("ApplicationId")),
-                UserId = updateReader.GetGuid(updateReader.GetOrdinal("UserId")),
-                ScholarshipId = updateReader.GetInt32(updateReader.GetOrdinal("ScholarshipId")),
-                ScholarshipName = reserved.Name,
-                ScholarshipType = updateReader.GetString(updateReader.GetOrdinal("ScholarshipType")),
-                GradeAverage = updateReader.GetDecimal(updateReader.GetOrdinal("GradeAverage")),
-                Status = updateReader.GetString(updateReader.GetOrdinal("Status")),
-                SubmittedAt = updateReader.GetDateTime(updateReader.GetOrdinal("SubmittedAt")),
-            };
+                updateCommand.Parameters.Add(new SqlParameter("@ApplicationId", SqlDbType.UniqueIdentifier) { Value = applicationId });
+
+                await using var updateReader = await updateCommand.ExecuteReaderAsync(cancellationToken);
+                await updateReader.ReadAsync(cancellationToken);
+
+                // Same reasoning as InsertApplicationAsync: UPDATE...OUTPUT
+                // has no ScholarshipName column (it isn't stored on this
+                // table), so build the object field-by-field rather than
+                // reuse MapApplication (which expects a joined
+                // ScholarshipName column from GetByUserIdAsync's SELECT,
+                // not present here).
+                application = new ScholarshipApplication
+                {
+                    ApplicationId = updateReader.GetGuid(updateReader.GetOrdinal("ApplicationId")),
+                    UserId = updateReader.GetGuid(updateReader.GetOrdinal("UserId")),
+                    ScholarshipId = updateReader.GetInt32(updateReader.GetOrdinal("ScholarshipId")),
+                    ScholarshipName = reserved.Name,
+                    ScholarshipType = updateReader.GetString(updateReader.GetOrdinal("ScholarshipType")),
+                    GradeAverage = updateReader.GetDecimal(updateReader.GetOrdinal("GradeAverage")),
+                    Status = updateReader.GetString(updateReader.GetOrdinal("Status")),
+                    SubmittedAt = updateReader.GetDateTime(updateReader.GetOrdinal("SubmittedAt")),
+                };
+            }
 
             await transaction.CommitAsync(cancellationToken);
             return application;

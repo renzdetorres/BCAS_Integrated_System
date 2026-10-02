@@ -1,124 +1,89 @@
-.manage-users-subtitle {
-  margin: 0 0 24px;
-  color: var(--color-text-secondary);
-  font-size: 0.9rem;
-}
-
-.form-error {
-  color: var(--color-status-red-text);
-  background: var(--color-status-red-bg);
-  border-radius: var(--radius-md);
-  padding: 10px 12px;
-  font-size: 0.85rem;
-  margin-bottom: 16px;
-}
-
-.manage-users-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-}
-
-.manage-users-table th,
-.manage-users-table td {
-  text-align: left;
-  padding: 10px 8px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.manage-users-table th {
-  color: var(--color-text-secondary);
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.toggle-activate,
-.toggle-deactivate {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.toggle-activate {
-  background: var(--color-status-green-bg);
-  color: var(--color-status-green-text);
-}
-
-.toggle-deactivate {
-  background: var(--color-status-red-bg);
-  color: var(--color-status-red-text);
-}
-
-.toggle-activate:disabled,
-.toggle-deactivate:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.row-actions,
-.edit-actions {
-  display: flex;
+.account-name {
+  display: inline-flex;
+  align-items: center;
   gap: 8px;
-}
-
-.edit-trigger,
-.edit-save,
-.edit-cancel {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.85rem;
   font-weight: 600;
-  cursor: pointer;
-}
-
-.edit-trigger {
-  background: var(--color-surface);
   color: var(--color-text-primary);
-  border: 1px solid var(--color-border);
 }
 
-.edit-trigger:hover {
-  background: var(--color-bg);
-  border-color: var(--color-primary);
+.account-you,
+.account-super-tag {
+  padding: 1px 7px;
+  border-radius: var(--radius-sm);
+  font-size: 11.5px;
+  font-weight: 600;
 }
 
-.edit-save {
-  background: var(--color-status-green-bg);
-  color: var(--color-status-green-text);
-}
-
-.edit-cancel {
+.account-you {
   background: var(--color-status-gray-bg);
   color: var(--color-status-gray-text);
 }
 
-.edit-save:disabled,
-.edit-cancel:disabled {
-  opacity: 0.5;
+.account-role {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.account-super-tag {
+  background: var(--color-primary-tint-strong);
+  color: var(--color-primary);
+}
+
+.account-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.account-status-button {
+  min-height: 32px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.account-status-button:hover:not(:disabled) {
+  background: var(--color-surface-subtle);
+  color: var(--color-text-primary);
+}
+
+.account-status-button:disabled {
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
-.edit-row {
-  background: var(--color-bg);
-}
-
-.edit-input {
-  width: 100%;
-  max-width: 140px;
-  padding: 6px 8px;
+.account-super-admin {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 0.85rem;
-  margin-bottom: 4px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-.edit-row select.edit-input {
-  max-width: 160px;
+.account-super-admin input {
+  margin-top: 3px;
+  accent-color: var(--color-primary);
+}
+
+.account-super-admin small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
 }
 
 /* An Academic Head with no department sees nothing at all - flagged so an

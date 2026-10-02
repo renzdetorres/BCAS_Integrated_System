@@ -47,9 +47,8 @@
   gap: 8px;
   margin-bottom: 32px;
   color: var(--color-primary);
-  font-family: var(--font-serif);
   font-size: 21px;
-  font-weight: 650;
+  font-weight: 600;
   letter-spacing: 0.03em;
 }
 
@@ -62,7 +61,6 @@
 .auth-form-panel h1 {
   margin: 0 0 8px;
   font: var(--text-display);
-  font-variation-settings: "opsz" 60;
   letter-spacing: -0.02em;
   color: var(--color-text-primary);
 }

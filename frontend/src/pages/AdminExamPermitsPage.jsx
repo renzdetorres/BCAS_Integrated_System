@@ -1,36 +1,84 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { listExamPermits, releaseExamPermit } from "../api/adminExamPermitsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import { useToast } from "../context/ToastContext.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
-import Card from "../components/ui/Card.jsx";
+import DataTable, { PersonCell, RowAction } from "../components/ui/DataTable.jsx";
+import Modal, { DetailList } from "../components/ui/Modal.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
+import { formatCalendarDate, formatDateTime, formatTime } from "../utils/format.js";
 import "./AdminExamPermitsPage.css";
 
-function formatDate(isoDate) {
-  return new Date(`${isoDate}T00:00:00`).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+function examLabel(permit) {
+  return `${formatCalendarDate(permit.examDate)} at ${formatTime(permit.examTime)}`;
 }
 
-function formatDateTime(isoDateTime) {
-  return new Date(isoDateTime).toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+function PermitModal({ permit, isReleasing, onRelease, onClose }) {
+  const canRelease = !permit.isReleased && permit.documentsVerified;
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      busy={isReleasing}
+      title={permit.isReleased ? `Exam permit ${permit.permitNumber}` : "Exam permit"}
+      subtitle={`${permit.applicantName} · ${permit.applicantEmail}`}
+      footer={
+        <>
+          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isReleasing}>
+            Close
+          </button>
+          {!permit.isReleased ? (
+            <button type="button" className="btn btn-primary" onClick={() => onRelease(permit)} disabled={!canRelease || isReleasing}>
+              {isReleasing ? "Releasing..." : "Generate & release permit"}
+            </button>
+          ) : null}
+        </>
+      }
+    >
+      <DetailList
+        items={[
+          {
+            label: "Permit",
+            value: permit.isReleased ? (
+              <span className="permit-number">{permit.permitNumber}</span>
+            ) : (
+              <StatusBadge status="Pending" label="Not released" />
+            ),
+          },
+          { label: "Released", value: permit.isReleased ? formatDateTime(permit.releasedAt) : "Not yet" },
+          { label: "Exam date", value: formatCalendarDate(permit.examDate) },
+          { label: "Exam time", value: formatTime(permit.examTime) },
+          { label: "Venue", value: permit.venue },
+          { label: "Day type", value: permit.dayType },
+          {
+            label: "Required documents",
+            value: (
+              <StatusBadge
+                status={permit.documentsVerified ? "Verified" : "Pending"}
+                label={permit.documentsVerified ? "All verified" : "Not all verified"}
+              />
+            ),
+          },
+        ]}
+      />
+      {!permit.isReleased && !permit.documentsVerified ? (
+        <p className="permit-blocked">
+          The permit can be released once Support Staff have verified every required document for this applicant.
+        </p>
+      ) : null}
+    </Modal>
+  );
 }
 
 export default function AdminExamPermitsPage() {
+  const { showToast } = useToast();
   const [permits, setPermits] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
-  const [pendingReleaseUserId, setPendingReleaseUserId] = useState(null);
-  const [releaseError, setReleaseError] = useState(null);
-  const [search, setSearch] = useState("");
+  const [releasingUserId, setReleasingUserId] = useState(null);
+  const [viewing, setViewing] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [documentsFilter, setDocumentsFilter] = useState("");
 
   const loadPermits = useCallback(async () => {
     setIsLoading(true);
@@ -50,135 +98,139 @@ export default function AdminExamPermitsPage() {
   }, [loadPermits]);
 
   async function handleRelease(permit) {
-    setPendingReleaseUserId(permit.userId);
-    setReleaseError(null);
+    setReleasingUserId(permit.userId);
     try {
       const updated = await releaseExamPermit(permit.userId);
-      setPermits((prev) => (prev.map((p) => (p.userId === updated.userId ? updated : p))));
+      setPermits((prev) => prev.map((p) => (p.userId === updated.userId ? updated : p)));
+      setViewing(updated);
+      showToast(`Permit ${updated.permitNumber} released to ${updated.applicantName}.`);
     } catch (error) {
-      setReleaseError(error instanceof ApiError ? error.message : "Failed to release the exam permit.");
+      showToast(error instanceof ApiError ? error.message : "Failed to release the exam permit.", "error");
     } finally {
-      setPendingReleaseUserId(null);
+      setReleasingUserId(null);
     }
   }
 
-  const filtered = search.trim()
-    ? permits.filter((p) => {
-        const q = search.trim().toLowerCase();
-        return p.applicantName.toLowerCase().includes(q) || p.applicantEmail.toLowerCase().includes(q);
-      })
-    : permits;
-  const pending = filtered.filter((p) => !p.isReleased);
-  const released = filtered.filter((p) => p.isReleased);
+  const rows = useMemo(
+    () =>
+      permits.filter(
+        (p) =>
+          (!statusFilter || (statusFilter === "released" ? p.isReleased : !p.isReleased)) &&
+          (!documentsFilter || (documentsFilter === "verified" ? p.documentsVerified : !p.documentsVerified)),
+      ),
+    [permits, statusFilter, documentsFilter],
+  );
+
+  const pendingCount = permits.filter((p) => !p.isReleased).length;
+  const readyCount = permits.filter((p) => !p.isReleased && p.documentsVerified).length;
+  const releasedCount = permits.length - pendingCount;
+
+  const columns = [
+    {
+      key: "applicant",
+      header: "Applicant",
+      accessor: (row) => `${row.applicantName} ${row.applicantEmail}`,
+      sortable: true,
+      render: (row) => <PersonCell name={row.applicantName} detail={row.applicantEmail} />,
+    },
+    {
+      key: "exam",
+      header: "Exam",
+      accessor: (row) => `${row.examDate}T${row.examTime} ${row.venue}`,
+      sortable: true,
+      render: (row) => <PersonCell name={examLabel(row)} detail={row.venue} />,
+    },
+    {
+      key: "documents",
+      header: "Documents",
+      accessor: (row) => (row.documentsVerified ? "Verified" : "Pending"),
+      sortable: true,
+      render: (row) => (
+        <StatusBadge
+          status={row.documentsVerified ? "Verified" : "Pending"}
+          label={row.documentsVerified ? "Verified" : "Pending"}
+        />
+      ),
+    },
+    {
+      key: "permit",
+      header: "Permit",
+      accessor: (row) => (row.isReleased ? row.permitNumber : ""),
+      sortable: true,
+      render: (row) =>
+        row.isReleased ? (
+          <PersonCell name={<span className="permit-number">{row.permitNumber}</span>} detail={`Released ${formatDateTime(row.releasedAt)}`} />
+        ) : (
+          <span className="ui-cell-muted">Not released</span>
+        ),
+    },
+    {
+      key: "action",
+      header: "Action",
+      align: "right",
+      searchable: false,
+      render: (row) => (
+        <RowAction
+          label={!row.isReleased && row.documentsVerified ? "Review & release" : "View permit"}
+          icon="ticket"
+          onClick={() => setViewing(row)}
+          ariaLabel={`Open ${row.applicantName}'s exam permit`}
+        />
+      ),
+    },
+  ];
 
   return (
-    <AppLayout title="Exam Permits">
-        <p className="admin-exam-permits-subtitle">
-          Generate and release entrance-exam permits. Release is blocked until every one of an applicant's
-          required documents has been verified.
-        </p>
+    <AppLayout>
+      <DataTable
+        title="Exam Permits"
+        subtitle="Generate and release entrance exam permits. A permit can only be released once all of the applicant's required documents are verified."
+        summary={[
+          { label: "Awaiting release", value: pendingCount.toLocaleString(), tone: "amber" },
+          { label: "Ready to release", value: readyCount.toLocaleString(), tone: "green" },
+          { label: "Released", value: releasedCount.toLocaleString() },
+        ]}
+        summaryNote="Ready to release means every required document is verified."
+        columns={columns}
+        rows={rows}
+        getRowKey={(row) => row.userId}
+        isLoading={isLoading}
+        errorMessage={loadError}
+        emptyMessage={permits.length === 0 ? "No applicant has picked an exam schedule yet." : "No permits match these filters."}
+        onRowClick={(row) => setViewing(row)}
+        searchPlaceholder="Search by applicant, email or permit number"
+        filters={[
+          {
+            key: "status",
+            label: "Any release status",
+            value: statusFilter,
+            onChange: setStatusFilter,
+            options: [
+              { value: "pending", label: "Awaiting release" },
+              { value: "released", label: "Released" },
+            ],
+          },
+          {
+            key: "documents",
+            label: "Any document status",
+            value: documentsFilter,
+            onChange: setDocumentsFilter,
+            options: [
+              { value: "verified", label: "Documents verified" },
+              { value: "pending", label: "Documents pending" },
+            ],
+          },
+        ]}
+      />
 
-        {loadError && (
-          <p className="form-error" role="alert">
-            {loadError}
-          </p>
-        )}
-        {releaseError && (
-          <p className="form-error" role="alert">
-            {releaseError}
-          </p>
-        )}
-
-        {!isLoading && permits.length > 0 && (
-          <input
-            type="search"
-            className="ui-input ui-datatable-search admin-exam-permits-search"
-            placeholder="Search by applicant name or email"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        )}
-
-        {isLoading ? (
-          <p>Loading...</p>
-        ) : permits.length === 0 ? (
-          <Card>
-            <p>No applicants have selected an entrance exam schedule yet.</p>
-          </Card>
-        ) : (
-          <>
-            <Card>
-              <h2>Pending Release ({pending.length})</h2>
-              {pending.length === 0 ? (
-                <p>{search.trim() ? "No matches in Pending Release." : "Nothing waiting on release."}</p>
-              ) : (
-                <ul className="permit-list">
-                  {pending.map((permit) => (
-                    <li key={permit.userId} className="permit-row">
-                      <div className="permit-row-header">
-                        <div>
-                          <span className="permit-applicant-name">{permit.applicantName}</span>
-                          <span className="permit-applicant-email">{permit.applicantEmail}</span>
-                        </div>
-                        <StatusBadge
-                          status={permit.documentsVerified ? "Verified" : "Pending"}
-                          label={permit.documentsVerified ? "Documents Verified" : "Documents Pending"}
-                        />
-                      </div>
-                      <p className="permit-schedule">
-                        <span className={`daytype-badge daytype-${permit.dayType.toLowerCase()}`}>
-                          {permit.dayType}
-                        </span>
-                        {formatDate(permit.examDate)} at {permit.examTime} &middot; {permit.venue}
-                      </p>
-                      <button
-                        type="button"
-                        className="release-button"
-                        disabled={!permit.documentsVerified || pendingReleaseUserId === permit.userId}
-                        onClick={() => handleRelease(permit)}
-                        title={
-                          permit.documentsVerified
-                            ? undefined
-                            : "All required documents must be verified before the permit can be released."
-                        }
-                      >
-                        {pendingReleaseUserId === permit.userId ? "Releasing..." : "Generate & Release Permit"}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Card>
-
-            <Card>
-              <h2>Released ({released.length})</h2>
-              {released.length === 0 ? (
-                <p>{search.trim() ? "No matches in Released." : "No permits released yet."}</p>
-              ) : (
-                <ul className="permit-list">
-                  {released.map((permit) => (
-                    <li key={permit.userId} className="permit-row">
-                      <div className="permit-row-header">
-                        <div>
-                          <span className="permit-applicant-name">{permit.applicantName}</span>
-                          <span className="permit-applicant-email">{permit.applicantEmail}</span>
-                        </div>
-                        <span className="permit-number">{permit.permitNumber}</span>
-                      </div>
-                      <p className="permit-schedule">
-                        <span className={`daytype-badge daytype-${permit.dayType.toLowerCase()}`}>
-                          {permit.dayType}
-                        </span>
-                        {formatDate(permit.examDate)} at {permit.examTime} &middot; {permit.venue}
-                      </p>
-                      <p className="permit-released-at">Released {formatDateTime(permit.releasedAt)}</p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Card>
-          </>
-        )}
+      {viewing ? (
+        <PermitModal
+          permit={viewing}
+          isReleasing={releasingUserId === viewing.userId}
+          onRelease={handleRelease}
+          onClose={() => setViewing(null)}
+        />
+      ) : null}
     </AppLayout>
   );
 }

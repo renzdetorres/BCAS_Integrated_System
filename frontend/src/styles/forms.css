@@ -90,3 +90,10 @@
 .ui-field-error .ui-hint {
   color: var(--color-status-red-text);
 }
+
+@media (max-width: 560px) {
+  .ui-field-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}

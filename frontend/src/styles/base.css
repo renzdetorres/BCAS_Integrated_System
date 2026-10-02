@@ -51,8 +51,7 @@ h4 {
 }
 
 h1 {
-  font-family: var(--font-serif);
-  letter-spacing: -0.015em;
+  letter-spacing: -0.02em;
 }
 
 p {

@@ -14,9 +14,11 @@ import {
   getScholarshipSlotReport,
   getSectionFiles,
 } from "../api/adminReportsApi.js";
+import { SCHOLARSHIP_STATUSES } from "../api/adminApplicationsApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
+import DataTable, { PersonCell } from "../components/ui/DataTable.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import BarChart from "../components/ui/BarChart.jsx";
 import TrendChart from "../components/ui/TrendChart.jsx";
@@ -55,7 +57,7 @@ const FUNNEL_STAGE_LABELS = {
 };
 
 function formatDate(isoDateTime) {
-  if (!isoDateTime) return "—";
+  if (!isoDateTime) return "-";
   return new Date(isoDateTime).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
@@ -82,105 +84,373 @@ function ReportError({ message }) {
   );
 }
 
-function EnrollmentListReport() {
-  const [filters, setFilters] = useState({ program: "", applicationType: "" });
+const APPLICATION_TYPE_OPTIONS = [
+  { value: "NewStudent", label: "New Student" },
+  { value: "Transferee", label: "Transferee" },
+];
+
+function distinctOptions(rows, pick) {
+  return [...new Set(rows.map(pick).filter(Boolean))].sort().map((value) => ({ value, label: value }));
+}
+
+function statusLabel(status) {
+  return FUNNEL_STAGE_LABELS[status] ?? status;
+}
+
+/** Loads a report once; dropdowns then filter it in place so each change is instant. */
+function useReportRows(loader) {
   const [rows, setRows] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isExporting, setIsExporting] = useState(false);
   const { errorMessage, runReport } = useReportError();
 
-  const load = useCallback(
-    async (activeFilters) => {
-      setIsLoading(true);
-      const data = await runReport(() => getEnrollmentList(activeFilters));
-      if (data) setRows(data);
-      setIsLoading(false);
-    },
-    [runReport],
-  );
-
   useEffect(() => {
-    load(filters);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    let cancelled = false;
+    (async () => {
+      setIsLoading(true);
+      const data = await runReport(loader);
+      if (!cancelled && data) setRows(data);
+      if (!cancelled) setIsLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Runs once per report: the loader is a fixed API call.
+  }, [runReport]);
+
+  return { rows, isLoading, errorMessage, runReport };
+}
+
+function EnrollmentListReport() {
+  const { rows, isLoading, errorMessage, runReport } = useReportRows(() => getEnrollmentList({}));
+  const [program, setProgram] = useState("");
+  const [applicationType, setApplicationType] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
+
+  const filtered = rows.filter(
+    (row) => (!program || row.courseAppliedFor === program) && (!applicationType || row.applicationType === applicationType),
+  );
 
   async function handleExport() {
     setIsExporting(true);
     await runReport(async () => {
-      await exportEnrollmentList(filters);
+      await exportEnrollmentList({ program, applicationType });
       return true;
     });
     setIsExporting(false);
   }
 
   return (
-    <Card className="report-card">
-      <div className="report-card-header">
-        <h2>Enrollment List</h2>
-        <button type="button" onClick={handleExport} disabled={isExporting}>
+    <DataTable
+      title="Enrollment List"
+      titleAs="h2"
+      subtitle="Approved admission applicants who have reserved their slot."
+      actions={
+        <button type="button" className="btn btn-secondary" onClick={handleExport} disabled={isExporting}>
           {isExporting ? "Exporting..." : "Export to Excel"}
         </button>
-      </div>
-      <p className="report-subtitle">Approved admission applicants who have reserved their slot.</p>
+      }
+      columns={[
+        {
+          key: "applicant",
+          header: "Applicant",
+          accessor: (row) => `${row.applicantName} ${row.applicantEmail}`,
+          sortable: true,
+          render: (row) => <PersonCell name={row.applicantName} detail={row.applicantEmail} />,
+        },
+        {
+          key: "applicationType",
+          header: "Type",
+          accessor: (row) => APPLICATION_TYPE_OPTIONS.find((t) => t.value === row.applicationType)?.label ?? row.applicationType,
+          sortable: true,
+        },
+        { key: "courseAppliedFor", header: "Program", sortable: true },
+        { key: "submittedAt", header: "Submitted", sortable: true, searchable: false, render: (row) => formatDate(row.submittedAt) },
+        { key: "reservedAt", header: "Reserved", sortable: true, searchable: false, render: (row) => formatDate(row.reservedAt) },
+      ]}
+      rows={filtered}
+      getRowKey={(row) => row.applicationId}
+      isLoading={isLoading}
+      errorMessage={errorMessage}
+      emptyMessage="No enrolled applicants match these filters."
+      searchPlaceholder="Search by applicant or email"
+      filters={[
+        {
+          key: "program",
+          label: "All programs",
+          value: program,
+          onChange: setProgram,
+          options: distinctOptions(rows, (row) => row.courseAppliedFor),
+        },
+        {
+          key: "applicationType",
+          label: "All types",
+          value: applicationType,
+          onChange: setApplicationType,
+          options: APPLICATION_TYPE_OPTIONS,
+        },
+      ]}
+    />
+  );
+}
 
-      <form
-        className="report-filters"
-        onSubmit={(event) => {
-          event.preventDefault();
-          load(filters);
-        }}
-      >
-        <input
-          type="text"
-          placeholder="Program"
-          value={filters.program}
-          onChange={(event) => setFilters((prev) => ({ ...prev, program: event.target.value }))}
-        />
-        <select
-          value={filters.applicationType}
-          onChange={(event) => setFilters((prev) => ({ ...prev, applicationType: event.target.value }))}
-        >
-          <option value="">All types</option>
-          <option value="NewStudent">New Student</option>
-          <option value="Transferee">Transferee</option>
-        </select>
-        <button type="submit">Filter</button>
-      </form>
+function ScholarshipApplicantListReport() {
+  const { rows, isLoading, errorMessage } = useReportRows(() => getScholarshipApplicantList({}));
+  const [scholarship, setScholarship] = useState("");
+  const [status, setStatus] = useState("");
 
-      <ReportError message={errorMessage} />
+  const filtered = rows.filter(
+    (row) => (!scholarship || row.scholarshipName === scholarship) && (!status || row.status === status),
+  );
 
-      {isLoading ? (
-        <p>Loading...</p>
-      ) : rows.length === 0 ? (
-        <p>No enrolled applicants match these filters.</p>
-      ) : (
-        <table className="report-table">
-          <thead>
-            <tr>
-              <th>Applicant</th>
-              <th>Type</th>
-              <th>Program</th>
-              <th>Submitted</th>
-              <th>Reserved</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.applicationId}>
-                <td>
-                  <span className="report-name">{row.applicantName}</span>
-                  <span className="report-email">{row.applicantEmail}</span>
-                </td>
-                <td>{row.applicationType}</td>
-                <td>{row.courseAppliedFor}</td>
-                <td>{formatDate(row.submittedAt)}</td>
-                <td>{formatDate(row.reservedAt)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </Card>
+  return (
+    <DataTable
+      title="Scholarship Applicant List"
+      titleAs="h2"
+      subtitle="Every scholarship application, whatever its stage."
+      columns={[
+        {
+          key: "applicant",
+          header: "Applicant",
+          accessor: (row) => `${row.applicantName} ${row.applicantEmail}`,
+          sortable: true,
+          render: (row) => <PersonCell name={row.applicantName} detail={row.applicantEmail} />,
+        },
+        { key: "scholarshipName", header: "Scholarship", sortable: true },
+        { key: "gradeAverage", header: "Grade avg.", align: "right", sortable: true, searchable: false },
+        {
+          key: "status",
+          header: "Status",
+          accessor: (row) => statusLabel(row.status),
+          sortable: true,
+          render: (row) => <StatusBadge status={row.status} adminContext />,
+        },
+        { key: "submittedAt", header: "Submitted", sortable: true, searchable: false, render: (row) => formatDate(row.submittedAt) },
+      ]}
+      rows={filtered}
+      getRowKey={(row) => row.applicationId}
+      isLoading={isLoading}
+      errorMessage={errorMessage}
+      emptyMessage="No scholarship applications match these filters."
+      searchPlaceholder="Search by applicant or email"
+      filters={[
+        {
+          key: "scholarship",
+          label: "All scholarships",
+          value: scholarship,
+          onChange: setScholarship,
+          options: distinctOptions(rows, (row) => row.scholarshipName),
+        },
+        {
+          key: "status",
+          label: "Any status",
+          value: status,
+          onChange: setStatus,
+          options: SCHOLARSHIP_STATUSES.map((value) => ({ value, label: statusLabel(value) })),
+        },
+      ]}
+    />
+  );
+}
+
+function ScholarshipQualificationReport() {
+  const { rows, isLoading, errorMessage } = useReportRows(() => getScholarshipQualificationList({}));
+  const [scholarship, setScholarship] = useState("");
+  const [verdict, setVerdict] = useState("");
+
+  const filtered = rows.filter(
+    (row) => (!scholarship || row.scholarshipName === scholarship) && (!verdict || row.verdict === verdict),
+  );
+
+  return (
+    <DataTable
+      title="Qualified / Not Qualified Applicants"
+      titleAs="h2"
+      subtitle="Every eligibility screening an Evaluator has recorded."
+      columns={[
+        {
+          key: "applicant",
+          header: "Applicant",
+          accessor: (row) => `${row.applicantName} ${row.applicantEmail}`,
+          sortable: true,
+          render: (row) => <PersonCell name={row.applicantName} detail={row.applicantEmail} />,
+        },
+        { key: "scholarshipName", header: "Scholarship", sortable: true },
+        {
+          key: "verdict",
+          header: "Verdict",
+          sortable: true,
+          render: (row) => <StatusBadge status={row.verdict} />,
+        },
+        { key: "evaluatedByName", header: "Evaluated by", sortable: true },
+        { key: "evaluatedAt", header: "Evaluated", sortable: true, searchable: false, render: (row) => formatDate(row.evaluatedAt) },
+      ]}
+      rows={filtered}
+      getRowKey={(row) => row.applicationId}
+      isLoading={isLoading}
+      errorMessage={errorMessage}
+      emptyMessage="No eligibility screenings match these filters."
+      searchPlaceholder="Search by applicant or evaluator"
+      filters={[
+        {
+          key: "scholarship",
+          label: "All scholarships",
+          value: scholarship,
+          onChange: setScholarship,
+          options: distinctOptions(rows, (row) => row.scholarshipName),
+        },
+        {
+          key: "verdict",
+          label: "Any verdict",
+          value: verdict,
+          onChange: setVerdict,
+          options: [
+            { value: "Qualified", label: "Qualified" },
+            { value: "NotQualified", label: "Not Qualified" },
+          ],
+        },
+      ]}
+    />
+  );
+}
+
+function ScholarshipResultsReport() {
+  const { rows, isLoading, errorMessage } = useReportRows(() => getScholarshipResultList({}));
+  const [scholarship, setScholarship] = useState("");
+  const [decision, setDecision] = useState("");
+
+  const filtered = rows.filter(
+    (row) => (!scholarship || row.scholarshipName === scholarship) && (!decision || row.status === decision),
+  );
+
+  return (
+    <DataTable
+      title="Scholarship Results"
+      titleAs="h2"
+      subtitle="Decided scholarship applications. An approved one has a printable contract."
+      columns={[
+        {
+          key: "applicant",
+          header: "Applicant",
+          accessor: (row) => `${row.applicantName} ${row.applicantEmail}`,
+          sortable: true,
+          render: (row) => <PersonCell name={row.applicantName} detail={row.applicantEmail} />,
+        },
+        { key: "scholarshipName", header: "Scholarship", sortable: true },
+        { key: "status", header: "Result", sortable: true, render: (row) => <StatusBadge status={row.status} /> },
+        {
+          key: "decidedAt",
+          header: "Decided",
+          accessor: (row) => row.decidedAt ?? row.submittedAt,
+          sortable: true,
+          searchable: false,
+          render: (row) => formatDate(row.decidedAt ?? row.submittedAt),
+        },
+        {
+          key: "action",
+          header: "Action",
+          align: "right",
+          searchable: false,
+          render: (row) =>
+            row.status === "Approved" ? (
+              <Link className="ui-datatable-row-action" to={`/admin/reports/scholarship/${row.applicationId}/contract`}>
+                View contract
+              </Link>
+            ) : (
+              <span className="ui-cell-muted">-</span>
+            ),
+        },
+      ]}
+      rows={filtered}
+      getRowKey={(row) => row.applicationId}
+      isLoading={isLoading}
+      errorMessage={errorMessage}
+      emptyMessage="No decided scholarship applications match these filters."
+      searchPlaceholder="Search by applicant or email"
+      filters={[
+        {
+          key: "scholarship",
+          label: "All scholarships",
+          value: scholarship,
+          onChange: setScholarship,
+          options: distinctOptions(rows, (row) => row.scholarshipName),
+        },
+        {
+          key: "decision",
+          label: "Any result",
+          value: decision,
+          onChange: setDecision,
+          options: [
+            { value: "Approved", label: "Approved" },
+            { value: "Rejected", label: "Rejected" },
+          ],
+        },
+      ]}
+    />
+  );
+}
+
+function ScholarshipSlotsReport() {
+  const { rows, isLoading, errorMessage } = useReportRows(() => getScholarshipSlotReport());
+  const [status, setStatus] = useState("");
+  const [type, setType] = useState("");
+
+  const filtered = rows.filter(
+    (row) =>
+      (!status || (status === "active" ? row.isActive : !row.isActive)) && (!type || row.scholarshipType === type),
+  );
+
+  return (
+    <DataTable
+      title="Scholarship Slot Report"
+      titleAs="h2"
+      subtitle="Slots per scholarship: how many are filled and how many remain."
+      columns={[
+        {
+          key: "name",
+          header: "Scholarship",
+          accessor: (row) => `${row.name} ${row.scholarshipType}`,
+          sortable: true,
+          render: (row) => <PersonCell name={row.name} detail={row.scholarshipType} />,
+        },
+        { key: "totalSlots", header: "Total", align: "right", sortable: true, searchable: false },
+        { key: "occupiedSlots", header: "Filled", align: "right", sortable: true, searchable: false },
+        { key: "remainingSlots", header: "Remaining", align: "right", sortable: true, searchable: false },
+        {
+          key: "status",
+          header: "Status",
+          accessor: (row) => (row.isActive ? "Active" : "Deactivated"),
+          sortable: true,
+          render: (row) => (
+            <StatusBadge status={row.isActive ? "Active" : "Inactive"} label={row.isActive ? "Active" : "Deactivated"} />
+          ),
+        },
+      ]}
+      rows={filtered}
+      getRowKey={(row) => row.scholarshipId}
+      isLoading={isLoading}
+      errorMessage={errorMessage}
+      emptyMessage="No scholarships match these filters."
+      searchPlaceholder="Search by scholarship"
+      filters={[
+        {
+          key: "type",
+          label: "All types",
+          value: type,
+          onChange: setType,
+          options: distinctOptions(rows, (row) => row.scholarshipType),
+        },
+        {
+          key: "status",
+          label: "Any status",
+          value: status,
+          onChange: setStatus,
+          options: [
+            { value: "active", label: "Active" },
+            { value: "inactive", label: "Deactivated" },
+          ],
+        },
+      ]}
+    />
   );
 }
 
@@ -347,314 +617,6 @@ function SectionFilesReport() {
             </table>
           </div>
         ))
-      )}
-    </Card>
-  );
-}
-
-function ScholarshipApplicantListReport() {
-  const [filters, setFilters] = useState({ scholarshipName: "", status: "" });
-  const [rows, setRows] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { errorMessage, runReport } = useReportError();
-
-  const load = useCallback(
-    async (activeFilters) => {
-      setIsLoading(true);
-      const data = await runReport(() => getScholarshipApplicantList(activeFilters));
-      if (data) setRows(data);
-      setIsLoading(false);
-    },
-    [runReport],
-  );
-
-  useEffect(() => {
-    load(filters);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return (
-    <Card className="report-card">
-      <h2>Scholarship Applicant List</h2>
-
-      <form
-        className="report-filters"
-        onSubmit={(event) => {
-          event.preventDefault();
-          load(filters);
-        }}
-      >
-        <input
-          type="text"
-          placeholder="Scholarship name"
-          value={filters.scholarshipName}
-          onChange={(event) => setFilters((prev) => ({ ...prev, scholarshipName: event.target.value }))}
-        />
-        <input
-          type="text"
-          placeholder="Status"
-          value={filters.status}
-          onChange={(event) => setFilters((prev) => ({ ...prev, status: event.target.value }))}
-        />
-        <button type="submit">Filter</button>
-      </form>
-
-      <ReportError message={errorMessage} />
-
-      {isLoading ? (
-        <p>Loading...</p>
-      ) : rows.length === 0 ? (
-        <p>No scholarship applications match these filters.</p>
-      ) : (
-        <table className="report-table">
-          <thead>
-            <tr>
-              <th>Applicant</th>
-              <th>Scholarship</th>
-              <th>Grade Avg.</th>
-              <th>Status</th>
-              <th>Submitted</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.applicationId}>
-                <td>
-                  <span className="report-name">{row.applicantName}</span>
-                  <span className="report-email">{row.applicantEmail}</span>
-                </td>
-                <td>{row.scholarshipName}</td>
-                <td>{row.gradeAverage}</td>
-                <td>
-                  <StatusBadge status={row.status} />
-                </td>
-                <td>{formatDate(row.submittedAt)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </Card>
-  );
-}
-
-function ScholarshipQualificationReport() {
-  const [verdict, setVerdict] = useState("");
-  const [rows, setRows] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { errorMessage, runReport } = useReportError();
-
-  const load = useCallback(
-    async (activeVerdict) => {
-      setIsLoading(true);
-      const data = await runReport(() => getScholarshipQualificationList({ verdict: activeVerdict }));
-      if (data) setRows(data);
-      setIsLoading(false);
-    },
-    [runReport],
-  );
-
-  useEffect(() => {
-    load(verdict);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return (
-    <Card className="report-card">
-      <h2>Qualified / Not Qualified Applicants</h2>
-
-      <form
-        className="report-filters"
-        onSubmit={(event) => {
-          event.preventDefault();
-          load(verdict);
-        }}
-      >
-        <select value={verdict} onChange={(event) => setVerdict(event.target.value)}>
-          <option value="">All verdicts</option>
-          <option value="Qualified">Qualified</option>
-          <option value="NotQualified">Not Qualified</option>
-        </select>
-        <button type="submit">Filter</button>
-      </form>
-
-      <ReportError message={errorMessage} />
-
-      {isLoading ? (
-        <p>Loading...</p>
-      ) : rows.length === 0 ? (
-        <p>No eligibility screenings match this filter.</p>
-      ) : (
-        <table className="report-table">
-          <thead>
-            <tr>
-              <th>Applicant</th>
-              <th>Scholarship</th>
-              <th>Verdict</th>
-              <th>Evaluated By</th>
-              <th>Evaluated</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.applicationId}>
-                <td>
-                  <span className="report-name">{row.applicantName}</span>
-                  <span className="report-email">{row.applicantEmail}</span>
-                </td>
-                <td>{row.scholarshipName}</td>
-                <td>
-                  <StatusBadge status={row.verdict} />
-                </td>
-                <td>{row.evaluatedByName}</td>
-                <td>{formatDate(row.evaluatedAt)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </Card>
-  );
-}
-
-function ScholarshipResultsReport() {
-  const [decision, setDecision] = useState("");
-  const [rows, setRows] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { errorMessage, runReport } = useReportError();
-
-  const load = useCallback(
-    async (activeDecision) => {
-      setIsLoading(true);
-      const data = await runReport(() => getScholarshipResultList({ decision: activeDecision }));
-      if (data) setRows(data);
-      setIsLoading(false);
-    },
-    [runReport],
-  );
-
-  useEffect(() => {
-    load(decision);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return (
-    <Card className="report-card">
-      <h2>Scholarship Results</h2>
-
-      <form
-        className="report-filters"
-        onSubmit={(event) => {
-          event.preventDefault();
-          load(decision);
-        }}
-      >
-        <select value={decision} onChange={(event) => setDecision(event.target.value)}>
-          <option value="">All results</option>
-          <option value="Approved">Approved</option>
-          <option value="Rejected">Rejected</option>
-        </select>
-        <button type="submit">Filter</button>
-      </form>
-
-      <ReportError message={errorMessage} />
-
-      {isLoading ? (
-        <p>Loading...</p>
-      ) : rows.length === 0 ? (
-        <p>No decided scholarship applications match this filter.</p>
-      ) : (
-        <table className="report-table">
-          <thead>
-            <tr>
-              <th>Applicant</th>
-              <th>Scholarship</th>
-              <th>Result</th>
-              <th>Decided</th>
-              <th aria-hidden="true"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.applicationId}>
-                <td>
-                  <span className="report-name">{row.applicantName}</span>
-                  <span className="report-email">{row.applicantEmail}</span>
-                </td>
-                <td>{row.scholarshipName}</td>
-                <td>
-                  <StatusBadge status={row.status} />
-                </td>
-                <td>{formatDate(row.decidedAt ?? row.submittedAt)}</td>
-                <td>
-                  {row.status === "Approved" && (
-                    <Link className="report-contract-link" to={`/admin/reports/scholarship/${row.applicationId}/contract`}>
-                      View Contract
-                    </Link>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </Card>
-  );
-}
-
-function ScholarshipSlotsReport() {
-  const [rows, setRows] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { errorMessage, runReport } = useReportError();
-
-  useEffect(() => {
-    (async () => {
-      setIsLoading(true);
-      const data = await runReport(() => getScholarshipSlotReport());
-      if (data) setRows(data);
-      setIsLoading(false);
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return (
-    <Card className="report-card">
-      <h2>Scholarship Slot Report</h2>
-
-      <ReportError message={errorMessage} />
-
-      {isLoading ? (
-        <p>Loading...</p>
-      ) : rows.length === 0 ? (
-        <p>No scholarships yet.</p>
-      ) : (
-        <table className="report-table">
-          <thead>
-            <tr>
-              <th>Scholarship</th>
-              <th>Total</th>
-              <th>Remaining</th>
-              <th>Occupied</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.scholarshipId}>
-                <td>
-                  <span className="report-name">{row.name}</span>
-                  <span className="report-email">{row.scholarshipType}</span>
-                </td>
-                <td>{row.totalSlots}</td>
-                <td>{row.remainingSlots}</td>
-                <td>{row.occupiedSlots}</td>
-                <td>
-                  <StatusBadge status={row.isActive ? "Active" : "Inactive"} label={row.isActive ? "Active" : "Deactivated"} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       )}
     </Card>
   );

@@ -1,122 +1,16 @@
-.admin-exam-permits-subtitle {
-  margin: 0 0 20px;
-  color: var(--color-text-secondary);
-  font-size: 0.9rem;
-}
-
-.admin-exam-permits-search {
-  display: block;
-  width: 100%;
-  max-width: 360px;
-  margin-bottom: 20px;
-}
-
-.form-error {
-  color: var(--color-status-red-text);
-  background: var(--color-status-red-bg);
-  border-radius: var(--radius-md);
-  padding: 10px 12px;
-  font-size: 0.85rem;
-  margin: 0 0 16px;
-}
-
-.permit-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.permit-row {
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.permit-row:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.permit-row-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 6px;
-}
-
-.permit-applicant-name {
-  display: block;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  font-size: 0.95rem;
-}
-
-.permit-applicant-email {
-  display: block;
-  color: var(--color-text-secondary);
-  font-size: 0.8rem;
-}
-
 .permit-number {
-  font-weight: 700;
-  color: var(--color-primary);
-  font-size: 0.85rem;
-  white-space: nowrap;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  color: var(--color-text-primary);
 }
 
-.daytype-badge {
-  display: inline-block;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  padding: 3px 10px;
-  border-radius: 999px;
-  margin-right: 8px;
-}
-
-.daytype-saturday {
+.permit-blocked {
+  margin: 18px 0 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
   background: var(--color-status-amber-bg);
   color: var(--color-status-amber-text);
-}
-
-.daytype-weekday {
-  background: var(--color-status-purple-bg);
-  color: var(--color-status-purple-text);
-}
-
-.permit-schedule {
-  margin: 0 0 10px;
-  color: var(--color-text-secondary);
-  font-size: 0.85rem;
-}
-
-.permit-released-at {
-  margin: 0;
-  color: var(--color-text-secondary);
-  font-size: 0.8rem;
-}
-
-.release-button {
-  padding: 8px 18px;
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.release-button:hover:not(:disabled) {
-  background: var(--color-primary-dark);
-}
-
-.release-button:disabled {
-  background: var(--color-status-gray-bg);
-  color: var(--color-status-gray-text);
-  cursor: not-allowed;
+  font-size: 13.5px;
+  line-height: 1.5;
 }

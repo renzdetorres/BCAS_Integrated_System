@@ -73,5 +73,28 @@ ORDER BY d.UploadedAt DESC;";
         };
     }
 
+    public async Task<DocumentFile?> GetFileAsync(Guid documentId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+SELECT FileName, ContentType, FileData
+FROM dbo.ApplicantDocuments
+WHERE DocumentId = @DocumentId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@DocumentId", SqlDbType.UniqueIdentifier) { Value = documentId });
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken)) return null;
+
+        return new DocumentFile
+        {
+            FileName = reader.GetString(reader.GetOrdinal("FileName")),
+            ContentType = reader.GetString(reader.GetOrdinal("ContentType")),
+            FileData = (byte[])reader["FileData"],
+        };
+    }
+
     private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

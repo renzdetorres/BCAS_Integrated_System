@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { listSystemSettings, setSystemSettingEnabled } from "../api/systemSettingsApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
+import SemestersPanel from "../components/SemestersPanel.jsx";
 import Card from "../components/ui/Card.jsx";
 import "./AdminSettingsPage.css";
 
@@ -90,6 +91,8 @@ export default function AdminSettingsPage() {
           </ul>
         )}
       </Card>
+
+      <SemestersPanel />
     </AppLayout>
   );
 }

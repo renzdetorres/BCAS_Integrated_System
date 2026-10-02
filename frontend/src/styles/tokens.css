@@ -52,18 +52,16 @@
   --shadow-raised: 0 1px 3px rgba(18, 48, 31, 0.08), 0 12px 28px -8px rgba(18, 48, 31, 0.18);
   --shadow-overlay: 0 2px 6px rgba(18, 48, 31, 0.08), 0 24px 56px -12px rgba(18, 48, 31, 0.3);
 
-  /* Type - Source Serif 4 carries the institutional voice (page titles,
-     display headings, brand marks); IBM Plex Sans carries everything read
-     in bulk (tables, forms, cards) so data stays fast to scan, with real
-     tabular figures for counts and dates. Two body sizes exist on purpose:
-     "comfortable" for screens an applicant reads once and acts on, "dense"
-     for screens staff scan repeatedly all day. */
+  /* Type - one family for the whole system: IBM Plex Sans, with weight and
+     size (not a second face) carrying the difference between a page title
+     and a table cell. Real tabular figures keep counts and dates aligned.
+     Two body sizes exist on purpose: "comfortable" for screens an applicant
+     reads once and acts on, "dense" for screens staff scan all day. */
   --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-serif: "Source Serif 4 Variable", "Source Serif 4", Georgia, "Times New Roman", serif;
 
-  --text-display: 600 34px/1.15 var(--font-serif);
-  --text-page-title: 600 28px/1.2 var(--font-serif);
-  --text-h1: 600 22px/1.3 var(--font-serif);
+  --text-display: 700 32px/1.15 var(--font-sans);
+  --text-page-title: 600 24px/1.25 var(--font-sans);
+  --text-h1: 600 20px/1.3 var(--font-sans);
   --text-h2: 600 15.5px/1.4 var(--font-sans);
   --text-body-comfortable: 400 15.5px/1.6 var(--font-sans);
   --text-body: 400 14px/1.55 var(--font-sans);

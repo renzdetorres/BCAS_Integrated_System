@@ -1,135 +1,49 @@
-.admin-reservations-subtitle {
-  margin: 0 0 20px;
-  color: var(--color-text-secondary);
-  font-size: 0.9rem;
+/* Two large, labelled choices rather than a small toggle: recording a
+   reservation is the one decision this modal exists for. */
+.reservation-choice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
-.admin-reservations-search {
-  display: block;
-  width: 100%;
-  max-width: 360px;
-  margin-bottom: 20px;
-}
-
-.form-error {
-  color: var(--color-status-red-text);
-  background: var(--color-status-red-bg);
-  border-radius: var(--radius-md);
-  padding: 10px 12px;
-  font-size: 0.85rem;
-  margin: 0 0 12px;
-}
-
-.reservation-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.reservation-row {
-  padding-bottom: 18px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.reservation-row:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.reservation-row-header {
+.reservation-option {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 4px;
-}
-
-.reservation-applicant-name {
-  display: block;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  font-size: 0.95rem;
-}
-
-.reservation-applicant-email {
-  display: block;
-  color: var(--color-text-secondary);
-  font-size: 0.8rem;
-}
-
-.reservation-meta {
-  margin: 0 0 6px;
-  color: var(--color-text-secondary);
-  font-size: 0.85rem;
-}
-
-.reservation-recorded {
-  margin: 0 0 10px;
-  color: var(--color-primary);
-  font-size: 0.8rem;
-}
-
-.reservation-form {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.reservation-toggle-group {
-  display: inline-flex;
-  border: 1px solid var(--color-border);
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.toggle-option {
-  padding: 7px 14px;
-  border: none;
-  background: var(--color-surface);
-  color: var(--color-text-secondary);
-  font-size: 0.8rem;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  transition: border-color var(--motion-fast), background-color var(--motion-fast);
 }
 
-.toggle-option-selected {
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
+.reservation-option input {
+  margin-top: 3px;
+  accent-color: var(--color-primary);
 }
 
-.reservation-remarks-input {
-  flex: 1;
-  min-width: 180px;
-  padding: 8px 10px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: 0.85rem;
-  font-family: inherit;
+.reservation-option small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
 }
 
-.reservation-save {
-  padding: 8px 18px;
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
+.reservation-option:hover {
+  border-color: var(--color-primary-light);
 }
 
-.reservation-save:hover:not(:disabled) {
-  background: var(--color-primary-dark);
+.reservation-option.is-selected {
+  border-color: var(--color-primary-light);
+  background: var(--color-primary-tint);
 }
 
-.reservation-save:disabled {
-  background: var(--color-status-gray-bg);
-  color: var(--color-status-gray-text);
-  cursor: not-allowed;
+@media (max-width: 480px) {
+  .reservation-choice {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

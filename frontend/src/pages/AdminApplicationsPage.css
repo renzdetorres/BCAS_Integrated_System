@@ -1,50 +1,3 @@
-.admin-applications-subtitle {
-  margin: 0 0 20px;
-  color: var(--color-text-secondary);
-  font-size: 0.9rem;
-}
-
-/* A records panel, not a padded card - this screen is read by a registrar
-   scanning rows all day, so it should feel like a ledger, not a dashboard
-   widget: flush edges, a plain rule instead of a soft shadow. */
-.admin-applications-panel {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 18px 20px;
-}
-
-/* Live counts over the currently filtered rows, not an all-time KPI (that's
-   the Dashboard's job) - answers "what's actually in front of me right now"
-   for a registrar who just typed a search or picked a status filter. */
-.admin-applications-queue-summary {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.admin-applications-queue-summary .ui-card {
-  flex: 0 0 auto;
-  min-width: 140px;
-}
-
-.admin-applications-queue-caption {
-  margin: 0;
-  color: var(--color-text-secondary);
-  font-size: 0.8rem;
-}
-
-.form-error {
-  color: var(--color-status-red-text);
-  background: var(--color-status-red-bg);
-  border-radius: var(--radius-md);
-  padding: 10px 12px;
-  font-size: 0.85rem;
-  margin-bottom: 16px;
-}
-
 .admin-applications-cell {
   display: flex;
   flex-direction: column;
@@ -57,55 +10,23 @@
 
 .admin-applications-email {
   color: var(--color-text-secondary);
-  font-size: 0.8rem;
+  font-size: 12.5px;
 }
 
-.admin-applications-bulk-bar {
+/* Bulk archive lives in the table header while rows are selected, next to
+   the title it acts on, rather than as a bar pushing the table down. */
+.admin-applications-bulk {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 10px 14px;
-  margin-bottom: 16px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  flex-wrap: wrap;
+  gap: 10px;
+  animation: ui-fade-in 160ms var(--ease-out);
 }
 
 .admin-applications-bulk-count {
+  margin-right: 4px;
+  font-size: 13.5px;
   font-weight: 600;
-  font-size: 0.85rem;
-}
-
-.row-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.bulk-archive-button,
-.bulk-clear-button {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.bulk-archive-button {
-  background: var(--color-status-amber-bg);
-  color: var(--color-status-amber-text);
-}
-
-.bulk-clear-button {
-  background: var(--color-status-gray-bg);
-  color: var(--color-status-gray-text);
-}
-
-.bulk-archive-button:disabled,
-.bulk-clear-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  color: var(--color-text-primary);
 }
 
 /* Unassigned applicants are invisible to every Academic Head - worth a glance. */
