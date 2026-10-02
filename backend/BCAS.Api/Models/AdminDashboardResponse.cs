@@ -23,8 +23,11 @@ public class AdminDashboardResponse
     /// <summary>Uploaded applicant documents still waiting for verification (non-archived).</summary>
     public int PendingDocumentsCount { get; set; }
 
-    /// <summary>Distinct admission applicants per program (course applied for), highest first.</summary>
+    /// <summary>Distinct admission applicants for each of the four College programs (BSBA, BSED, BSA, BSIT), always all four.</summary>
     public IReadOnlyList<ProgramCountResponse> ByProgram { get; set; } = Array.Empty<ProgramCountResponse>();
+
+    /// <summary>Applicants for a college course that isn't one of those four (older free-text applications).</summary>
+    public int OtherProgramApplicants { get; set; }
 
     /// <summary>Admission applications per department; a null Department is the unassigned bucket.</summary>
     public IReadOnlyList<DepartmentCountResponse> ByDepartment { get; set; } = Array.Empty<DepartmentCountResponse>();

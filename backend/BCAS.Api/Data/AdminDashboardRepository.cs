@@ -1,4 +1,5 @@
 using System.Data;
+using BCAS.Api.Constants;
 using BCAS.Api.Models;
 using Microsoft.Data.SqlClient;
 
@@ -34,32 +35,61 @@ WHERE @Department IS NULL OR Department = @Department;";
         return await ReadAnalyticsAsync(command, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<ProgramApplicantCount>> GetByProgramAsync(string? department = null, CancellationToken cancellationToken = default)
+    public async Task<ProgramBreakdown> GetByProgramAsync(string? department = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
+        // One row per applicant and course; the grouping happens below so an
+        // applicant who typed two spellings of the same program counts once.
         const string sql = @"
-SELECT CourseAppliedFor AS Program, COUNT(DISTINCT UserId) AS Count
+SELECT DISTINCT UserId, CourseAppliedFor, Department
 FROM dbo.AdmissionApplications
-WHERE @Department IS NULL OR Department = @Department
-GROUP BY CourseAppliedFor
-ORDER BY COUNT(DISTINCT UserId) DESC, CourseAppliedFor ASC;";
+WHERE @Department IS NULL OR Department = @Department;";
 
         await using var command = new SqlCommand(sql, connection);
         AddDepartmentParameter(command, department);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
-        var counts = new List<ProgramApplicantCount>();
+        var applicantsByProgram = DepartmentConstants.FixedPrograms["College"]
+            .ToDictionary(p => p.Code, _ => new HashSet<Guid>(), StringComparer.Ordinal);
+        var otherApplicants = new HashSet<Guid>();
+
         while (await reader.ReadAsync(cancellationToken))
         {
-            counts.Add(new ProgramApplicantCount
+            var rowDepartment = ReadNullableString(reader, "Department");
+
+            // Strands and grade levels aren't programs.
+            if (rowDepartment is not null && rowDepartment != "College")
             {
-                Program = reader.GetString(reader.GetOrdinal("Program")),
-                Count = reader.GetInt32(reader.GetOrdinal("Count")),
-            });
+                continue;
+            }
+
+            var userId = reader.GetGuid(reader.GetOrdinal("UserId"));
+            var course = reader.GetString(reader.GetOrdinal("CourseAppliedFor"));
+            var code = DepartmentConstants.ProgramCodeFor(course);
+
+            if (code is not null)
+            {
+                applicantsByProgram[code].Add(userId);
+            }
+            else if (rowDepartment == "College" || DepartmentConstants.LooksLikeCollegeCourse(course))
+            {
+                // Filed under College (or an older application with no
+                // department) but for a course the school doesn't offer.
+                otherApplicants.Add(userId);
+            }
         }
 
-        return counts;
+        // Someone already counted under a program isn't also "other".
+        otherApplicants.ExceptWith(applicantsByProgram.Values.SelectMany(set => set));
+
+        return new ProgramBreakdown
+        {
+            Programs = DepartmentConstants.FixedPrograms["College"]
+                .Select(p => new ProgramApplicantCount { Program = p.Code, Count = applicantsByProgram[p.Code].Count })
+                .ToList(),
+            OtherApplicants = otherApplicants.Count,
+        };
     }
 
     public async Task<IReadOnlyList<DepartmentCount>> GetByDepartmentAsync(string? department = null, CancellationToken cancellationToken = default)

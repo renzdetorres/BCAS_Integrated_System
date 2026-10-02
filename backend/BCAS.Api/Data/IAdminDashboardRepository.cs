@@ -14,8 +14,13 @@ public interface IAdminDashboardRepository
     /// <summary>Total/pending/approved/rejected, this week's, and unassigned counts across admission applications.</summary>
     Task<AdmissionAnalytics> GetAnalyticsAsync(string? department = null, CancellationToken cancellationToken = default);
 
-    /// <summary>Admission application counts grouped by course applied for, highest first.</summary>
-    Task<IReadOnlyList<ProgramApplicantCount>> GetByProgramAsync(string? department = null, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Distinct applicants for each of the four College programs (zero-filled),
+    /// counting older free-text course names toward the program they match,
+    /// plus applicants whose college course matches none of them. Applications
+    /// to other departments (strands, grade levels) are not part of it.
+    /// </summary>
+    Task<ProgramBreakdown> GetByProgramAsync(string? department = null, CancellationToken cancellationToken = default);
 
     /// <summary>Admission application counts per department; a null Department is the unassigned bucket.</summary>
     Task<IReadOnlyList<DepartmentCount>> GetByDepartmentAsync(string? department = null, CancellationToken cancellationToken = default);
