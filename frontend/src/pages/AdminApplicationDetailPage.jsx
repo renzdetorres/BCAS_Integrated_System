@@ -12,7 +12,7 @@ import {
   updateApplicationStatus,
 } from "../api/adminApplicationsApi.js";
 import { ApiError } from "../api/apiClient.js";
-import { DEPARTMENT_OPTIONS } from "../config/departments.js";
+import { DEPARTMENT_OPTIONS, programOptionLabel, programsFor } from "../config/departments.js";
 import WorkflowStepper, { ADMISSION_STEP_LABELS, SCHOLARSHIP_STEP_LABELS } from "../components/WorkflowStepper.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
@@ -44,6 +44,7 @@ export default function AdminApplicationDetailPage() {
   const [archiveError, setArchiveError] = useState(null);
 
   const [departmentDraft, setDepartmentDraft] = useState("");
+  const [programDraft, setProgramDraft] = useState("");
   const [isSavingDepartment, setIsSavingDepartment] = useState(false);
   const [departmentMessage, setDepartmentMessage] = useState(null);
   const [departmentError, setDepartmentError] = useState(null);
@@ -67,6 +68,7 @@ export default function AdminApplicationDetailPage() {
         if (found) {
           setStatusForm({ status: found.status, remarks: found.remarks ?? "" });
           setDepartmentDraft(found.department ?? "");
+          setProgramDraft(found.courseAppliedFor ?? "");
         }
       })
       .catch((error) => {
@@ -110,6 +112,13 @@ export default function AdminApplicationDetailPage() {
 
   useEffect(() => loadStatusHistory(), [loadStatusHistory]);
 
+  // Filing under a department with a fixed program list (College) needs one
+  // of its programs; a legacy free-text course has to be mapped to one here.
+  const draftPrograms = programsFor(departmentDraft);
+  const programIsValid = !draftPrograms || draftPrograms.some((program) => program.code === programDraft);
+  const departmentUnchanged =
+    departmentDraft === (application?.department ?? "") && programDraft === (application?.courseAppliedFor ?? "");
+
   async function handleDepartmentSubmit(event) {
     event.preventDefault();
     setDepartmentError(null);
@@ -117,8 +126,9 @@ export default function AdminApplicationDetailPage() {
     setIsSavingDepartment(true);
 
     try {
-      const updated = await setApplicationDepartment(applicationId, departmentDraft);
+      const updated = await setApplicationDepartment(applicationId, departmentDraft, draftPrograms ? programDraft : null);
       setApplication(updated);
+      setProgramDraft(updated.courseAppliedFor ?? "");
       setDepartmentMessage(`Filed under ${updated.department}.`);
     } catch (error) {
       setDepartmentError(error instanceof ApiError ? error.message : "Failed to update the department.");
@@ -297,6 +307,7 @@ export default function AdminApplicationDetailPage() {
                             onChange={(event) => {
                               setDepartmentDraft(event.target.value);
                               setDepartmentMessage(null);
+                              setDepartmentError(null);
                             }}
                             disabled={isSavingDepartment}
                           >
@@ -309,12 +320,30 @@ export default function AdminApplicationDetailPage() {
                               </option>
                             ))}
                           </select>
+                          {draftPrograms && (
+                            <select
+                              aria-label="Program"
+                              value={programIsValid ? programDraft : ""}
+                              onChange={(event) => {
+                                setProgramDraft(event.target.value);
+                                setDepartmentMessage(null);
+                              }}
+                              disabled={isSavingDepartment}
+                            >
+                              <option value="" disabled>
+                                Choose a program
+                              </option>
+                              {draftPrograms.map((program) => (
+                                <option key={program.code} value={program.code}>
+                                  {programOptionLabel(program)}
+                                </option>
+                              ))}
+                            </select>
+                          )}
                           <button
                             type="submit"
                             className="btn btn-secondary btn-sm"
-                            disabled={
-                              isSavingDepartment || !departmentDraft || departmentDraft === (application.department ?? "")
-                            }
+                            disabled={isSavingDepartment || !departmentDraft || !programIsValid || departmentUnchanged}
                           >
                             {isSavingDepartment ? "Saving..." : "Save"}
                           </button>

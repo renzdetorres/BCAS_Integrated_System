@@ -146,6 +146,7 @@ public class AdminApplicationsService : IAdminApplicationsService
     public async Task<AdminApplicationListItemResponse> SetDepartmentAsync(
         Guid applicationId,
         string department,
+        string? program = null,
         CancellationToken cancellationToken = default)
     {
         var normalized = DepartmentConstants.Normalize(department)
@@ -159,7 +160,13 @@ public class AdminApplicationsService : IAdminApplicationsService
             throw InvalidDepartmentException.NotSettableOnScholarship();
         }
 
-        if (!await _departmentScopeRepository.SetAdmissionApplicationDepartmentAsync(applicationId, normalized, cancellationToken))
+        // The course is kept unless the department needs a program the
+        // application doesn't already have; then one must be supplied.
+        var course = DepartmentConstants.NormalizeProgram(normalized, program ?? existing.CourseAppliedFor)
+            ?? throw new InvalidCourseProgramException(normalized, program ?? existing.CourseAppliedFor);
+        var newCourse = string.Equals(course, existing.CourseAppliedFor, StringComparison.Ordinal) ? null : course;
+
+        if (!await _departmentScopeRepository.SetAdmissionApplicationDepartmentAsync(applicationId, normalized, newCourse, cancellationToken))
         {
             throw new ApplicationNotFoundException(applicationId);
         }

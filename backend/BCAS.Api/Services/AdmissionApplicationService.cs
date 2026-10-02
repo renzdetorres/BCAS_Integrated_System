@@ -57,6 +57,11 @@ public class AdmissionApplicationService : IAdmissionApplicationService
         request.Department = DepartmentConstants.Normalize(request.Department)
             ?? throw new InvalidDepartmentException(request.Department);
 
+        // A department with a fixed program list (College) only takes those
+        // programs; stored by code so reports group them consistently.
+        request.CourseAppliedFor = DepartmentConstants.NormalizeProgram(request.Department, request.CourseAppliedFor)
+            ?? throw new InvalidCourseProgramException(request.Department, request.CourseAppliedFor);
+
         if (!await _profileRepository.ExistsAsync(userId, cancellationToken))
         {
             throw new ProfileIncompleteException();

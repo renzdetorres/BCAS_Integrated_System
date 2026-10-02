@@ -147,8 +147,21 @@ builder.Services.AddCors(options =>
     {
         // Credentialed (cookie) requests require an explicit origin list -
         // AllowAnyOrigin cannot be combined with AllowCredentials.
-        policy.WithOrigins(allowedOrigins)
-              .AllowAnyHeader()
+        if (builder.Environment.IsDevelopment())
+        {
+            // Vite moves to the next free port (5174, ...) when 5173 is busy,
+            // which would otherwise silently block sign-in. Any localhost
+            // origin is fine on a developer machine.
+            policy.SetIsOriginAllowed(origin =>
+                Uri.TryCreate(origin, UriKind.Absolute, out var uri) &&
+                (uri.Host == "localhost" || uri.Host == "127.0.0.1"));
+        }
+        else
+        {
+            policy.WithOrigins(allowedOrigins);
+        }
+
+        policy.AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
     });
@@ -164,6 +177,34 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors(FrontendCorsPolicy);
+
+// An exception nothing else handled becomes a JSON 500 here, inside the CORS
+// middleware, so the response keeps its CORS headers. Left to Kestrel, the
+// error response is rebuilt without them and the browser discards it as a
+// network failure - the page then can't tell a crashed API from an
+// unreachable one. Development includes the exception's own message (the
+// real cause, e.g. a missing column); other environments stay generic.
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex) when (!context.Response.HasStarted)
+    {
+        app.Logger.LogError(ex, "Unhandled exception for {Method} {Path}", context.Request.Method, context.Request.Path);
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        await context.Response.WriteAsJsonAsync(new Microsoft.AspNetCore.Mvc.ProblemDetails
+        {
+            Title = "Server error",
+            Status = StatusCodes.Status500InternalServerError,
+            Detail = app.Environment.IsDevelopment()
+                ? ex.Message
+                : "Something went wrong on the server. Please try again.",
+        });
+    }
+});
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
@@ -177,5 +218,9 @@ app.MapControllers();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 app.MapFallbackToFile("index.html");
+
+// Say which database this API is using, and what it is missing if it is the
+// wrong or an outdated one (see DatabaseStartupCheck).
+await DatabaseStartupCheck.RunAsync(app.Configuration, app.Environment, app.Logger);
 
 app.Run();
