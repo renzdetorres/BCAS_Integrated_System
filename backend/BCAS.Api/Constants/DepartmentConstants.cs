@@ -24,7 +24,9 @@ public static class DepartmentConstants
     /// application to one of these must name one of its programs (stored by
     /// code, e.g. "BSIT"). A department not listed here (Senior High School,
     /// High School, Elementary) takes the strand or grade level as typed.
-    /// Mirrored by DEPARTMENT_PROGRAMS in the frontend's config/departments.js.
+    /// Mirrored by DEPARTMENT_PROGRAMS in the frontend's config/departments.js,
+    /// and by CK_AdmissionApplications_CollegeProgram in database/schema.sql -
+    /// change all three together.
     /// </summary>
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<Program>> FixedPrograms =
         new Dictionary<string, IReadOnlyList<Program>>(StringComparer.Ordinal)
