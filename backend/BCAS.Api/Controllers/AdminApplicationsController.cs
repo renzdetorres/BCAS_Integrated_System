@@ -130,7 +130,7 @@ public class AdminApplicationsController : ControllerBase
     {
         try
         {
-            var updated = await _applicationsService.SetDepartmentAsync(applicationId, request.Department, cancellationToken);
+            var updated = await _applicationsService.SetDepartmentAsync(applicationId, request.Department, request.Program, cancellationToken);
             await _auditLogService.LogAsync(
                 User,
                 "ApplicationDepartmentSet",
@@ -143,6 +143,15 @@ public class AdminApplicationsController : ControllerBase
             return BadRequest(new ProblemDetails
             {
                 Title = "Invalid department",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (InvalidCourseProgramException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Invalid program",
                 Detail = ex.Message,
                 Status = StatusCodes.Status400BadRequest,
             });

@@ -37,7 +37,7 @@ WHERE sa.ApplicationId = @ApplicationId;";
     }
 
     public async Task<bool> SetAdmissionApplicationDepartmentAsync(
-        Guid applicationId, string department, CancellationToken cancellationToken = default)
+        Guid applicationId, string department, string? courseAppliedFor = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
@@ -46,12 +46,14 @@ WHERE sa.ApplicationId = @ApplicationId;";
         // under isn't one.
         const string sql = @"
 UPDATE dbo.AdmissionApplications
-SET Department = @Department
+SET Department = @Department,
+    CourseAppliedFor = COALESCE(@CourseAppliedFor, CourseAppliedFor)
 WHERE ApplicationId = @ApplicationId;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.Add(new SqlParameter("@ApplicationId", SqlDbType.UniqueIdentifier) { Value = applicationId });
         command.Parameters.Add(new SqlParameter("@Department", SqlDbType.NVarChar, 100) { Value = department });
+        command.Parameters.Add(new SqlParameter("@CourseAppliedFor", SqlDbType.NVarChar, 200) { Value = (object?)courseAppliedFor ?? DBNull.Value });
 
         return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
     }

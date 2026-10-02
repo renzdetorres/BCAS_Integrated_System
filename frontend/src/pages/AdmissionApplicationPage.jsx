@@ -6,7 +6,7 @@ import {
   submitAdmissionApplication,
 } from "../api/admissionApi.js";
 import { ApiError } from "../api/apiClient.js";
-import { DEPARTMENT_OPTIONS } from "../config/departments.js";
+import { DEPARTMENT_OPTIONS, programOptionLabel, programsFor } from "../config/departments.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
@@ -59,8 +59,14 @@ export default function AdmissionApplicationPage() {
 
   function handleChange(event) {
     const { name, value } = event.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    // The course choices depend on the department, so changing it clears
+    // a course picked for the previous one.
+    setForm((prev) => ({ ...prev, [name]: value, ...(name === "department" ? { courseAppliedFor: "" } : {}) }));
   }
+
+  // A department with a fixed program list (College) picks from it; any
+  // other takes its strand or grade level as typed.
+  const programs = programsFor(form.department);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -69,6 +75,11 @@ export default function AdmissionApplicationPage() {
 
     if (!form.department) {
       setErrorMessage("Choose the department you are applying to.");
+      return;
+    }
+
+    if (programs && !form.courseAppliedFor) {
+      setErrorMessage(`Choose a program for the ${form.department} department.`);
       return;
     }
 
@@ -173,15 +184,36 @@ export default function AdmissionApplicationPage() {
           </div>
 
           <div className="form-row">
-            <label htmlFor="courseAppliedFor">Course applied for</label>
-            <input
-              id="courseAppliedFor"
-              name="courseAppliedFor"
-              type="text"
-              required
-              value={form.courseAppliedFor}
-              onChange={handleChange}
-            />
+            <label htmlFor="courseAppliedFor">{programs ? "Program" : "Strand or grade level"}</label>
+            {programs ? (
+              <select
+                id="courseAppliedFor"
+                name="courseAppliedFor"
+                required
+                value={form.courseAppliedFor}
+                onChange={handleChange}
+              >
+                <option value="" disabled>
+                  Select a program
+                </option>
+                {programs.map((program) => (
+                  <option key={program.code} value={program.code}>
+                    {programOptionLabel(program)}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                id="courseAppliedFor"
+                name="courseAppliedFor"
+                type="text"
+                required
+                placeholder={form.department ? "For example: STEM, Grade 7" : "Choose a department first"}
+                disabled={!form.department}
+                value={form.courseAppliedFor}
+                onChange={handleChange}
+              />
+            )}
           </div>
 
           <div className="form-row">

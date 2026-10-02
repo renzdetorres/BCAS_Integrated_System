@@ -14,9 +14,11 @@ public interface IDepartmentScopeRepository
         Guid applicationId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Sets the department on one admission application. Returns false if
-    /// no admission application has that id.
+    /// Sets the department on one admission application, and its course too
+    /// when courseAppliedFor is given (filing a legacy application under a
+    /// department with a fixed program list needs a valid program). Returns
+    /// false if no admission application has that id.
     /// </summary>
     Task<bool> SetAdmissionApplicationDepartmentAsync(
-        Guid applicationId, string department, CancellationToken cancellationToken = default);
+        Guid applicationId, string department, string? courseAppliedFor = null, CancellationToken cancellationToken = default);
 }

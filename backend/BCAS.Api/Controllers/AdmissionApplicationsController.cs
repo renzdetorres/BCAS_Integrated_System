@@ -72,6 +72,15 @@ public class AdmissionApplicationsController : ControllerBase
                 Status = StatusCodes.Status400BadRequest,
             });
         }
+        catch (InvalidCourseProgramException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Invalid program",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
         catch (ProfileIncompleteException ex)
         {
             return BadRequest(new ProblemDetails

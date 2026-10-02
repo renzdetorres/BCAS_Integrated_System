@@ -47,6 +47,7 @@ public interface IAdminApplicationsService
     Task<AdminApplicationListItemResponse> SetDepartmentAsync(
         Guid applicationId,
         string department,
+        string? program = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

@@ -106,12 +106,12 @@ export async function updateApplicationStatus(applicationId, { category, status,
  * applications). Admission applications only; a scholarship application
  * follows its applicant's admission application.
  */
-export async function setApplicationDepartment(applicationId, department) {
+export async function setApplicationDepartment(applicationId, department, program) {
   const response = await fetch(`${API_BASE_URL}/api/admin/applications/${applicationId}/department`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ department }),
+    body: JSON.stringify({ department, program: program || null }),
   });
 
   const data = await response.json().catch(() => null);
