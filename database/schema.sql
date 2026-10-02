@@ -1522,8 +1522,25 @@ BEGIN
 END
 GO
 
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_AdmissionApplications_Department' AND object_id = OBJECT_ID(N'dbo.AdmissionApplications'))
-    CREATE NONCLUSTERED INDEX IX_AdmissionApplications_Department ON dbo.AdmissionApplications (Department, UserId);
+-- Safe to re-run in every state: the index exists, nothing exists, or a stray
+-- statistics object already holds the name (SQL Server shares one name space
+-- for indexes and statistics on a table, and CREATE INDEX then fails with
+-- Msg 1913 "an index or statistics with name ... already exists" even though
+-- the index itself is missing). A leftover statistics object is dropped - they
+-- are rebuilt automatically - and the index created in its place.
+BEGIN TRY
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_AdmissionApplications_Department' AND object_id = OBJECT_ID(N'dbo.AdmissionApplications'))
+    BEGIN
+        IF EXISTS (SELECT 1 FROM sys.stats WHERE name = N'IX_AdmissionApplications_Department' AND object_id = OBJECT_ID(N'dbo.AdmissionApplications'))
+            DROP STATISTICS dbo.AdmissionApplications.IX_AdmissionApplications_Department;
+
+        CREATE NONCLUSTERED INDEX IX_AdmissionApplications_Department ON dbo.AdmissionApplications (Department, UserId);
+    END
+END TRY
+BEGIN CATCH
+    -- 1913 / 1902: the name is already taken, which is the state we want.
+    IF ERROR_NUMBER() NOT IN (1902, 1913) THROW;
+END CATCH
 GO
 
 CREATE OR ALTER VIEW dbo.vw_ApplicantDepartments
