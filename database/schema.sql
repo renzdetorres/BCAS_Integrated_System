@@ -1593,3 +1593,46 @@ BEGIN
     );
 END
 GO
+
+-- -----------------------------------------------------------------------------
+-- College programs
+-- The College department offers four programs: BSBA, BSED, BSA and BSIT. An
+-- admission application filed under College must name one of them, stored by
+-- code. The API already enforces this (DepartmentConstants.FixedPrograms);
+-- this constraint keeps the database itself honest for anything that writes
+-- to it directly. Other departments (Senior High School, High School,
+-- Elementary) carry a strand or grade level, so they are not restricted.
+--
+-- Applications with no department (filed before departments existed) are
+-- unaffected. If rows already filed under College hold some other course,
+-- the constraint is still added - it then applies to new and changed rows
+-- only - and a warning lists how many to correct.
+-- -----------------------------------------------------------------------------
+IF NOT EXISTS (
+    SELECT 1 FROM sys.check_constraints
+    WHERE name = N'CK_AdmissionApplications_CollegeProgram'
+      AND parent_object_id = OBJECT_ID(N'dbo.AdmissionApplications')
+)
+BEGIN
+    DECLARE @CollegeOutsideList INT = (
+        SELECT COUNT(*) FROM dbo.AdmissionApplications
+        WHERE Department = N'College' AND CourseAppliedFor NOT IN (N'BSBA', N'BSED', N'BSA', N'BSIT')
+    );
+
+    IF @CollegeOutsideList = 0
+        ALTER TABLE dbo.AdmissionApplications WITH CHECK
+            ADD CONSTRAINT CK_AdmissionApplications_CollegeProgram
+            CHECK (Department IS NULL OR Department <> N'College' OR CourseAppliedFor IN (N'BSBA', N'BSED', N'BSA', N'BSIT'));
+    ELSE
+    BEGIN
+        ALTER TABLE dbo.AdmissionApplications WITH NOCHECK
+            ADD CONSTRAINT CK_AdmissionApplications_CollegeProgram
+            CHECK (Department IS NULL OR Department <> N'College' OR CourseAppliedFor IN (N'BSBA', N'BSED', N'BSA', N'BSIT'));
+
+        PRINT CONCAT(N'WARNING: ', @CollegeOutsideList, N' College application(s) have a course outside BSBA, BSED, BSA, BSIT. ',
+                     N'The rule applies to new and changed rows; correct these with: ',
+                     N'SELECT ApplicationId, CourseAppliedFor FROM dbo.AdmissionApplications ',
+                     N'WHERE Department = N''College'' AND CourseAppliedFor NOT IN (N''BSBA'', N''BSED'', N''BSA'', N''BSIT'').');
+    END
+END
+GO
