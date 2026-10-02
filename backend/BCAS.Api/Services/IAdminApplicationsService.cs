@@ -10,6 +10,7 @@ public interface IAdminApplicationsService
         string? category,
         string? program,
         bool? archived = null,
+        string? department = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

@@ -34,6 +34,14 @@ const PATHS = {
   "graduation-cap": "M12 3 2 8l10 5 10-5-10-5ZM6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5",
   copy: "M9 9h12v12H9ZM4 4h11v11H4Z",
   message: "M4 5h16v11H8l-4 4Z",
+  search: "M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14Zm5-2 4.5 4.5",
+  plus: "M12 5v14M5 12h14",
+  "trend-up": "m3 17 6-6 4 4 8-8M15 7h6v6",
+  "chevron-right": "m9 6 6 6-6 6",
+  grid: "M4 4h7v7H4Zm9 0h7v7h-7ZM4 13h7v7H4Zm9 0h7v7h-7Z",
+  clipboard: "M9 4h6v3H9ZM8 5H6v16h12V5h-2M9 12h6M9 16h4",
+  alert: "M12 3 2 20h20L12 3Zm0 7v4m0 3v.01",
+  megaphone: "M3 10v4h3l7 4V6l-7 4H3Zm13-1a4 4 0 0 1 0 6",
 };
 
 export default function Icon({ name, size = 18, className = "" }) {

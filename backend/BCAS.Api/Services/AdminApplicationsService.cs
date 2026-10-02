@@ -40,9 +40,10 @@ public class AdminApplicationsService : IAdminApplicationsService
         string? category,
         string? program,
         bool? archived = null,
+        string? department = null,
         CancellationToken cancellationToken = default)
     {
-        var items = await _applicationsRepository.SearchAsync(search, status, category, program, archived, cancellationToken);
+        var items = await _applicationsRepository.SearchAsync(search, status, category, program, archived, department, cancellationToken);
 
         // Cached per applicant (UserId) rather than per application, since
         // the same applicant can have more than one application and these

@@ -4,8 +4,12 @@ import Sidebar from "./Sidebar.jsx";
 import TopBar from "./TopBar.jsx";
 import "./AppLayout.css";
 
-/** Persistent shell (sidebar + topbar) every authenticated page renders inside. */
-export default function AppLayout({ title, actions, children }) {
+/**
+ * Persistent shell (sidebar + topbar) every authenticated page renders inside.
+ * `topbarLeading` puts a page-level control (e.g. the dashboard's workspace
+ * switch) at the start of the top bar.
+ */
+export default function AppLayout({ title, actions, topbarLeading, children }) {
   const { session } = useSession();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -16,7 +20,7 @@ export default function AppLayout({ title, actions, children }) {
         <div className="app-layout-scrim" onClick={() => setSidebarOpen(false)} />
       ) : null}
       <div className="app-layout-body">
-        <TopBar onMenuClick={() => setSidebarOpen((open) => !open)} />
+        <TopBar onMenuClick={() => setSidebarOpen((open) => !open)} leading={topbarLeading} />
         <main className="app-layout-content">
           {title ? (
             <div className="app-layout-header">

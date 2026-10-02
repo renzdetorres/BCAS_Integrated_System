@@ -18,39 +18,55 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 20px 20px 18px;
+  padding: 20px 18px 18px;
   margin: 0 12px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-brand-seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(217, 164, 65, 0.7);
+  border-radius: var(--radius-lg);
+  background: rgba(217, 164, 65, 0.08);
   color: var(--color-accent);
 }
 
 .sidebar-brand-text {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 3px;
   min-width: 0;
 }
 
 .sidebar-brand-mark {
   color: var(--color-white);
-  font-family: var(--font-serif);
-  font-size: 20px;
-  font-weight: 650;
-  letter-spacing: 0.02em;
-  line-height: 1.15;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+.sidebar-brand-dot {
+  color: var(--color-accent);
 }
 
 .sidebar-brand-subtitle {
   color: rgba(255, 255, 255, 0.62);
   font-size: 12px;
   font-weight: 500;
+  line-height: 1.3;
 }
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 10px 12px 20px;
+  padding: 8px 12px 20px;
   overflow-y: auto;
   scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
 }
@@ -62,38 +78,70 @@
 .sidebar-group {
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  margin-bottom: 4px;
+  gap: 2px;
+  margin-bottom: 6px;
 }
 
+/* Section labels stay quiet - sentence case, low contrast - so gold is
+   reserved for the seal, the wordmark dot and the item you are on. */
 .sidebar-group-label {
-  padding: 16px 12px 6px;
+  padding: 18px 12px 6px;
   color: rgba(255, 255, 255, 0.5);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .sidebar-link {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 11px;
-  min-height: 38px;
+  gap: 12px;
+  min-height: 40px;
   padding: 8px 12px;
   border-radius: var(--radius-md);
-  color: rgba(255, 255, 255, 0.76);
+  color: rgba(255, 255, 255, 0.8);
   font-size: 13.5px;
-  font-weight: 400;
+  font-weight: 500;
   text-decoration: none;
   transition: background-color var(--motion-fast), color var(--motion-fast);
 }
 
+.sidebar-link-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .sidebar-link-icon {
   flex-shrink: 0;
-  opacity: 0.8;
+  opacity: 0.85;
   transition: opacity var(--motion-fast), color var(--motion-fast);
+}
+
+/* Department rows: a small ring instead of an icon, and a chevron - they
+   open a filtered list rather than a page of their own. */
+.sidebar-group-categories .sidebar-link {
+  min-height: 36px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.sidebar-link-bullet {
+  width: 7px;
+  height: 7px;
+  margin: 0 5px 0 5px;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  border-radius: var(--radius-full);
+  transition: border-color var(--motion-fast), background-color var(--motion-fast);
+}
+
+.sidebar-link-chevron {
+  flex-shrink: 0;
+  opacity: 0.45;
+  transition: opacity var(--motion-fast), transform var(--motion-standard);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -102,25 +150,49 @@
     color: var(--color-white);
   }
 
-  .sidebar-link:hover .sidebar-link-icon {
+  .sidebar-link:hover .sidebar-link-icon,
+  .sidebar-link:hover .sidebar-link-chevron {
     opacity: 1;
+  }
+
+  .sidebar-link:hover .sidebar-link-chevron {
+    transform: translateX(2px);
   }
 }
 
-/* Active: a lifted translucent tile with the seal gold on the icon only -
-   clearly "you are here" without a solid gold block shouting over every
-   other item in the list. */
+/* Active: a lifted translucent tile, a gold marker on its leading edge,
+   and the seal gold on the icon - "you are here" at a glance. */
 .sidebar-link-active,
 .sidebar-link-active:hover {
-  background: rgba(255, 255, 255, 0.11);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 1px 2px rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 1px 2px rgba(0, 0, 0, 0.14);
   color: var(--color-white);
   font-weight: 600;
+}
+
+.sidebar-link-active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 9px;
+  bottom: 9px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--color-accent);
 }
 
 .sidebar-link-active .sidebar-link-icon {
   color: var(--color-accent);
   opacity: 1;
+}
+
+.sidebar-link-active .sidebar-link-bullet {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+}
+
+.sidebar-link-active .sidebar-link-chevron {
+  opacity: 0.9;
 }
 
 .sidebar-link:focus-visible {

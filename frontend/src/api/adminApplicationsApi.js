@@ -60,8 +60,9 @@ export function getValidNextScholarshipStatuses(currentStatus) {
   return SCHOLARSHIP_STATUSES.filter((status) => SCHOLARSHIP_STAGE_RANK[status] > currentRank);
 }
 
-export async function searchApplications({ search, status, category, program, archived } = {}) {
+export async function searchApplications({ search, status, category, program, archived, department } = {}) {
   const params = new URLSearchParams();
+  if (department) params.set("department", department);
   if (search) params.set("search", search);
   if (status) params.set("status", status);
   if (category) params.set("category", category);

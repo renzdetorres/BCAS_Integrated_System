@@ -1,48 +1,119 @@
 .ui-barchart {
+  margin: 0;
+}
+
+.ui-barchart-plot {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 }
 
 .ui-barchart-row {
   display: grid;
-  grid-template-columns: minmax(90px, 34%) 1fr auto;
+  grid-template-columns: minmax(96px, 34%) minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .ui-barchart-label {
-  font-size: 13px;
-  color: var(--color-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 13px;
+  color: var(--color-text-primary);
 }
 
+/* No filled track behind the bar: faint gridlines at the axis ticks carry
+   the scale instead, so the bar is the only solid thing in the row. */
 .ui-barchart-track {
-  height: 10px;
-  background: var(--color-bg);
-  border-radius: var(--radius-full);
+  position: relative;
+  height: 22px;
+  /* Room on the right for the value label on the longest bar. */
+  margin-right: 44px;
+}
+
+.ui-barchart-gridline {
+  position: absolute;
+  top: -5px;
+  bottom: -5px;
+  width: 1px;
+  background: var(--color-border);
+}
+
+.ui-barchart-gridline:first-child {
+  background: var(--color-border-strong);
 }
 
 .ui-barchart-fill {
-  height: 100%;
-  min-width: 4px;
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  min-width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: var(--color-primary-light);
+  transform-origin: left;
+  animation: ui-barchart-grow 600ms var(--ease-out) both;
+  animation-delay: calc(var(--bar-index, 0) * 45ms);
+  transition: background-color var(--motion-fast);
+}
+
+.ui-barchart-row:hover .ui-barchart-fill {
   background: var(--color-primary);
-  border-radius: var(--radius-full);
-  transition: width var(--motion-standard);
+}
+
+@keyframes ui-barchart-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-barchart-fill {
+    animation: none;
+  }
 }
 
 .ui-barchart-value {
-  min-width: 2.5em;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  font-size: 13px;
+  position: absolute;
+  top: 50%;
+  margin-left: 8px;
+  transform: translateY(-50%);
+  font-size: 12.5px;
   font-weight: 600;
-  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+}
+
+.ui-barchart-axis-row {
+  margin-top: 2px;
+}
+
+.ui-barchart-axis {
+  position: relative;
+  height: 16px;
+  margin-right: 44px;
+}
+
+.ui-barchart-axis span {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-tertiary);
+}
+
+.ui-barchart-axis span:first-child {
+  transform: none;
 }
 
 .ui-barchart-empty {
+  margin: 0;
+  padding: 24px 0;
   color: var(--color-text-secondary);
-  font-size: 0.9rem;
+  font-size: 14px;
 }

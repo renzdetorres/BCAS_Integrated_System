@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useSession } from "../../context/SessionContext.jsx";
 import { useLogout } from "../../hooks/useLogout.js";
 import { getActiveAnnouncements } from "../../api/announcementApi.js";
@@ -29,7 +29,36 @@ function useOutsideClick(onOutside) {
   return ref;
 }
 
-export default function TopBar({ onMenuClick }) {
+/**
+ * Admin-only: searches applicants by name or email by opening the
+ * Applications list with that search already applied - the list page owns
+ * the actual query, so there's one search behaviour, not two.
+ */
+function ApplicationSearch() {
+  const navigate = useNavigate();
+  const [term, setTerm] = useState("");
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    const query = term.trim();
+    navigate(query ? `/admin/applications?${new URLSearchParams({ search: query })}` : "/admin/applications");
+  }
+
+  return (
+    <form className="topbar-search" role="search" onSubmit={handleSubmit}>
+      <Icon name="search" size={16} className="topbar-search-icon" />
+      <input
+        type="search"
+        value={term}
+        onChange={(event) => setTerm(event.target.value)}
+        placeholder="Search applicants..."
+        aria-label="Search applicants by name or email"
+      />
+    </form>
+  );
+}
+
+export default function TopBar({ onMenuClick, leading }) {
   const { session } = useSession();
   const handleLogout = useLogout();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -39,11 +68,17 @@ export default function TopBar({ onMenuClick }) {
   const notifRef = useOutsideClick(() => setNotifOpen(false));
   const profileMenuItems = PROFILE_MENU_BY_ROLE[session.role] ?? [];
 
+  // The bell lists the announcements applicants see, and that endpoint is
+  // applicant-only - staff manage announcements from their own page - so
+  // the bell (and the request behind it) is for applicants alone.
+  const showAnnouncements = session.role === "Applicant";
+
   useEffect(() => {
+    if (!showAnnouncements) return;
     getActiveAnnouncements()
       .then(setAnnouncements)
       .catch(() => setAnnouncements([]));
-  }, []);
+  }, [showAnnouncements]);
 
   const recent = announcements.slice(0, 5);
 
@@ -58,8 +93,12 @@ export default function TopBar({ onMenuClick }) {
         <Icon name="menu" size={20} />
       </button>
 
+      {leading ? <div className="topbar-leading">{leading}</div> : null}
+      {session.role === "Admin" && <ApplicationSearch />}
+
       <div className="topbar-spacer" />
 
+      {showAnnouncements && (
       <div className="topbar-notif" ref={notifRef}>
         <button
           type="button"
@@ -98,6 +137,7 @@ export default function TopBar({ onMenuClick }) {
           </div>
         ) : null}
       </div>
+      )}
 
       <div className="topbar-user" ref={userRef}>
         <button
