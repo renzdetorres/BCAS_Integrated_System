@@ -33,7 +33,7 @@ public class RoleAccessMiddleware
                     await context.Response.WriteAsJsonAsync(new Microsoft.AspNetCore.Mvc.ProblemDetails
                     {
                         Title = "Access restricted",
-                        Detail = $"Your role no longer has access to {feature.Label}. Ask the principal if you need it.",
+                        Detail = $"Your role no longer has access to {feature.Label}. Ask a Super Admin if you need it.",
                         Status = StatusCodes.Status403Forbidden,
                     });
                     return;

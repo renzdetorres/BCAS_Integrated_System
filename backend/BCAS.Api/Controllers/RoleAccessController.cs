@@ -16,7 +16,7 @@ public record MyAccessResponse(IReadOnlyList<string> BlockedFeatures);
 
 /// <summary>
 /// What each role may open. Any Admin can read the matrix; only the Super
-/// Admin (the principal) changes it.
+/// Admin changes it.
 /// </summary>
 [ApiController]
 public class RoleAccessController : ControllerBase

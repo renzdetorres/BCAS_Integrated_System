@@ -27,7 +27,7 @@ export default function RequireAuth() {
         <EmptyState
           title="This page is not available to your role"
           icon="lock"
-          message="The principal has switched this page off for your role. Ask them if you need access."
+          message="A Super Admin has switched this page off for your role. Ask them if you need access."
         />
       </AppLayout>
     );

@@ -82,7 +82,7 @@ export default function AdminRoleAccessPage() {
         )}
 
         {overview && !canEdit && (
-          <p className="role-access-note">Only the Super Admin (principal) can change these. You can view them.</p>
+          <p className="role-access-note">Only a Super Admin can change these. You can view them.</p>
         )}
 
         {!overview && !errorMessage && <p>Loading...</p>}
