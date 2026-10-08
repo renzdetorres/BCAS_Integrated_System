@@ -45,9 +45,6 @@ DELETE FROM dbo.InquiryThreads                     WHERE UserId IN (SELECT UserI
 DELETE FROM dbo.NotificationPreferences            WHERE UserId IN (SELECT UserId FROM @SampleUsers);
 DELETE FROM dbo.PasswordResetTokens                WHERE UserId IN (SELECT UserId FROM @SampleUsers);
 DELETE FROM dbo.AuditLogs                          WHERE UserId IN (SELECT UserId FROM @SampleUsers);
-DELETE FROM dbo.PotentialDuplicateApplicants       WHERE NewUserId IN (SELECT UserId FROM @SampleUsers)
-                                                      OR MatchedUserId IN (SELECT UserId FROM @SampleUsers)
-                                                      OR ReviewedByUserId IN (SELECT UserId FROM @SampleUsers);
 
 DELETE FROM dbo.Semesters WHERE Name LIKE N'% (sample)'
                              OR CreatedByUserId IN (SELECT UserId FROM @SampleUsers);
