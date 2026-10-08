@@ -59,6 +59,19 @@ export async function updateUser(userId, { firstName, lastName, email, role, dep
   return data;
 }
 
+/** Admin with full controls only: permanently deletes an account and its records. */
+export async function deleteUser(userId) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    throw new ApiError(resolveErrorMessage(response, data, "Failed to delete the account. Please try again."), response.status);
+  }
+}
+
 export async function setUserActiveStatus(userId, isActive) {
   const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/status`, {
     method: "PATCH",

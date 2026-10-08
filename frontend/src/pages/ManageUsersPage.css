@@ -97,3 +97,12 @@
   font-size: 12px;
   font-weight: 600;
 }
+
+.account-delete-button {
+  color: var(--color-status-red-text);
+}
+
+.account-delete-button:hover:not(:disabled) {
+  background: var(--color-status-red-bg);
+  color: var(--color-status-red-text);
+}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ALL_ROLES,
   DEPARTMENT_OPTIONS,
+  deleteUser,
   listUsers,
   setUserActiveStatus,
   setUserSuperAdmin,
@@ -189,6 +190,8 @@ export default function ManageUsersPage() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [pendingUserId, setPendingUserId] = useState(null);
   const [deactivateTarget, setDeactivateTarget] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [editing, setEditing] = useState(null);
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -225,6 +228,21 @@ export default function ManageUsersPage() {
     } finally {
       setPendingUserId(null);
       setDeactivateTarget(null);
+    }
+  }
+
+  async function confirmDelete() {
+    const target = deleteTarget;
+    setIsDeleting(true);
+    try {
+      await deleteUser(target.userId);
+      setUsers((prev) => prev.filter((u) => u.userId !== target.userId));
+      showToast(`${fullName(target)}'s account was deleted.`);
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : "Failed to delete the account.", "error");
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
     }
   }
 
@@ -303,6 +321,18 @@ export default function ManageUsersPage() {
             >
               {pendingUserId === row.userId ? "Saving..." : row.isActive ? "Deactivate" : "Activate"}
             </button>
+            {callerIsSuperAdmin ? (
+              <button
+                type="button"
+                className="account-status-button account-delete-button"
+                disabled={isSelf || isDeleting}
+                title={isSelf ? "You can't delete your own account" : undefined}
+                onClick={() => setDeleteTarget(row)}
+                aria-label={`Delete ${fullName(row)}`}
+              >
+                Delete
+              </button>
+            ) : null}
           </span>
         );
       },
@@ -371,6 +401,20 @@ export default function ManageUsersPage() {
         isSubmitting={pendingUserId === deactivateTarget?.userId}
         onConfirm={() => changeStatus(deactivateTarget, false)}
         onCancel={() => setDeactivateTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Delete this account permanently?"
+        message={
+          deleteTarget
+            ? `${fullName(deleteTarget)} (${deleteTarget.email}) and everything tied to the account - applications, documents, exam records and inquiries - will be deleted. This can't be undone. To only block sign-in, deactivate the account instead.`
+            : ""
+        }
+        confirmLabel="Delete account"
+        isSubmitting={isDeleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
       />
     </AppLayout>
   );

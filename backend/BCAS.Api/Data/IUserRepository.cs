@@ -2,6 +2,13 @@ using BCAS.Api.Models;
 
 namespace BCAS.Api.Data;
 
+public enum AccountDeleteOutcome
+{
+    Deleted,
+    NotFound,
+    HasRecordedActivity,
+}
+
 public interface IUserRepository
 {
     Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default);
@@ -64,6 +71,18 @@ public interface IUserRepository
 
     /// <summary>Active Admin accounts that are Super Admins.</summary>
     Task<int> CountActiveSuperAdminsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Permanently deletes an account and everything it owns (profile,
+    /// applications and their history, documents, exam records, inquiries) in
+    /// one transaction. References to it as an actor on someone else's
+    /// records (archived-by, reviewed-by, audit entries) are cleared, not
+    /// deleted. Returns HasRecordedActivity when it recorded decisions,
+    /// screenings, reservations or inquiry replies on other people's
+    /// applications - that history must not disappear, so such an account can
+    /// only be deactivated.
+    /// </summary>
+    Task<AccountDeleteOutcome> DeleteAccountAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>If no active Admin is a Super Admin, makes the earliest-created active Admin one.</summary>
     Task EnsureSuperAdminExistsAsync(CancellationToken cancellationToken = default);

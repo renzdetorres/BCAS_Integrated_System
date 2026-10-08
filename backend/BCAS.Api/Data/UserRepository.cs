@@ -326,6 +326,87 @@ WHERE u.UserId = @UserId;";
         return await reader.ReadAsync(cancellationToken) ? MapUser(reader) : null;
     }
 
+    public async Task<AccountDeleteOutcome> DeleteAccountAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        // One batch inside one transaction: either the whole account goes or
+        // nothing does. The PotentialDuplicateApplicants statement is dynamic
+        // SQL because that table is being retired and may not exist.
+        const string sql = @"
+SET XACT_ABORT ON;
+SET NOCOUNT ON;
+BEGIN TRANSACTION;
+
+IF NOT EXISTS (SELECT 1 FROM dbo.Users WHERE UserId = @UserId)
+BEGIN
+    ROLLBACK TRANSACTION;
+    SELECT N'NotFound';
+    RETURN;
+END
+
+DECLARE @UserIdText NVARCHAR(36) = CONVERT(NVARCHAR(36), @UserId);
+DECLARE @Apps TABLE (ApplicationId UNIQUEIDENTIFIER NOT NULL PRIMARY KEY);
+INSERT INTO @Apps (ApplicationId)
+SELECT ApplicationId FROM dbo.AdmissionApplications WHERE UserId = @UserId
+UNION
+SELECT ApplicationId FROM dbo.ScholarshipApplications WHERE UserId = @UserId;
+
+-- History this account recorded on OTHER people's applications can't go.
+IF EXISTS (SELECT 1 FROM dbo.ScholarshipEligibilityScreenings WHERE EvaluatedByUserId = @UserId AND ApplicationId NOT IN (SELECT ApplicationId FROM @Apps))
+   OR EXISTS (SELECT 1 FROM dbo.ScholarshipFinalDecisions WHERE DecidedByUserId = @UserId AND ApplicationId NOT IN (SELECT ApplicationId FROM @Apps))
+   OR EXISTS (SELECT 1 FROM dbo.AdmissionReservations WHERE RecordedByUserId = @UserId AND ApplicationId NOT IN (SELECT ApplicationId FROM @Apps))
+   OR EXISTS (SELECT 1 FROM dbo.InquiryMessages m WHERE m.SenderUserId = @UserId AND m.ThreadId NOT IN (SELECT ThreadId FROM dbo.InquiryThreads WHERE UserId = @UserId))
+BEGIN
+    ROLLBACK TRANSACTION;
+    SELECT N'HasRecordedActivity';
+    RETURN;
+END
+
+-- Nullable actor references on other records: keep the record, clear the name.
+UPDATE dbo.AdmissionApplications SET ArchivedByUserId = NULL WHERE ArchivedByUserId = @UserId;
+UPDATE dbo.ScholarshipApplications SET ArchivedByUserId = NULL WHERE ArchivedByUserId = @UserId;
+UPDATE dbo.ApplicantDocuments SET ReviewedByUserId = NULL WHERE ReviewedByUserId = @UserId;
+UPDATE dbo.ApplicationStatusHistory SET ChangedByUserId = NULL WHERE ChangedByUserId = @UserId AND ApplicationId NOT IN (SELECT ApplicationId FROM @Apps);
+UPDATE dbo.ExamScheduleSelections SET PermitReleasedByUserId = NULL WHERE PermitReleasedByUserId = @UserId;
+UPDATE dbo.Semesters SET CreatedByUserId = NULL WHERE CreatedByUserId = @UserId;
+UPDATE dbo.AuditLogs SET UserId = NULL WHERE UserId = @UserId;
+IF OBJECT_ID(N'dbo.PotentialDuplicateApplicants', N'U') IS NOT NULL
+    EXEC (N'DELETE FROM dbo.PotentialDuplicateApplicants WHERE NewUserId = ''' + @UserIdText + N''' OR MatchedUserId = ''' + @UserIdText + N''';
+            UPDATE dbo.PotentialDuplicateApplicants SET ReviewedByUserId = NULL WHERE ReviewedByUserId = ''' + @UserIdText + N'''');
+
+-- Everything the account owns.
+DELETE FROM dbo.ApplicationStatusHistory         WHERE ApplicationId IN (SELECT ApplicationId FROM @Apps);
+DELETE FROM dbo.ScholarshipFinalDecisions        WHERE ApplicationId IN (SELECT ApplicationId FROM @Apps);
+DELETE FROM dbo.ScholarshipEligibilityScreenings WHERE ApplicationId IN (SELECT ApplicationId FROM @Apps);
+DELETE FROM dbo.AdmissionReservations            WHERE ApplicationId IN (SELECT ApplicationId FROM @Apps);
+DELETE FROM dbo.ScholarshipApplications          WHERE UserId = @UserId;
+DELETE FROM dbo.AdmissionApplications            WHERE UserId = @UserId;
+DELETE FROM dbo.ExamScheduleSelections           WHERE UserId = @UserId;
+DELETE FROM dbo.ExamRescheduleRequests           WHERE UserId = @UserId;
+DELETE FROM dbo.ApplicantDocuments               WHERE UserId = @UserId;
+DELETE FROM dbo.ApplicantProfiles                WHERE UserId = @UserId;
+DELETE FROM dbo.InquiryMessages                  WHERE SenderUserId = @UserId OR ThreadId IN (SELECT ThreadId FROM dbo.InquiryThreads WHERE UserId = @UserId);
+DELETE FROM dbo.InquiryThreads                   WHERE UserId = @UserId;
+DELETE FROM dbo.NotificationPreferences          WHERE UserId = @UserId;
+DELETE FROM dbo.PasswordResetTokens              WHERE UserId = @UserId;
+DELETE FROM dbo.Users                            WHERE UserId = @UserId;
+
+COMMIT TRANSACTION;
+SELECT N'Deleted';";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@UserId", System.Data.SqlDbType.UniqueIdentifier) { Value = userId });
+
+        var outcome = (string?)await command.ExecuteScalarAsync(cancellationToken);
+        return outcome switch
+        {
+            "Deleted" => AccountDeleteOutcome.Deleted,
+            "HasRecordedActivity" => AccountDeleteOutcome.HasRecordedActivity,
+            _ => AccountDeleteOutcome.NotFound,
+        };
+    }
+
     public async Task<int> CountActiveSuperAdminsAsync(CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);

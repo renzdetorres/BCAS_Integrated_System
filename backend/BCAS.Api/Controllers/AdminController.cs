@@ -254,6 +254,54 @@ public class AdminController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Admin with full controls only: permanently deletes an account and its
+    /// records. The caller's own account, the last full-controls Admin, and
+    /// accounts that recorded decisions on other people's applications
+    /// (deactivate those instead) are refused.
+    /// </summary>
+    [HttpDelete("users/{userId:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteUser(Guid userId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var deleted = await _userManagementService.DeleteUserAsync(User.GetUserId(), userId, cancellationToken);
+            await _auditLogService.LogAsync(User, "UserDeleted", $"{deleted.Email} ({deleted.Role})", cancellationToken);
+            return NoContent();
+        }
+        catch (SuperAdminRequiredException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Full Admin controls required",
+                Detail = ex.Message,
+                Status = StatusCodes.Status403Forbidden,
+            });
+        }
+        catch (InvalidAccountDeletionException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Account can't be deleted",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (UserNotFoundException ex)
+        {
+            return NotFound(new ProblemDetails
+            {
+                Title = "Account not found",
+                Detail = ex.Message,
+                Status = StatusCodes.Status404NotFound,
+            });
+        }
+    }
+
     // Department assignments decide what an Academic Head can see, so the
     // audit trail records them alongside the account change itself.
     private static string DepartmentSuffix(UserProfileResponse response) =>

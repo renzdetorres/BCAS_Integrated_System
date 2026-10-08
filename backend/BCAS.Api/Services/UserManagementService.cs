@@ -92,6 +92,38 @@ public class UserManagementService : IUserManagementService
         return updated.ToProfileResponse();
     }
 
+    public async Task<UserProfileResponse> DeleteUserAsync(Guid callerUserId, Guid userId, CancellationToken cancellationToken = default)
+    {
+        await _superAdminGuard.EnsureAsync(callerUserId, "delete accounts", cancellationToken);
+
+        if (callerUserId == userId)
+        {
+            throw new InvalidAccountDeletionException("You can't delete your own account.");
+        }
+
+        var target = await _userRepository.GetByIdAsync(userId, cancellationToken) ?? throw new UserNotFoundException(userId);
+
+        try
+        {
+            await EnsureNotLastSuperAdminAsync(userId, "delete", cancellationToken);
+        }
+        catch (InvalidSuperAdminChangeException ex)
+        {
+            throw new InvalidAccountDeletionException(ex.Message);
+        }
+
+        var outcome = await _userRepository.DeleteAccountAsync(userId, cancellationToken);
+        if (outcome == AccountDeleteOutcome.NotFound) throw new UserNotFoundException(userId);
+        if (outcome == AccountDeleteOutcome.HasRecordedActivity)
+        {
+            throw new InvalidAccountDeletionException(
+                "This account has recorded decisions, screenings, reservations or replies on other people's applications, so it can't be deleted. Deactivate it instead.");
+        }
+
+        _logger.LogInformation("Account {Email} deleted by {CallerUserId}", target.Email, callerUserId);
+        return target.ToProfileResponse();
+    }
+
     /// <summary>
     /// A Super Admin is the only one who can override the semester lock or
     /// grant Super Admin, so the last active one can't be removed from that

@@ -22,4 +22,14 @@ public interface IUserManagementService
     /// Admin can't be revoked (InvalidSuperAdminChangeException).
     /// </summary>
     Task<UserProfileResponse> SetSuperAdminAsync(Guid callerUserId, Guid userId, bool isSuperAdmin, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Permanently deletes an account and its records. Caller must have full
+    /// Admin controls (SuperAdminRequiredException). Throws
+    /// InvalidAccountDeletionException for the caller's own account, the last
+    /// full-controls Admin, or an account that recorded decisions on other
+    /// people's applications (deactivate those instead); UserNotFoundException
+    /// if it doesn't exist. Returns the deleted account for the audit trail.
+    /// </summary>
+    Task<UserProfileResponse> DeleteUserAsync(Guid callerUserId, Guid userId, CancellationToken cancellationToken = default);
 }
