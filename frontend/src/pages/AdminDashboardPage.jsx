@@ -7,7 +7,6 @@ import AppLayout from "../components/layout/AppLayout.jsx";
 import Icon from "../components/ui/Icon.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import { DEPARTMENT_OPTIONS } from "../config/departments.js";
-import { useSession } from "../context/SessionContext.jsx";
 import "./AdminDashboardPage.css";
 
 const WORKSPACES = [
@@ -26,13 +25,6 @@ const SHORTCUTS = [
 function currentAcademicYear(now = new Date()) {
   const startYear = now.getMonth() >= 5 ? now.getFullYear() : now.getFullYear() - 1;
   return `${startYear}-${startYear + 1}`;
-}
-
-function greeting(now = new Date()) {
-  const hour = now.getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
 }
 
 function formatDate(isoDateTime) {
@@ -236,7 +228,6 @@ function DashboardSkeleton() {
 
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
-  const { session } = useSession();
   const [searchParams, setSearchParams] = useSearchParams();
   const workspace = searchParams.get("workspace") === "scholarship" ? "scholarship" : "admission";
 
@@ -319,7 +310,7 @@ export default function AdminDashboardPage() {
         <div className="dash-intro-text">
           <h1 className="dash-title">{workspaceLabel}</h1>
           <p className="dash-intro-meta">
-            {greeting()}, {session.firstName} &middot; Academic Year {currentAcademicYear()}
+            Academic Year {currentAcademicYear()}
           </p>
         </div>
         <Link to={applicationsLink({ category: workspaceLabel })} className="btn btn-primary dash-intro-cta">
