@@ -82,34 +82,6 @@ function WorkspaceSwitch({ value, onChange }) {
   );
 }
 
-/**
- * The page's opening line: what needs doing, in words, before any figure.
- * Counts are part of the sentence so the headline and the data can't drift.
- */
-function Briefing({ view, workspaceLabel }) {
-  const noun = workspaceLabel.toLowerCase();
-  if (view.totalApplications === 0) {
-    return <>No {noun} applications have come in yet this year.</>;
-  }
-  const followUps = [];
-  if (view.unassignedCount > 0) followUps.push(`${plural(view.unassignedCount, "still needs", "still need")} a department`);
-  if (view.pendingDocumentsCount > 0) followUps.push(`${plural(view.pendingDocumentsCount, "document", "documents")} to verify`);
-
-  return (
-    <>
-      {view.pendingCount > 0 ? (
-        <>
-          <em>{plural(view.pendingCount, `${noun} application is`, `${noun} applications are`)}</em> waiting on a
-          decision
-        </>
-      ) : (
-        <>Every {noun} application has a decision</>
-      )}
-      {followUps.length > 0 ? <>, and {followUps.join(" and ")}.</> : "."}
-    </>
-  );
-}
-
 /** Approved / pending / rejected as one proportional strip: the decision mix at a glance. */
 function DecisionMix({ view }) {
   const segments = [
@@ -348,9 +320,6 @@ export default function AdminDashboardPage() {
           <h1 className="dash-title">{workspaceLabel}</h1>
           <p className="dash-intro-meta">
             {greeting()}, {session.firstName} &middot; Academic Year {currentAcademicYear()}
-          </p>
-          <p className="dash-intro-title">
-            {view ? <Briefing view={view} workspaceLabel={workspaceLabel} /> : `${workspaceLabel} overview`}
           </p>
         </div>
         <Link to={applicationsLink({ category: workspaceLabel })} className="btn btn-primary dash-intro-cta">
