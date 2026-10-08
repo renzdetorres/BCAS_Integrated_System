@@ -9,19 +9,23 @@ public static class AdmissionConstants
     };
 
     /// <summary>
-    /// The full range AdmissionApplications.Status can hold (BISAASS-16's
-    /// CHECK constraint, widened up front to anticipate this ticket -
-    /// BISAASS-31 Application Status Workflow Oversight & Update). Staff can
-    /// set an application to any of these; the granular six-step view
-    /// (Submitted/DocumentsReceived/UnderReview/ExamScheduled/ExamCompleted/
-    /// DecisionReleased, BISAASS-22) is derived on top of this smaller set
-    /// plus other signals - see ApplicationWorkflowSteps.
+    /// Every value AdmissionApplications.Status can hold (matches
+    /// CK_AdmissionApplications_Status). Which of them an application may move
+    /// to from where it is now is decided by AdmissionWorkflowConstants.
     /// </summary>
     public static readonly IReadOnlySet<string> AllowedStatuses = new HashSet<string>(StringComparer.Ordinal)
     {
         "Submitted",
         "UnderReview",
+        "PendingDocuments",
+        "DocumentsCompleted",
+        "DocumentsCleared",
+        "ExamScheduled",
+        "ExamDone",
+        "DidNotTakeExam",
+        "Registration",
         "Approved",
         "Rejected",
+        "Retracted",
     };
 }

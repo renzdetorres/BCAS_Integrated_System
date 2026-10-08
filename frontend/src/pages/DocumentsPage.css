@@ -105,3 +105,14 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.documents-section-title {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+  color: var(--color-text-primary);
+}
+
+.required-mark {
+  color: var(--color-status-red-text);
+  font-weight: 700;
+}

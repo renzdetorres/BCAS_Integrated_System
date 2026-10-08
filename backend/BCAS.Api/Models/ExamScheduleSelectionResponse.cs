@@ -7,4 +7,5 @@ public class ExamScheduleSelectionResponse
     public DateOnly ExamDate { get; set; }
     public TimeOnly ExamTime { get; set; }
     public DateTime SelectedAt { get; set; }
+    public string ExamType { get; set; } = "Entrance Exam";
 }

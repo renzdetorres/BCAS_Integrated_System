@@ -30,6 +30,8 @@ SELECT
     CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.ExamScheduleSelections ess WHERE ess.UserId = sa.UserId) THEN 1 ELSE 0 END AS BIT)
         AS EntranceExamScheduled,
     sa.Status, sa.SubmittedAt, sa.UpdatedAt,
+    sa.LevelApplied, sa.ApplicantFullName, sa.SchoolLastAttended, sa.GuardianRole, sa.GuardianName, sa.GuardianContact,
+    sa.GuardianEmail, sa.ConsentTerms, sa.ConsentParticipation, sa.ConsentCertification, sa.ConsentedAt,
     ses.Verdict, ses.Remarks, ses.EvaluatedAt,
     eu.FirstName AS EvaluatorFirstName, eu.LastName AS EvaluatorLastName,
     fd.Decision, fd.Remarks AS DecisionRemarks, fd.DecidedAt,
@@ -302,6 +304,12 @@ ORDER BY sa.UpdatedAt ASC;";
         return applications;
     }
 
+    private static string? NullableString(SqlDataReader reader, string column) =>
+        reader.IsDBNull(reader.GetOrdinal(column)) ? null : reader.GetString(reader.GetOrdinal(column));
+
+    private static bool? NullableBool(SqlDataReader reader, string column) =>
+        reader.IsDBNull(reader.GetOrdinal(column)) ? null : reader.GetBoolean(reader.GetOrdinal(column));
+
     private static EvaluatorScholarshipApplicationDetail MapDetail(SqlDataReader reader)
     {
         var detail = new EvaluatorScholarshipApplicationDetail
@@ -321,6 +329,20 @@ ORDER BY sa.UpdatedAt ASC;";
             Status = reader.GetString(reader.GetOrdinal("Status")),
             SubmittedAt = reader.GetDateTime(reader.GetOrdinal("SubmittedAt")),
             UpdatedAt = reader.GetDateTime(reader.GetOrdinal("UpdatedAt")),
+            Form = new ScholarshipApplicationDetails
+            {
+                LevelApplied = NullableString(reader, "LevelApplied"),
+                ApplicantFullName = NullableString(reader, "ApplicantFullName"),
+                SchoolLastAttended = NullableString(reader, "SchoolLastAttended"),
+                GuardianRole = NullableString(reader, "GuardianRole"),
+                GuardianName = NullableString(reader, "GuardianName"),
+                GuardianContact = NullableString(reader, "GuardianContact"),
+                GuardianEmail = NullableString(reader, "GuardianEmail"),
+                ConsentTerms = NullableBool(reader, "ConsentTerms"),
+                ConsentParticipation = NullableBool(reader, "ConsentParticipation"),
+                ConsentCertification = NullableBool(reader, "ConsentCertification"),
+                ConsentedAt = reader.IsDBNull(reader.GetOrdinal("ConsentedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("ConsentedAt")),
+            },
         };
 
         var isTopOne = reader.GetBoolean(reader.GetOrdinal("IsTopOne"));

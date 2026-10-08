@@ -31,6 +31,7 @@ export default function ExamSchedulePage() {
   const [schedules, setSchedules] = useState([]);
   const [selection, setSelection] = useState(null);
   const [selectedId, setSelectedId] = useState("");
+  const [examType, setExamType] = useState("Entrance Exam");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,7 +68,7 @@ export default function ExamSchedulePage() {
     setIsSubmitting(true);
 
     try {
-      const confirmed = await selectExamSchedule(Number(selectedId));
+      const confirmed = await selectExamSchedule(Number(selectedId), examType);
       setSelection(confirmed);
     } catch (error) {
       setErrorMessage(error instanceof ApiError ? error.message : "Something went wrong. Please try again.");
@@ -81,7 +82,7 @@ export default function ExamSchedulePage() {
       <Card className="exam-schedule-card">
         {selection && (
           <div className="exam-schedule-confirmed">
-            <p className="exam-schedule-confirmed-label">Your confirmed schedule</p>
+            <p className="exam-schedule-confirmed-label">Your confirmed schedule &middot; {selection.examType}</p>
             <p className="exam-schedule-confirmed-date">{formatDate(selection.examDate)}</p>
             <p className="exam-schedule-confirmed-time">{formatTime(selection.examTime)}</p>
             <Link to="/exam-permit">View my exam permit</Link>
@@ -100,6 +101,14 @@ export default function ExamSchedulePage() {
 
         {(isLoading || schedules.length > 0) && (
           <form onSubmit={handleSubmit} noValidate>
+            <div className="form-row">
+              <label htmlFor="examType">Type of exam</label>
+              <select id="examType" name="examType" value={examType} onChange={(event) => setExamType(event.target.value)}>
+                <option value="Entrance Exam">Entrance Exam</option>
+                <option value="Scholarship Exam">Scholarship Exam</option>
+              </select>
+            </div>
+
             <div className="form-row">
               <label htmlFor="examScheduleId">
                 {selection ? "Choose a different schedule" : "Choose a schedule"}

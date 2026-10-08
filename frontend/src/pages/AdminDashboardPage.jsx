@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { getAdminDashboard } from "../api/adminDashboardApi.js";
+import { getEnrollmentSummary } from "../api/adminReportsApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
-import BarChart from "../components/ui/BarChart.jsx";
 import Icon from "../components/ui/Icon.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import { DEPARTMENT_OPTIONS } from "../config/departments.js";
@@ -14,22 +14,6 @@ const WORKSPACES = [
   { value: "admission", label: "Admission", icon: "graduation-cap" },
   { value: "scholarship", label: "Scholarship", icon: "award" },
 ];
-
-// The scholarship chart shows the top scholarships by name; the long tail
-// folds into one "Other" bar so a new one never pushes the chart off the panel.
-const MAX_PROGRAM_BARS = 8;
-
-function programBars(byProgram, workspace) {
-  const sorted = [...(byProgram ?? [])].sort((a, b) => b.count - a.count);
-  // Admission is always exactly the four College programs (the server
-  // returns all four, zero-filled), so there is nothing to fold.
-  if (workspace === "admission" || sorted.length <= MAX_PROGRAM_BARS) {
-    return sorted.map((p) => ({ label: p.program, value: p.count }));
-  }
-  const top = sorted.slice(0, MAX_PROGRAM_BARS - 1).map((p) => ({ label: p.program, value: p.count }));
-  const rest = sorted.slice(MAX_PROGRAM_BARS - 1);
-  return [...top, { label: `Other (${rest.length} more)`, value: rest.reduce((sum, p) => sum + p.count, 0) }];
-}
 
 const SHORTCUTS = [
   { to: "/admin/announcements", label: "Post an announcement", icon: "megaphone" },
@@ -167,6 +151,107 @@ function DecisionMix({ view }) {
   );
 }
 
+/**
+ * The four shortcuts live behind one floating button: open on hover or
+ * focus (desktop), on tap (touch), closed with Escape or by leaving.
+ */
+function ShortcutFab() {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    function onKey(event) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    function onPointerDown(event) {
+      if (rootRef.current && !rootRef.current.contains(event.target)) setOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [open]);
+
+  return (
+    <div
+      className={`dash-fab${open ? " dash-fab-open" : ""}`}
+      ref={rootRef}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <nav className="dash-fab-menu" aria-label="Shortcuts" hidden={!open}>
+        <ul>
+          {SHORTCUTS.map((shortcut) => (
+            <li key={shortcut.to}>
+              <Link to={shortcut.to} className="dash-shortcut" onClick={() => setOpen(false)}>
+                <Icon name={shortcut.icon} size={17} />
+                {shortcut.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <button
+        type="button"
+        className="dash-fab-button"
+        aria-label="Shortcuts"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <Icon name={open ? "x" : "plus"} size={22} />
+      </button>
+    </div>
+  );
+}
+
+/** Enrolled = Approved and reserved. Reuses the Enrollment Summary report so the two never disagree. */
+function EnrollmentSummary({ summary, approvedCount }) {
+  const programs = summary.byProgram ?? [];
+  const awaitingReservation = Math.max(0, approvedCount - summary.totalEnrolled);
+  return (
+    <section className="dash-panel dash-enrollment" aria-labelledby="dash-enrollment-title">
+      <div className="dash-panel-head">
+        <h2 id="dash-enrollment-title" className="dash-panel-title">
+          Summary of enrollment
+        </h2>
+        <Link to="/admin/reports" className="dash-link">
+          Full report
+          <Icon name="chevron-right" size={14} />
+        </Link>
+      </div>
+      <dl className="dash-enroll-figures">
+        <div>
+          <dt>Enrolled</dt>
+          <dd>{summary.totalEnrolled.toLocaleString()}</dd>
+          <p className="dash-figure-note">Approved and reserved</p>
+        </div>
+        <div>
+          <dt>Approved, not reserved</dt>
+          <dd>{awaitingReservation.toLocaleString()}</dd>
+          <p className="dash-figure-note">
+            <Link to="/admin/reservations">Open reservations</Link>
+          </p>
+        </div>
+      </dl>
+      {programs.length > 0 ? (
+        <ul className="dash-enroll-list">
+          {programs.map((p) => (
+            <li key={p.program}>
+              <span>{p.program}</span>
+              <strong>{p.count.toLocaleString()}</strong>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="dash-empty">No enrolled applicants yet.</p>
+      )}
+    </section>
+  );
+}
+
 function DashboardSkeleton() {
   return (
     <div className="dash-layout" aria-busy="true" aria-label="Loading dashboard">
@@ -186,9 +271,16 @@ export default function AdminDashboardPage() {
   const [dashboard, setDashboard] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [enrollment, setEnrollment] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
+
+    getEnrollmentSummary()
+      .then((data) => {
+        if (!cancelled) setEnrollment(data);
+      })
+      .catch(() => {});
 
     getAdminDashboard()
       .then((data) => {
@@ -222,8 +314,6 @@ export default function AdminDashboardPage() {
   ];
   const largestDepartment = Math.max(1, ...departments.map((d) => d.count));
 
-  const decided = (view?.approvedCount ?? 0) + (view?.rejectedCount ?? 0);
-  const approvalRate = decided > 0 ? Math.round((view.approvedCount / decided) * 100) : null;
 
   const attention = view
     ? [
@@ -255,12 +345,13 @@ export default function AdminDashboardPage() {
     <AppLayout topbarLeading={<WorkspaceSwitch value={workspace} onChange={setWorkspace} />}>
       <header className="dash-intro">
         <div className="dash-intro-text">
+          <h1 className="dash-title">{workspaceLabel}</h1>
           <p className="dash-intro-meta">
-            {greeting()}, {session.firstName} &middot; {workspaceLabel} &middot; Academic Year {currentAcademicYear()}
+            {greeting()}, {session.firstName} &middot; Academic Year {currentAcademicYear()}
           </p>
-          <h1 className="dash-intro-title">
+          <p className="dash-intro-title">
             {view ? <Briefing view={view} workspaceLabel={workspaceLabel} /> : `${workspaceLabel} overview`}
-          </h1>
+          </p>
         </div>
         <Link to={applicationsLink({ category: workspaceLabel })} className="btn btn-primary dash-intro-cta">
           Open the queue
@@ -277,42 +368,28 @@ export default function AdminDashboardPage() {
       )}
 
       {!isLoading && !errorMessage && view && (
-        <div className="dash-layout" key={workspace}>
+        <div className={`dash-layout dash-layout-${workspace}`} key={workspace}>
           <section className="dash-panel dash-ledger" aria-label={`${workspaceLabel} figures`}>
             <dl className="dash-figures">
-              <div>
-                <dt>Applications</dt>
-                <dd>{view.totalApplications.toLocaleString()}</dd>
-                <p className={view.submittedThisWeek > 0 ? "dash-figure-note dash-figure-note-up" : "dash-figure-note"}>
-                  {view.submittedThisWeek > 0 ? (
-                    <>
-                      <Icon name="trend-up" size={13} />
-                      {view.submittedThisWeek.toLocaleString()} this week
-                    </>
-                  ) : (
-                    "None new this week"
-                  )}
-                </p>
-              </div>
-              <div>
-                <dt>Applicants</dt>
-                <dd>{view.totalApplicants.toLocaleString()}</dd>
-                <p className="dash-figure-note">Unique people</p>
-              </div>
               <div>
                 <dt>Awaiting decision</dt>
                 <dd>{view.pendingCount.toLocaleString()}</dd>
                 <p className="dash-figure-note">
-                  {view.totalApplications > 0
-                    ? `${Math.round((view.pendingCount / view.totalApplications) * 100)}% of all`
-                    : "Nothing yet"}
+                  {view.totalApplications > 0 ? `of ${plural(view.totalApplications, "application", "applications")}` : "Nothing yet"}
                 </p>
               </div>
               <div>
-                <dt>Approval rate</dt>
-                <dd>{approvalRate === null ? "–" : `${approvalRate}%`}</dd>
-                <p className="dash-figure-note">
-                  {decided > 0 ? `Of ${plural(decided, "decision", "decisions")}` : "No decisions yet"}
+                <dt>New this week</dt>
+                <dd>{view.submittedThisWeek.toLocaleString()}</dd>
+                <p className={view.submittedThisWeek > 0 ? "dash-figure-note dash-figure-note-up" : "dash-figure-note"}>
+                  {view.submittedThisWeek > 0 ? (
+                    <>
+                      <Icon name="trend-up" size={13} />
+                      Submitted in the last 7 days
+                    </>
+                  ) : (
+                    "None new this week"
+                  )}
                 </p>
               </div>
             </dl>
@@ -341,27 +418,9 @@ export default function AdminDashboardPage() {
             </ul>
           </aside>
 
-          <section className="dash-panel dash-programs" aria-labelledby="dash-programs-title">
-            <div className="dash-panel-head">
-              <h2 id="dash-programs-title" className="dash-panel-title">
-                Applicants by {workspace === "scholarship" ? "Scholarship" : "Program"}
-              </h2>
-              <span className="dash-panel-aside">Unique applicants</span>
-            </div>
-            <BarChart
-              data={programBars(view.byProgram, workspace)}
-              caption={`${workspaceLabel} applicants by ${workspace === "scholarship" ? "scholarship" : "program"}`}
-              unit="applicants"
-              emptyMessage={`No ${workspaceLabel.toLowerCase()} applicants yet.`}
-            />
-            {workspace === "admission" && view.otherProgramApplicants > 0 && (
-              <p className="dash-panel-note">
-                {view.otherProgramApplicants.toLocaleString()}{" "}
-                {view.otherProgramApplicants === 1 ? "applicant applied" : "applicants applied"} for a course outside BSIT,
-                BSBA, BSA and BSED (older applications).
-              </p>
-            )}
-          </section>
+          {workspace === "admission" && enrollment ? (
+            <EnrollmentSummary summary={enrollment} approvedCount={view.approvedCount} />
+          ) : null}
 
           <section className="dash-panel dash-departments" aria-labelledby="dash-departments-title">
             <div className="dash-panel-head">
@@ -452,24 +511,10 @@ export default function AdminDashboardPage() {
             )}
           </section>
 
-          <nav className="dash-panel dash-shortcuts" aria-labelledby="dash-shortcuts-title">
-            <h2 id="dash-shortcuts-title" className="dash-panel-title">
-              Shortcuts
-            </h2>
-            <ul>
-              {SHORTCUTS.map((shortcut) => (
-                <li key={shortcut.to}>
-                  <Link to={shortcut.to} className="dash-shortcut">
-                    <Icon name={shortcut.icon} size={17} />
-                    {shortcut.label}
-                    <Icon name="chevron-right" size={14} className="dash-shortcut-chevron" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
         </div>
       )}
+
+      <ShortcutFab />
     </AppLayout>
   );
 }

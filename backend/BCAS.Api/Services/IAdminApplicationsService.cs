@@ -56,6 +56,14 @@ public interface IAdminApplicationsService
     /// initial submission). Throws ApplicationNotFoundException if no
     /// application with that id exists in the given category.
     /// </summary>
+    /// <summary>
+    /// The application's log, newest first: its submission, every status
+    /// change with who made it and any remark, document reviews, and exam
+    /// events. Throws ApplicationNotFoundException if no application with that
+    /// id exists in the given category.
+    /// </summary>
+    Task<IReadOnlyList<ApplicationLogEntryResponse>> GetLogAsync(Guid applicationId, string category, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<ApplicationStatusHistoryEntryResponse>> GetStatusHistoryAsync(
         Guid applicationId,
         string category,

@@ -13,10 +13,12 @@ export async function listExamPermits() {
   return response.json();
 }
 
-export async function releaseExamPermit(userId) {
+export async function releaseExamPermit(userId, invoiceNumber) {
   const response = await fetch(`${API_BASE_URL}/api/admin/exam-permits/${userId}/release`, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     credentials: "include",
+    body: JSON.stringify({ invoiceNumber }),
   });
 
   const data = await response.json().catch(() => null);

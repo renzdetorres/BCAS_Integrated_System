@@ -10,11 +10,14 @@ public static class ApplicationTrackingConstants
     public static readonly IReadOnlyList<string> AdmissionSteps = new[]
     {
         "Submitted",
-        "DocumentsReceived",
         "UnderReview",
+        "PendingDocuments",
+        "DocumentsCompleted",
+        "DocumentsCleared",
         "ExamScheduled",
-        "ExamCompleted",
-        "DecisionReleased",
+        "ExamDone",
+        "Registration",
+        "Approved",
     };
 
     /// <summary>The Scholarship workflow (BISAASS-22), earliest to latest.</summary>

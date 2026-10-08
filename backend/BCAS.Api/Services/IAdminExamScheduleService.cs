@@ -10,6 +10,15 @@ public interface IAdminExamScheduleService
     /// <summary>Throws InvalidDayTypeException for an unrecognized DayType.</summary>
     Task<ExamScheduleResponse> CreateAsync(CreateExamScheduleRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Records what happened to a scheduled applicant after their exam slot
+    /// (Scheduled, ExamDone, Rescheduled, DidNotTakeExam) and moves their
+    /// admission application along with it where the workflow allows
+    /// (ExamDone, DidNotTakeExam, and back to ExamScheduled). Throws
+    /// InvalidExamStatusException or NoExamScheduleSelectedException.
+    /// </summary>
+    Task SetApplicantExamStatusAsync(Guid userId, string status, Guid changedByUserId, CancellationToken cancellationToken = default);
+
     /// <summary>Throws ExamScheduleNotFoundException if no schedule has that id.</summary>
     Task<ExamScheduleResponse> SetOfferedAsync(
         int examScheduleId,

@@ -61,6 +61,74 @@ ORDER BY h.SubmittedAt DESC;";
         return items;
     }
 
+    public async Task<IReadOnlyList<ApplicationLogEntry>> GetActivityLogAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+        var entries = new List<ApplicationLogEntry>();
+
+        const string documentsSql = @"
+SELECT d.DocumentType, d.Status, d.FlaggedReason, d.ReviewedAt, ru.FirstName, ru.LastName
+FROM dbo.ApplicantDocuments d
+LEFT JOIN dbo.Users ru ON ru.UserId = d.ReviewedByUserId
+WHERE d.UserId = @UserId AND d.ReviewedAt IS NOT NULL;";
+
+        await using (var command = new SqlCommand(documentsSql, connection))
+        {
+            command.Parameters.Add(new SqlParameter("@UserId", SqlDbType.UniqueIdentifier) { Value = userId });
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                var reason = reader.IsDBNull(reader.GetOrdinal("FlaggedReason")) ? null : reader.GetString(reader.GetOrdinal("FlaggedReason"));
+                entries.Add(new ApplicationLogEntry
+                {
+                    At = reader.GetDateTime(reader.GetOrdinal("ReviewedAt")),
+                    Action = "Document reviewed",
+                    Details = $"{reader.GetString(reader.GetOrdinal("DocumentType"))}: {reader.GetString(reader.GetOrdinal("Status"))}" + (reason is null ? "" : $" ({reason})"),
+                    ActorName = reader.IsDBNull(reader.GetOrdinal("FirstName"))
+                        ? null
+                        : $"{reader.GetString(reader.GetOrdinal("FirstName"))} {reader.GetString(reader.GetOrdinal("LastName"))}",
+                });
+            }
+        }
+
+        const string examSql = @"
+SELECT sel.SelectedAt, sel.PermitReleasedAt, sch.ExamDate, ru.FirstName, ru.LastName
+FROM dbo.ExamScheduleSelections sel
+JOIN dbo.ExamSchedules sch ON sch.ExamScheduleId = sel.ExamScheduleId
+LEFT JOIN dbo.Users ru ON ru.UserId = sel.PermitReleasedByUserId
+WHERE sel.UserId = @UserId;";
+
+        await using (var command = new SqlCommand(examSql, connection))
+        {
+            command.Parameters.Add(new SqlParameter("@UserId", SqlDbType.UniqueIdentifier) { Value = userId });
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                var examDate = reader.GetDateTime(reader.GetOrdinal("ExamDate")).ToString("MMM d, yyyy");
+                entries.Add(new ApplicationLogEntry
+                {
+                    At = reader.GetDateTime(reader.GetOrdinal("SelectedAt")),
+                    Action = "Exam schedule selected",
+                    Details = $"Exam on {examDate}",
+                });
+
+                if (!reader.IsDBNull(reader.GetOrdinal("PermitReleasedAt")))
+                {
+                    entries.Add(new ApplicationLogEntry
+                    {
+                        At = reader.GetDateTime(reader.GetOrdinal("PermitReleasedAt")),
+                        Action = "Exam permit released",
+                        ActorName = reader.IsDBNull(reader.GetOrdinal("FirstName"))
+                            ? null
+                            : $"{reader.GetString(reader.GetOrdinal("FirstName"))} {reader.GetString(reader.GetOrdinal("LastName"))}",
+                    });
+                }
+            }
+        }
+
+        return entries;
+    }
+
     public async Task<AdminApplicationListItem?> GetByIdAsync(Guid applicationId, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);

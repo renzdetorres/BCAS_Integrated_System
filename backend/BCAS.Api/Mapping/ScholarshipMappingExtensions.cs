@@ -45,5 +45,6 @@ public static class ScholarshipMappingExtensions
         GradeAverage = application.GradeAverage,
         Status = application.Status,
         SubmittedAt = application.SubmittedAt,
+        LevelApplied = application.Details.LevelApplied,
     };
 }

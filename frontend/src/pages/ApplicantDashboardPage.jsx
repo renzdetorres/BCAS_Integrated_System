@@ -23,11 +23,14 @@ const DEADLINE_TYPE_LABELS = {
 
 const ADMISSION_NEXT_STEP_HINT = {
   Submitted: "Your application has been received. Upload your requirements so verification can begin.",
-  DocumentsReceived: "Your documents are being processed by the registrar.",
   UnderReview: "The registrar is reviewing your application.",
+  PendingDocuments: "Upload any missing required documents so the registrar can continue.",
+  DocumentsCompleted: "All your required documents are in. The registrar will verify them next.",
+  DocumentsCleared: "Your documents are verified. Choose an entrance exam schedule.",
   ExamScheduled: "Your entrance exam is scheduled - check your exam permit for the venue and time.",
-  ExamCompleted: "Your exam is complete. Awaiting the registrar's decision.",
-  DecisionReleased: "A decision has been released for your application.",
+  ExamDone: "You took the exam. Wait for the registrar's next step.",
+  Registration: "You passed the exam. Complete your registration with the registrar.",
+  Approved: "Your application has been approved.",
 };
 
 function formatDate(isoDate) {

@@ -42,7 +42,6 @@ public class ApplicationTrackingService : IApplicationTrackingService
         var examSelection = await _examScheduleRepository.GetSelectionByUserIdAsync(userId, cancellationToken);
         var documents = await GetDocumentsOrNullAsync(userId, cancellationToken);
 
-        var documentsReceived = documents is not null && documents.Requirements.All(r => r.Status != "NotSubmitted");
         var documentsVerified = documents is not null && documents.Requirements.All(r => r.Status == "Verified");
 
         return new ApplicationTrackingResponse
@@ -54,7 +53,7 @@ public class ApplicationTrackingService : IApplicationTrackingService
                     ApplicationType = a.ApplicationType,
                     CourseAppliedFor = a.CourseAppliedFor,
                     Status = a.Status,
-                    Steps = ApplicationWorkflowSteps.BuildAdmissionSteps(a.Status, documentsReceived, examSelection is not null),
+                    Steps = ApplicationWorkflowSteps.BuildAdmissionSteps(a.Status),
                     SubmittedAt = a.SubmittedAt,
                 })
                 .ToList(),

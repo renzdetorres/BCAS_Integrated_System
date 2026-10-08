@@ -50,3 +50,24 @@ export async function setExamScheduleOffered(examScheduleId, isOffered) {
 
   return data;
 }
+
+export const EXAM_STATUSES = [
+  { value: "Scheduled", label: "Scheduled" },
+  { value: "ExamDone", label: "Exam Done" },
+  { value: "Rescheduled", label: "Rescheduled" },
+  { value: "DidNotTakeExam", label: "Did Not Take Exam" },
+];
+
+export async function setApplicantExamStatus(userId, status) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/exam-schedules/applicants/${userId}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ status }),
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    throw new ApiError(resolveErrorMessage(response, data, "Failed to update the exam status."), response.status);
+  }
+}

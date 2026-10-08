@@ -1,40 +1,77 @@
 namespace BCAS.Api.Constants;
 
 /// <summary>
-/// Enforces the ordered admission workflow (BISAASS-56): Submitted ->
-/// UnderReview -> Approved|Rejected. AdminApplicationsService.
-/// UpdateStatusAsync uses IsForwardTransition to reject a status change
-/// that would move an Admission application backward, leave it unchanged,
-/// or change it again once a final decision (Approved/Rejected) has been
-/// recorded. This sits on top of AdmissionConstants.AllowedStatuses
-/// (BISAASS-31), which only checks that the target status is one of the
-/// four valid values at all, not that reaching it from the current status
-/// makes sense.
+/// The ordered admission workflow. Staff move an application one step at a
+/// time along <see cref="Steps"/>; Rejected and Retracted are open to any
+/// application that is not yet final; DidNotTakeExam is a side branch off
+/// ExamScheduled that can return to it. Approved, Rejected and Retracted are
+/// final - nothing changes after them. AdminApplicationsService uses
+/// IsAllowedTransition to refuse any other change (skipping ahead, going
+/// back, repeating the current status).
 /// </summary>
 public static class AdmissionWorkflowConstants
 {
-    private static readonly IReadOnlyDictionary<string, int> StageRank = new Dictionary<string, int>(StringComparer.Ordinal)
+    /// <summary>The main path, earliest to latest.</summary>
+    public static readonly IReadOnlyList<string> Steps = new[]
     {
-        ["Submitted"] = 0,
-        ["UnderReview"] = 1,
-        ["Approved"] = 2,
-        ["Rejected"] = 2,
+        "Submitted",
+        "UnderReview",
+        "PendingDocuments",
+        "DocumentsCompleted",
+        "DocumentsCleared",
+        "ExamScheduled",
+        "ExamDone",
+        "Registration",
+        "Approved",
     };
 
-    /// <summary>
-    /// True only if nextStatus is a real forward move from currentStatus:
-    /// both must be known statuses, currentStatus must not already be a
-    /// final decision (Approved/Rejected are terminal), and nextStatus
-    /// must rank strictly later. Same-status "changes" and any backward
-    /// move both return false.
-    /// </summary>
-    public static bool IsForwardTransition(string currentStatus, string nextStatus)
+    public const string Rejected = "Rejected";
+    public const string Retracted = "Retracted";
+    public const string DidNotTakeExam = "DidNotTakeExam";
+
+    private static readonly IReadOnlySet<string> Final = new HashSet<string>(StringComparer.Ordinal) { "Approved", Rejected, Retracted };
+
+    public static bool IsFinal(string status) => Final.Contains(status);
+
+    /// <summary>Every status an application in currentStatus may be moved to. Empty once it is final or unknown.</summary>
+    public static IReadOnlyList<string> NextStatuses(string currentStatus)
     {
-        if (!StageRank.TryGetValue(currentStatus, out var currentRank) || !StageRank.TryGetValue(nextStatus, out var nextRank))
+        if (IsFinal(currentStatus)) return Array.Empty<string>();
+
+        var next = new List<string>();
+        var index = IndexOf(currentStatus);
+        if (index >= 0)
         {
-            return false;
+            next.Add(Steps[index + 1]);
+            if (currentStatus == "ExamScheduled") next.Add(DidNotTakeExam);
+        }
+        else if (currentStatus == DidNotTakeExam)
+        {
+            next.Add("ExamScheduled");
+        }
+        else
+        {
+            return Array.Empty<string>();
         }
 
-        return currentRank < 2 && nextRank > currentRank;
+        next.Add(Rejected);
+        next.Add(Retracted);
+        return next;
+    }
+
+    public static bool IsAllowedTransition(string currentStatus, string nextStatus) =>
+        NextStatuses(currentStatus).Contains(nextStatus);
+
+    /// <summary>Kept for existing callers: true when nextStatus is a permitted move from currentStatus.</summary>
+    public static bool IsForwardTransition(string currentStatus, string nextStatus) => IsAllowedTransition(currentStatus, nextStatus);
+
+    private static int IndexOf(string status)
+    {
+        for (var i = 0; i < Steps.Count - 1; i++)
+        {
+            if (Steps[i] == status) return i;
+        }
+
+        return -1;
     }
 }

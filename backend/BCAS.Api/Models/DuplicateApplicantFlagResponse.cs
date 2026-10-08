@@ -19,4 +19,13 @@ public class DuplicateApplicantFlagResponse
     public string? ReviewedByName { get; set; }
     public DateTime? ReviewedAt { get; set; }
     public string? ReviewNotes { get; set; }
+
+    /// <summary>The matched account's most recent admission application, so staff can see what already exists. All null if it has none.</summary>
+    public Guid? MatchedApplicationId { get; set; }
+    public string? MatchedApplicationStatus { get; set; }
+    public string? MatchedCourseAppliedFor { get; set; }
+    public string? MatchedDepartment { get; set; }
+    public DateTime? MatchedSubmittedAt { get; set; }
+    public int MatchedDocumentsUploaded { get; set; }
+    public int MatchedDocumentsVerified { get; set; }
 }

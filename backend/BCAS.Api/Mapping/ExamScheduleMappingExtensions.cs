@@ -20,6 +20,7 @@ public static class ExamScheduleMappingExtensions
         ExamDate = selection.ExamDate,
         ExamTime = selection.ExamTime,
         SelectedAt = selection.SelectedAt,
+        ExamType = selection.ExamType,
     };
 
     public static AdminExamScheduleResponse ToAdminResponse(this AdminExamSchedule schedule) => new()
@@ -35,6 +36,8 @@ public static class ExamScheduleMappingExtensions
 
     public static AssignedApplicantResponse ToResponse(this AssignedApplicant applicant) => new()
     {
+        UserId = applicant.UserId,
+        ExamStatus = applicant.ExamStatus,
         ApplicantName = applicant.ApplicantName,
         ApplicantEmail = applicant.ApplicantEmail,
         SelectedAt = applicant.SelectedAt,

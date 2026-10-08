@@ -74,11 +74,25 @@ VALUES (@NewUserId, @MatchedUserId, @MatchReason);";
 SELECT f.FlagId, f.MatchReason, f.Status, f.DetectedAt, f.ReviewNotes, f.ReviewedAt,
        nu.UserId AS NewUserId, nu.FirstName AS NewFirstName, nu.LastName AS NewLastName, nu.Email AS NewEmail,
        mu.UserId AS MatchedUserId, mu.FirstName AS MatchedFirstName, mu.LastName AS MatchedLastName, mu.Email AS MatchedEmail,
-       ru.FirstName AS ReviewerFirstName, ru.LastName AS ReviewerLastName
+       ru.FirstName AS ReviewerFirstName, ru.LastName AS ReviewerLastName,
+       app.ApplicationId AS MatchedApplicationId, app.Status AS MatchedApplicationStatus,
+       app.CourseAppliedFor AS MatchedCourse, app.Department AS MatchedDepartment, app.SubmittedAt AS MatchedSubmittedAt,
+       docs.Uploaded AS MatchedDocumentsUploaded, docs.Verified AS MatchedDocumentsVerified
 FROM dbo.PotentialDuplicateApplicants f
 JOIN dbo.Users nu ON nu.UserId = f.NewUserId
 JOIN dbo.Users mu ON mu.UserId = f.MatchedUserId
 LEFT JOIN dbo.Users ru ON ru.UserId = f.ReviewedByUserId
+OUTER APPLY (
+    SELECT TOP (1) aa.ApplicationId, aa.Status, aa.CourseAppliedFor, aa.Department, aa.SubmittedAt
+    FROM dbo.AdmissionApplications aa
+    WHERE aa.UserId = mu.UserId
+    ORDER BY aa.SubmittedAt DESC
+) app
+OUTER APPLY (
+    SELECT COUNT(*) AS Uploaded, COALESCE(SUM(CASE WHEN d.Status = N'Verified' THEN 1 ELSE 0 END), 0) AS Verified
+    FROM dbo.ApplicantDocuments d
+    WHERE d.UserId = mu.UserId AND d.IsArchived = 0
+) docs
 WHERE f.Status = N'Open'
 ORDER BY f.DetectedAt DESC;";
 
@@ -128,11 +142,25 @@ WHERE FlagId = @FlagId AND Status = N'Open';";
 SELECT f.FlagId, f.MatchReason, f.Status, f.DetectedAt, f.ReviewNotes, f.ReviewedAt,
        nu.UserId AS NewUserId, nu.FirstName AS NewFirstName, nu.LastName AS NewLastName, nu.Email AS NewEmail,
        mu.UserId AS MatchedUserId, mu.FirstName AS MatchedFirstName, mu.LastName AS MatchedLastName, mu.Email AS MatchedEmail,
-       ru.FirstName AS ReviewerFirstName, ru.LastName AS ReviewerLastName
+       ru.FirstName AS ReviewerFirstName, ru.LastName AS ReviewerLastName,
+       app.ApplicationId AS MatchedApplicationId, app.Status AS MatchedApplicationStatus,
+       app.CourseAppliedFor AS MatchedCourse, app.Department AS MatchedDepartment, app.SubmittedAt AS MatchedSubmittedAt,
+       docs.Uploaded AS MatchedDocumentsUploaded, docs.Verified AS MatchedDocumentsVerified
 FROM dbo.PotentialDuplicateApplicants f
 JOIN dbo.Users nu ON nu.UserId = f.NewUserId
 JOIN dbo.Users mu ON mu.UserId = f.MatchedUserId
 LEFT JOIN dbo.Users ru ON ru.UserId = f.ReviewedByUserId
+OUTER APPLY (
+    SELECT TOP (1) aa.ApplicationId, aa.Status, aa.CourseAppliedFor, aa.Department, aa.SubmittedAt
+    FROM dbo.AdmissionApplications aa
+    WHERE aa.UserId = mu.UserId
+    ORDER BY aa.SubmittedAt DESC
+) app
+OUTER APPLY (
+    SELECT COUNT(*) AS Uploaded, COALESCE(SUM(CASE WHEN d.Status = N'Verified' THEN 1 ELSE 0 END), 0) AS Verified
+    FROM dbo.ApplicantDocuments d
+    WHERE d.UserId = mu.UserId AND d.IsArchived = 0
+) docs
 WHERE f.FlagId = @FlagId;";
 
         await using var selectCommand = new SqlCommand(selectSql, connection);
@@ -159,5 +187,12 @@ WHERE f.FlagId = @FlagId;";
             : $"{reader.GetString(reader.GetOrdinal("ReviewerFirstName"))} {reader.GetString(reader.GetOrdinal("ReviewerLastName"))}",
         ReviewedAt = reader.IsDBNull(reader.GetOrdinal("ReviewedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("ReviewedAt")),
         ReviewNotes = reader.IsDBNull(reader.GetOrdinal("ReviewNotes")) ? null : reader.GetString(reader.GetOrdinal("ReviewNotes")),
+        MatchedApplicationId = reader.IsDBNull(reader.GetOrdinal("MatchedApplicationId")) ? null : reader.GetGuid(reader.GetOrdinal("MatchedApplicationId")),
+        MatchedApplicationStatus = reader.IsDBNull(reader.GetOrdinal("MatchedApplicationStatus")) ? null : reader.GetString(reader.GetOrdinal("MatchedApplicationStatus")),
+        MatchedCourseAppliedFor = reader.IsDBNull(reader.GetOrdinal("MatchedCourse")) ? null : reader.GetString(reader.GetOrdinal("MatchedCourse")),
+        MatchedDepartment = reader.IsDBNull(reader.GetOrdinal("MatchedDepartment")) ? null : reader.GetString(reader.GetOrdinal("MatchedDepartment")),
+        MatchedSubmittedAt = reader.IsDBNull(reader.GetOrdinal("MatchedSubmittedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("MatchedSubmittedAt")),
+        MatchedDocumentsUploaded = reader.GetInt32(reader.GetOrdinal("MatchedDocumentsUploaded")),
+        MatchedDocumentsVerified = reader.GetInt32(reader.GetOrdinal("MatchedDocumentsVerified")),
     };
 }

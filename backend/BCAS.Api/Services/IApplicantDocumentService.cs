@@ -13,9 +13,16 @@ public interface IApplicantDocumentService
     Task<DocumentChecklistResponse> GetMyChecklistAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// The scholarship documentary requirements with upload / verification
+    /// status. Throws NoScholarshipApplicationException if the applicant has
+    /// not submitted a scholarship application.
+    /// </summary>
+    Task<DocumentChecklistResponse> GetMyScholarshipChecklistAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Uploads (or re-uploads) a document for the signed-in applicant.
     /// Re-uploading replaces the existing file and resets its status to
-    /// Pending. Only PDF files are accepted.
+    /// Pending. Only PDF, JPG or PNG files are accepted.
     /// </summary>
     Task<DocumentChecklistItemResponse> UploadDocumentAsync(
         Guid userId,

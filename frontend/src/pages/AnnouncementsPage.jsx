@@ -3,6 +3,7 @@ import { getActiveAnnouncements } from "../api/announcementApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
+import Modal from "../components/ui/Modal.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import "./AnnouncementsPage.css";
 
@@ -18,6 +19,7 @@ export default function AnnouncementsPage() {
   const [announcements, setAnnouncements] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [viewing, setViewing] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,11 +69,31 @@ export default function AnnouncementsPage() {
                 </div>
                 <p className="announcements-title">{announcement.title}</p>
                 <p className="announcements-body">{announcement.body}</p>
+                <button type="button" className="btn btn-secondary btn-sm announcements-more" onClick={() => setViewing(announcement)}>
+                  View details
+                </button>
               </li>
             ))}
           </ul>
         )}
       </Card>
+
+      {viewing ? (
+        <Modal
+          open
+          onClose={() => setViewing(null)}
+          size="lg"
+          title={viewing.title}
+          subtitle={`${viewing.category} · Posted ${formatDate(viewing.postedAt)}`}
+          footer={
+            <button type="button" className="btn btn-secondary" onClick={() => setViewing(null)}>
+              Close
+            </button>
+          }
+        >
+          <p className="announcements-full">{viewing.body}</p>
+        </Modal>
+      ) : null}
     </AppLayout>
   );
 }

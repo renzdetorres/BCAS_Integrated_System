@@ -35,10 +35,25 @@ const TONE_BY_VALUE = {
   Closed: "gray",
 
   UnderReview: "amber",
+
+  PendingDocuments: "amber",
+  DocumentsCompleted: "amber",
+  DocumentsCleared: "green",
+  ExamScheduled: "amber",
+  ExamDone: "green",
+  Registration: "amber",
+  Retracted: "gray",
+  DidNotTakeExam: "red",
 };
 
 const LABEL_OVERRIDES = {
   UnderReview: "Under Review",
+  PendingDocuments: "Pending Documents",
+  DocumentsCompleted: "Documents Completed",
+  DocumentsCleared: "Documents Cleared",
+  ExamScheduled: "Exam Scheduled",
+  ExamDone: "Exam Done",
+  DidNotTakeExam: "Did Not Take Exam",
   DocumentsVerified: "Documents Verified",
   EligibilityScreening: "Eligibility Screening",
   NotQualified: "Not Qualified",
@@ -58,19 +73,26 @@ const ICON_BY_TONE = {
   purple: "eye",
 };
 
+export function statusLabel(status) {
+  return LABEL_OVERRIDES[status] ?? status;
+}
+
+export function statusTone(status, adminContext = false) {
+  return adminContext && status === "UnderReview" ? "purple" : TONE_BY_VALUE[status] ?? "gray";
+}
+
 /**
  * Status pill using only the five palette tones (green/red/amber/gray/purple).
  * `adminContext` renders "UnderReview" as purple instead of amber, per the
  * design spec's distinction between an applicant's own view of their pending
  * application and staff actively reviewing it.
  */
-export default function StatusBadge({ status, adminContext = false, label }) {
-  const tone =
-    adminContext && status === "UnderReview" ? "purple" : TONE_BY_VALUE[status] ?? "gray";
-  const text = label ?? LABEL_OVERRIDES[status] ?? status;
+export default function StatusBadge({ status, adminContext = false, label, hint }) {
+  const tone = statusTone(status, adminContext);
+  const text = label ?? statusLabel(status);
 
   return (
-    <span className={`status-badge status-badge-${tone}`}>
+    <span className={`status-badge status-badge-${tone}`} title={hint}>
       <Icon name={ICON_BY_TONE[tone]} size={11} className="status-badge-icon" />
       {text}
     </span>

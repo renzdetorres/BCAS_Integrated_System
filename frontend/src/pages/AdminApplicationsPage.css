@@ -34,3 +34,8 @@
   color: var(--color-status-amber-text);
   font-weight: 500;
 }
+
+.admin-applications-status-head {
+  display: inline-flex;
+  align-items: center;
+}

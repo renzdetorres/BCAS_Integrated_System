@@ -11,13 +11,17 @@ public class AdminExamPermitService : IAdminExamPermitService
     private readonly IApplicantDocumentService _documentService;
     private readonly IUserRepository _userRepository;
     private readonly INotificationDispatchService _notificationDispatchService;
+    private readonly decimal _examFee;
 
     public AdminExamPermitService(
         IExamScheduleRepository examScheduleRepository,
         IApplicantDocumentService documentService,
         IUserRepository userRepository,
-        INotificationDispatchService notificationDispatchService)
+        INotificationDispatchService notificationDispatchService,
+        IConfiguration configuration)
     {
+        // The fixed exam fee (Exam:Fee in appsettings); snapshotted onto the slip at release.
+        _examFee = configuration.GetValue<decimal>("Exam:Fee");
         _examScheduleRepository = examScheduleRepository;
         _documentService = documentService;
         _userRepository = userRepository;
@@ -38,7 +42,7 @@ public class AdminExamPermitService : IAdminExamPermitService
         return results;
     }
 
-    public async Task<AdminExamPermitListItemResponse> ReleaseAsync(Guid userId, Guid releasedByUserId, CancellationToken cancellationToken = default)
+    public async Task<AdminExamPermitListItemResponse> ReleaseAsync(Guid userId, Guid releasedByUserId, string invoiceNumber, CancellationToken cancellationToken = default)
     {
         var candidate = await _examScheduleRepository.GetPermitCandidateByUserIdAsync(userId, cancellationToken)
             ?? throw new NoExamScheduleSelectedException();
@@ -50,7 +54,7 @@ public class AdminExamPermitService : IAdminExamPermitService
         }
 
         var wasAlreadyReleased = candidate.IsPermitReleased;
-        var released = await _examScheduleRepository.ReleasePermitAsync(userId, releasedByUserId, cancellationToken);
+        var released = await _examScheduleRepository.ReleasePermitAsync(userId, releasedByUserId, _examFee, invoiceNumber.Trim(), cancellationToken);
 
         // Exam Permit Available notification (BISAASS-59) - only for an
         // actual release, not a repeat call on an already-released permit

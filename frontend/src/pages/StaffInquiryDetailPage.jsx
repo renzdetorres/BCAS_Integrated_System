@@ -154,7 +154,7 @@ export default function StaffInquiryDetailPage() {
               value={replyBody}
               onChange={(event) => setReplyBody(event.target.value)}
             />
-            <button type="submit" disabled={isSending}>
+            <button type="submit" className="btn btn-primary" disabled={isSending}>
               {isSending ? "Sending..." : "Send Reply"}
             </button>
           </form>

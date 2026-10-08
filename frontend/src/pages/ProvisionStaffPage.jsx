@@ -3,7 +3,15 @@ import { provisionStaff, STAFF_ROLES, DEPARTMENT_OPTIONS } from "../api/adminApi
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
+import { Link } from "react-router-dom";
 import "./ProvisionStaffPage.css";
+
+const ROLE_INFO = {
+  Evaluator: { label: "Evaluator", hint: "Screens scholarship applications and records verdicts." },
+  SupportStaff: { label: "Support Staff", hint: "Verifies applicants' documents and answers inquiries." },
+  AcademicHead: { label: "Academic Head", hint: "Makes final scholarship decisions for one department." },
+  Admin: { label: "Admin / Registrar", hint: "Full access, including accounts and settings." },
+};
 
 const initialForm = {
   firstName: "",
@@ -57,7 +65,8 @@ export default function ProvisionStaffPage() {
     <AppLayout title="Provision Staff">
       <Card className="provision-card">
         <p className="provision-subtitle">
-          Admin-only. Applicant accounts are never created here - applicants self-register.
+          Create a staff account. Applicant accounts are never created here - applicants self-register. To edit,
+          activate or deactivate existing staff, use <Link to="/admin/users">Account Management</Link>.
         </p>
 
         {createdAccount && (
@@ -67,7 +76,7 @@ export default function ProvisionStaffPage() {
           </p>
         )}
 
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={handleSubmit} noValidate className="provision-form">
           <div className="form-row">
             <label htmlFor="firstName">First name</label>
             <input
@@ -124,10 +133,11 @@ export default function ProvisionStaffPage() {
             <select id="role" name="role" value={form.role} onChange={handleChange}>
               {STAFF_ROLES.map((role) => (
                 <option key={role} value={role}>
-                  {role}
+                  {ROLE_INFO[role]?.label ?? role}
                 </option>
               ))}
             </select>
+            {ROLE_INFO[form.role] ? <p className="form-hint">{ROLE_INFO[form.role].hint}</p> : null}
           </div>
 
           {form.role === "AcademicHead" && (
@@ -162,7 +172,7 @@ export default function ProvisionStaffPage() {
             </p>
           )}
 
-          <button type="submit" disabled={isSubmitting}>
+          <button type="submit" className="btn btn-primary provision-submit" disabled={isSubmitting}>
             {isSubmitting ? "Creating account..." : "Create Account"}
           </button>
         </form>

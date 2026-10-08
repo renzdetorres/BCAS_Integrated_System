@@ -6,6 +6,7 @@ export const DOCUMENT_TYPE_LABELS = {
   PSA: "PSA (Birth Certificate)",
   TOR: "Transcript of Records (TOR)",
   SF10: "SF10 (Permanent Record)",
+  ScholarshipForm: "Signed Scholarship Application Form",
 };
 
 export async function getMyDocumentChecklist() {
@@ -18,6 +19,22 @@ export async function getMyDocumentChecklist() {
 
   if (!response.ok) {
     const message = resolveErrorMessage(response, data, "Failed to load document checklist.");
+    throw new ApiError(message, response.status);
+  }
+
+  return data;
+}
+
+export async function getMyScholarshipDocumentChecklist() {
+  const response = await fetch(`${API_BASE_URL}/api/documents/scholarship`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const message = resolveErrorMessage(response, data, "Failed to load scholarship documents.");
     throw new ApiError(message, response.status);
   }
 

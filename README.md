@@ -4,8 +4,7 @@ BCAS Integrated Scholarship and Admissions Application and Screening System.
 
 ## Structure
 
-- `database/` - SQL Server schema (`schema.sql`) and optional example data
-  (`sample-data.sql`, removed again by `sample-data-remove.sql`)
+- `database/` - SQL Server schema (`schema.sql`)
 - `backend/BCAS.Api/` - ASP.NET Core (C#) Web API
 - `frontend/` - React (Vite) app
 
@@ -21,15 +20,6 @@ be provisioned separately by an Admin.
    It creates the `BCAS` database, the `Roles` table (seeded with
    `Applicant`, `Evaluator`, `SupportStaff`, `AcademicHead`, `Admin`), and the
    `Users` table with a unique constraint on `Email`.
-
-   Optionally, for a development database, run `database/sample-data.sql`
-   afterwards. It adds example applicants across all four departments,
-   admission and scholarship applications at every stage, documents,
-   exam selections and one Academic Head per department (needs an Admin,
-   Evaluator and SupportStaff account to exist first). It is safe to re-run,
-   and every sample account uses the `@sample.bcas.test` domain with the
-   password `BcasDemo#2026`. `database/sample-data-remove.sql` deletes
-   exactly those records again.
 
 2. **Backend**:
    ```

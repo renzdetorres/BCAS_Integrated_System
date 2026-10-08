@@ -4,7 +4,8 @@ import { ApiError } from "../api/apiClient.js";
 import { useToast } from "../context/ToastContext.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import DataTable, { PersonCell, RowAction } from "../components/ui/DataTable.jsx";
-import Modal, { DetailList } from "../components/ui/Modal.jsx";
+import ExamSlip from "../components/ExamSlip.jsx";
+import Modal from "../components/ui/Modal.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import { formatCalendarDate, formatDateTime, formatTime } from "../utils/format.js";
 import "./AdminExamPermitsPage.css";
@@ -14,13 +15,15 @@ function examLabel(permit) {
 }
 
 function PermitModal({ permit, isReleasing, onRelease, onClose }) {
-  const canRelease = !permit.isReleased && permit.documentsVerified;
+  const [invoiceNumber, setInvoiceNumber] = useState("");
+  const canRelease = !permit.isReleased && permit.documentsVerified && invoiceNumber.trim().length > 0;
   return (
     <Modal
       open
       onClose={onClose}
       busy={isReleasing}
-      title={permit.isReleased ? `Exam permit ${permit.permitNumber}` : "Exam permit"}
+      size="lg"
+      title="Exam permit"
       subtitle={`${permit.applicantName} · ${permit.applicantEmail}`}
       footer={
         <>
@@ -28,39 +31,43 @@ function PermitModal({ permit, isReleasing, onRelease, onClose }) {
             Close
           </button>
           {!permit.isReleased ? (
-            <button type="button" className="btn btn-primary" onClick={() => onRelease(permit)} disabled={!canRelease || isReleasing}>
+            <button type="button" className="btn btn-primary" onClick={() => onRelease(permit, invoiceNumber.trim())} disabled={!canRelease || isReleasing}>
               {isReleasing ? "Releasing..." : "Generate & release permit"}
             </button>
           ) : null}
         </>
       }
     >
-      <DetailList
-        items={[
-          {
-            label: "Permit",
-            value: permit.isReleased ? (
-              <span className="permit-number">{permit.permitNumber}</span>
-            ) : (
-              <StatusBadge status="Pending" label="Not released" />
-            ),
-          },
-          { label: "Released", value: permit.isReleased ? formatDateTime(permit.releasedAt) : "Not yet" },
-          { label: "Exam date", value: formatCalendarDate(permit.examDate) },
-          { label: "Exam time", value: formatTime(permit.examTime) },
-          { label: "Venue", value: permit.venue },
-          { label: "Day type", value: permit.dayType },
-          {
-            label: "Required documents",
-            value: (
-              <StatusBadge
-                status={permit.documentsVerified ? "Verified" : "Pending"}
-                label={permit.documentsVerified ? "All verified" : "Not all verified"}
-              />
-            ),
-          },
-        ]}
-      />
+      <ExamSlip permit={permit} released={permit.isReleased} />
+      <dl className="permit-status">
+        <div>
+          <dt>Permit</dt>
+          <dd>
+            {permit.isReleased ? `Released ${formatDateTime(permit.releasedAt)}` : <StatusBadge status="Pending" label="Not released" />}
+          </dd>
+        </div>
+        <div>
+          <dt>Required documents</dt>
+          <dd>
+            <StatusBadge
+              status={permit.documentsVerified ? "Verified" : "Pending"}
+              label={permit.documentsVerified ? "All verified" : "Not all verified"}
+            />
+          </dd>
+        </div>
+      </dl>
+      {!permit.isReleased && permit.documentsVerified ? (
+        <div className="form-row permit-invoice">
+          <label htmlFor="invoiceNumber">Invoice (SI) number</label>
+          <input
+            id="invoiceNumber"
+            value={invoiceNumber}
+            maxLength={50}
+            placeholder="From the cashier's receipt"
+            onChange={(event) => setInvoiceNumber(event.target.value)}
+          />
+        </div>
+      ) : null}
       {!permit.isReleased && !permit.documentsVerified ? (
         <p className="permit-blocked">
           The permit can be released once Support Staff have verified every required document for this applicant.
@@ -97,10 +104,10 @@ export default function AdminExamPermitsPage() {
     loadPermits();
   }, [loadPermits]);
 
-  async function handleRelease(permit) {
+  async function handleRelease(permit, invoiceNumber) {
     setReleasingUserId(permit.userId);
     try {
-      const updated = await releaseExamPermit(permit.userId);
+      const updated = await releaseExamPermit(permit.userId, invoiceNumber);
       setPermits((prev) => prev.map((p) => (p.userId === updated.userId ? updated : p)));
       setViewing(updated);
       showToast(`Permit ${updated.permitNumber} released to ${updated.applicantName}.`);
@@ -167,7 +174,7 @@ export default function AdminExamPermitsPage() {
     {
       key: "action",
       header: "Action",
-      align: "right",
+      align: "center",
       searchable: false,
       render: (row) => (
         <RowAction
@@ -197,7 +204,6 @@ export default function AdminExamPermitsPage() {
         isLoading={isLoading}
         errorMessage={loadError}
         emptyMessage={permits.length === 0 ? "No applicant has picked an exam schedule yet." : "No permits match these filters."}
-        onRowClick={(row) => setViewing(row)}
         searchPlaceholder="Search by applicant, email or permit number"
         filters={[
           {

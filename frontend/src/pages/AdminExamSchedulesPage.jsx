@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   DAY_TYPES,
+  EXAM_STATUSES,
   createExamSchedule,
   listExamSchedules,
+  setApplicantExamStatus,
   setExamScheduleOffered,
 } from "../api/adminExamSchedulesApi.js";
 import { ApiError } from "../api/apiClient.js";
@@ -135,7 +137,7 @@ function AddScheduleModal({ open, onClose, onCreated }) {
   );
 }
 
-function ApplicantsModal({ schedule, onClose }) {
+function ApplicantsModal({ schedule, onClose, onChangeStatus, pendingUserId }) {
   const applicants = schedule.assignedApplicants;
   return (
     <Modal
@@ -156,7 +158,22 @@ function ApplicantsModal({ schedule, onClose }) {
           {applicants.map((applicant) => (
             <li key={applicant.applicantEmail}>
               <PersonCell name={applicant.applicantName} detail={applicant.applicantEmail} />
+              <div className="exam-applicant-side">
               <span className="exam-applicant-date">Picked {formatDateTime(applicant.selectedAt)}</span>
+              <select
+                className="ui-select exam-applicant-status"
+                aria-label={`Exam status for ${applicant.applicantName}`}
+                value={applicant.examStatus}
+                disabled={pendingUserId === applicant.userId}
+                onChange={(event) => onChangeStatus(applicant, event.target.value)}
+              >
+                {EXAM_STATUSES.map((s) => (
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
+                ))}
+              </select>
+              </div>
             </li>
           ))}
         </ol>
@@ -168,6 +185,7 @@ function ApplicantsModal({ schedule, onClose }) {
 export default function AdminExamSchedulesPage() {
   const { showToast } = useToast();
   const [schedules, setSchedules] = useState([]);
+  const [pendingStatusUserId, setPendingStatusUserId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [pendingToggleId, setPendingToggleId] = useState(null);
@@ -176,6 +194,19 @@ export default function AdminExamSchedulesPage() {
   const [viewing, setViewing] = useState(null);
   const [dayFilter, setDayFilter] = useState("");
   const [offerFilter, setOfferFilter] = useState("");
+
+  async function handleExamStatus(applicant, status) {
+    setPendingStatusUserId(applicant.userId);
+    try {
+      await setApplicantExamStatus(applicant.userId, status);
+      await loadSchedules();
+      showToast(`${applicant.applicantName} marked ${EXAM_STATUSES.find((s) => s.value === status)?.label ?? status}.`);
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : "Failed to update the exam status.", "error");
+    } finally {
+      setPendingStatusUserId(null);
+    }
+  }
 
   const loadSchedules = useCallback(async () => {
     setIsLoading(true);
@@ -348,7 +379,14 @@ export default function AdminExamSchedulesPage() {
         }}
       />
 
-      {viewing ? <ApplicantsModal schedule={viewing} onClose={() => setViewing(null)} /> : null}
+      {viewing ? (
+        <ApplicantsModal
+          schedule={schedules.find((s) => s.examScheduleId === viewing.examScheduleId) ?? viewing}
+          onClose={() => setViewing(null)}
+          onChangeStatus={handleExamStatus}
+          pendingUserId={pendingStatusUserId}
+        />
+      ) : null}
 
       <ConfirmDialog
         open={Boolean(unofferTarget)}

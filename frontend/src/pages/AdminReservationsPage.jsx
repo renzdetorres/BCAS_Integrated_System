@@ -12,7 +12,7 @@ import "./AdminReservationsPage.css";
 const APPLICATION_TYPE_LABELS = { NewStudent: "New Student", Transferee: "Transferee" };
 
 function ReservationBadge({ isReserved }) {
-  return <StatusBadge status={isReserved ? "Active" : "Inactive"} label={isReserved ? "Reserved" : "Not reserved"} />;
+  return <StatusBadge status={isReserved ? "Active" : "Inactive"} label={isReserved ? "Reserved" : "Not Reserved"} />;
 }
 
 /** Reservation details, and where staff record whether the slot is reserved. */
@@ -21,6 +21,7 @@ function ReservationModal({ reservation, onClose, onSaved }) {
   const [remarks, setRemarks] = useState(reservation.remarks ?? "");
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [showReceipt, setShowReceipt] = useState(false);
   const unchanged = isReserved === reservation.isReserved && remarks === (reservation.remarks ?? "");
 
   async function handleSave(event) {
@@ -62,7 +63,6 @@ function ReservationModal({ reservation, onClose, onSaved }) {
             { label: "Application type", value: APPLICATION_TYPE_LABELS[reservation.applicationType] ?? reservation.applicationType },
             { label: "Course", value: reservation.courseAppliedFor },
             { label: "Application submitted", value: formatDate(reservation.submittedAt) },
-            { label: "Reservation fee", value: reservation.reservationFee != null ? formatPeso(reservation.reservationFee) : null },
             {
               label: "Last recorded",
               value: reservation.recordedAt
@@ -71,6 +71,38 @@ function ReservationModal({ reservation, onClose, onSaved }) {
             },
           ]}
         />
+      </div>
+      <div className="ui-modal-section">
+        <div className="reservation-payment-head">
+          <h3 className="ui-modal-section-title">Payment</h3>
+          <button type="button" className="btn btn-secondary btn-sm" aria-expanded={showReceipt} onClick={() => setShowReceipt((value) => !value)}>
+            {showReceipt ? "Hide receipt" : "View receipt"}
+          </button>
+        </div>
+        <p className="reservation-payment-line">
+          Reservation fee <strong>{reservation.reservationFee != null ? formatPeso(reservation.reservationFee) : "\u2014"}</strong>
+          {" \u00b7 "}
+          {reservation.isReserved ? "Paid" : "Not paid yet"}
+        </p>
+        {showReceipt ? (
+          reservation.isReserved ? (
+            <div className="reservation-receipt" role="region" aria-label="Reservation receipt">
+              <p className="reservation-receipt-title">Reservation receipt</p>
+              <DetailList
+                items={[
+                  { label: "Applicant", value: reservation.applicantName },
+                  { label: "Course", value: reservation.courseAppliedFor },
+                  { label: "Amount", value: reservation.reservationFee != null ? formatPeso(reservation.reservationFee) : null },
+                  { label: "Recorded", value: reservation.recordedAt ? formatDateTime(reservation.recordedAt) : null },
+                  { label: "Recorded by", value: reservation.recordedByName ?? null },
+                  { label: "Remarks / receipt no.", value: reservation.remarks || null },
+                ]}
+              />
+            </div>
+          ) : (
+            <p className="ui-hint">No payment has been recorded for this reservation yet.</p>
+          )
+        ) : null}
       </div>
       <form id="reservation-form" className="ui-modal-section" onSubmit={handleSave} noValidate>
         <h3 className="ui-modal-section-title">Record reservation</h3>
@@ -82,7 +114,7 @@ function ReservationModal({ reservation, onClose, onSaved }) {
         <div className="reservation-choice" role="radiogroup" aria-label="Reservation status">
           {[
             { value: true, label: "Reserved", hint: "The applicant has paid and holds their slot." },
-            { value: false, label: "Not reserved", hint: "No reservation recorded yet." },
+            { value: false, label: "Not Reserved", hint: "No reservation recorded yet." },
           ].map((option) => (
             <label key={option.label} className={`reservation-option${isReserved === option.value ? " is-selected" : ""}`}>
               <input
@@ -176,18 +208,9 @@ export default function AdminReservationsPage() {
     {
       key: "status",
       header: "Reservation",
-      accessor: (row) => (row.isReserved ? "Reserved" : "Not reserved"),
+      accessor: (row) => (row.isReserved ? "Reserved" : "Not Reserved"),
       sortable: true,
       render: (row) => <ReservationBadge isReserved={row.isReserved} />,
-    },
-    {
-      key: "fee",
-      header: "Fee",
-      align: "right",
-      accessor: (row) => row.reservationFee ?? -1,
-      sortable: true,
-      searchable: false,
-      render: (row) => (row.reservationFee != null ? formatPeso(row.reservationFee) : <span className="ui-cell-muted">-</span>),
     },
     {
       key: "recordedAt",
@@ -200,7 +223,7 @@ export default function AdminReservationsPage() {
     {
       key: "action",
       header: "Action",
-      align: "right",
+      align: "center",
       searchable: false,
       render: (row) => (
         <RowAction
@@ -221,7 +244,7 @@ export default function AdminReservationsPage() {
         summary={[
           { label: "Approved applicants", value: reservations.length.toLocaleString() },
           { label: "Reserved", value: reservedCount.toLocaleString(), tone: "green" },
-          { label: "Not reserved", value: (reservations.length - reservedCount).toLocaleString(), tone: "amber" },
+          { label: "Not Reserved", value: (reservations.length - reservedCount).toLocaleString(), tone: "amber" },
         ]}
         columns={columns}
         rows={rows}
@@ -239,7 +262,7 @@ export default function AdminReservationsPage() {
             onChange: setStatusFilter,
             options: [
               { value: "reserved", label: "Reserved" },
-              { value: "not-reserved", label: "Not reserved" },
+              { value: "not-reserved", label: "Not Reserved" },
             ],
           },
           {

@@ -22,7 +22,7 @@ public class AdminDashboardRepository : IAdminDashboardRepository
 SELECT
     COUNT(*) AS TotalApplications,
     COUNT(DISTINCT UserId) AS TotalApplicants,
-    SUM(CASE WHEN Status IN (N'Submitted', N'UnderReview') THEN 1 ELSE 0 END) AS PendingCount,
+    SUM(CASE WHEN Status NOT IN (N'Approved', N'Rejected', N'Retracted') THEN 1 ELSE 0 END) AS PendingCount,
     SUM(CASE WHEN Status = N'Approved' THEN 1 ELSE 0 END) AS ApprovedCount,
     SUM(CASE WHEN Status = N'Rejected' THEN 1 ELSE 0 END) AS RejectedCount,
     SUM(CASE WHEN SubmittedAt >= DATEADD(DAY, -7, SYSUTCDATETIME()) THEN 1 ELSE 0 END) AS SubmittedThisWeek,

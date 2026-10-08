@@ -93,6 +93,16 @@
   text-decoration: none;
 }
 
+.input-group.has-aside-link {
+  position: relative;
+}
+
+.input-group.has-aside-link .input-group-aside-link {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
 .input-group-aside-link:hover {
   text-decoration: underline;
 }

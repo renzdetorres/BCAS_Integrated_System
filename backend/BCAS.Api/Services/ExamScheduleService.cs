@@ -1,4 +1,6 @@
+using BCAS.Api.Constants;
 using BCAS.Api.Data;
+using BCAS.Api.Exceptions;
 using BCAS.Api.Mapping;
 using BCAS.Api.Models;
 
@@ -37,7 +39,10 @@ public class ExamScheduleService : IExamScheduleService
         SelectExamScheduleRequest request,
         CancellationToken cancellationToken = default)
     {
-        var selection = await _examScheduleRepository.SelectAsync(userId, request.ExamScheduleId!.Value, cancellationToken);
+        var examType = ExamTypes.Normalize(request.ExamType)
+            ?? throw new ExamScheduleNotAvailableException($"Exam type must be one of: {string.Join(", ", ExamTypes.All)}.");
+
+        var selection = await _examScheduleRepository.SelectAsync(userId, request.ExamScheduleId!.Value, examType, cancellationToken);
 
         // Exam Schedule notification (BISAASS-59).
         var applicant = await _userRepository.GetByIdAsync(userId, cancellationToken);

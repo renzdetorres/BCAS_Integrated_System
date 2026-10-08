@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import {
   ARCHIVABLE_STATUSES,
   archiveApplication,
-  getApplicationStatusHistory,
+  getApplicationLogs,
   getValidNextAdmissionStatuses,
   getValidNextScholarshipStatuses,
   promoteFromWaitlist,
@@ -15,7 +15,10 @@ import { ApiError } from "../api/apiClient.js";
 import { DEPARTMENT_OPTIONS, programOptionLabel, programsFor } from "../config/departments.js";
 import WorkflowStepper, { ADMISSION_STEP_LABELS, SCHOLARSHIP_STEP_LABELS } from "../components/WorkflowStepper.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
-import StatusBadge from "../components/ui/StatusBadge.jsx";
+import StatusBadge, { statusLabel } from "../components/ui/StatusBadge.jsx";
+import { searchDocuments } from "../api/adminDocumentsApi.js";
+import { DOCUMENT_TYPE_LABELS } from "../api/documentApi.js";
+import { statusDescription } from "../config/statusDescriptions.js";
 import "./AdminApplicationDetailPage.css";
 
 function formatDateTime(isoDateTime) {
@@ -52,9 +55,10 @@ export default function AdminApplicationDetailPage() {
   const [isPromoting, setIsPromoting] = useState(false);
   const [promoteError, setPromoteError] = useState(null);
 
-  const [statusHistory, setStatusHistory] = useState([]);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
-  const [historyError, setHistoryError] = useState(null);
+  const [logs, setLogs] = useState([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(true);
+  const [logsError, setLogsError] = useState(null);
+  const [documents, setDocuments] = useState(null);
 
   const loadApplication = useCallback(() => {
     let cancelled = false;
@@ -87,22 +91,25 @@ export default function AdminApplicationDetailPage() {
 
   useEffect(() => loadApplication(), [loadApplication]);
 
-  const loadStatusHistory = useCallback(() => {
+  const loadLogs = useCallback(() => {
     if (!application) return undefined;
 
     let cancelled = false;
-    setIsLoadingHistory(true);
-    getApplicationStatusHistory(applicationId, application.category)
+    setIsLoadingLogs(true);
+    getApplicationLogs(applicationId, application.category)
       .then((data) => {
-        if (!cancelled) setStatusHistory(data);
+        if (!cancelled) {
+          setLogs(data);
+          setLogsError(null);
+        }
       })
       .catch((error) => {
         if (!cancelled) {
-          setHistoryError(error instanceof ApiError ? error.message : "Failed to load status history.");
+          setLogsError(error instanceof ApiError ? error.message : "Failed to load the application logs.");
         }
       })
       .finally(() => {
-        if (!cancelled) setIsLoadingHistory(false);
+        if (!cancelled) setIsLoadingLogs(false);
       });
 
     return () => {
@@ -110,7 +117,24 @@ export default function AdminApplicationDetailPage() {
     };
   }, [applicationId, application?.category]);
 
-  useEffect(() => loadStatusHistory(), [loadStatusHistory]);
+  useEffect(() => loadLogs(), [loadLogs]);
+
+  // The applicant's documents, so staff can see where they stand without leaving this page.
+  const applicantEmail = application?.applicantEmail;
+  useEffect(() => {
+    if (!applicantEmail) return undefined;
+    let cancelled = false;
+    searchDocuments({ search: applicantEmail })
+      .then((data) => {
+        if (!cancelled) setDocuments(data.filter((d) => d.applicantEmail === applicantEmail));
+      })
+      .catch(() => {
+        if (!cancelled) setDocuments([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [applicantEmail]);
 
   // Filing under a department with a fixed program list (College) needs one
   // of its programs; a legacy free-text course has to be mapped to one here.
@@ -158,7 +182,7 @@ export default function AdminApplicationDetailPage() {
       setApplication(updated);
       setStatusForm({ status: updated.status, remarks: updated.remarks ?? "" });
       setSavedMessage("Status updated.");
-      loadStatusHistory();
+      loadLogs();
     } catch (error) {
       setSaveError(error instanceof ApiError ? error.message : "Failed to update the application's status.");
     } finally {
@@ -174,7 +198,7 @@ export default function AdminApplicationDetailPage() {
       const promoted = await promoteFromWaitlist(applicationId);
       setApplication(promoted);
       setStatusForm({ status: promoted.status, remarks: promoted.remarks ?? "" });
-      loadStatusHistory();
+      loadLogs();
     } catch (error) {
       setPromoteError(error instanceof ApiError ? error.message : "Failed to promote this application from the waitlist.");
     } finally {
@@ -393,30 +417,52 @@ export default function AdminApplicationDetailPage() {
               </div>
 
               <div className="admin-app-dossier-section">
-                <h2>Status History</h2>
+                <h2>Documents</h2>
+                {documents === null ? (
+                  <p>Loading...</p>
+                ) : documents.length === 0 ? (
+                  <p className="admin-app-detail-subtitle">No documents uploaded yet.</p>
+                ) : (
+                  <ul className="admin-app-documents">
+                    {documents.map((doc) => (
+                      <li key={doc.documentId}>
+                        <span>{DOCUMENT_TYPE_LABELS[doc.documentType] ?? doc.documentType}</span>
+                        <StatusBadge status={doc.status} />
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 <p className="admin-app-detail-subtitle">
-                  Every status change recorded for this application, oldest first.
+                  Open the <Link to="/admin/documents">Document Verification Log</Link> to review or verify them.
+                </p>
+              </div>
+
+              <div className="admin-app-dossier-section">
+                <h2>Application Logs</h2>
+                <p className="admin-app-detail-subtitle">
+                  What happened to this application, newest first: submission, status changes, document reviews and exam
+                  events.
                 </p>
 
-                {isLoadingHistory && <p>Loading...</p>}
-                {historyError && (
+                {isLoadingLogs && <p>Loading...</p>}
+                {logsError && (
                   <p className="form-error" role="alert">
-                    {historyError}
+                    {logsError}
                   </p>
                 )}
-                {!isLoadingHistory && !historyError && statusHistory.length === 0 && <p>No status changes recorded yet.</p>}
+                {!isLoadingLogs && !logsError && logs.length === 0 && <p>Nothing has been logged yet.</p>}
 
-                {!isLoadingHistory && !historyError && statusHistory.length > 0 && (
+                {!isLoadingLogs && !logsError && logs.length > 0 && (
                   <ul className="admin-app-status-history">
-                    {statusHistory.map((entry) => (
-                      <li key={entry.historyId}>
+                    {logs.map((entry, index) => (
+                      <li key={`${entry.at}-${index}`}>
                         <div className="admin-app-status-history-line">
-                          <strong>{entry.fromStatus ? `${entry.fromStatus} → ${entry.toStatus}` : `${entry.toStatus} (submitted)`}</strong>
-                          <span>{formatDateTime(entry.changedAt)}</span>
+                          <strong>{entry.action}</strong>
+                          <span>{formatDateTime(entry.at)}</span>
                         </div>
                         <div className="admin-app-status-history-meta">
-                          by {entry.changedByName ?? "the applicant"}
-                          {entry.remarks && <> &mdash; {entry.remarks}</>}
+                          {entry.details}
+                          {entry.actorName ? <>{entry.details ? " \u00b7 " : ""}by {entry.actorName}</> : null}
                         </div>
                       </li>
                     ))}
@@ -452,7 +498,9 @@ export default function AdminApplicationDetailPage() {
               <p className="admin-app-detail-subtitle">
                 {isWaitlisted
                   ? "Waitlisted applications can only move forward through the dedicated Promote from Waitlist action above, which reserves a slot atomically - this generic control is disabled while waitlisted."
-                  : "Authorized staff can set this application to any status in its workflow and attach an optional remark."}
+                  : application.category === "Admission"
+                    ? "Move the application one step along its workflow, or reject or retract it. Submitted is set automatically and can't be chosen. Add an optional remark; it appears in the application logs."
+                    : "Authorized staff can set this application to any status in its workflow and attach an optional remark."}
               </p>
 
               {savedMessage && (
@@ -478,10 +526,11 @@ export default function AdminApplicationDetailPage() {
                   >
                     {statusOptions.map((option) => (
                       <option key={option} value={option}>
-                        {option}
+                        {statusLabel(option)}
                       </option>
                     ))}
                   </select>
+                  {statusDescription(statusForm.status) ? <p className="admin-app-detail-subtitle">{statusDescription(statusForm.status)}</p> : null}
                 </div>
 
                 <div className="form-row">

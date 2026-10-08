@@ -38,6 +38,7 @@ import AdminApplicationsPage from "./pages/AdminApplicationsPage.jsx";
 import AdminApplicationDetailPage from "./pages/AdminApplicationDetailPage.jsx";
 import AdminDocumentsPage from "./pages/AdminDocumentsPage.jsx";
 import AdminArchivePage from "./pages/AdminArchivePage.jsx";
+import AdminRecordsPage from "./pages/AdminRecordsPage.jsx";
 import AdminAnnouncementsPage from "./pages/AdminAnnouncementsPage.jsx";
 import AdminReportsPage from "./pages/AdminReportsPage.jsx";
 import ScholarshipContractPage from "./pages/ScholarshipContractPage.jsx";
@@ -74,6 +75,7 @@ export default function App() {
                 <Route path="/admin/applications" element={<AdminApplicationsPage />} />
                 <Route path="/admin/applications/:applicationId" element={<AdminApplicationDetailPage />} />
                 <Route path="/admin/documents" element={<AdminDocumentsPage />} />
+                <Route path="/admin/records" element={<AdminRecordsPage />} />
                 <Route path="/admin/archive" element={<AdminArchivePage />} />
                 <Route path="/admin/announcements" element={<AdminAnnouncementsPage />} />
                 <Route path="/admin/reports" element={<AdminReportsPage />} />

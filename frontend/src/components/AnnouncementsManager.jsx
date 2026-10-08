@@ -281,7 +281,7 @@ export default function AnnouncementsManager({ api, subtitle }) {
       align: "right",
       searchable: false,
       render: (row) => (
-        <RowAction label="View" onClick={() => setViewing(row)} ariaLabel={`View "${row.title}"`} />
+        <RowAction label="View details" onClick={() => setViewing(row)} ariaLabel={`View "${row.title}"`} />
       ),
     },
   ];
