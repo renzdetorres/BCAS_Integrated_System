@@ -90,13 +90,8 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="input-group">
-                <div className="input-group-label-row">
-                  <label htmlFor="password">Password</label>
-                  <Link className="input-group-aside-link" to="/forgot-password">
-                    Forgot password?
-                  </Link>
-                </div>
+              <div className="input-group has-aside-link">
+                <label htmlFor="password">Password</label>
                 <div className="input-with-icon has-toggle">
                   <Icon name="lock" size={18} className="input-icon" />
                   <input
@@ -117,6 +112,11 @@ export default function LoginPage() {
                     <Icon name={showPassword ? "eye-off" : "eye"} size={18} />
                   </button>
                 </div>
+                {/* Placed after the input so Tab goes email -> password -> toggle -> link;
+                    CSS positions it beside the label. */}
+                <Link className="input-group-aside-link" to="/forgot-password">
+                  Forgot password?
+                </Link>
               </div>
 
               {errorMessage && (
