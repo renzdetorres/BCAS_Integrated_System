@@ -171,8 +171,8 @@ function EditAccountModal({ user, isSelf, callerIsSuperAdmin, onClose, onSaved }
               onChange={(e) => setField("isSuperAdmin", e.target.checked)}
             />
             <span>
-              Super Admin
-              <small>Can force-edit scholarships during a semester, manage semesters, and grant Super Admin.</small>
+              Full controls
+              <small>Can force-edit scholarships during a semester, manage semesters, set what each role can access, and give other Admins full controls.</small>
             </span>
           </label>
         ) : null}
@@ -260,7 +260,7 @@ export default function ManageUsersPage() {
       render: (row) => (
         <span className="account-role">
           {roleLabel(row.role)}
-          {row.isSuperAdmin ? <span className="account-super-tag">Super Admin</span> : null}
+          {row.isSuperAdmin ? <span className="account-super-tag">Full controls</span> : null}
         </span>
       ),
     },

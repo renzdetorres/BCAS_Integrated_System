@@ -196,8 +196,8 @@ export default function SemestersPanel() {
         titleAs="h2"
         subtitle={
           canManage
-            ? "Scholarships are locked while a semester is in progress. As a Super Admin you manage these dates."
-            : "Scholarships are locked while a semester is in progress. Only a Super Admin can change these dates."
+            ? "Scholarships are locked while a semester is in progress. As an Admin with full controls you manage these dates."
+            : "Scholarships are locked while a semester is in progress. Only an Admin with full controls can change these dates."
         }
         actions={
           canManage ? (

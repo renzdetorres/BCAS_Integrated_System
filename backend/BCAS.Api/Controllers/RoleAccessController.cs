@@ -77,7 +77,7 @@ public class RoleAccessController : ControllerBase
         }
         catch (SuperAdminRequiredException ex)
         {
-            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Title = "Super Admin required", Detail = ex.Message, Status = StatusCodes.Status403Forbidden });
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails { Title = "Full Admin controls required", Detail = ex.Message, Status = StatusCodes.Status403Forbidden });
         }
     }
 }

@@ -89,7 +89,7 @@ export async function setUserSuperAdmin(userId, isSuperAdmin) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new ApiError(resolveErrorMessage(response, data, "Failed to change Super Admin access."), response.status);
+    throw new ApiError(resolveErrorMessage(response, data, "Failed to change full Admin controls."), response.status);
   }
 
   return data;

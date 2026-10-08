@@ -72,12 +72,12 @@ public class UserManagementService : IUserManagementService
     public async Task<UserProfileResponse> SetSuperAdminAsync(
         Guid callerUserId, Guid userId, bool isSuperAdmin, CancellationToken cancellationToken = default)
     {
-        await _superAdminGuard.EnsureAsync(callerUserId, "grant or revoke Super Admin", cancellationToken);
+        await _superAdminGuard.EnsureAsync(callerUserId, "give or remove full Admin controls", cancellationToken);
 
         var target = await _userRepository.GetByIdAsync(userId, cancellationToken) ?? throw new UserNotFoundException(userId);
         if (isSuperAdmin && (target.RoleName != "Admin" || !target.IsActive))
         {
-            throw new InvalidSuperAdminChangeException("Only an active Admin-Registrar account can be made a Super Admin.");
+            throw new InvalidSuperAdminChangeException("Only an active Admin-Registrar account can be given full controls.");
         }
 
         if (!isSuperAdmin)
@@ -105,7 +105,7 @@ public class UserManagementService : IUserManagementService
         if (await _userRepository.CountActiveSuperAdminsAsync(cancellationToken) <= 1)
         {
             throw new InvalidSuperAdminChangeException(
-                $"You can't {action} the only Super Admin. Make another Admin a Super Admin first.");
+                $"You can't {action} the only Admin with full controls. Give another Admin full controls first.");
         }
     }
 

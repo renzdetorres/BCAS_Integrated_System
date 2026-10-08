@@ -111,7 +111,7 @@ function ScholarshipFormModal({ mode, scholarship, lockedBy, onClose, onSaved })
             <Notice tone="warning" title={`${lockedBy.name} is in progress`}>
               <p>
                 Scholarships are locked until {formatCalendarDate(lockedBy.endDate)}. Saving now overrides the lock
-                as a Super Admin and is recorded in the Activity Log.
+                with your full Admin controls and is recorded in the Activity Log.
               </p>
             </Notice>
             <label className="scholarship-override-confirm">
@@ -318,7 +318,7 @@ export default function AdminScholarshipsPage() {
             icon={locked ? "lock" : "settings"}
             onClick={() => setFormState({ mode: "edit", scholarship: row })}
             disabled={editBlocked}
-            title={editBlocked ? `${lockedTitle}. Only a Super Admin can edit now.` : undefined}
+            title={editBlocked ? `${lockedTitle}. Only an Admin with full controls can edit now.` : undefined}
             ariaLabel={`Edit ${row.name}`}
           />
           {row.isActive ? (
@@ -326,7 +326,7 @@ export default function AdminScholarshipsPage() {
               type="button"
               className="scholarship-status-button"
               disabled={editBlocked}
-              title={editBlocked ? `${lockedTitle}. Only a Super Admin can deactivate now.` : undefined}
+              title={editBlocked ? `${lockedTitle}. Only an Admin with full controls can deactivate now.` : undefined}
               onClick={(event) => {
                 event.stopPropagation();
                 setStatusTarget(row);
@@ -367,8 +367,8 @@ export default function AdminScholarshipsPage() {
             <Notice tone="warning" title={`${locked.name} is in progress (${semesterRange(locked)})`}>
               <p>
                 {overview.callerIsSuperAdmin
-                  ? "Scholarships can't be edited or deactivated until it ends. As a Super Admin you can force a change; it's recorded in the Activity Log."
-                  : "Scholarships can't be edited or deactivated until it ends. You can still add new scholarships. Ask a Super Admin if a change can't wait."}
+                  ? "Scholarships can't be edited or deactivated until it ends. With your full Admin controls you can force a change; it's recorded in the Activity Log."
+                  : "Scholarships can't be edited or deactivated until it ends. You can still add new scholarships. Ask an Admin with full controls if a change can't wait."}
               </p>
             </Notice>
           ) : null

@@ -4,7 +4,7 @@ namespace BCAS.Api.Exceptions;
 public class ScholarshipLockedException : Exception
 {
     public ScholarshipLockedException(string semesterName, DateOnly endDate)
-        : base($"Scholarships can't be edited or deactivated during {semesterName} (ends {endDate:MMMM d, yyyy}). A Super Admin can force the change.")
+        : base($"Scholarships can't be edited or deactivated during {semesterName} (ends {endDate:MMMM d, yyyy}). An Admin with full controls can force the change.")
     {
     }
 }

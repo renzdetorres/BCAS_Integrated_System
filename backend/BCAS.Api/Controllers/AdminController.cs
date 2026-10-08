@@ -113,7 +113,7 @@ public class AdminController : ControllerBase
         {
             return BadRequest(new ProblemDetails
             {
-                Title = "Super Admin change not allowed",
+                Title = "Admin controls change not allowed",
                 Detail = ex.Message,
                 Status = StatusCodes.Status400BadRequest,
             });
@@ -174,7 +174,7 @@ public class AdminController : ControllerBase
         {
             return BadRequest(new ProblemDetails
             {
-                Title = "Super Admin change not allowed",
+                Title = "Admin controls change not allowed",
                 Detail = ex.Message,
                 Status = StatusCodes.Status400BadRequest,
             });
@@ -229,7 +229,7 @@ public class AdminController : ControllerBase
         {
             return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
             {
-                Title = "Super Admin required",
+                Title = "Full Admin controls required",
                 Detail = ex.Message,
                 Status = StatusCodes.Status403Forbidden,
             });
@@ -238,7 +238,7 @@ public class AdminController : ControllerBase
         {
             return BadRequest(new ProblemDetails
             {
-                Title = "Super Admin change not allowed",
+                Title = "Admin controls change not allowed",
                 Detail = ex.Message,
                 Status = StatusCodes.Status400BadRequest,
             });

@@ -82,7 +82,7 @@ public class AdminScholarshipsController : ControllerBase
         {
             return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
             {
-                Title = "Super Admin required",
+                Title = "Full Admin controls required",
                 Detail = ex.Message,
                 Status = StatusCodes.Status403Forbidden,
             });
@@ -150,7 +150,7 @@ public class AdminScholarshipsController : ControllerBase
         {
             return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
             {
-                Title = "Super Admin required",
+                Title = "Full Admin controls required",
                 Detail = ex.Message,
                 Status = StatusCodes.Status403Forbidden,
             });
