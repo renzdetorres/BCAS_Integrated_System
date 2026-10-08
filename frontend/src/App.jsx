@@ -48,7 +48,6 @@ import AdminExamPermitsPage from "./pages/AdminExamPermitsPage.jsx";
 import AdminScholarshipsPage from "./pages/AdminScholarshipsPage.jsx";
 import AdminReservationsPage from "./pages/AdminReservationsPage.jsx";
 import AdminAuditLogsPage from "./pages/AdminAuditLogsPage.jsx";
-import AdminDuplicateApplicantsPage from "./pages/AdminDuplicateApplicantsPage.jsx";
 import InquiriesPage from "./pages/InquiriesPage.jsx";
 import InquiryDetailPage from "./pages/InquiryDetailPage.jsx";
 import StaffInquiriesPage from "./pages/StaffInquiriesPage.jsx";
@@ -70,7 +69,6 @@ export default function App() {
               <Route element={<RequireRole allowedRoles={["Admin"]} />}>
                 <Route path="/admin/staff" element={<ProvisionStaffPage />} />
                 <Route path="/admin/users" element={<ManageUsersPage />} />
-                <Route path="/admin/duplicate-applicants" element={<AdminDuplicateApplicantsPage />} />
                 <Route path="/admin/notification-settings" element={<NotificationSettingsPage />} />
                 <Route path="/admin/settings" element={<AdminSettingsPage />} />
                 <Route path="/admin/applications" element={<AdminApplicationsPage />} />

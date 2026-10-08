@@ -35,7 +35,6 @@ public static class FeatureCatalog
                 new("/staff/inquiries", "Inquiries", "Communications", "/api/staff/inquiries"),
                 new("/admin/reports", "Reports", "Reports", "/api/admin/reports"),
                 new("/admin/users", "Account Management", "Administration", "/api/admin/users"),
-                new("/admin/duplicate-applicants", "Duplicate Applicants", "Administration", "/api/admin/duplicate-applicants"),
                 new("/admin/staff", "Provision Staff", "Administration", "/api/admin/staff"),
                 new("/admin/audit-logs", "Activity Log", "Administration", "/api/admin/audit-logs"),
             },
