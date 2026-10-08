@@ -4,6 +4,7 @@ import {
   ARCHIVABLE_STATUSES,
   archiveApplication,
   getApplicationLogs,
+  getEntranceForm,
   getValidNextAdmissionStatuses,
   getValidNextScholarshipStatuses,
   promoteFromWaitlist,
@@ -15,6 +16,7 @@ import { ApiError } from "../api/apiClient.js";
 import { DEPARTMENT_OPTIONS, programOptionLabel, programsFor } from "../config/departments.js";
 import WorkflowStepper, { ADMISSION_STEP_LABELS, SCHOLARSHIP_STEP_LABELS } from "../components/WorkflowStepper.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
+import EntranceFormView from "../components/EntranceFormView.jsx";
 import StatusBadge, { statusLabel } from "../components/ui/StatusBadge.jsx";
 import { searchDocuments } from "../api/adminDocumentsApi.js";
 import { DOCUMENT_TYPE_LABELS } from "../api/documentApi.js";
@@ -59,6 +61,7 @@ export default function AdminApplicationDetailPage() {
   const [isLoadingLogs, setIsLoadingLogs] = useState(true);
   const [logsError, setLogsError] = useState(null);
   const [documents, setDocuments] = useState(null);
+  const [entranceForm, setEntranceForm] = useState(null);
 
   const loadApplication = useCallback(() => {
     let cancelled = false;
@@ -118,6 +121,23 @@ export default function AdminApplicationDetailPage() {
   }, [applicationId, application?.category]);
 
   useEffect(() => loadLogs(), [loadLogs]);
+
+  // The entrance-exam application form (admission applications only).
+  const isAdmissionApplication = application?.category === "Admission";
+  useEffect(() => {
+    if (!isAdmissionApplication) return undefined;
+    let cancelled = false;
+    getEntranceForm(applicationId)
+      .then((data) => {
+        if (!cancelled) setEntranceForm(data);
+      })
+      .catch(() => {
+        if (!cancelled) setEntranceForm(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [applicationId, isAdmissionApplication]);
 
   // The applicant's documents, so staff can see where they stand without leaving this page.
   const applicantEmail = application?.applicantEmail;
@@ -415,6 +435,13 @@ export default function AdminApplicationDetailPage() {
                   </p>
                 )}
               </div>
+
+              {entranceForm ? (
+                <div className="admin-app-dossier-section">
+                  <h2>Application Form for Entrance Exam</h2>
+                  <EntranceFormView data={entranceForm} />
+                </div>
+              ) : null}
 
               <div className="admin-app-dossier-section">
                 <h2>Documents</h2>

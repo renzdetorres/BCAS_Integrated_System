@@ -215,6 +215,10 @@ public class AdminApplicationsService : IAdminApplicationsService
         return updated.ToResponse(steps);
     }
 
+    public async Task<AdminEntranceFormResponse> GetEntranceFormAsync(Guid applicationId, CancellationToken cancellationToken = default) =>
+        await _applicationsRepository.GetEntranceFormAsync(applicationId, cancellationToken)
+            ?? throw new ApplicationNotFoundException(applicationId);
+
     public async Task<IReadOnlyList<ApplicationLogEntryResponse>> GetLogAsync(
         Guid applicationId,
         string category,

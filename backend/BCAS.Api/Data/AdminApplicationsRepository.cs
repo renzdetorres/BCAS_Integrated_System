@@ -61,6 +61,47 @@ ORDER BY h.SubmittedAt DESC;";
         return items;
     }
 
+    public async Task<AdminEntranceFormResponse?> GetEntranceFormAsync(Guid applicationId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        var sql = @"
+SELECT u.FirstName, u.LastName, p.BirthDate, p.ContactNumber, p.AddressLine, p.City, p.Province, p.PostalCode,
+       a.ApplicationType, a.CourseAppliedFor, a.Department, a.PreviousSchool, a.SubmittedAt, " + AdmissionFormColumns.Qualified("a") + @"
+FROM dbo.AdmissionApplications a
+JOIN dbo.Users u ON u.UserId = a.UserId
+LEFT JOIN dbo.ApplicantProfiles p ON p.UserId = a.UserId
+WHERE a.ApplicationId = @ApplicationId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@ApplicationId", SqlDbType.UniqueIdentifier) { Value = applicationId });
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        string? Text(string column) => reader.IsDBNull(reader.GetOrdinal(column)) ? null : reader.GetString(reader.GetOrdinal(column));
+        var form = AdmissionFormColumns.Read(reader);
+        var address = string.Join(", ", new[] { Text("AddressLine"), Text("City"), Text("Province"), Text("PostalCode") }.Where(s => !string.IsNullOrWhiteSpace(s)));
+
+        return new AdminEntranceFormResponse
+        {
+            ApplicantName = $"{reader.GetString(reader.GetOrdinal("FirstName"))} {reader.GetString(reader.GetOrdinal("LastName"))}",
+            BirthDate = reader.IsDBNull(reader.GetOrdinal("BirthDate")) ? null : DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("BirthDate"))),
+            Address = address.Length == 0 ? null : address,
+            ContactNumber = Text("ContactNumber"),
+            ApplicationType = reader.GetString(reader.GetOrdinal("ApplicationType")),
+            CourseAppliedFor = reader.GetString(reader.GetOrdinal("CourseAppliedFor")),
+            Department = Text("Department"),
+            PreviousSchool = reader.GetString(reader.GetOrdinal("PreviousSchool")),
+            SubmittedAt = reader.GetDateTime(reader.GetOrdinal("SubmittedAt")),
+            HasFormDetails = form.StudentSignature is not null,
+            Form = form,
+        };
+    }
+
     public async Task<IReadOnlyList<ApplicationLogEntry>> GetActivityLogAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);

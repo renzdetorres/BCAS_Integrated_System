@@ -62,6 +62,8 @@ public class AdmissionApplicationService : IAdmissionApplicationService
         request.CourseAppliedFor = DepartmentConstants.NormalizeProgram(request.Department, request.CourseAppliedFor)
             ?? throw new InvalidCourseProgramException(request.Department, request.CourseAppliedFor);
 
+        AdmissionFormConstants.ValidateAndNormalize(request.Form!);
+
         if (!await _profileRepository.ExistsAsync(userId, cancellationToken))
         {
             throw new ProfileIncompleteException();

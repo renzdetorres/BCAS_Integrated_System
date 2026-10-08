@@ -23,4 +23,8 @@ public class SubmitAdmissionApplicationRequest
     [Required]
     [StringLength(200, MinimumLength = 1)]
     public string PreviousSchool { get; set; } = string.Empty;
+
+    /// <summary>The rest of the entrance-exam application form.</summary>
+    [Required]
+    public AdmissionFormDetails? Form { get; set; }
 }

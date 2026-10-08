@@ -176,6 +176,27 @@ public class AdminApplicationsController : ControllerBase
         }
     }
 
+    /// <summary>Admin-only: the entrance-exam application form of an admission application.</summary>
+    [HttpGet("{applicationId:guid}/entrance-form")]
+    [ProducesResponseType(typeof(AdminEntranceFormResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AdminEntranceFormResponse>> GetEntranceForm(Guid applicationId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _applicationsService.GetEntranceFormAsync(applicationId, cancellationToken));
+        }
+        catch (ApplicationNotFoundException ex)
+        {
+            return NotFound(new ProblemDetails
+            {
+                Title = "Application not found",
+                Detail = ex.Message,
+                Status = StatusCodes.Status404NotFound,
+            });
+        }
+    }
+
     /// <summary>Admin-only: the application's log, newest first (submission, status changes, document reviews, exam events).</summary>
     [HttpGet("{applicationId:guid}/logs")]
     [ProducesResponseType(typeof(IReadOnlyList<ApplicationLogEntryResponse>), StatusCodes.Status200OK)]

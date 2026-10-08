@@ -25,6 +25,9 @@ public interface IAdminApplicationsRepository
     /// <summary>A single application (admission or scholarship) by id, or null if none exists.</summary>
     Task<AdminApplicationListItem?> GetByIdAsync(Guid applicationId, CancellationToken cancellationToken = default);
 
+    /// <summary>The entrance-exam form of one admission application, or null if there is no such application.</summary>
+    Task<AdminEntranceFormResponse?> GetEntranceFormAsync(Guid applicationId, CancellationToken cancellationToken = default);
+
     /// <summary>Document reviews and exam events for one applicant, for the application log. Unsorted.</summary>
     Task<IReadOnlyList<ApplicationLogEntry>> GetActivityLogAsync(Guid userId, CancellationToken cancellationToken = default);
 

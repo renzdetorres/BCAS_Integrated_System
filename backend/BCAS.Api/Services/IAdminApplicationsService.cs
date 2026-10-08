@@ -64,6 +64,9 @@ public interface IAdminApplicationsService
     /// </summary>
     Task<IReadOnlyList<ApplicationLogEntryResponse>> GetLogAsync(Guid applicationId, string category, CancellationToken cancellationToken = default);
 
+    /// <summary>The entrance-exam form of an admission application. Throws ApplicationNotFoundException if there is none.</summary>
+    Task<AdminEntranceFormResponse> GetEntranceFormAsync(Guid applicationId, CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<ApplicationStatusHistoryEntryResponse>> GetStatusHistoryAsync(
         Guid applicationId,
         string category,

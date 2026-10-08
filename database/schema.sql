@@ -1741,3 +1741,88 @@ BEGIN
     );
 END
 GO
+
+-- -----------------------------------------------------------------------------
+-- Application Form for Entrance Exam
+-- The school's paper form asks for more than course and previous school: the
+-- student's sex and place of birth, the address of the school last attended,
+-- special skills, father / mother / guardian (name, occupation, phone), brothers
+-- and sisters (name, age, occupation, school or place of work, kept as JSON in
+-- Siblings) and the student's and parent's/guardian's signatures (typed names).
+-- The student's name, date of birth, address and contact number come from the
+-- applicant's profile, and the date is the submission date. All columns are
+-- NULL so applications filed before this form stay valid.
+-- -----------------------------------------------------------------------------
+IF COL_LENGTH(N'dbo.AdmissionApplications', N'Sex') IS NULL
+    ALTER TABLE dbo.AdmissionApplications ADD Sex NVARCHAR(10) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.AdmissionApplications', N'PlaceOfBirth') IS NULL
+    ALTER TABLE dbo.AdmissionApplications ADD PlaceOfBirth NVARCHAR(200) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.AdmissionApplications', N'PreviousSchoolAddress') IS NULL
+    ALTER TABLE dbo.AdmissionApplications ADD PreviousSchoolAddress NVARCHAR(300) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.AdmissionApplications', N'SpecialSkills') IS NULL
+    ALTER TABLE dbo.AdmissionApplications ADD SpecialSkills NVARCHAR(300) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.AdmissionApplications', N'FatherName') IS NULL
+    ALTER TABLE dbo.AdmissionApplications ADD FatherName NVARCHAR(200) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.AdmissionApplications', N'FatherOccupation') IS NULL
+    ALTER TABLE dbo.AdmissionApplications ADD FatherOccupation NVARCHAR(100) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.AdmissionApplications', N'FatherPhone') IS NULL
+    ALTER TABLE dbo.AdmissionApplications ADD FatherPhone NVARCHAR(50) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.AdmissionApplications', N'MotherName') IS NULL
+    ALTER TABLE dbo.AdmissionApplications ADD MotherName NVARCHAR(200) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.AdmissionApplications', N'MotherOccupation') IS NULL
+    ALTER TABLE dbo.AdmissionApplications ADD MotherOccupation NVARCHAR(100) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.AdmissionApplications', N'MotherPhone') IS NULL
+    ALTER TABLE dbo.AdmissionApplications ADD MotherPhone NVARCHAR(50) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.AdmissionApplications', N'GuardianName') IS NULL
+    ALTER TABLE dbo.AdmissionApplications ADD GuardianName NVARCHAR(200) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.AdmissionApplications', N'GuardianOccupation') IS NULL
+    ALTER TABLE dbo.AdmissionApplications ADD GuardianOccupation NVARCHAR(100) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.AdmissionApplications', N'GuardianPhone') IS NULL
+    ALTER TABLE dbo.AdmissionApplications ADD GuardianPhone NVARCHAR(50) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.AdmissionApplications', N'Siblings') IS NULL
+    ALTER TABLE dbo.AdmissionApplications ADD Siblings NVARCHAR(MAX) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.AdmissionApplications', N'StudentSignature') IS NULL
+    ALTER TABLE dbo.AdmissionApplications ADD StudentSignature NVARCHAR(200) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.AdmissionApplications', N'GuardianSignature') IS NULL
+    ALTER TABLE dbo.AdmissionApplications ADD GuardianSignature NVARCHAR(200) NULL;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_AdmissionApplications_Sex')
+    ALTER TABLE dbo.AdmissionApplications WITH NOCHECK
+        ADD CONSTRAINT CK_AdmissionApplications_Sex CHECK (Sex IS NULL OR Sex IN (N'Male', N'Female'));
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_AdmissionApplications_Siblings')
+    ALTER TABLE dbo.AdmissionApplications WITH NOCHECK
+        ADD CONSTRAINT CK_AdmissionApplications_Siblings CHECK (Siblings IS NULL OR ISJSON(Siblings) = 1);
+GO

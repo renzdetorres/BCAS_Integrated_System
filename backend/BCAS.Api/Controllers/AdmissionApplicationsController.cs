@@ -63,6 +63,15 @@ public class AdmissionApplicationsController : ControllerBase
                 Status = StatusCodes.Status409Conflict,
             });
         }
+        catch (InvalidEntranceFormException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Application form incomplete",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
         catch (InvalidApplicationTypeException ex)
         {
             return BadRequest(new ProblemDetails

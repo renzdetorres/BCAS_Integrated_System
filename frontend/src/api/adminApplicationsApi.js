@@ -172,6 +172,20 @@ export async function getApplicationStatusHistory(applicationId, category) {
   return response.json();
 }
 
+/** The entrance-exam application form of an admission application. */
+export async function getEntranceForm(applicationId) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/applications/${applicationId}/entrance-form`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to load the application form."), response.status);
+  }
+
+  return response.json();
+}
+
 /** The application's log, newest first: submission, status changes, document reviews and exam events. */
 export async function getApplicationLogs(applicationId, category) {
   const params = new URLSearchParams({ category });

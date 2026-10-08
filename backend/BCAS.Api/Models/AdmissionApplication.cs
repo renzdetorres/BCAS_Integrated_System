@@ -10,4 +10,7 @@ public class AdmissionApplication
     public string PreviousSchool { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public DateTime SubmittedAt { get; set; }
+
+    /// <summary>The entrance-exam form answers; empty fields on applications filed before the form existed.</summary>
+    public AdmissionFormDetails Form { get; set; } = new();
 }

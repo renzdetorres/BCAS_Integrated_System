@@ -9,4 +9,5 @@ public class AdmissionApplicationResponse
     public string PreviousSchool { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public DateTime SubmittedAt { get; set; }
+    public AdmissionFormDetails Form { get; set; } = new();
 }

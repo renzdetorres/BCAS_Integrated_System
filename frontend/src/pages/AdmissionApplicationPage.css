@@ -191,3 +191,114 @@
   font-style: normal;
   color: var(--color-text-secondary);
 }
+
+.form-section-title {
+  margin: 26px 0 12px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.95rem;
+  color: var(--color-text-primary);
+}
+
+.form-fieldset > .form-section-title:first-child {
+  margin-top: 4px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 20px;
+}
+
+.form-profile {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 20px;
+  margin: 0 0 8px;
+  padding: 14px 16px;
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.form-profile dt {
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+}
+
+.form-profile dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.form-profile-wide {
+  grid-column: 1 / -1;
+}
+
+.form-table-wrap {
+  overflow-x: auto;
+  margin-bottom: 10px;
+}
+
+.family-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.family-table th,
+.family-table td {
+  padding: 6px 8px 6px 0;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.family-table thead th {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.family-table tbody th {
+  width: 90px;
+  font-weight: 600;
+}
+
+.family-table input {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font: inherit;
+  background: var(--color-surface);
+}
+
+.family-table .family-age {
+  width: 80px;
+}
+
+.form-readonly .family-table input {
+  background: var(--color-surface-subtle);
+  color: var(--color-text-secondary);
+  -webkit-text-fill-color: var(--color-text-secondary);
+  opacity: 1;
+}
+
+.signature-input {
+  font-style: italic;
+}
+
+@media (max-width: 640px) {
+  .form-grid,
+  .form-profile {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.form-fieldset .form-note {
+  margin-bottom: 16px;
+}

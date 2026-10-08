@@ -21,8 +21,12 @@ public class AdmissionApplicationRepository : IAdmissionApplicationRepository
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
-        const string sql = @"
-INSERT INTO dbo.AdmissionApplications (UserId, ApplicationType, CourseAppliedFor, Department, PreviousSchool)
+        var sql = @"
+INSERT INTO dbo.AdmissionApplications
+    (UserId, ApplicationType, CourseAppliedFor, Department, PreviousSchool,
+     Sex, PlaceOfBirth, PreviousSchoolAddress, SpecialSkills, FatherName, FatherOccupation, FatherPhone,
+     MotherName, MotherOccupation, MotherPhone, GuardianName, GuardianOccupation, GuardianPhone, Siblings,
+     StudentSignature, GuardianSignature)
 OUTPUT
     inserted.ApplicationId,
     inserted.UserId,
@@ -31,8 +35,12 @@ OUTPUT
     inserted.Department,
     inserted.PreviousSchool,
     inserted.Status,
-    inserted.SubmittedAt
-SELECT @UserId, @ApplicationType, @CourseAppliedFor, @Department, @PreviousSchool
+    inserted.SubmittedAt,
+    " + AdmissionFormColumns.Qualified("inserted") + @"
+SELECT @UserId, @ApplicationType, @CourseAppliedFor, @Department, @PreviousSchool,
+       @Sex, @PlaceOfBirth, @PreviousSchoolAddress, @SpecialSkills, @FatherName, @FatherOccupation, @FatherPhone,
+       @MotherName, @MotherOccupation, @MotherPhone, @GuardianName, @GuardianOccupation, @GuardianPhone, @Siblings,
+       @StudentSignature, @GuardianSignature
 WHERE NOT EXISTS (SELECT 1 FROM dbo.AdmissionApplications WITH (UPDLOCK, HOLDLOCK) WHERE UserId = @UserId);";
 
         await using var command = new SqlCommand(sql, connection);
@@ -41,6 +49,7 @@ WHERE NOT EXISTS (SELECT 1 FROM dbo.AdmissionApplications WITH (UPDLOCK, HOLDLOC
         command.Parameters.Add(new SqlParameter("@CourseAppliedFor", SqlDbType.NVarChar, 200) { Value = request.CourseAppliedFor });
         command.Parameters.Add(new SqlParameter("@Department", SqlDbType.NVarChar, 100) { Value = (object?)request.Department ?? DBNull.Value });
         command.Parameters.Add(new SqlParameter("@PreviousSchool", SqlDbType.NVarChar, 200) { Value = request.PreviousSchool });
+        AdmissionFormColumns.AddParameters(command, request.Form!);
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
@@ -56,8 +65,8 @@ WHERE NOT EXISTS (SELECT 1 FROM dbo.AdmissionApplications WITH (UPDLOCK, HOLDLOC
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
-        const string sql = @"
-SELECT ApplicationId, UserId, ApplicationType, CourseAppliedFor, Department, PreviousSchool, Status, SubmittedAt
+        var sql = @"
+SELECT ApplicationId, UserId, ApplicationType, CourseAppliedFor, Department, PreviousSchool, Status, SubmittedAt, " + AdmissionFormColumns.Select + @"
 FROM dbo.AdmissionApplications
 WHERE UserId = @UserId
 ORDER BY SubmittedAt DESC;";
@@ -86,5 +95,6 @@ ORDER BY SubmittedAt DESC;";
         PreviousSchool = reader.GetString(reader.GetOrdinal("PreviousSchool")),
         Status = reader.GetString(reader.GetOrdinal("Status")),
         SubmittedAt = reader.GetDateTime(reader.GetOrdinal("SubmittedAt")),
+        Form = AdmissionFormColumns.Read(reader),
     };
 }

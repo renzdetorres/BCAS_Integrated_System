@@ -13,5 +13,6 @@ public static class AdmissionApplicationMappingExtensions
         PreviousSchool = application.PreviousSchool,
         Status = application.Status,
         SubmittedAt = application.SubmittedAt,
+        Form = application.Form,
     };
 }
