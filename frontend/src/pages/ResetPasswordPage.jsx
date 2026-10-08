@@ -1,11 +1,12 @@
-import { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { resetPassword, ApiError } from "../api/authApi.js";
 import AuthShowcase from "../components/auth/AuthShowcase.jsx";
 import Icon from "../components/ui/Icon.jsx";
 import "../components/auth/AuthForm.css";
 
 export default function ResetPasswordPage() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token") ?? "";
 
@@ -16,6 +17,13 @@ export default function ResetPasswordPage() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isReset, setIsReset] = useState(false);
+
+  // Once the password is changed, carry on to the login page by itself.
+  useEffect(() => {
+    if (!isReset) return undefined;
+    const timer = setTimeout(() => navigate("/login", { replace: true }), 3000);
+    return () => clearTimeout(timer);
+  }, [isReset, navigate]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -84,7 +92,7 @@ export default function ResetPasswordPage() {
                 <Icon name="check" size={24} />
               </span>
               <h1>Password reset</h1>
-              <p className="auth-subtitle">Your password has been changed. You can now log in with it.</p>
+              <p className="auth-subtitle">Your password has been changed. Taking you to the login page...</p>
               <Link className="auth-submit" to="/login">
                 Go to login
               </Link>
