@@ -150,9 +150,16 @@ function ShortcutFab() {
         <ul>
           {SHORTCUTS.map((shortcut) => (
             <li key={shortcut.to}>
-              <Link to={shortcut.to} className="dash-shortcut" onClick={() => setOpen(false)}>
-                <Icon name={shortcut.icon} size={17} />
-                {shortcut.label}
+              <Link
+                to={shortcut.to}
+                className="dash-shortcut"
+                aria-label={shortcut.label}
+                onClick={() => setOpen(false)}
+              >
+                <Icon name={shortcut.icon} size={20} />
+                <span className="dash-shortcut-tip" aria-hidden="true">
+                  {shortcut.label}
+                </span>
               </Link>
             </li>
           ))}
