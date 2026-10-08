@@ -17,5 +17,5 @@ public interface IAdminExamPermitService
     /// schedule, or DocumentsNotVerifiedException if their required
     /// documents aren't all verified yet.
     /// </summary>
-    Task<AdminExamPermitListItemResponse> ReleaseAsync(Guid userId, Guid releasedByUserId, CancellationToken cancellationToken = default);
+    Task<AdminExamPermitListItemResponse> ReleaseAsync(Guid userId, Guid releasedByUserId, string invoiceNumber, CancellationToken cancellationToken = default);
 }

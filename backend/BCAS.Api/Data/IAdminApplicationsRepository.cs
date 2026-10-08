@@ -25,6 +25,9 @@ public interface IAdminApplicationsRepository
     /// <summary>A single application (admission or scholarship) by id, or null if none exists.</summary>
     Task<AdminApplicationListItem?> GetByIdAsync(Guid applicationId, CancellationToken cancellationToken = default);
 
+    /// <summary>Document reviews and exam events for one applicant, for the application log. Unsorted.</summary>
+    Task<IReadOnlyList<ApplicationLogEntry>> GetActivityLogAsync(Guid userId, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Admin-only: sets an application's Status (and optional Remarks).
     /// category must be "Admission" or "Scholarship" - it picks which

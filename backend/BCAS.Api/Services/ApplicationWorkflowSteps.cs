@@ -14,22 +14,23 @@ public static class ApplicationWorkflowSteps
     private static readonly IReadOnlySet<string> DecidedStatuses = new HashSet<string>(StringComparer.Ordinal) { "Approved", "Rejected" };
     private static readonly IReadOnlySet<string> ReviewingOrDecidedStatuses = new HashSet<string>(StringComparer.Ordinal) { "UnderReview", "Approved", "Rejected" };
 
-    public static IReadOnlyList<TrackingStepResponse> BuildAdmissionSteps(
-        string status, bool documentsReceived, bool examScheduled)
+    /// <summary>
+    /// The admission steps come straight from the application's status now
+    /// that every step is a real status. Rejected and Retracted end the path
+    /// without completing it, so no step is marked; DidNotTakeExam sits at the
+    /// exam step.
+    /// </summary>
+    public static IReadOnlyList<TrackingStepResponse> BuildAdmissionSteps(string status)
     {
-        var decided = DecidedStatuses.Contains(status);
-        var underReview = ReviewingOrDecidedStatuses.Contains(status);
+        var steps = ApplicationTrackingConstants.AdmissionSteps;
+        if (status is "Rejected" or "Retracted")
+        {
+            return steps.Select(step => new TrackingStepResponse { Step = step }).ToList();
+        }
 
-        // Highest-indexed signal that's true wins - some of these
-        // (UnderReview, ExamCompleted) currently only ever fire together
-        // with a decision, since nothing sets them individually yet.
-        var currentIndex = 0;
-        if (documentsReceived) currentIndex = 1;
-        if (underReview) currentIndex = 2;
-        if (examScheduled) currentIndex = 3;
-        if (decided) currentIndex = 5; // ExamCompleted (4) and DecisionReleased (5) both follow from a decision being out.
-
-        return BuildSteps(ApplicationTrackingConstants.AdmissionSteps, currentIndex);
+        var lookup = status == AdmissionWorkflowConstants.DidNotTakeExam ? "ExamScheduled" : status;
+        var currentIndex = Math.Max(0, steps.ToList().IndexOf(lookup));
+        return BuildSteps(steps, currentIndex);
     }
 
     public static IReadOnlyList<TrackingStepResponse> BuildScholarshipSteps(string status, bool documentsVerified)

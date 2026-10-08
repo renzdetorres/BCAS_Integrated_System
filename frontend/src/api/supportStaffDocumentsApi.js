@@ -1,6 +1,6 @@
 import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
-export const DOCUMENT_TYPES = ["ReportCard", "IdPicture", "PSA", "TOR", "SF10"];
+export const DOCUMENT_TYPES = ["ReportCard", "IdPicture", "PSA", "TOR", "SF10", "ScholarshipForm"];
 
 export async function listPendingAndFlaggedDocuments() {
   const response = await fetch(`${API_BASE_URL}/api/support-staff/documents`, {

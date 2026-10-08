@@ -13,4 +13,10 @@ public class AdminExamPermitListItemResponse
     public bool DocumentsVerified { get; set; }
     public bool IsReleased { get; set; }
     public DateTime? ReleasedAt { get; set; }
+    public string ExamType { get; set; } = "Entrance Exam";
+    public decimal? ExamFee { get; set; }
+    public string? InvoiceNumber { get; set; }
+    public string? SchoolLastAttended { get; set; }
+    public string? LevelApplying { get; set; }
+    public string? Program { get; set; }
 }

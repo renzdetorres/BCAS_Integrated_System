@@ -26,6 +26,7 @@ public class ScholarshipApplicationRepository : IScholarshipApplicationRepositor
         Guid userId,
         int scholarshipId,
         decimal gradeAverage,
+        ScholarshipApplicationDetails details,
         CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
@@ -33,6 +34,8 @@ public class ScholarshipApplicationRepository : IScholarshipApplicationRepositor
 
         try
         {
+            await EnsureNoExistingApplicationAsync(connection, transaction, userId, cancellationToken);
+
             var reserved = await ReserveSlotAsync(connection, transaction, scholarshipId, cancellationToken);
 
             string scholarshipName;
@@ -57,7 +60,7 @@ public class ScholarshipApplicationRepository : IScholarshipApplicationRepositor
             }
 
             var application = await InsertApplicationAsync(
-                connection, transaction, userId, scholarshipId, scholarshipType, gradeAverage, status, cancellationToken);
+                connection, transaction, userId, scholarshipId, scholarshipType, gradeAverage, status, details, cancellationToken);
             application.ScholarshipName = scholarshipName;
 
             await transaction.CommitAsync(cancellationToken);
@@ -71,6 +74,20 @@ public class ScholarshipApplicationRepository : IScholarshipApplicationRepositor
         finally
         {
             await transaction.DisposeAsync();
+        }
+    }
+
+    /// <summary>One scholarship application per applicant; locks the applicant's rows so a concurrent submit waits.</summary>
+    private static async Task EnsureNoExistingApplicationAsync(
+        SqlConnection connection, SqlTransaction transaction, Guid userId, CancellationToken cancellationToken)
+    {
+        const string sql = "SELECT COUNT(*) FROM dbo.ScholarshipApplications WITH (UPDLOCK, HOLDLOCK) WHERE UserId = @UserId;";
+        await using var command = new SqlCommand(sql, connection, transaction);
+        command.Parameters.Add(new SqlParameter("@UserId", SqlDbType.UniqueIdentifier) { Value = userId });
+
+        if ((int)(await command.ExecuteScalarAsync(cancellationToken))! > 0)
+        {
+            throw new ApplicationAlreadySubmittedException("scholarship");
         }
     }
 
@@ -202,7 +219,7 @@ WHERE ApplicationId = @ApplicationId;";
 
         const string sql = @"
 SELECT a.ApplicationId, a.UserId, a.ScholarshipId, s.Name AS ScholarshipName, a.ScholarshipType,
-       a.GradeAverage, a.Status, a.SubmittedAt
+       a.GradeAverage, a.Status, a.SubmittedAt, a.LevelApplied
 FROM dbo.ScholarshipApplications a
 JOIN dbo.Scholarships s ON s.ScholarshipId = a.ScholarshipId
 WHERE a.UserId = @UserId
@@ -284,14 +301,21 @@ WHERE ScholarshipId = @ScholarshipId AND IsActive = 1 AND RemainingSlots > 0;";
         string scholarshipType,
         decimal gradeAverage,
         string status,
+        ScholarshipApplicationDetails details,
         CancellationToken cancellationToken)
     {
         const string sql = @"
-INSERT INTO dbo.ScholarshipApplications (UserId, ScholarshipId, ScholarshipType, GradeAverage, Status)
+INSERT INTO dbo.ScholarshipApplications
+    (UserId, ScholarshipId, ScholarshipType, GradeAverage, Status,
+     LevelApplied, ApplicantFullName, SchoolLastAttended, GuardianRole, GuardianName, GuardianContact, GuardianEmail,
+     ConsentTerms, ConsentParticipation, ConsentCertification, ConsentedAt)
 OUTPUT
     inserted.ApplicationId, inserted.UserId, inserted.ScholarshipId, inserted.ScholarshipType,
-    inserted.GradeAverage, inserted.Status, inserted.SubmittedAt
-VALUES (@UserId, @ScholarshipId, @ScholarshipType, @GradeAverage, @Status);";
+    inserted.GradeAverage, inserted.Status, inserted.SubmittedAt, inserted.ConsentedAt
+VALUES
+    (@UserId, @ScholarshipId, @ScholarshipType, @GradeAverage, @Status,
+     @LevelApplied, @ApplicantFullName, @SchoolLastAttended, @GuardianRole, @GuardianName, @GuardianContact, @GuardianEmail,
+     @ConsentTerms, @ConsentParticipation, @ConsentCertification, SYSUTCDATETIME());";
 
         await using var command = new SqlCommand(sql, connection, transaction);
         command.Parameters.Add(new SqlParameter("@UserId", SqlDbType.UniqueIdentifier) { Value = userId });
@@ -299,9 +323,11 @@ VALUES (@UserId, @ScholarshipId, @ScholarshipType, @GradeAverage, @Status);";
         command.Parameters.Add(new SqlParameter("@ScholarshipType", SqlDbType.NVarChar, 100) { Value = scholarshipType });
         command.Parameters.Add(new SqlParameter("@GradeAverage", SqlDbType.Decimal) { Value = gradeAverage });
         command.Parameters.Add(new SqlParameter("@Status", SqlDbType.NVarChar, 30) { Value = status });
+        AddDetailParameters(command, details);
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         await reader.ReadAsync(cancellationToken);
+        details.ConsentedAt = reader.GetDateTime(reader.GetOrdinal("ConsentedAt"));
 
         // INSERT...OUTPUT has no ScholarshipName column (it isn't stored on
         // this table) - CreateAsync fills it in afterward from the
@@ -315,7 +341,25 @@ VALUES (@UserId, @ScholarshipId, @ScholarshipType, @GradeAverage, @Status);";
             GradeAverage = reader.GetDecimal(reader.GetOrdinal("GradeAverage")),
             Status = reader.GetString(reader.GetOrdinal("Status")),
             SubmittedAt = reader.GetDateTime(reader.GetOrdinal("SubmittedAt")),
+            Details = details,
         };
+    }
+
+    private static void AddDetailParameters(SqlCommand command, ScholarshipApplicationDetails d)
+    {
+        static object Text(string? v) => (object?)v ?? DBNull.Value;
+        static object Flag(bool? v) => (object?)v ?? DBNull.Value;
+
+        command.Parameters.Add(new SqlParameter("@LevelApplied", SqlDbType.NVarChar, 30) { Value = Text(d.LevelApplied) });
+        command.Parameters.Add(new SqlParameter("@ApplicantFullName", SqlDbType.NVarChar, 200) { Value = Text(d.ApplicantFullName) });
+        command.Parameters.Add(new SqlParameter("@SchoolLastAttended", SqlDbType.NVarChar, 200) { Value = Text(d.SchoolLastAttended) });
+        command.Parameters.Add(new SqlParameter("@GuardianRole", SqlDbType.NVarChar, 20) { Value = Text(d.GuardianRole) });
+        command.Parameters.Add(new SqlParameter("@GuardianName", SqlDbType.NVarChar, 200) { Value = Text(d.GuardianName) });
+        command.Parameters.Add(new SqlParameter("@GuardianContact", SqlDbType.NVarChar, 50) { Value = Text(d.GuardianContact) });
+        command.Parameters.Add(new SqlParameter("@GuardianEmail", SqlDbType.NVarChar, 256) { Value = Text(d.GuardianEmail) });
+        command.Parameters.Add(new SqlParameter("@ConsentTerms", SqlDbType.Bit) { Value = Flag(d.ConsentTerms) });
+        command.Parameters.Add(new SqlParameter("@ConsentParticipation", SqlDbType.Bit) { Value = Flag(d.ConsentParticipation) });
+        command.Parameters.Add(new SqlParameter("@ConsentCertification", SqlDbType.Bit) { Value = Flag(d.ConsentCertification) });
     }
 
     private static ScholarshipApplication MapApplication(SqlDataReader reader) => new()
@@ -328,5 +372,9 @@ VALUES (@UserId, @ScholarshipId, @ScholarshipType, @GradeAverage, @Status);";
         GradeAverage = reader.GetDecimal(reader.GetOrdinal("GradeAverage")),
         Status = reader.GetString(reader.GetOrdinal("Status")),
         SubmittedAt = reader.GetDateTime(reader.GetOrdinal("SubmittedAt")),
+        Details = new ScholarshipApplicationDetails
+        {
+            LevelApplied = reader.IsDBNull(reader.GetOrdinal("LevelApplied")) ? null : reader.GetString(reader.GetOrdinal("LevelApplied")),
+        },
     };
 }

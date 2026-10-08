@@ -11,11 +11,11 @@ public class InvalidStatusTransitionException : Exception
     {
         var workflow = category switch
         {
-            "Admission" => "Submitted -> UnderReview -> Approved|Rejected",
+            "Admission" => "Submitted -> UnderReview -> PendingDocuments -> DocumentsCompleted -> DocumentsCleared -> ExamScheduled -> ExamDone -> Registration -> Approved (Rejected or Retracted are possible until then)",
             "Scholarship" => "Submitted -> DocumentsVerified -> EligibilityScreening -> Evaluation -> Result -> Approved|Rejected",
             _ => "its ordered workflow",
         };
 
-        return $"{category} application '{applicationId}' cannot move from status '{fromStatus}' to '{toStatus}' - the workflow only moves forward, through {workflow}, and never changes once a decision is recorded.";
+        return $"{category} application '{applicationId}' cannot move from status '{fromStatus}' to '{toStatus}' - the workflow moves one step at a time, through {workflow}, and never changes once the application is final.";
     }
 }

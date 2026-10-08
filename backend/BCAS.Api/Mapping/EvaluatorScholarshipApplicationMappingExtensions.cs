@@ -23,6 +23,7 @@ public static class EvaluatorScholarshipApplicationMappingExtensions
         Status = detail.Status,
         SubmittedAt = detail.SubmittedAt,
         UpdatedAt = detail.UpdatedAt,
+        Form = detail.Form,
         Screening = detail.Screening?.ToResponse(),
         Documents = documents.Select(d => d.ToEvaluatorResponse()).ToList(),
         WorkflowStages = ScholarshipWorkflowConstants.Stages,

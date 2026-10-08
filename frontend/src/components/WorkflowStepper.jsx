@@ -2,11 +2,14 @@ import "./WorkflowStepper.css";
 
 export const ADMISSION_STEP_LABELS = {
   Submitted: "Submitted",
-  DocumentsReceived: "Documents Received",
   UnderReview: "Under Review",
+  PendingDocuments: "Pending Documents",
+  DocumentsCompleted: "Documents Completed",
+  DocumentsCleared: "Documents Cleared",
   ExamScheduled: "Exam Scheduled",
-  ExamCompleted: "Exam Completed",
-  DecisionReleased: "Decision Released",
+  ExamDone: "Exam Done",
+  Registration: "Registration",
+  Approved: "Approved",
 };
 
 export const SCHOLARSHIP_STEP_LABELS = {

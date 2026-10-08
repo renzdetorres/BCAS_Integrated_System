@@ -49,10 +49,37 @@ public class ScholarshipApplicationService : IScholarshipApplicationService
             throw new ProfileIncompleteException();
         }
 
+        if (request.ConsentTerms != true || request.ConsentParticipation != true || request.ConsentCertification != true)
+        {
+            throw new ScholarshipConsentRequiredException();
+        }
+
+        // One scholarship application per applicant (repeated inside the
+        // repository's transaction so simultaneous submissions can't both pass).
+        if ((await _applicationRepository.GetByUserIdAsync(userId, cancellationToken)).Count > 0)
+        {
+            throw new ApplicationAlreadySubmittedException("scholarship");
+        }
+
+        var details = new ScholarshipApplicationDetails
+        {
+            LevelApplied = request.LevelApplied,
+            ApplicantFullName = request.ApplicantFullName!.Trim(),
+            SchoolLastAttended = request.SchoolLastAttended!.Trim(),
+            GuardianRole = request.GuardianRole,
+            GuardianName = request.GuardianName!.Trim(),
+            GuardianContact = request.GuardianContact!.Trim(),
+            GuardianEmail = request.GuardianEmail!.Trim(),
+            ConsentTerms = true,
+            ConsentParticipation = true,
+            ConsentCertification = true,
+        };
+
         var application = await _applicationRepository.CreateAsync(
             userId,
             request.ScholarshipId!.Value,
             request.GradeAverage!.Value,
+            details,
             cancellationToken);
 
         // The opening row of this application's status-history audit trail

@@ -91,6 +91,15 @@ public class AdminApplicationsController : ControllerBase
                 Status = StatusCodes.Status400BadRequest,
             });
         }
+        catch (StatusPreconditionNotMetException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Status requirement not met",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
         catch (InvalidStatusTransitionException ex)
         {
             return BadRequest(new ProblemDetails
@@ -155,6 +164,30 @@ public class AdminApplicationsController : ControllerBase
                 Detail = ex.Message,
                 Status = StatusCodes.Status400BadRequest,
             });
+        }
+        catch (ApplicationNotFoundException ex)
+        {
+            return NotFound(new ProblemDetails
+            {
+                Title = "Application not found",
+                Detail = ex.Message,
+                Status = StatusCodes.Status404NotFound,
+            });
+        }
+    }
+
+    /// <summary>Admin-only: the application's log, newest first (submission, status changes, document reviews, exam events).</summary>
+    [HttpGet("{applicationId:guid}/logs")]
+    [ProducesResponseType(typeof(IReadOnlyList<ApplicationLogEntryResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyList<ApplicationLogEntryResponse>>> GetLog(
+        Guid applicationId,
+        [FromQuery] string category,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _applicationsService.GetLogAsync(applicationId, category, cancellationToken));
         }
         catch (ApplicationNotFoundException ex)
         {

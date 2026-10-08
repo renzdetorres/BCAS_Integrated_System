@@ -10,6 +10,8 @@ import { DEPARTMENT_OPTIONS, programOptionLabel, programsFor } from "../config/d
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
+import ConfirmSubmissionModal from "../components/ConfirmSubmissionModal.jsx";
+import { REQUIRED_NOTE, requiredDocumentsFor } from "../config/requiredDocuments.js";
 import "./AdmissionApplicationPage.css";
 
 const initialForm = {
@@ -35,6 +37,7 @@ export default function AdmissionApplicationPage() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [profileIncomplete, setProfileIncomplete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,7 +71,7 @@ export default function AdmissionApplicationPage() {
   // other takes its strand or grade level as typed.
   const programs = programsFor(form.department);
 
-  async function handleSubmit(event) {
+  function handleSubmit(event) {
     event.preventDefault();
     setErrorMessage(null);
     setProfileIncomplete(false);
@@ -83,6 +86,15 @@ export default function AdmissionApplicationPage() {
       return;
     }
 
+    if (!form.previousSchool.trim()) {
+      setErrorMessage("Enter your previous school.");
+      return;
+    }
+
+    setConfirming(true);
+  }
+
+  async function sendApplication() {
     setIsSubmitting(true);
 
     try {
@@ -95,50 +107,40 @@ export default function AdmissionApplicationPage() {
       } else {
         setErrorMessage("Something went wrong. Please try again.");
       }
+      setConfirming(false);
     } finally {
       setIsSubmitting(false);
     }
   }
 
+  // One admission application per applicant: once it exists the form stays on
+  // screen, greyed out and read-only, showing what was submitted.
+  const submitted = applications[0] ?? null;
+  const values = submitted ?? form;
+  const readOnly = Boolean(submitted);
+  const shownPrograms = programsFor(values.department);
+  const requiredDocuments = requiredDocumentsFor(values.applicationType);
+
   return (
     <AppLayout title="My Application">
-      {/* Applications-you-already-have leads for a returning applicant (the
-          more frequent visit); the submit form is still one scroll away,
-          not hidden - a first-time applicant just sees a brief empty note
-          above it instead of the list being absent entirely. */}
-      <Card className="admission-card">
-        <h2>My Applications</h2>
-        {isLoading && <p>Loading...</p>}
-        {!isLoading && applications.length === 0 && (
-          <p>No applications submitted yet. Use the form below to submit one.</p>
-        )}
-        {!isLoading && applications.length > 0 && (
-          <ul className="admission-list">
-            {applications.map((application) => (
-              <li key={application.applicationId}>
-                <div className="admission-list-header">
-                  <span className="admission-type">
-                    {APPLICATION_TYPES.find((t) => t.value === application.applicationType)?.label ??
-                      application.applicationType}
-                  </span>
-                  <StatusBadge status={application.status} />
-                </div>
-                <p className="admission-course">
-                  {application.courseAppliedFor}
-                  {application.department ? ` · ${application.department}` : ""}
-                </p>
-                <p className="admission-meta">
-                  Previous school: {application.previousSchool} &middot; Submitted{" "}
-                  {formatDate(application.submittedAt)}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+      <Card className={`admission-card${readOnly ? " admission-card-submitted" : ""}`}>
+        <h2>{readOnly ? "Your Admission Application" : "Submit Admission Application"}</h2>
 
-      <Card className="admission-card">
-        <h2>Submit Admission Application</h2>
+        {readOnly && (
+          <div className="admission-submitted-note" role="status">
+            <div className="admission-submitted-head">
+              <StatusBadge status={submitted.status} />
+              <span>Submitted {formatDate(submitted.submittedAt)}</span>
+            </div>
+            <p>
+              Your application has been submitted and can no longer be edited or sent again. Next, follow its progress under{" "}
+              <Link to="/application-tracking">Application Tracking</Link>, upload your <Link to="/documents">documents</Link>, and
+              watch <Link to="/announcements">Announcements</Link> for your exam schedule.
+            </p>
+          </div>
+        )}
+
+        {isLoading && <p>Loading...</p>}
 
         {errorMessage && (
           <p className="form-error" role="alert">
@@ -152,87 +154,97 @@ export default function AdmissionApplicationPage() {
           </p>
         )}
 
-        <form onSubmit={handleSubmit} noValidate>
-          <div className="form-row">
-            <label htmlFor="applicationType">Application type</label>
-            <select
-              id="applicationType"
-              name="applicationType"
-              value={form.applicationType}
-              onChange={handleChange}
-            >
-              {APPLICATION_TYPES.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-          </div>
+        {!isLoading && (
+          <form onSubmit={handleSubmit} noValidate className={readOnly ? "form-readonly" : undefined}>
+            <fieldset disabled={readOnly || isSubmitting} className="form-fieldset">
+              <div className="form-row">
+                <label htmlFor="applicationType">Application type</label>
+                <select id="applicationType" name="applicationType" value={values.applicationType} onChange={handleChange}>
+                  {APPLICATION_TYPES.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          <div className="form-row">
-            <label htmlFor="department">Department</label>
-            <select id="department" name="department" required value={form.department} onChange={handleChange}>
-              <option value="" disabled>
-                Select a department
-              </option>
-              {DEPARTMENT_OPTIONS.map((department) => (
-                <option key={department} value={department}>
-                  {department}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-row">
-            <label htmlFor="courseAppliedFor">{programs ? "Program" : "Strand or grade level"}</label>
-            {programs ? (
-              <select
-                id="courseAppliedFor"
-                name="courseAppliedFor"
-                required
-                value={form.courseAppliedFor}
-                onChange={handleChange}
-              >
-                <option value="" disabled>
-                  Select a program
-                </option>
-                {programs.map((program) => (
-                  <option key={program.code} value={program.code}>
-                    {programOptionLabel(program)}
+              <div className="form-row">
+                <label htmlFor="department">Department</label>
+                <select id="department" name="department" required value={values.department ?? ""} onChange={handleChange}>
+                  <option value="" disabled>
+                    Select a department
                   </option>
-                ))}
-              </select>
-            ) : (
-              <input
-                id="courseAppliedFor"
-                name="courseAppliedFor"
-                type="text"
-                required
-                placeholder={form.department ? "For example: STEM, Grade 7" : "Choose a department first"}
-                disabled={!form.department}
-                value={form.courseAppliedFor}
-                onChange={handleChange}
-              />
+                  {DEPARTMENT_OPTIONS.map((department) => (
+                    <option key={department} value={department}>
+                      {department}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-row">
+                <label htmlFor="courseAppliedFor">{shownPrograms ? "Program" : "Strand or grade level"}</label>
+                {shownPrograms ? (
+                  <select id="courseAppliedFor" name="courseAppliedFor" required value={values.courseAppliedFor} onChange={handleChange}>
+                    <option value="" disabled>
+                      Select a program
+                    </option>
+                    {shownPrograms.map((program) => (
+                      <option key={program.code} value={program.code}>
+                        {programOptionLabel(program)}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    id="courseAppliedFor"
+                    name="courseAppliedFor"
+                    type="text"
+                    required
+                    placeholder={values.department ? "For example: STEM, Grade 7" : "Choose a department first"}
+                    disabled={!values.department}
+                    value={values.courseAppliedFor}
+                    onChange={handleChange}
+                  />
+                )}
+              </div>
+
+              <div className="form-row">
+                <label htmlFor="previousSchool">Previous school</label>
+                <input id="previousSchool" name="previousSchool" type="text" required value={values.previousSchool} onChange={handleChange} />
+              </div>
+            </fieldset>
+
+            {!readOnly && (
+              <>
+                <div className="form-guidance">
+                  <p className="form-guidance-title">Documents you will need</p>
+                  <ul className="required-docs">
+                    {requiredDocuments.map((doc) => (
+                      <li key={doc.type}>
+                        {doc.label}
+                        {doc.required ? <span className="required-mark" title="Required"> *</span> : <em> ({doc.note})</em>}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="form-note">{REQUIRED_NOTE} You upload them on the Documents page after submitting.</p>
+                </div>
+
+                <button type="submit" disabled={isSubmitting}>
+                  Submit Application
+                </button>
+              </>
             )}
-          </div>
-
-          <div className="form-row">
-            <label htmlFor="previousSchool">Previous school</label>
-            <input
-              id="previousSchool"
-              name="previousSchool"
-              type="text"
-              required
-              value={form.previousSchool}
-              onChange={handleChange}
-            />
-          </div>
-
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : "Submit Application"}
-          </button>
-        </form>
+          </form>
+        )}
       </Card>
+
+      <ConfirmSubmissionModal
+        open={confirming}
+        onCancel={() => setConfirming(false)}
+        onConfirm={sendApplication}
+        isSubmitting={isSubmitting}
+      />
     </AppLayout>
   );
 }

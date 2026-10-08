@@ -1,4 +1,5 @@
 using System.Data;
+using BCAS.Api.Exceptions;
 using BCAS.Api.Models;
 using Microsoft.Data.SqlClient;
 
@@ -31,7 +32,8 @@ OUTPUT
     inserted.PreviousSchool,
     inserted.Status,
     inserted.SubmittedAt
-VALUES (@UserId, @ApplicationType, @CourseAppliedFor, @Department, @PreviousSchool);";
+SELECT @UserId, @ApplicationType, @CourseAppliedFor, @Department, @PreviousSchool
+WHERE NOT EXISTS (SELECT 1 FROM dbo.AdmissionApplications WITH (UPDLOCK, HOLDLOCK) WHERE UserId = @UserId);";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.Add(new SqlParameter("@UserId", SqlDbType.UniqueIdentifier) { Value = userId });
@@ -41,7 +43,12 @@ VALUES (@UserId, @ApplicationType, @CourseAppliedFor, @Department, @PreviousScho
         command.Parameters.Add(new SqlParameter("@PreviousSchool", SqlDbType.NVarChar, 200) { Value = request.PreviousSchool });
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-        await reader.ReadAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            // The guarded INSERT matched no row: the applicant already has one.
+            throw new ApplicationAlreadySubmittedException("admission");
+        }
+
         return MapApplication(reader);
     }
 

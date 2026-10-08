@@ -108,9 +108,9 @@
 }
 
 .exam-applicant-list li {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 190px;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
   padding: 10px 0;
   border-bottom: 1px solid var(--color-border);
@@ -129,4 +129,19 @@
 .exam-empty {
   margin: 0;
   color: var(--color-text-secondary);
+}
+
+.exam-applicant-list .exam-applicant-status {
+  width: 170px;
+  max-width: 100%;
+}
+
+.exam-applicant-side {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.exam-applicant-list .exam-applicant-status {
+  width: 100%;
 }

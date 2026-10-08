@@ -14,7 +14,8 @@ import {
   getScholarshipSlotReport,
   getSectionFiles,
 } from "../api/adminReportsApi.js";
-import { SCHOLARSHIP_STATUSES } from "../api/adminApplicationsApi.js";
+import { SCHOLARSHIP_STATUSES, searchApplications } from "../api/adminApplicationsApi.js";
+import { ADMISSION_STATUSES } from "../config/statusDescriptions.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
@@ -24,22 +25,25 @@ import BarChart from "../components/ui/BarChart.jsx";
 import TrendChart from "../components/ui/TrendChart.jsx";
 import "./AdminReportsPage.css";
 
+// Two report groups. Trends belong to Admission: the weekly trend and the
+// funnel are about admission intake, so they sit with the other admission reports.
+const CATEGORIES = ["Admission", "Scholarship"];
+
 const REPORTS = [
   { key: "enrollmentList", category: "Admission", label: "Enrollment List" },
   { key: "enrollmentSummary", category: "Admission", label: "Summary of Enrollment" },
   { key: "sectionFiles", category: "Admission", label: "File per Section" },
-  { key: "scholarshipApplicants", category: "Scholarship", label: "Scholarship Applicant List" },
-  { key: "scholarshipQualification", category: "Scholarship", label: "Qualified / Not Qualified" },
-  { key: "scholarshipResults", category: "Scholarship", label: "Scholarship Results" },
-  { key: "scholarshipSlots", category: "Scholarship", label: "Scholarship Slot Report" },
-  { key: "applicationTrend", category: "Trends", label: "Applications per Week" },
-  { key: "applicationFunnel", category: "Trends", label: "Funnel / Drop-off" },
+  { key: "statusDistribution", category: "Admission", label: "Applicant Status Distribution" },
+  { key: "applicationTrend", category: "Admission", label: "Applications per Week" },
+  { key: "admissionFunnel", category: "Admission", label: "Funnel / Drop-off" },
+  { key: "scholarshipApplicants", category: "Scholarship", label: "Scholarship Applications" },
+  { key: "scholarshipQualification", category: "Scholarship", label: "Qualified Applicants" },
+  { key: "scholarshipResults", category: "Scholarship", label: "Approved Scholars" },
+  { key: "scholarshipSlots", category: "Scholarship", label: "Scholarship Slots" },
+  { key: "scholarshipFunnel", category: "Scholarship", label: "Funnel / Drop-off" },
 ];
 
-const TREND_SERIES = [
-  { key: "admission", label: "Admission", color: "var(--color-primary)" },
-  { key: "scholarship", label: "Scholarship", color: "var(--color-accent)" },
-];
+const TREND_SERIES = [{ key: "admission", label: "Admission", color: "var(--color-primary)" }];
 
 function formatWeekLabel(isoDate) {
   return new Date(isoDate).toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -48,6 +52,13 @@ function formatWeekLabel(isoDate) {
 const FUNNEL_STAGE_LABELS = {
   Submitted: "Submitted",
   UnderReview: "Under Review",
+  PendingDocuments: "Pending Documents",
+  DocumentsCompleted: "Documents Completed",
+  DocumentsCleared: "Documents Cleared",
+  ExamScheduled: "Exam Scheduled",
+  ExamDone: "Exam Done",
+  Registration: "Registration",
+  Retracted: "Retracted",
   DocumentsVerified: "Documents Verified",
   EligibilityScreening: "Eligibility Screening",
   Evaluation: "Evaluation",
@@ -645,18 +656,17 @@ function ApplicationTrendReport() {
 
   const chartData = trend?.weekly.map((point) => ({
     label: formatWeekLabel(point.weekStart),
-    values: { admission: point.admissionCount, scholarship: point.scholarshipCount },
+    values: { admission: point.admissionCount },
   }));
 
   const totalAdmission = trend?.weekly.reduce((sum, p) => sum + p.admissionCount, 0) ?? 0;
-  const totalScholarship = trend?.weekly.reduce((sum, p) => sum + p.scholarshipCount, 0) ?? 0;
 
   return (
     <Card className="report-card">
       <h2>Applications per Week</h2>
       <p className="report-subtitle">
-        Admission and Scholarship applications submitted each week, most recent {weeks} weeks. Useful for spotting
-        intake volume trends - a snapshot total doesn't show whether this week is busier than last.
+        Admission applications submitted each week, most recent {weeks} weeks. Useful for spotting intake volume
+        trends - a snapshot total doesn't show whether this week is busier than last.
       </p>
 
       <form
@@ -682,7 +692,7 @@ function ApplicationTrendReport() {
       ) : (
         <>
           <p className="report-total">
-            Total: <strong>{totalAdmission}</strong> Admission, <strong>{totalScholarship}</strong> Scholarship
+            Total: <strong>{totalAdmission}</strong> admission applications
           </p>
           <TrendChart data={chartData} series={TREND_SERIES} emptyMessage="No applications in this period." />
         </>
@@ -691,7 +701,7 @@ function ApplicationTrendReport() {
   );
 }
 
-function ApplicationFunnelReport() {
+function ApplicationFunnelReport({ kind }) {
   const [funnel, setFunnel] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const { errorMessage, runReport } = useReportError();
@@ -708,7 +718,7 @@ function ApplicationFunnelReport() {
 
   return (
     <Card className="report-card">
-      <h2>Funnel / Drop-off</h2>
+      <h2>{kind === "scholarship" ? "Scholarship" : "Admission"} Funnel / Drop-off</h2>
       <p className="report-subtitle">
         How many applications ever reached each stage of the workflow, in order. The gap between two bars is how
         many applications dropped off between those stages - not every Submitted application reaches a final
@@ -720,22 +730,57 @@ function ApplicationFunnelReport() {
       {isLoading ? (
         <p>Loading...</p>
       ) : funnel ? (
-        <div className="report-summary-columns">
-          <div>
-            <h3>Admission</h3>
-            <BarChart
-              data={funnel.admissionFunnel.map((s) => ({ label: FUNNEL_STAGE_LABELS[s.stage] ?? s.stage, value: s.count }))}
-              emptyMessage="No admission applications yet."
-            />
-          </div>
-          <div>
-            <h3>Scholarship</h3>
-            <BarChart
-              data={funnel.scholarshipFunnel.map((s) => ({ label: FUNNEL_STAGE_LABELS[s.stage] ?? s.stage, value: s.count }))}
-              emptyMessage="No scholarship applications yet."
-            />
-          </div>
-        </div>
+        <BarChart
+          data={(kind === "scholarship" ? funnel.scholarshipFunnel : funnel.admissionFunnel).map((s) => ({
+            label: FUNNEL_STAGE_LABELS[s.stage] ?? s.stage,
+            value: s.count,
+          }))}
+          emptyMessage={`No ${kind} applications yet.`}
+        />
+      ) : null}
+    </Card>
+  );
+}
+
+/** Where admission applications stand right now (the funnel counts how far each ever got). */
+function StatusDistributionReport() {
+  const [counts, setCounts] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { errorMessage, runReport } = useReportError();
+
+  useEffect(() => {
+    (async () => {
+      setIsLoading(true);
+      const rows = await runReport(() => searchApplications({ category: "Admission" }));
+      if (rows) {
+        const byStatus = new Map();
+        rows.forEach((row) => byStatus.set(row.status, (byStatus.get(row.status) ?? 0) + 1));
+        setCounts({ byStatus, total: rows.length });
+      }
+      setIsLoading(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <Card className="report-card">
+      <h2>Applicant Status Distribution</h2>
+      <p className="report-subtitle">The current status of every admission application, archived ones included.</p>
+
+      <ReportError message={errorMessage} />
+
+      {isLoading ? (
+        <p>Loading...</p>
+      ) : counts ? (
+        <>
+          <p className="report-total">
+            Total: <strong>{counts.total}</strong> admission applications
+          </p>
+          <BarChart
+            data={ADMISSION_STATUSES.map((s) => ({ label: statusLabel(s.value), value: counts.byStatus.get(s.value) ?? 0 }))}
+            emptyMessage="No admission applications yet."
+          />
+        </>
       ) : null}
     </Card>
   );
@@ -750,41 +795,59 @@ const REPORT_COMPONENTS = {
   scholarshipResults: ScholarshipResultsReport,
   scholarshipSlots: ScholarshipSlotsReport,
   applicationTrend: ApplicationTrendReport,
-  applicationFunnel: ApplicationFunnelReport,
+  statusDistribution: StatusDistributionReport,
+  admissionFunnel: () => <ApplicationFunnelReport kind="admission" />,
+  scholarshipFunnel: () => <ApplicationFunnelReport kind="scholarship" />,
 };
 
 export default function AdminReportsPage() {
+  const [category, setCategory] = useState("Admission");
   const [activeReport, setActiveReport] = useState("enrollmentList");
   const ActiveComponent = REPORT_COMPONENTS[activeReport];
 
+  function chooseCategory(next) {
+    setCategory(next);
+    setActiveReport(REPORTS.find((report) => report.category === next).key);
+  }
+
   return (
     <AppLayout title="Reports">
-        <p className="admin-reports-subtitle">
-          Admission and Scholarship reports. Admission reports can be exported to Excel; approved scholarship
-          applications can be viewed and printed as a contract.
-        </p>
+      <p className="admin-reports-subtitle">
+        Admission reports can be exported to Excel; approved scholarship applications can be viewed and printed as a
+        contract.
+      </p>
 
-        <nav className="admin-reports-nav">
-          {["Admission", "Scholarship", "Trends"].map((category) => (
-            <div key={category} className="admin-reports-nav-group">
-              <span className="admin-reports-nav-label">{category}</span>
-              <div className="admin-reports-nav-buttons">
-                {REPORTS.filter((report) => report.category === category).map((report) => (
-                  <button
-                    key={report.key}
-                    type="button"
-                    className={report.key === activeReport ? "report-tab report-tab-active" : "report-tab"}
-                    onClick={() => setActiveReport(report.key)}
-                  >
-                    {report.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+      <div className="admin-reports-categories" role="tablist" aria-label="Report type">
+        {CATEGORIES.map((name) => (
+          <button
+            key={name}
+            type="button"
+            role="tab"
+            aria-selected={name === category}
+            className={name === category ? "report-category report-category-active" : "report-category"}
+            onClick={() => chooseCategory(name)}
+          >
+            {name}
+          </button>
+        ))}
+      </div>
+
+      <nav className="admin-reports-nav" aria-label={`${category} reports`}>
+        <div className="admin-reports-nav-buttons">
+          {REPORTS.filter((report) => report.category === category).map((report) => (
+            <button
+              key={report.key}
+              type="button"
+              className={report.key === activeReport ? "report-tab report-tab-active" : "report-tab"}
+              onClick={() => setActiveReport(report.key)}
+            >
+              {report.label}
+            </button>
           ))}
-        </nav>
+        </div>
+      </nav>
 
-        <ActiveComponent />
+      <ActiveComponent />
     </AppLayout>
   );
 }

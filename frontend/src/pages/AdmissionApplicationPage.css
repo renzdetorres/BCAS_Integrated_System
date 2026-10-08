@@ -112,3 +112,82 @@
   color: var(--color-text-secondary);
   font-size: 0.8rem;
 }
+
+.form-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* Submitted: the same form, greyed out so it reads as a record, not a task. */
+.form-readonly .form-row input,
+.form-readonly .form-row select {
+  background: var(--color-surface-subtle);
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+  cursor: default;
+  -webkit-text-fill-color: var(--color-text-secondary);
+  opacity: 1;
+}
+
+.admission-submitted-note {
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.admission-submitted-note p {
+  margin: 10px 0 0;
+  color: var(--color-text-secondary);
+}
+
+.admission-submitted-note a {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.admission-submitted-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.form-guidance {
+  margin: 4px 0 20px;
+  padding: 14px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+}
+
+.form-guidance p {
+  margin: 0 0 8px;
+}
+
+.form-guidance-title {
+  font-weight: 700;
+}
+
+.required-docs {
+  margin: 0 0 8px;
+  padding-left: 20px;
+}
+
+.required-mark {
+  color: var(--color-status-red-text);
+  font-weight: 700;
+}
+
+.required-docs em,
+.form-note {
+  font-size: 0.85rem;
+  font-style: normal;
+  color: var(--color-text-secondary);
+}

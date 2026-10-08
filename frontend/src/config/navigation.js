@@ -64,7 +64,8 @@ export const NAV_ITEMS_BY_ROLE = {
         { to: "/admin/exam-schedules", label: "Exam Schedules", icon: "calendar" },
         { to: "/admin/exam-permits", label: "Exam Permits", icon: "ticket" },
         { to: "/admin/reservations", label: "Reservations", icon: "bookmark" },
-        { to: "/admin/archive", label: "Records Archive", icon: "archive" },
+        { to: "/admin/records", label: "Records", icon: "clipboard" },
+        { to: "/admin/archive", label: "Archives", icon: "archive" },
       ],
     },
     {

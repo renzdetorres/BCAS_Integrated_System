@@ -12,5 +12,6 @@ public static class ArchiveConstants
     {
         "Approved",
         "Rejected",
+        "Retracted",
     };
 }

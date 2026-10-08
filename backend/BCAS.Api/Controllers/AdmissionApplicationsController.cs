@@ -54,6 +54,15 @@ public class AdmissionApplicationsController : ControllerBase
                 Status = StatusCodes.Status400BadRequest,
             });
         }
+        catch (ApplicationAlreadySubmittedException ex)
+        {
+            return Conflict(new ProblemDetails
+            {
+                Title = "Application already submitted",
+                Detail = ex.Message,
+                Status = StatusCodes.Status409Conflict,
+            });
+        }
         catch (InvalidApplicationTypeException ex)
         {
             return BadRequest(new ProblemDetails

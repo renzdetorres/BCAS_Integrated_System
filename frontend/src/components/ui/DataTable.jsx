@@ -38,13 +38,14 @@ function textOf(value) {
  * filters: [{ key, label, value, onChange, options: [{ value, label }] }]
  *          Dropdowns share the left half of the filter row at equal widths;
  *          search takes the right half.
- * extraToolbar: an extra control placed with the dropdowns.
+ * extraToolbar: an extra control placed with the dropdowns; `extraToolbarSlots`
+ *          is how many dropdown-widths it takes (default 1).
  * textFilters: [{ key, label, value, onChange }] - separate text fields that
  *          take the search half of the row (e.g. Name and Email), filtering
  *          client-side on the column with the same key. Replaces search.
  * actions / onExport: rendered in the header, right of the title.
  * notice: a banner under the header (e.g. a lock that applies to the list).
- * summary: [{ label, value, tone? }] full-width summary cards under the
+ * summary: [{ label, value, tone?, onClick?, active? }] full-width summary cards under the
  *          header, with `summaryNote` (their description) below them.
  */
 export default function DataTable({
@@ -59,6 +60,7 @@ export default function DataTable({
   searchPlaceholder,
   filters = [],
   extraToolbar = null,
+  extraToolbarSlots = 1,
   onExport,
   isLoading = false,
   errorMessage = null,
@@ -149,7 +151,7 @@ export default function DataTable({
   const onSearchChange = search ? search.onChange : setGlobalFilter;
   const hasTextFilters = Array.isArray(textFilters) && textFilters.length > 0;
   const hasSearch = !hasTextFilters && (Boolean(search) || clientSearch);
-  const filterControls = filters.length + (extraToolbar ? 1 : 0);
+  const filterControls = filters.length + (extraToolbar ? extraToolbarSlots : 0);
   const hasToolbar = hasSearch || hasTextFilters || filterControls > 0;
   const hasHeader = Boolean(title || subtitle || actions || onExport);
 
@@ -179,14 +181,23 @@ export default function DataTable({
       {summary ? (
         <div className="ui-datatable-summary-block">
           <div className="ui-datatable-summary" style={{ "--summary-count": summary.length }}>
-            {summary.map((item) => (
-              <div key={item.label} className={`ui-datatable-summary-card${item.tone && String(item.value) !== "0" ? ` ui-datatable-summary-${item.tone}` : ""}`}>
-                <span className="ui-datatable-summary-label">{item.label}</span>
-                <span className="ui-datatable-summary-value">
-                  {isLoading ? <span className="ui-datatable-skeleton ui-datatable-skeleton-value" /> : item.value}
-                </span>
-              </div>
-            ))}
+            {summary.map((item) => {
+              const Tag = item.onClick ? "button" : "div";
+              return (
+                <Tag
+                  key={item.label}
+                  type={item.onClick ? "button" : undefined}
+                  onClick={item.onClick}
+                  aria-pressed={item.onClick ? Boolean(item.active) : undefined}
+                  className={`ui-datatable-summary-card${item.tone && String(item.value) !== "0" ? ` ui-datatable-summary-${item.tone}` : ""}${item.onClick ? " ui-datatable-summary-action" : ""}${item.active ? " is-active" : ""}`}
+                >
+                  <span className="ui-datatable-summary-label">{item.label}</span>
+                  <span className="ui-datatable-summary-value">
+                    {isLoading ? <span className="ui-datatable-skeleton ui-datatable-skeleton-value" /> : item.value}
+                  </span>
+                </Tag>
+              );
+            })}
           </div>
           {summaryNote ? <p className="ui-datatable-summary-note">{summaryNote}</p> : null}
         </div>
@@ -212,7 +223,7 @@ export default function DataTable({
                   ))}
                 </select>
               ))}
-              {extraToolbar}
+              {extraToolbar ? <div className="ui-datatable-extra" style={{ gridColumn: `span ${extraToolbarSlots}` }}>{extraToolbar}</div> : null}
             </div>
           ) : null}
           {hasTextFilters ? (

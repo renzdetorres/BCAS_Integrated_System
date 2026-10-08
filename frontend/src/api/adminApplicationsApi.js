@@ -1,6 +1,19 @@
 import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
-export const ADMISSION_STATUSES = ["Submitted", "UnderReview", "Approved", "Rejected"];
+export const ADMISSION_STATUSES = [
+  "Submitted",
+  "UnderReview",
+  "PendingDocuments",
+  "DocumentsCompleted",
+  "DocumentsCleared",
+  "ExamScheduled",
+  "ExamDone",
+  "DidNotTakeExam",
+  "Registration",
+  "Approved",
+  "Rejected",
+  "Retracted",
+];
 
 export const SCHOLARSHIP_STATUSES = [
   "Waitlisted",
@@ -15,20 +28,41 @@ export const SCHOLARSHIP_STATUSES = [
 
 // Completed/inactive statuses eligible for archiving (BISAASS-35) - kept in
 // sync with the backend's ArchiveConstants.ArchivableStatuses.
-export const ARCHIVABLE_STATUSES = ["Approved", "Rejected"];
+export const ARCHIVABLE_STATUSES = ["Approved", "Rejected", "Retracted"];
 
-// Admission's ordered workflow (BISAASS-56) - kept in sync with the
-// backend's AdmissionWorkflowConstants. Approved and Rejected share a rank
-// (both terminal, neither leads anywhere else).
-const ADMISSION_STAGE_RANK = { Submitted: 0, UnderReview: 1, Approved: 2, Rejected: 2 };
+// Admission's ordered workflow - kept in sync with the backend's
+// AdmissionWorkflowConstants. The main path moves one step at a time;
+// Rejected and Retracted are open until the application is final;
+// DidNotTakeExam branches off ExamScheduled and can return to it.
+export const ADMISSION_PATH = [
+  "Submitted",
+  "UnderReview",
+  "PendingDocuments",
+  "DocumentsCompleted",
+  "DocumentsCleared",
+  "ExamScheduled",
+  "ExamDone",
+  "Registration",
+  "Approved",
+];
+const ADMISSION_FINAL = new Set(["Approved", "Rejected", "Retracted"]);
 
 // Every Admission status that's a valid forward move from currentStatus -
 // empty once a decision (Approved/Rejected) has been recorded, since the
 // workflow never changes after that.
 export function getValidNextAdmissionStatuses(currentStatus) {
-  const currentRank = ADMISSION_STAGE_RANK[currentStatus] ?? 0;
-  if (currentRank >= 2) return [];
-  return ADMISSION_STATUSES.filter((status) => ADMISSION_STAGE_RANK[status] > currentRank);
+  if (ADMISSION_FINAL.has(currentStatus)) return [];
+  const index = ADMISSION_PATH.indexOf(currentStatus);
+  const next = [];
+  if (index >= 0) {
+    next.push(ADMISSION_PATH[index + 1]);
+    if (currentStatus === "ExamScheduled") next.push("DidNotTakeExam");
+  } else if (currentStatus === "DidNotTakeExam") {
+    next.push("ExamScheduled");
+  } else {
+    return [];
+  }
+  return [...next, "Rejected", "Retracted"];
 }
 
 // Scholarship's ordered workflow (BISAASS-57) - kept in sync with the
@@ -133,6 +167,21 @@ export async function getApplicationStatusHistory(applicationId, category) {
 
   if (!response.ok) {
     throw new ApiError(resolveErrorMessage(response, null, "Failed to load this application's status history."), response.status);
+  }
+
+  return response.json();
+}
+
+/** The application's log, newest first: submission, status changes, document reviews and exam events. */
+export async function getApplicationLogs(applicationId, category) {
+  const params = new URLSearchParams({ category });
+  const response = await fetch(`${API_BASE_URL}/api/admin/applications/${applicationId}/logs?${params}`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to load this application's logs."), response.status);
   }
 
   return response.json();

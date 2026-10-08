@@ -16,6 +16,7 @@ public class EvaluatorScholarshipApplicationDetailResponse
     public string Status { get; set; } = string.Empty;
     public DateTime SubmittedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    public ScholarshipApplicationDetails Form { get; set; } = new();
     public ScholarshipScreeningResponse? Screening { get; set; }
     public IReadOnlyList<EvaluatorApplicantDocumentResponse> Documents { get; set; } = Array.Empty<EvaluatorApplicantDocumentResponse>();
 

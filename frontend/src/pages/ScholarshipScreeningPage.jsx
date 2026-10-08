@@ -10,6 +10,7 @@ import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
+import ScholarshipFormSummary from "../components/ui/ScholarshipFormSummary.jsx";
 import WorkflowStepper, { SCHOLARSHIP_STEP_LABELS } from "../components/WorkflowStepper.jsx";
 import "./ScholarshipScreeningPage.css";
 
@@ -140,6 +141,11 @@ export default function ScholarshipScreeningPage() {
                 below (the actual decision) stay as their own cards,
                 because those are the two moments that aren't reading. */}
             <Card className="screening-dossier">
+              <div className="screening-dossier-section">
+                <h2>Application Form</h2>
+                <ScholarshipFormSummary form={application.form} />
+              </div>
+
               <div className="screening-dossier-section">
                 <h2>Applicant</h2>
                 <dl className="screening-detail-list">

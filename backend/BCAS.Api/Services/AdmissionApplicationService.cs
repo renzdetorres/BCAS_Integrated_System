@@ -67,6 +67,14 @@ public class AdmissionApplicationService : IAdmissionApplicationService
             throw new ProfileIncompleteException();
         }
 
+        // One admission application per applicant. The repository's INSERT
+        // repeats this check atomically, so two simultaneous submissions
+        // can't both get through.
+        if ((await _applicationRepository.GetByUserIdAsync(userId, cancellationToken)).Count > 0)
+        {
+            throw new ApplicationAlreadySubmittedException("admission");
+        }
+
         var application = await _applicationRepository.CreateAsync(userId, request, cancellationToken);
 
         // The opening row of this application's status-history audit trail

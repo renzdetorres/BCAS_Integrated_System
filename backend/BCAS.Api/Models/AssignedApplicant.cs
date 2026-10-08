@@ -7,4 +7,5 @@ public class AssignedApplicant
     public string ApplicantName { get; set; } = string.Empty;
     public string ApplicantEmail { get; set; } = string.Empty;
     public DateTime SelectedAt { get; set; }
+    public string ExamStatus { get; set; } = "Scheduled";
 }

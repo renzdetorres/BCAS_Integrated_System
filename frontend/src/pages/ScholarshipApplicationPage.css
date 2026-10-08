@@ -115,3 +115,96 @@
   color: var(--color-text-secondary);
   font-size: 0.8rem;
 }
+
+.form-section-title {
+  margin: 28px 0 12px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.95rem;
+  color: var(--color-text-primary);
+}
+
+.form-note {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.form-guidance {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+}
+
+.form-guidance p {
+  margin: 0 0 10px;
+}
+
+.form-guidance ul,
+.form-guidance ol {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+
+.form-guidance li {
+  margin-bottom: 4px;
+}
+
+.form-guidance-title {
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.form-consent-text {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.form-table-wrap {
+  overflow-x: auto;
+}
+
+.form-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.form-table th,
+.form-table td {
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.form-table th {
+  font-weight: 700;
+}
+
+.form-radio-group {
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+}
+
+.form-radio-group legend {
+  margin-bottom: 8px;
+  padding: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.form-radio-group label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: 20px;
+  font-size: 0.95rem;
+  cursor: pointer;
+}

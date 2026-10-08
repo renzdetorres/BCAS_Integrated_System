@@ -24,6 +24,9 @@ public class EvaluatorScholarshipApplicationDetail
     public DateTime SubmittedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
+    /// <summary>The scholarship form answers; every field is null for applications filed before the form existed.</summary>
+    public ScholarshipApplicationDetails Form { get; set; } = new();
+
     /// <summary>Null if this application hasn't been screened yet.</summary>
     public ScholarshipEligibilityScreening? Screening { get; set; }
 

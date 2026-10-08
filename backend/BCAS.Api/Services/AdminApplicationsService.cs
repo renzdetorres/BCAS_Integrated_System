@@ -45,16 +45,14 @@ public class AdminApplicationsService : IAdminApplicationsService
     {
         var items = await _applicationsRepository.SearchAsync(search, status, category, program, archived, department, cancellationToken);
 
-        // Cached per applicant (UserId) rather than per application, since
-        // the same applicant can have more than one application and these
-        // signals (documents, exam schedule) are shared across all of them.
+        // Cached per applicant (UserId): the same applicant can have more than
+        // one application and the document signal is shared across them.
         var documentsCache = new Dictionary<Guid, DocumentChecklistResponse?>();
-        var examScheduledCache = new Dictionary<Guid, bool>();
 
         var responses = new List<AdminApplicationListItemResponse>(items.Count);
         foreach (var item in items)
         {
-            var steps = await BuildStepsAsync(item, documentsCache, examScheduledCache, cancellationToken);
+            var steps = await BuildStepsAsync(item, documentsCache, cancellationToken);
             responses.Add(item.ToResponse(steps));
         }
 
@@ -104,6 +102,11 @@ public class AdminApplicationsService : IAdminApplicationsService
             throw new InvalidStatusTransitionException(applicationId, category, existing.Status, status);
         }
 
+        if (category == "Admission")
+        {
+            await EnsureAdmissionStatusPreconditionsAsync(existing, status, cancellationToken);
+        }
+
         var updated = await _applicationsRepository.UpdateStatusAsync(applicationId, category, status, request.Remarks, cancellationToken)
             ?? throw new ApplicationNotFoundException(applicationId);
 
@@ -139,8 +142,41 @@ public class AdminApplicationsService : IAdminApplicationsService
         }
 
         var steps = await BuildStepsAsync(
-            updated, new Dictionary<Guid, DocumentChecklistResponse?>(), new Dictionary<Guid, bool>(), cancellationToken);
+            updated, new Dictionary<Guid, DocumentChecklistResponse?>(), cancellationToken);
         return updated.ToResponse(steps);
+    }
+
+    /// <summary>
+    /// A few admission steps mean something real, so they need it to be true:
+    /// documents can only be marked complete once every required one is in,
+    /// cleared once every required one is verified, and the exam can only be
+    /// scheduled once the applicant has picked a schedule. SF10 is left out
+    /// because it is only submitted after the exam.
+    /// </summary>
+    private async Task EnsureAdmissionStatusPreconditionsAsync(
+        AdminApplicationListItem existing, string status, CancellationToken cancellationToken)
+    {
+        if (status is "DocumentsCompleted" or "DocumentsCleared")
+        {
+            var checklist = await GetDocumentsOrNullAsync(existing.UserId, cancellationToken);
+            var required = checklist?.Requirements.Where(r => r.DocumentType != DocumentConstants.Sf10).ToList() ?? new();
+
+            if (status == "DocumentsCompleted" && (required.Count == 0 || required.Any(r => r.Status == "NotSubmitted")))
+            {
+                throw new StatusPreconditionNotMetException("Every required document must be uploaded before the documents can be marked complete.");
+            }
+
+            if (status == "DocumentsCleared" && (required.Count == 0 || required.Any(r => r.Status != "Verified")))
+            {
+                throw new StatusPreconditionNotMetException("Every required document must be verified before the documents can be cleared.");
+            }
+        }
+
+        if (status == "ExamScheduled" && existing.Status != AdmissionWorkflowConstants.DidNotTakeExam
+            && await _examScheduleRepository.GetSelectionByUserIdAsync(existing.UserId, cancellationToken) is null)
+        {
+            throw new StatusPreconditionNotMetException("The applicant has not picked an exam schedule yet.");
+        }
     }
 
     public async Task<AdminApplicationListItemResponse> SetDepartmentAsync(
@@ -175,9 +211,55 @@ public class AdminApplicationsService : IAdminApplicationsService
             ?? throw new ApplicationNotFoundException(applicationId);
 
         var steps = await BuildStepsAsync(
-            updated, new Dictionary<Guid, DocumentChecklistResponse?>(), new Dictionary<Guid, bool>(), cancellationToken);
+            updated, new Dictionary<Guid, DocumentChecklistResponse?>(), cancellationToken);
         return updated.ToResponse(steps);
     }
+
+    public async Task<IReadOnlyList<ApplicationLogEntryResponse>> GetLogAsync(
+        Guid applicationId,
+        string category,
+        CancellationToken cancellationToken = default)
+    {
+        var existing = await _applicationsRepository.GetByIdAsync(applicationId, cancellationToken);
+        if (existing is null || existing.Category != category)
+        {
+            throw new ApplicationNotFoundException(applicationId);
+        }
+
+        var entries = new List<ApplicationLogEntry>();
+
+        foreach (var h in await _statusHistoryRepository.GetByApplicationIdAsync(applicationId, category, cancellationToken))
+        {
+            entries.Add(new ApplicationLogEntry
+            {
+                At = h.ChangedAt,
+                Action = h.FromStatus is null ? "Application submitted" : LogActionFor(h.ToStatus),
+                Details = h.FromStatus is null ? null : $"{StatusText(h.FromStatus)} to {StatusText(h.ToStatus)}" + (string.IsNullOrWhiteSpace(h.Remarks) ? "" : $": {h.Remarks}"),
+                ActorName = h.ChangedByName,
+            });
+        }
+
+        entries.AddRange(await _applicationsRepository.GetActivityLogAsync(existing.UserId, cancellationToken));
+
+        return entries
+            .OrderByDescending(e => e.At)
+            .Select(e => new ApplicationLogEntryResponse { At = e.At, Action = e.Action, Details = e.Details, ActorName = e.ActorName })
+            .ToList();
+    }
+
+    private static string LogActionFor(string toStatus) => toStatus switch
+    {
+        "Approved" => "Application approved",
+        "Rejected" => "Application rejected",
+        "Retracted" => "Application retracted",
+        "UnderReview" => "Application reviewed",
+        "DocumentsCleared" => "Documents cleared",
+        _ => "Status changed",
+    };
+
+    /// <summary>"UnderReview" -> "Under Review".</summary>
+    private static string StatusText(string status) =>
+        System.Text.RegularExpressions.Regex.Replace(status, "(?<=[a-z])(?=[A-Z])", " ");
 
     public async Task<IReadOnlyList<ApplicationStatusHistoryEntryResponse>> GetStatusHistoryAsync(
         Guid applicationId,
@@ -231,7 +313,7 @@ public class AdminApplicationsService : IAdminApplicationsService
         }
 
         var steps = await BuildStepsAsync(
-            archived, new Dictionary<Guid, DocumentChecklistResponse?>(), new Dictionary<Guid, bool>(), cancellationToken);
+            archived, new Dictionary<Guid, DocumentChecklistResponse?>(), cancellationToken);
         return archived.ToResponse(steps);
     }
 
@@ -265,7 +347,7 @@ public class AdminApplicationsService : IAdminApplicationsService
         var updated = await _applicationsRepository.GetByIdAsync(applicationId, cancellationToken)
             ?? throw new ApplicationNotFoundException(applicationId);
         var steps = await BuildStepsAsync(
-            updated, new Dictionary<Guid, DocumentChecklistResponse?>(), new Dictionary<Guid, bool>(), cancellationToken);
+            updated, new Dictionary<Guid, DocumentChecklistResponse?>(), cancellationToken);
         return updated.ToResponse(steps);
     }
 
@@ -309,25 +391,19 @@ public class AdminApplicationsService : IAdminApplicationsService
     private async Task<IReadOnlyList<TrackingStepResponse>> BuildStepsAsync(
         AdminApplicationListItem item,
         Dictionary<Guid, DocumentChecklistResponse?> documentsCache,
-        Dictionary<Guid, bool> examScheduledCache,
         CancellationToken cancellationToken)
     {
+        // Admission steps follow the status alone; only scholarship steps
+        // look at the documents.
+        if (item.Category == "Admission")
+        {
+            return ApplicationWorkflowSteps.BuildAdmissionSteps(item.Status);
+        }
+
         if (!documentsCache.TryGetValue(item.UserId, out var documents))
         {
             documents = await GetDocumentsOrNullAsync(item.UserId, cancellationToken);
             documentsCache[item.UserId] = documents;
-        }
-
-        if (item.Category == "Admission")
-        {
-            if (!examScheduledCache.TryGetValue(item.UserId, out var examScheduled))
-            {
-                examScheduled = await _examScheduleRepository.GetSelectionByUserIdAsync(item.UserId, cancellationToken) is not null;
-                examScheduledCache[item.UserId] = examScheduled;
-            }
-
-            var documentsReceived = documents is not null && documents.Requirements.All(r => r.Status != "NotSubmitted");
-            return ApplicationWorkflowSteps.BuildAdmissionSteps(item.Status, documentsReceived, examScheduled);
         }
 
         var documentsVerified = documents is not null && documents.Requirements.All(r => r.Status == "Verified");

@@ -70,9 +70,8 @@ BEGIN
         CONSTRAINT FK_Users_Roles FOREIGN KEY (RoleId) REFERENCES dbo.Roles (RoleId),
         CONSTRAINT UQ_Users_Email UNIQUE (Email)
     );
-
-    CREATE NONCLUSTERED INDEX IX_Users_Email ON dbo.Users (Email);
 END
+BEGIN TRY IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Users_Email' AND object_id = OBJECT_ID(N'dbo.Users')) EXEC (N'IF EXISTS (SELECT 1 FROM sys.stats WHERE name = N''IX_Users_Email'' AND object_id = OBJECT_ID(N''dbo.Users'')) DROP STATISTICS dbo.Users.IX_Users_Email CREATE NONCLUSTERED INDEX IX_Users_Email ON dbo.Users (Email)') END TRY BEGIN CATCH IF ERROR_NUMBER() NOT IN (1902, 1913) THROW END CATCH
 GO
 
 -- -----------------------------------------------------------------------------
@@ -151,11 +150,10 @@ BEGIN
         CONSTRAINT PK_AdmissionApplications PRIMARY KEY (ApplicationId),
         CONSTRAINT FK_AdmissionApplications_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId),
         CONSTRAINT CK_AdmissionApplications_ApplicationType CHECK (ApplicationType IN (N'NewStudent', N'Transferee')),
-        CONSTRAINT CK_AdmissionApplications_Status CHECK (Status IN (N'Submitted', N'UnderReview', N'Approved', N'Rejected'))
+        CONSTRAINT CK_AdmissionApplications_Status CHECK (Status IN (N'Submitted', N'UnderReview', N'PendingDocuments', N'DocumentsCompleted', N'DocumentsCleared', N'ExamScheduled', N'ExamDone', N'DidNotTakeExam', N'Registration', N'Approved', N'Rejected', N'Retracted'))
     );
-
-    CREATE NONCLUSTERED INDEX IX_AdmissionApplications_UserId ON dbo.AdmissionApplications (UserId);
 END
+BEGIN TRY IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_AdmissionApplications_UserId' AND object_id = OBJECT_ID(N'dbo.AdmissionApplications')) EXEC (N'IF EXISTS (SELECT 1 FROM sys.stats WHERE name = N''IX_AdmissionApplications_UserId'' AND object_id = OBJECT_ID(N''dbo.AdmissionApplications'')) DROP STATISTICS dbo.AdmissionApplications.IX_AdmissionApplications_UserId CREATE NONCLUSTERED INDEX IX_AdmissionApplications_UserId ON dbo.AdmissionApplications (UserId)') END TRY BEGIN CATCH IF ERROR_NUMBER() NOT IN (1902, 1913) THROW END CATCH
 GO
 
 -- -----------------------------------------------------------------------------
@@ -226,9 +224,8 @@ BEGIN
         CONSTRAINT FK_ScholarshipApplications_Scholarships FOREIGN KEY (ScholarshipId) REFERENCES dbo.Scholarships (ScholarshipId),
         CONSTRAINT CK_ScholarshipApplications_Status CHECK (Status IN (N'Submitted', N'UnderReview', N'Approved', N'Rejected'))
     );
-
-    CREATE NONCLUSTERED INDEX IX_ScholarshipApplications_UserId ON dbo.ScholarshipApplications (UserId);
 END
+BEGIN TRY IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ScholarshipApplications_UserId' AND object_id = OBJECT_ID(N'dbo.ScholarshipApplications')) EXEC (N'IF EXISTS (SELECT 1 FROM sys.stats WHERE name = N''IX_ScholarshipApplications_UserId'' AND object_id = OBJECT_ID(N''dbo.ScholarshipApplications'')) DROP STATISTICS dbo.ScholarshipApplications.IX_ScholarshipApplications_UserId CREATE NONCLUSTERED INDEX IX_ScholarshipApplications_UserId ON dbo.ScholarshipApplications (UserId)') END TRY BEGIN CATCH IF ERROR_NUMBER() NOT IN (1902, 1913) THROW END CATCH
 GO
 
 -- -----------------------------------------------------------------------------
@@ -315,12 +312,11 @@ BEGIN
         CONSTRAINT PK_ApplicantDocuments PRIMARY KEY (DocumentId),
         CONSTRAINT FK_ApplicantDocuments_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId),
         CONSTRAINT UQ_ApplicantDocuments_UserId_DocumentType UNIQUE (UserId, DocumentType),
-        CONSTRAINT CK_ApplicantDocuments_DocumentType CHECK (DocumentType IN (N'ReportCard', N'IdPicture', N'PSA', N'TOR', N'SF10')),
+        CONSTRAINT CK_ApplicantDocuments_DocumentType CHECK (DocumentType IN (N'ReportCard', N'IdPicture', N'PSA', N'TOR', N'SF10', N'ScholarshipForm')),
         CONSTRAINT CK_ApplicantDocuments_Status CHECK (Status IN (N'Pending', N'Verified', N'Rejected', N'Flagged'))
     );
-
-    CREATE NONCLUSTERED INDEX IX_ApplicantDocuments_UserId ON dbo.ApplicantDocuments (UserId);
 END
+BEGIN TRY IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ApplicantDocuments_UserId' AND object_id = OBJECT_ID(N'dbo.ApplicantDocuments')) EXEC (N'IF EXISTS (SELECT 1 FROM sys.stats WHERE name = N''IX_ApplicantDocuments_UserId'' AND object_id = OBJECT_ID(N''dbo.ApplicantDocuments'')) DROP STATISTICS dbo.ApplicantDocuments.IX_ApplicantDocuments_UserId CREATE NONCLUSTERED INDEX IX_ApplicantDocuments_UserId ON dbo.ApplicantDocuments (UserId)') END TRY BEGIN CATCH IF ERROR_NUMBER() NOT IN (1902, 1913) THROW END CATCH
 GO
 
 -- -----------------------------------------------------------------------------
@@ -473,12 +469,9 @@ BEGIN
         CONSTRAINT CK_ExamRescheduleRequests_Status CHECK (Status IN (N'Pending', N'Approved', N'Rejected'))
     );
 
-    CREATE NONCLUSTERED INDEX IX_ExamRescheduleRequests_UserId ON dbo.ExamRescheduleRequests (UserId);
-
-    CREATE UNIQUE NONCLUSTERED INDEX UQ_ExamRescheduleRequests_UserId_Pending
-        ON dbo.ExamRescheduleRequests (UserId)
-        WHERE Status = N'Pending';
 END
+BEGIN TRY IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ExamRescheduleRequests_UserId' AND object_id = OBJECT_ID(N'dbo.ExamRescheduleRequests')) EXEC (N'IF EXISTS (SELECT 1 FROM sys.stats WHERE name = N''IX_ExamRescheduleRequests_UserId'' AND object_id = OBJECT_ID(N''dbo.ExamRescheduleRequests'')) DROP STATISTICS dbo.ExamRescheduleRequests.IX_ExamRescheduleRequests_UserId CREATE NONCLUSTERED INDEX IX_ExamRescheduleRequests_UserId ON dbo.ExamRescheduleRequests (UserId)') END TRY BEGIN CATCH IF ERROR_NUMBER() NOT IN (1902, 1913) THROW END CATCH
+BEGIN TRY IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UQ_ExamRescheduleRequests_UserId_Pending' AND object_id = OBJECT_ID(N'dbo.ExamRescheduleRequests')) EXEC (N'IF EXISTS (SELECT 1 FROM sys.stats WHERE name = N''UQ_ExamRescheduleRequests_UserId_Pending'' AND object_id = OBJECT_ID(N''dbo.ExamRescheduleRequests'')) DROP STATISTICS dbo.ExamRescheduleRequests.UQ_ExamRescheduleRequests_UserId_Pending CREATE UNIQUE NONCLUSTERED INDEX UQ_ExamRescheduleRequests_UserId_Pending ON dbo.ExamRescheduleRequests (UserId) WHERE Status = N''Pending''') END TRY BEGIN CATCH IF ERROR_NUMBER() NOT IN (1902, 1913) THROW END CATCH
 GO
 
 -- -----------------------------------------------------------------------------
@@ -893,11 +886,9 @@ GO
 -- IX_ApplicantDocuments_UserId (above) only serves the per-applicant lookup
 -- ApplicantDocumentRepository already did.
 -- -----------------------------------------------------------------------------
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ApplicantDocuments_Status' AND object_id = OBJECT_ID(N'dbo.ApplicantDocuments'))
-    CREATE NONCLUSTERED INDEX IX_ApplicantDocuments_Status ON dbo.ApplicantDocuments (Status);
+BEGIN TRY IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ApplicantDocuments_Status' AND object_id = OBJECT_ID(N'dbo.ApplicantDocuments')) EXEC (N'IF EXISTS (SELECT 1 FROM sys.stats WHERE name = N''IX_ApplicantDocuments_Status'' AND object_id = OBJECT_ID(N''dbo.ApplicantDocuments'')) DROP STATISTICS dbo.ApplicantDocuments.IX_ApplicantDocuments_Status CREATE NONCLUSTERED INDEX IX_ApplicantDocuments_Status ON dbo.ApplicantDocuments (Status)') END TRY BEGIN CATCH IF ERROR_NUMBER() NOT IN (1902, 1913) THROW END CATCH
 
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ApplicantDocuments_DocumentType' AND object_id = OBJECT_ID(N'dbo.ApplicantDocuments'))
-    CREATE NONCLUSTERED INDEX IX_ApplicantDocuments_DocumentType ON dbo.ApplicantDocuments (DocumentType);
+BEGIN TRY IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ApplicantDocuments_DocumentType' AND object_id = OBJECT_ID(N'dbo.ApplicantDocuments')) EXEC (N'IF EXISTS (SELECT 1 FROM sys.stats WHERE name = N''IX_ApplicantDocuments_DocumentType'' AND object_id = OBJECT_ID(N''dbo.ApplicantDocuments'')) DROP STATISTICS dbo.ApplicantDocuments.IX_ApplicantDocuments_DocumentType CREATE NONCLUSTERED INDEX IX_ApplicantDocuments_DocumentType ON dbo.ApplicantDocuments (DocumentType)') END TRY BEGIN CATCH IF ERROR_NUMBER() NOT IN (1902, 1913) THROW END CATCH
 GO
 
 -- -----------------------------------------------------------------------------
@@ -958,11 +949,9 @@ BEGIN
 END
 GO
 
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_AdmissionApplications_IsArchived' AND object_id = OBJECT_ID(N'dbo.AdmissionApplications'))
-    CREATE NONCLUSTERED INDEX IX_AdmissionApplications_IsArchived ON dbo.AdmissionApplications (IsArchived);
+BEGIN TRY IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_AdmissionApplications_IsArchived' AND object_id = OBJECT_ID(N'dbo.AdmissionApplications')) EXEC (N'IF EXISTS (SELECT 1 FROM sys.stats WHERE name = N''IX_AdmissionApplications_IsArchived'' AND object_id = OBJECT_ID(N''dbo.AdmissionApplications'')) DROP STATISTICS dbo.AdmissionApplications.IX_AdmissionApplications_IsArchived CREATE NONCLUSTERED INDEX IX_AdmissionApplications_IsArchived ON dbo.AdmissionApplications (IsArchived)') END TRY BEGIN CATCH IF ERROR_NUMBER() NOT IN (1902, 1913) THROW END CATCH
 
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ScholarshipApplications_IsArchived' AND object_id = OBJECT_ID(N'dbo.ScholarshipApplications'))
-    CREATE NONCLUSTERED INDEX IX_ScholarshipApplications_IsArchived ON dbo.ScholarshipApplications (IsArchived);
+BEGIN TRY IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ScholarshipApplications_IsArchived' AND object_id = OBJECT_ID(N'dbo.ScholarshipApplications')) EXEC (N'IF EXISTS (SELECT 1 FROM sys.stats WHERE name = N''IX_ScholarshipApplications_IsArchived'' AND object_id = OBJECT_ID(N''dbo.ScholarshipApplications'')) DROP STATISTICS dbo.ScholarshipApplications.IX_ScholarshipApplications_IsArchived CREATE NONCLUSTERED INDEX IX_ScholarshipApplications_IsArchived ON dbo.ScholarshipApplications (IsArchived)') END TRY BEGIN CATCH IF ERROR_NUMBER() NOT IN (1902, 1913) THROW END CATCH
 GO
 
 -- Re-create vw_ApplicationHistory (defined earlier in this file) to surface
@@ -1175,9 +1164,8 @@ BEGIN
         CONSTRAINT FK_ApplicationStatusHistory_ChangedBy FOREIGN KEY (ChangedByUserId) REFERENCES dbo.Users (UserId),
         CONSTRAINT CK_ApplicationStatusHistory_Category CHECK (Category IN (N'Admission', N'Scholarship'))
     );
-
-    CREATE NONCLUSTERED INDEX IX_ApplicationStatusHistory_Application ON dbo.ApplicationStatusHistory (ApplicationId, Category, ChangedAt);
 END
+BEGIN TRY IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ApplicationStatusHistory_Application' AND object_id = OBJECT_ID(N'dbo.ApplicationStatusHistory')) EXEC (N'IF EXISTS (SELECT 1 FROM sys.stats WHERE name = N''IX_ApplicationStatusHistory_Application'' AND object_id = OBJECT_ID(N''dbo.ApplicationStatusHistory'')) DROP STATISTICS dbo.ApplicationStatusHistory.IX_ApplicationStatusHistory_Application CREATE NONCLUSTERED INDEX IX_ApplicationStatusHistory_Application ON dbo.ApplicationStatusHistory (ApplicationId, Category, ChangedAt)') END TRY BEGIN CATCH IF ERROR_NUMBER() NOT IN (1902, 1913) THROW END CATCH
 GO
 
 -- -----------------------------------------------------------------------------
@@ -1243,16 +1231,10 @@ BEGIN
 END
 GO
 
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_AuditLogs_CreatedAt' AND object_id = OBJECT_ID(N'dbo.AuditLogs'))
-BEGIN
-    CREATE NONCLUSTERED INDEX IX_AuditLogs_CreatedAt ON dbo.AuditLogs (CreatedAt DESC);
-END
+BEGIN TRY IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_AuditLogs_CreatedAt' AND object_id = OBJECT_ID(N'dbo.AuditLogs')) EXEC (N'IF EXISTS (SELECT 1 FROM sys.stats WHERE name = N''IX_AuditLogs_CreatedAt'' AND object_id = OBJECT_ID(N''dbo.AuditLogs'')) DROP STATISTICS dbo.AuditLogs.IX_AuditLogs_CreatedAt CREATE NONCLUSTERED INDEX IX_AuditLogs_CreatedAt ON dbo.AuditLogs (CreatedAt DESC)') END TRY BEGIN CATCH IF ERROR_NUMBER() NOT IN (1902, 1913) THROW END CATCH
 GO
 
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_AuditLogs_UserEmail' AND object_id = OBJECT_ID(N'dbo.AuditLogs'))
-BEGIN
-    CREATE NONCLUSTERED INDEX IX_AuditLogs_UserEmail ON dbo.AuditLogs (UserEmail);
-END
+BEGIN TRY IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_AuditLogs_UserEmail' AND object_id = OBJECT_ID(N'dbo.AuditLogs')) EXEC (N'IF EXISTS (SELECT 1 FROM sys.stats WHERE name = N''IX_AuditLogs_UserEmail'' AND object_id = OBJECT_ID(N''dbo.AuditLogs'')) DROP STATISTICS dbo.AuditLogs.IX_AuditLogs_UserEmail CREATE NONCLUSTERED INDEX IX_AuditLogs_UserEmail ON dbo.AuditLogs (UserEmail)') END TRY BEGIN CATCH IF ERROR_NUMBER() NOT IN (1902, 1913) THROW END CATCH
 GO
 
 -- -----------------------------------------------------------------------------
@@ -1283,10 +1265,7 @@ GO
 SET QUOTED_IDENTIFIER ON;
 GO
 
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_PasswordResetTokens_UserId' AND object_id = OBJECT_ID(N'dbo.PasswordResetTokens'))
-BEGIN
-    CREATE NONCLUSTERED INDEX IX_PasswordResetTokens_UserId ON dbo.PasswordResetTokens (UserId) WHERE UsedAt IS NULL;
-END
+BEGIN TRY IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_PasswordResetTokens_UserId' AND object_id = OBJECT_ID(N'dbo.PasswordResetTokens')) EXEC (N'IF EXISTS (SELECT 1 FROM sys.stats WHERE name = N''IX_PasswordResetTokens_UserId'' AND object_id = OBJECT_ID(N''dbo.PasswordResetTokens'')) DROP STATISTICS dbo.PasswordResetTokens.IX_PasswordResetTokens_UserId CREATE NONCLUSTERED INDEX IX_PasswordResetTokens_UserId ON dbo.PasswordResetTokens (UserId) WHERE UsedAt IS NULL') END TRY BEGIN CATCH IF ERROR_NUMBER() NOT IN (1902, 1913) THROW END CATCH
 GO
 
 -- -----------------------------------------------------------------------------
@@ -1363,9 +1342,8 @@ BEGIN
         CONSTRAINT FK_PotentialDuplicateApplicants_ReviewedBy FOREIGN KEY (ReviewedByUserId) REFERENCES dbo.Users (UserId),
         CONSTRAINT CK_PotentialDuplicateApplicants_Status CHECK (Status IN (N'Open', N'Dismissed', N'ConfirmedDuplicate'))
     );
-
-    CREATE NONCLUSTERED INDEX IX_PotentialDuplicateApplicants_Status ON dbo.PotentialDuplicateApplicants (Status);
 END
+BEGIN TRY IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_PotentialDuplicateApplicants_Status' AND object_id = OBJECT_ID(N'dbo.PotentialDuplicateApplicants')) EXEC (N'IF EXISTS (SELECT 1 FROM sys.stats WHERE name = N''IX_PotentialDuplicateApplicants_Status'' AND object_id = OBJECT_ID(N''dbo.PotentialDuplicateApplicants'')) DROP STATISTICS dbo.PotentialDuplicateApplicants.IX_PotentialDuplicateApplicants_Status CREATE NONCLUSTERED INDEX IX_PotentialDuplicateApplicants_Status ON dbo.PotentialDuplicateApplicants (Status)') END TRY BEGIN CATCH IF ERROR_NUMBER() NOT IN (1902, 1913) THROW END CATCH
 GO
 
 -- -----------------------------------------------------------------------------
@@ -1460,10 +1438,9 @@ BEGIN
         CONSTRAINT FK_InquiryThreads_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId),
         CONSTRAINT CK_InquiryThreads_Status CHECK (Status IN (N'Open', N'Closed'))
     );
-
-    CREATE NONCLUSTERED INDEX IX_InquiryThreads_UserId ON dbo.InquiryThreads (UserId);
-    CREATE NONCLUSTERED INDEX IX_InquiryThreads_Status_UpdatedAt ON dbo.InquiryThreads (Status, UpdatedAt DESC);
 END
+BEGIN TRY IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_InquiryThreads_UserId' AND object_id = OBJECT_ID(N'dbo.InquiryThreads')) EXEC (N'IF EXISTS (SELECT 1 FROM sys.stats WHERE name = N''IX_InquiryThreads_UserId'' AND object_id = OBJECT_ID(N''dbo.InquiryThreads'')) DROP STATISTICS dbo.InquiryThreads.IX_InquiryThreads_UserId CREATE NONCLUSTERED INDEX IX_InquiryThreads_UserId ON dbo.InquiryThreads (UserId)') END TRY BEGIN CATCH IF ERROR_NUMBER() NOT IN (1902, 1913) THROW END CATCH
+BEGIN TRY IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_InquiryThreads_Status_UpdatedAt' AND object_id = OBJECT_ID(N'dbo.InquiryThreads')) EXEC (N'IF EXISTS (SELECT 1 FROM sys.stats WHERE name = N''IX_InquiryThreads_Status_UpdatedAt'' AND object_id = OBJECT_ID(N''dbo.InquiryThreads'')) DROP STATISTICS dbo.InquiryThreads.IX_InquiryThreads_Status_UpdatedAt CREATE NONCLUSTERED INDEX IX_InquiryThreads_Status_UpdatedAt ON dbo.InquiryThreads (Status, UpdatedAt DESC)') END TRY BEGIN CATCH IF ERROR_NUMBER() NOT IN (1902, 1913) THROW END CATCH
 GO
 
 IF OBJECT_ID(N'dbo.InquiryMessages', N'U') IS NULL
@@ -1480,9 +1457,8 @@ BEGIN
         CONSTRAINT FK_InquiryMessages_Threads FOREIGN KEY (ThreadId) REFERENCES dbo.InquiryThreads (ThreadId),
         CONSTRAINT FK_InquiryMessages_Users FOREIGN KEY (SenderUserId) REFERENCES dbo.Users (UserId)
     );
-
-    CREATE NONCLUSTERED INDEX IX_InquiryMessages_ThreadId ON dbo.InquiryMessages (ThreadId, CreatedAt ASC);
 END
+BEGIN TRY IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_InquiryMessages_ThreadId' AND object_id = OBJECT_ID(N'dbo.InquiryMessages')) EXEC (N'IF EXISTS (SELECT 1 FROM sys.stats WHERE name = N''IX_InquiryMessages_ThreadId'' AND object_id = OBJECT_ID(N''dbo.InquiryMessages'')) DROP STATISTICS dbo.InquiryMessages.IX_InquiryMessages_ThreadId CREATE NONCLUSTERED INDEX IX_InquiryMessages_ThreadId ON dbo.InquiryMessages (ThreadId, CreatedAt ASC)') END TRY BEGIN CATCH IF ERROR_NUMBER() NOT IN (1902, 1913) THROW END CATCH
 GO
 
 IF NOT EXISTS (SELECT 1 FROM dbo.NotificationTriggerConfigs WHERE TriggerKey = N'InquiryReply')
@@ -1528,31 +1504,112 @@ GO
 -- Msg 1913 "an index or statistics with name ... already exists" even though
 -- the index itself is missing). A leftover statistics object is dropped - they
 -- are rebuilt automatically - and the index created in its place.
-BEGIN TRY
-    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_AdmissionApplications_Department' AND object_id = OBJECT_ID(N'dbo.AdmissionApplications'))
-    BEGIN
-        IF EXISTS (SELECT 1 FROM sys.stats WHERE name = N'IX_AdmissionApplications_Department' AND object_id = OBJECT_ID(N'dbo.AdmissionApplications'))
-            DROP STATISTICS dbo.AdmissionApplications.IX_AdmissionApplications_Department;
+BEGIN TRY IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_AdmissionApplications_Department' AND object_id = OBJECT_ID(N'dbo.AdmissionApplications')) EXEC (N'IF EXISTS (SELECT 1 FROM sys.stats WHERE name = N''IX_AdmissionApplications_Department'' AND object_id = OBJECT_ID(N''dbo.AdmissionApplications'')) DROP STATISTICS dbo.AdmissionApplications.IX_AdmissionApplications_Department CREATE NONCLUSTERED INDEX IX_AdmissionApplications_Department ON dbo.AdmissionApplications (Department, UserId)') END TRY BEGIN CATCH IF ERROR_NUMBER() NOT IN (1902, 1913) THROW END CATCH
+GO
 
-        CREATE NONCLUSTERED INDEX IX_AdmissionApplications_Department ON dbo.AdmissionApplications (Department, UserId);
-    END
-END TRY
-BEGIN CATCH
-    -- 1913 / 1902: the name is already taken, which is the state we want.
-    IF ERROR_NUMBER() NOT IN (1902, 1913) THROW;
-END CATCH
+-- -----------------------------------------------------------------------------
+-- Scholarship application form (School Year 2026-2027 Academic Scholarship
+-- Application and Consent Form)
+-- The online form collects more than a grade average: the level applied for
+-- (Grade 7, Grade 11 or First Year College), the applicant's full name and last
+-- school, the parent / official guardian's details, and three Data Privacy
+-- consents (terms, participation, certification) recorded with a timestamp.
+-- All columns are NULL so applications filed before this change stay valid.
+-- A scholarship application with a LevelApplied now also places its applicant
+-- in a department (Grade 7 = High School, Grade 11 = Senior High School,
+-- First Year College = College) - see vw_ApplicantDepartments below.
+-- -----------------------------------------------------------------------------
+IF COL_LENGTH(N'dbo.ScholarshipApplications', N'LevelApplied') IS NULL
+    ALTER TABLE dbo.ScholarshipApplications ADD LevelApplied NVARCHAR(30) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.ScholarshipApplications', N'ApplicantFullName') IS NULL
+    ALTER TABLE dbo.ScholarshipApplications ADD ApplicantFullName NVARCHAR(200) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.ScholarshipApplications', N'SchoolLastAttended') IS NULL
+    ALTER TABLE dbo.ScholarshipApplications ADD SchoolLastAttended NVARCHAR(200) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.ScholarshipApplications', N'GuardianRole') IS NULL
+    ALTER TABLE dbo.ScholarshipApplications ADD GuardianRole NVARCHAR(20) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.ScholarshipApplications', N'GuardianName') IS NULL
+    ALTER TABLE dbo.ScholarshipApplications ADD GuardianName NVARCHAR(200) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.ScholarshipApplications', N'GuardianContact') IS NULL
+    ALTER TABLE dbo.ScholarshipApplications ADD GuardianContact NVARCHAR(50) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.ScholarshipApplications', N'GuardianEmail') IS NULL
+    ALTER TABLE dbo.ScholarshipApplications ADD GuardianEmail NVARCHAR(256) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.ScholarshipApplications', N'ConsentTerms') IS NULL
+    ALTER TABLE dbo.ScholarshipApplications ADD ConsentTerms BIT NULL;
+GO
+
+IF COL_LENGTH(N'dbo.ScholarshipApplications', N'ConsentParticipation') IS NULL
+    ALTER TABLE dbo.ScholarshipApplications ADD ConsentParticipation BIT NULL;
+GO
+
+IF COL_LENGTH(N'dbo.ScholarshipApplications', N'ConsentCertification') IS NULL
+    ALTER TABLE dbo.ScholarshipApplications ADD ConsentCertification BIT NULL;
+GO
+
+IF COL_LENGTH(N'dbo.ScholarshipApplications', N'ConsentedAt') IS NULL
+    ALTER TABLE dbo.ScholarshipApplications ADD ConsentedAt DATETIME2(3) NULL;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_ScholarshipApplications_LevelApplied')
+    ALTER TABLE dbo.ScholarshipApplications WITH NOCHECK
+        ADD CONSTRAINT CK_ScholarshipApplications_LevelApplied
+        CHECK (LevelApplied IS NULL OR LevelApplied IN (N'Grade 7', N'Grade 11', N'First Year College'));
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_ScholarshipApplications_GuardianRole')
+    ALTER TABLE dbo.ScholarshipApplications WITH NOCHECK
+        ADD CONSTRAINT CK_ScholarshipApplications_GuardianRole
+        CHECK (GuardianRole IS NULL OR GuardianRole IN (N'Parent', N'Official guardian'));
+GO
+
+-- The signed scholarship application form is a new document type.
+IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_ApplicantDocuments_DocumentType' AND definition NOT LIKE N'%ScholarshipForm%')
+BEGIN
+    ALTER TABLE dbo.ApplicantDocuments DROP CONSTRAINT CK_ApplicantDocuments_DocumentType;
+    ALTER TABLE dbo.ApplicantDocuments ADD CONSTRAINT CK_ApplicantDocuments_DocumentType
+        CHECK (DocumentType IN (N'ReportCard', N'IdPicture', N'PSA', N'TOR', N'SF10', N'ScholarshipForm'));
+END
 GO
 
 CREATE OR ALTER VIEW dbo.vw_ApplicantDepartments
 AS
+    -- The department of the applicant's most recent application that names
+    -- one: an admission application's Department, or a scholarship
+    -- application's level (Grade 7 / Grade 11 / First Year College).
     SELECT latest.UserId, latest.Department
     FROM (
         SELECT
-            a.UserId,
-            a.Department,
-            ROW_NUMBER() OVER (PARTITION BY a.UserId ORDER BY a.SubmittedAt DESC) AS rn
-        FROM dbo.AdmissionApplications a
-        WHERE a.Department IS NOT NULL
+            x.UserId,
+            x.Department,
+            ROW_NUMBER() OVER (PARTITION BY x.UserId ORDER BY x.SubmittedAt DESC) AS rn
+        FROM (
+            SELECT a.UserId, a.Department, a.SubmittedAt
+            FROM dbo.AdmissionApplications a
+            WHERE a.Department IS NOT NULL
+            UNION ALL
+            SELECT sa.UserId,
+                   CASE sa.LevelApplied
+                       WHEN N'Grade 7' THEN N'High School'
+                       WHEN N'Grade 11' THEN N'Senior High School'
+                       WHEN N'First Year College' THEN N'College'
+                   END,
+                   sa.SubmittedAt
+            FROM dbo.ScholarshipApplications sa
+            WHERE sa.LevelApplied IS NOT NULL
+        ) x
     ) latest
     WHERE latest.rn = 1;
 GO
@@ -1652,4 +1709,57 @@ BEGIN
                      N'WHERE Department = N''College'' AND CourseAppliedFor NOT IN (N''BSBA'', N''BSED'', N''BSA'', N''BSIT'').');
     END
 END
+GO
+
+-- -----------------------------------------------------------------------------
+-- ExamScheduleSelections.ExamType / ExamFee / InvoiceNumber
+-- The printed exam slip shows the type of exam, the fee paid and the cashier's
+-- invoice (SI) number. ExamType is chosen by the applicant when they pick a
+-- schedule; ExamFee is a snapshot of the fixed fee (Exam:Fee setting) taken
+-- when the registrar releases the permit, so later fee changes never alter an
+-- issued slip; InvoiceNumber is typed in by the registrar at release.
+-- -----------------------------------------------------------------------------
+IF COL_LENGTH(N'dbo.ExamScheduleSelections', N'ExamType') IS NULL
+    ALTER TABLE dbo.ExamScheduleSelections ADD ExamType NVARCHAR(40) NOT NULL CONSTRAINT DF_ExamScheduleSelections_ExamType DEFAULT (N'Entrance Exam');
+GO
+
+IF COL_LENGTH(N'dbo.ExamScheduleSelections', N'ExamFee') IS NULL
+    ALTER TABLE dbo.ExamScheduleSelections ADD ExamFee DECIMAL(10,2) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.ExamScheduleSelections', N'InvoiceNumber') IS NULL
+    ALTER TABLE dbo.ExamScheduleSelections ADD InvoiceNumber NVARCHAR(50) NULL;
+GO
+
+-- -----------------------------------------------------------------------------
+-- Admission status workflow
+-- Submitted -> UnderReview -> PendingDocuments -> DocumentsCompleted ->
+-- DocumentsCleared -> ExamScheduled -> ExamDone -> Registration -> Approved,
+-- with Rejected / Retracted possible from any step that is not yet final, and
+-- DidNotTakeExam as a side branch off ExamScheduled that can return to it. The
+-- order is enforced by the API (AdmissionWorkflowConstants); this constraint
+-- only lists the values the column may hold. Older rows (Submitted,
+-- UnderReview, Approved, Rejected) stay valid as they are.
+-- -----------------------------------------------------------------------------
+IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_AdmissionApplications_Status' AND definition NOT LIKE N'%PendingDocuments%')
+BEGIN
+    ALTER TABLE dbo.AdmissionApplications DROP CONSTRAINT CK_AdmissionApplications_Status;
+    ALTER TABLE dbo.AdmissionApplications ADD CONSTRAINT CK_AdmissionApplications_Status
+        CHECK (Status IN (N'Submitted', N'UnderReview', N'PendingDocuments', N'DocumentsCompleted', N'DocumentsCleared', N'ExamScheduled', N'ExamDone', N'DidNotTakeExam', N'Registration', N'Approved', N'Rejected', N'Retracted'));
+END
+GO
+
+-- -----------------------------------------------------------------------------
+-- ExamScheduleSelections.ExamStatus
+-- What happened to the applicant after they were scheduled: Scheduled (the
+-- default, and what a fresh selection resets to), ExamDone, Rescheduled or
+-- DidNotTakeExam. Staff set it on the Exam Schedules page.
+-- -----------------------------------------------------------------------------
+IF COL_LENGTH(N'dbo.ExamScheduleSelections', N'ExamStatus') IS NULL
+    ALTER TABLE dbo.ExamScheduleSelections ADD ExamStatus NVARCHAR(30) NOT NULL CONSTRAINT DF_ExamScheduleSelections_ExamStatus DEFAULT (N'Scheduled');
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_ExamScheduleSelections_ExamStatus')
+    ALTER TABLE dbo.ExamScheduleSelections ADD CONSTRAINT CK_ExamScheduleSelections_ExamStatus
+        CHECK (ExamStatus IN (N'Scheduled', N'ExamDone', N'Rescheduled', N'DidNotTakeExam'));
 GO

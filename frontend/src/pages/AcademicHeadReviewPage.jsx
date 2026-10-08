@@ -9,6 +9,7 @@ import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
+import ScholarshipFormSummary from "../components/ui/ScholarshipFormSummary.jsx";
 import WorkflowStepper, { SCHOLARSHIP_STEP_LABELS } from "../components/WorkflowStepper.jsx";
 import "./AcademicHeadReviewPage.css";
 
@@ -112,6 +113,11 @@ export default function AcademicHeadReviewPage() {
                 already used on the Evaluator's own screening page for the
                 same record, one workflow step earlier. */}
             <Card className="ah-dossier">
+              <div className="ah-dossier-section">
+                <h2>Application Form</h2>
+                <ScholarshipFormSummary form={application.form} />
+              </div>
+
               <div className="ah-dossier-section">
                 <h2>Applicant &amp; Academic Records</h2>
                 <dl className="ah-detail-list">

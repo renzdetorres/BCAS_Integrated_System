@@ -3,17 +3,30 @@ import { getOpenDuplicateFlags, resolveDuplicateFlag } from "../api/duplicateApp
 import { ApiError } from "../api/apiClient.js";
 import { useToast } from "../context/ToastContext.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
-import Card from "../components/ui/Card.jsx";
+import DataTable, { PersonCell } from "../components/ui/DataTable.jsx";
+import StatusBadge from "../components/ui/StatusBadge.jsx";
+import { formatDate, formatDateTime } from "../utils/format.js";
 import "./AdminDuplicateApplicantsPage.css";
 
-function formatDateTime(isoDateTime) {
-  return new Date(isoDateTime).toLocaleString(undefined, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+/** What the matched (existing) account already has, so staff can compare before deciding. */
+function ExistingApplication({ flag }) {
+  if (!flag.matchedApplicationId) {
+    return <span className="ui-cell-muted">No application yet</span>;
+  }
+  return (
+    <div className="duplicate-existing">
+      <div className="duplicate-existing-line">
+        <StatusBadge status={flag.matchedApplicationStatus} adminContext />
+        <span>
+          {flag.matchedCourseAppliedFor}
+          {flag.matchedDepartment ? ` \u00b7 ${flag.matchedDepartment}` : ""}
+        </span>
+      </div>
+      <span className="duplicate-existing-meta">
+        Submitted {formatDate(flag.matchedSubmittedAt)} {" \u00b7 "}{flag.matchedDocumentsVerified} of {flag.matchedDocumentsUploaded} documents verified
+      </span>
+    </div>
+  );
 }
 
 export default function AdminDuplicateApplicantsPage() {
@@ -26,8 +39,7 @@ export default function AdminDuplicateApplicantsPage() {
   const loadFlags = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await getOpenDuplicateFlags();
-      setFlags(data);
+      setFlags(await getOpenDuplicateFlags());
       setErrorMessage(null);
     } catch (error) {
       setErrorMessage(error instanceof ApiError ? error.message : "Failed to load duplicate-applicant flags.");
@@ -42,83 +54,77 @@ export default function AdminDuplicateApplicantsPage() {
 
   async function handleResolve(flag, status) {
     setPendingFlagId(flag.flagId);
-    setErrorMessage(null);
     try {
       await resolveDuplicateFlag(flag.flagId, { status });
       setFlags((prev) => prev.filter((f) => f.flagId !== flag.flagId));
       showToast(status === "Dismissed" ? "Flag dismissed - not a duplicate." : "Marked as a confirmed duplicate.");
     } catch (error) {
-      setErrorMessage(error instanceof ApiError ? error.message : "Failed to resolve this flag.");
+      showToast(error instanceof ApiError ? error.message : "Failed to resolve this flag.", "error");
     } finally {
       setPendingFlagId(null);
     }
   }
 
+  const columns = [
+    {
+      key: "newUser",
+      header: "New registration",
+      accessor: (row) => `${row.newUserName} ${row.newUserEmail}`,
+      sortable: true,
+      render: (row) => <PersonCell name={row.newUserName} detail={row.newUserEmail} />,
+    },
+    {
+      key: "matched",
+      header: "Matches existing account",
+      accessor: (row) => `${row.matchedUserName} ${row.matchedUserEmail}`,
+      sortable: true,
+      render: (row) => <PersonCell name={row.matchedUserName} detail={row.matchedUserEmail} />,
+    },
+    {
+      key: "existing",
+      header: "Their existing application",
+      searchable: false,
+      render: (row) => <ExistingApplication flag={row} />,
+    },
+    {
+      key: "detectedAt",
+      header: "Detected",
+      accessor: (row) => row.detectedAt,
+      sortable: true,
+      searchable: false,
+      render: (row) => formatDateTime(row.detectedAt),
+    },
+    {
+      key: "action",
+      header: "Action",
+      align: "center",
+      searchable: false,
+      render: (row) => (
+        <div className="duplicate-actions">
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => handleResolve(row, "Dismissed")} disabled={pendingFlagId === row.flagId}>
+            Dismiss
+          </button>
+          <button type="button" className="btn btn-danger btn-sm" onClick={() => handleResolve(row, "ConfirmedDuplicate")} disabled={pendingFlagId === row.flagId}>
+            Confirm duplicate
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <AppLayout title="Duplicate Applicants">
-      <Card>
-        <p className="duplicate-applicants-subtitle">
-          A close name match against an existing applicant account was found at registration. This never blocks
-          registration or merges anything automatically - review each one and either dismiss it (a coincidental
-          name match, not the same person) or confirm it as a duplicate to follow up on manually.
-        </p>
-
-        {errorMessage && (
-          <p className="form-error" role="alert">
-            {errorMessage}
-          </p>
-        )}
-
-        {isLoading ? (
-          <p>Loading...</p>
-        ) : flags.length === 0 ? (
-          <p>No potential duplicates awaiting review.</p>
-        ) : (
-          <table className="duplicate-applicants-table">
-            <thead>
-              <tr>
-                <th>New Registration</th>
-                <th>Matches Existing Account</th>
-                <th>Detected</th>
-                <th aria-hidden="true"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {flags.map((flag) => (
-                <tr key={flag.flagId}>
-                  <td>
-                    <div className="duplicate-applicant-name">{flag.newUserName}</div>
-                    <div className="duplicate-applicant-email">{flag.newUserEmail}</div>
-                  </td>
-                  <td>
-                    <div className="duplicate-applicant-name">{flag.matchedUserName}</div>
-                    <div className="duplicate-applicant-email">{flag.matchedUserEmail}</div>
-                  </td>
-                  <td>{formatDateTime(flag.detectedAt)}</td>
-                  <td className="row-actions">
-                    <button
-                      type="button"
-                      className="duplicate-dismiss"
-                      onClick={() => handleResolve(flag, "Dismissed")}
-                      disabled={pendingFlagId === flag.flagId}
-                    >
-                      Dismiss
-                    </button>
-                    <button
-                      type="button"
-                      className="duplicate-confirm"
-                      onClick={() => handleResolve(flag, "ConfirmedDuplicate")}
-                      disabled={pendingFlagId === flag.flagId}
-                    >
-                      Confirm Duplicate
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </Card>
+    <AppLayout>
+      <DataTable
+        title="Duplicate Applicants"
+        subtitle="A close name match against an existing applicant account was found at registration. Nothing is blocked or merged automatically. Compare with the existing account's application and documents, then dismiss it (a coincidence) or confirm the duplicate to follow up on manually."
+        columns={columns}
+        rows={flags}
+        getRowKey={(row) => row.flagId}
+        isLoading={isLoading}
+        errorMessage={errorMessage}
+        emptyMessage="No potential duplicates awaiting review."
+        searchPlaceholder="Search by name or email"
+      />
     </AppLayout>
   );
 }

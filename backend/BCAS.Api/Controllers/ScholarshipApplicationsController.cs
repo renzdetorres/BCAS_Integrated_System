@@ -75,6 +75,24 @@ public class ScholarshipApplicationsController : ControllerBase
                 Status = StatusCodes.Status400BadRequest,
             });
         }
+        catch (ApplicationAlreadySubmittedException ex)
+        {
+            return Conflict(new ProblemDetails
+            {
+                Title = "Application already submitted",
+                Detail = ex.Message,
+                Status = StatusCodes.Status409Conflict,
+            });
+        }
+        catch (ScholarshipConsentRequiredException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Consent required",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
         catch (ProfileIncompleteException ex)
         {
             return BadRequest(new ProblemDetails

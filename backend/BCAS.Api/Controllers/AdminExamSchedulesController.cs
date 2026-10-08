@@ -1,4 +1,5 @@
 using BCAS.Api.Exceptions;
+using BCAS.Api.Extensions;
 using BCAS.Api.Models;
 using BCAS.Api.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -54,6 +55,36 @@ public class AdminExamSchedulesController : ControllerBase
             return BadRequest(new ProblemDetails
             {
                 Title = "Invalid day type",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+    }
+
+    /// <summary>
+    /// Admin-only: what happened to a scheduled applicant (Scheduled,
+    /// ExamDone, Rescheduled, DidNotTakeExam). Moves their admission
+    /// application with it where the workflow allows.
+    /// </summary>
+    [HttpPatch("applicants/{userId:guid}/status")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SetApplicantExamStatus(
+        Guid userId,
+        [FromBody] SetExamStatusRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _examScheduleService.SetApplicantExamStatusAsync(userId, request.Status!, User.GetUserId(), cancellationToken);
+            await _auditLogService.LogAsync(User, "ExamScheduleStatusUpdated", $"{request.Status} for applicant {userId}", cancellationToken);
+            return NoContent();
+        }
+        catch (Exception ex) when (ex is InvalidExamStatusException or NoExamScheduleSelectedException or InvalidStatusTransitionException or StatusPreconditionNotMetException)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Could not update the exam status",
                 Detail = ex.Message,
                 Status = StatusCodes.Status400BadRequest,
             });

@@ -40,11 +40,11 @@ public class AdminExamPermitsController : ControllerBase
     [HttpPost("{userId:guid}/release")]
     [ProducesResponseType(typeof(AdminExamPermitListItemResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<AdminExamPermitListItemResponse>> Release(Guid userId, CancellationToken cancellationToken)
+    public async Task<ActionResult<AdminExamPermitListItemResponse>> Release(Guid userId, [FromBody] ReleaseExamPermitRequest request, CancellationToken cancellationToken)
     {
         try
         {
-            var released = await _examPermitService.ReleaseAsync(userId, User.GetUserId(), cancellationToken);
+            var released = await _examPermitService.ReleaseAsync(userId, User.GetUserId(), request.InvoiceNumber!, cancellationToken);
             return Ok(released);
         }
         catch (NoExamScheduleSelectedException ex)

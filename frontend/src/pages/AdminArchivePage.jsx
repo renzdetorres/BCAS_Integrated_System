@@ -82,7 +82,7 @@ export default function AdminArchivePage() {
     {
       key: "action",
       header: "Action",
-      align: "right",
+      align: "center",
       searchable: false,
       render: (row) => (
         <RowAction
@@ -97,8 +97,8 @@ export default function AdminArchivePage() {
   return (
     <AppLayout>
       <DataTable
-        title="Records Archive"
-        subtitle="Completed admission and scholarship applications moved out of the working list. Nothing here is deleted: every record, and an admission application's documents, stays retrievable for the school's 5-year retention."
+        title="Archives"
+        subtitle="Finished applications, such as rejected ones and old completed ones, moved out of the working list. Active approved applicants are under Records. Nothing here is deleted: every record, and an admission application's documents, stays retrievable for the school's 5-year retention."
         columns={columns}
         rows={applications}
         getRowKey={(row) => row.applicationId}

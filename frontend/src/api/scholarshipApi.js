@@ -26,12 +26,12 @@ export async function getMyScholarshipApplications() {
   return response.json();
 }
 
-export async function submitScholarshipApplication({ scholarshipId, gradeAverage }) {
+export async function submitScholarshipApplication(payload) {
   const response = await fetch(`${API_BASE_URL}/api/scholarship-applications`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ scholarshipId, gradeAverage }),
+    body: JSON.stringify(payload),
   });
 
   const data = await response.json().catch(() => null);

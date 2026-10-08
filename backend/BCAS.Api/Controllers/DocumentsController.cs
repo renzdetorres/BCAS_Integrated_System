@@ -47,8 +47,33 @@ public class DocumentsController : ControllerBase
     }
 
     /// <summary>
+    /// The signed-in applicant's scholarship documentary requirements (signed
+    /// application form, report card, 2x2 photo) with upload / verification status.
+    /// </summary>
+    [HttpGet("scholarship")]
+    [ProducesResponseType(typeof(DocumentChecklistResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<DocumentChecklistResponse>> GetMyScholarshipChecklist(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var checklist = await _documentService.GetMyScholarshipChecklistAsync(User.GetUserId(), cancellationToken);
+            return Ok(checklist);
+        }
+        catch (NoScholarshipApplicationException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "No scholarship application",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+    }
+
+    /// <summary>
     /// Uploads (or re-uploads) a document for the signed-in applicant.
-    /// Only PDF files are accepted. Re-uploading replaces the previous file
+    /// Only PDF, JPG or PNG files are accepted. Re-uploading replaces the previous file
     /// and resets its status to Pending for re-verification.
     /// </summary>
     [HttpPut("{documentType}")]

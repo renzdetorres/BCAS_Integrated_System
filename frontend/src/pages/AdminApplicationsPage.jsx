@@ -6,11 +6,12 @@ import { useToast } from "../context/ToastContext.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import ApplicationDetailModal from "../components/ApplicationDetailModal.jsx";
 import DataTable, { RowAction } from "../components/ui/DataTable.jsx";
-import StatusBadge from "../components/ui/StatusBadge.jsx";
+import StatusBadge, { statusLabel } from "../components/ui/StatusBadge.jsx";
+import StatusLegend from "../components/ui/StatusLegend.jsx";
 import { DEPARTMENT_OPTIONS } from "../config/departments.js";
+import { ADMISSION_STATUSES, SCHOLARSHIP_STATUSES, statusDescription } from "../config/statusDescriptions.js";
 import "./AdminApplicationsPage.css";
 
-const TERMINAL_STATUSES = new Set(["Approved", "Rejected"]);
 const ARCHIVABLE_STATUS_SET = new Set(ARCHIVABLE_STATUSES);
 
 // Filters live in the URL, so the sidebar's department links, the dashboard
@@ -23,16 +24,24 @@ const DEPARTMENT_FILTER_OPTIONS = [
   { value: "Unassigned", label: "Unassigned" },
 ];
 
-const STATUS_OPTIONS = [
-  "Submitted",
-  "UnderReview",
-  "DocumentsVerified",
-  "EligibilityScreening",
-  "Evaluation",
-  "Result",
-  "Approved",
-  "Rejected",
-].map((value) => ({ value, label: value }));
+// The status filter only offers statuses the chosen type can actually have.
+function statusOptionsFor(category) {
+  const lists = category === "Admission" ? [ADMISSION_STATUSES] : category === "Scholarship" ? [SCHOLARSHIP_STATUSES] : [ADMISSION_STATUSES, SCHOLARSHIP_STATUSES];
+  const values = [...new Set(lists.flat().map((s) => s.value))];
+  return values.map((value) => ({ value, label: statusLabel(value) }));
+}
+
+// The "?" guide mirrors the same choice. "Submitted" is left out: it is the
+// automatic starting status and needs no explaining.
+function legendGroupsFor(category) {
+  const without = (list) => list.filter((s) => s.value !== "Submitted");
+  if (category === "Admission") return [{ statuses: without(ADMISSION_STATUSES) }];
+  if (category === "Scholarship") return [{ statuses: without(SCHOLARSHIP_STATUSES) }];
+  return [
+    { title: "Admission", statuses: without(ADMISSION_STATUSES) },
+    { title: "Scholarship", statuses: without(SCHOLARSHIP_STATUSES).filter((s) => !["Approved", "Rejected"].includes(s.value)) },
+  ];
+}
 
 function formatDate(isoDateTime) {
   return new Date(isoDateTime).toLocaleDateString(undefined, {
@@ -53,21 +62,29 @@ export default function AdminApplicationsPage() {
     return Object.fromEntries(FILTER_KEYS.map((key, index) => [key, values[index]]));
   }, [filterQuery]);
 
-  function setFilter(key, value) {
+  // One update for any number of keys: two separate setSearchParams calls in the
+  // same tick would each start from the same stale params.
+  function setFilters(updates) {
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
-        if (value) {
-          next.set(key, value);
-        } else {
-          next.delete(key);
+        for (const [key, value] of Object.entries(updates)) {
+          if (value) {
+            next.set(key, value);
+          } else {
+            next.delete(key);
+          }
         }
         return next;
       },
       { replace: true },
     );
   }
-  const [applications, setApplications] = useState([]);
+
+  function setFilter(key, value) {
+    setFilters({ [key]: value });
+  }
+  const [loaded, setLoaded] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
 
@@ -78,8 +95,9 @@ export default function AdminApplicationsPage() {
   const loadApplications = useCallback(async (activeFilters) => {
     setIsLoading(true);
     try {
-      const data = await searchApplications(activeFilters);
-      setApplications(data);
+      const { status: _status, ...serverFilters } = activeFilters;
+      const data = await searchApplications(serverFilters);
+      setLoaded(data);
       setErrorMessage(null);
     } catch (error) {
       setErrorMessage(error instanceof ApiError ? error.message : "Failed to load applications.");
@@ -88,10 +106,18 @@ export default function AdminApplicationsPage() {
     }
   }, []);
 
+  // Status is applied in the browser, so changing it never refetches.
   useEffect(() => {
     const timeout = setTimeout(() => loadApplications(filters), 300);
     return () => clearTimeout(timeout);
-  }, [filters, loadApplications]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.search, filters.category, filters.program, filters.department, loadApplications]);
+
+  // Most recently active first (last updated, then submitted).
+  const applications = useMemo(() => {
+    const shown = filters.status ? loaded.filter((row) => row.status === filters.status) : loaded;
+    return [...shown].sort((a, b) => (b.updatedAt ?? b.submittedAt).localeCompare(a.updatedAt ?? a.submittedAt));
+  }, [loaded, filters.status]);
 
   const archivableApplications = applications.filter(
     (row) => !row.isArchived && ARCHIVABLE_STATUS_SET.has(row.status),
@@ -200,10 +226,14 @@ export default function AdminApplicationsPage() {
     },
     {
       key: "status",
-      header: "Status",
+      header: (
+        <span className="admin-applications-status-head">
+          Status
+          <StatusLegend groups={legendGroupsFor(filters.category)} adminContext />
+        </span>
+      ),
       accessor: (row) => row.status,
-      sortable: true,
-      render: (row) => <StatusBadge status={row.status} adminContext />,
+      render: (row) => <StatusBadge status={row.status} adminContext hint={statusDescription(row.status)} />,
     },
     {
       key: "submittedAt",
@@ -215,7 +245,7 @@ export default function AdminApplicationsPage() {
     {
       key: "action",
       header: "Action",
-      align: "right",
+      align: "center",
       searchable: false,
       render: (row) => (
         <RowAction
@@ -227,9 +257,9 @@ export default function AdminApplicationsPage() {
     },
   ];
 
-  const needsActionCount = applications.filter((row) => !TERMINAL_STATUSES.has(row.status)).length;
-  const approvedCount = applications.filter((row) => row.status === "Approved").length;
-  const rejectedCount = applications.filter((row) => row.status === "Rejected").length;
+  const unassignedCount = loaded.filter((row) => !row.department).length;
+  const underReviewCount = loaded.filter((row) => row.status === "UnderReview").length;
+  const newCount = loaded.filter((row) => row.status === "Submitted").length;
 
   const bulkActions =
     selectedArchivableIds.length > 0 ? (
@@ -251,12 +281,29 @@ export default function AdminApplicationsPage() {
         subtitle="Every admission and scholarship application. Select one to read it in full."
         actions={bulkActions}
         summary={[
-          { label: "Showing", value: applications.length.toLocaleString() },
-          { label: "Needs action", value: needsActionCount.toLocaleString(), tone: "amber" },
-          { label: "Approved", value: approvedCount.toLocaleString(), tone: "green" },
-          { label: "Rejected", value: rejectedCount.toLocaleString(), tone: "red" },
+          {
+            label: "Unassigned",
+            value: unassignedCount.toLocaleString(),
+            tone: "red",
+            active: filters.department === "Unassigned",
+            onClick: () => setFilter("department", filters.department === "Unassigned" ? "" : "Unassigned"),
+          },
+          {
+            label: "Under review",
+            value: underReviewCount.toLocaleString(),
+            tone: "amber",
+            active: filters.status === "UnderReview",
+            onClick: () => setFilter("status", filters.status === "UnderReview" ? "" : "UnderReview"),
+          },
+          {
+            label: "New applications",
+            value: newCount.toLocaleString(),
+            tone: "amber",
+            active: filters.status === "Submitted",
+            onClick: () => setFilter("status", filters.status === "Submitted" ? "" : "Submitted"),
+          },
         ]}
-        summaryNote={`Counts reflect the ${applications.length.toLocaleString()} application${applications.length === 1 ? "" : "s"} matching the filters below, not the full archive.`}
+        summaryNote="Select a card to filter the list. Unassigned means no department has been set yet."
         columns={columns}
         rows={applications}
         getRowKey={(row) => row.applicationId}
@@ -274,7 +321,12 @@ export default function AdminApplicationsPage() {
             key: "category",
             label: "All types",
             value: filters.category,
-            onChange: (value) => setFilter("category", value),
+            // A status that belongs to the other type would match nothing, so reset it.
+            onChange: (value) =>
+              setFilters({
+                category: value,
+                ...(filters.status && !statusOptionsFor(value).some((o) => o.value === filters.status) ? { status: "" } : {}),
+              }),
             options: [
               { value: "Admission", label: "Admission" },
               { value: "Scholarship", label: "Scholarship" },
@@ -285,7 +337,7 @@ export default function AdminApplicationsPage() {
             label: "All statuses",
             value: filters.status,
             onChange: (value) => setFilter("status", value),
-            options: STATUS_OPTIONS,
+            options: statusOptionsFor(filters.category),
           },
           {
             key: "department",

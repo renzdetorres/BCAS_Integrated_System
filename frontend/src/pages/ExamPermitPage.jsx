@@ -2,28 +2,12 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getMyExamPermit, getMyRescheduleRequest, submitRescheduleRequest } from "../api/examPermitApi.js";
 import { ApiError } from "../api/apiClient.js";
+import ExamSlip from "../components/ExamSlip.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import "./ExamPermitPage.css";
-
-function formatDate(isoDate) {
-  return new Date(isoDate).toLocaleDateString(undefined, {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
-function formatTime(isoTime) {
-  const [hours, minutes] = isoTime.split(":").map(Number);
-  return new Date(2000, 0, 1, hours, minutes).toLocaleTimeString(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
 
 export default function ExamPermitPage() {
   const [permit, setPermit] = useState(null);
@@ -139,33 +123,12 @@ export default function ExamPermitPage() {
       )}
 
       {permit && (
-        <Card className="permit">
-          <p className="permit-eyebrow">BCAS Entrance Exam Permit</p>
-          <p className="permit-number">{permit.permitNumber}</p>
-
-          <dl className="permit-details">
-            <div>
-              <dt>Schedule</dt>
-              <dd>{permit.dayType}</dd>
-            </div>
-            <div>
-              <dt>Date</dt>
-              <dd>{formatDate(permit.examDate)}</dd>
-            </div>
-            <div>
-              <dt>Time</dt>
-              <dd>{formatTime(permit.examTime)}</dd>
-            </div>
-            <div>
-              <dt>Venue</dt>
-              <dd>{permit.venue}</dd>
-            </div>
-          </dl>
-
+        <div className="permit">
+          <ExamSlip permit={permit} />
           <button type="button" className="no-print" onClick={() => window.print()}>
             Print / Save as PDF
           </button>
-        </Card>
+        </div>
       )}
 
       <Card className="no-print reschedule-card">

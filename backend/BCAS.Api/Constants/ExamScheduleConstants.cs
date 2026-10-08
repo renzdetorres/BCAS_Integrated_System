@@ -7,4 +7,12 @@ public static class ExamScheduleConstants
         "Saturday",
         "Weekday",
     };
+
+    public static readonly IReadOnlySet<string> AllowedExamStatuses = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "Scheduled",
+        "ExamDone",
+        "Rescheduled",
+        "DidNotTakeExam",
+    };
 }

@@ -12,4 +12,11 @@ public class ExamScheduleSelection
     public DateTime SelectedAt { get; set; }
     public bool IsPermitReleased { get; set; }
     public DateTime? PermitReleasedAt { get; set; }
+    public string ApplicantName { get; set; } = string.Empty;
+    public string ExamType { get; set; } = "Entrance Exam";
+    public decimal? ExamFee { get; set; }
+    public string? InvoiceNumber { get; set; }
+    public string? SchoolLastAttended { get; set; }
+    public string? LevelApplying { get; set; }
+    public string? Program { get; set; }
 }

@@ -8,19 +8,21 @@ namespace BCAS.Api.Services;
 
 public class ApplicantDocumentService : IApplicantDocumentService
 {
-    private static readonly byte[] PdfSignature = { 0x25, 0x50, 0x44, 0x46, 0x2D }; // "%PDF-"
 
     private readonly IApplicantDocumentRepository _documentRepository;
     private readonly IAdmissionApplicationRepository _admissionApplicationRepository;
+    private readonly IScholarshipApplicationRepository _scholarshipApplicationRepository;
     private readonly ILogger<ApplicantDocumentService> _logger;
 
     public ApplicantDocumentService(
         IApplicantDocumentRepository documentRepository,
         IAdmissionApplicationRepository admissionApplicationRepository,
+        IScholarshipApplicationRepository scholarshipApplicationRepository,
         ILogger<ApplicantDocumentService> logger)
     {
         _documentRepository = documentRepository;
         _admissionApplicationRepository = admissionApplicationRepository;
+        _scholarshipApplicationRepository = scholarshipApplicationRepository;
         _logger = logger;
     }
 
@@ -40,6 +42,26 @@ public class ApplicantDocumentService : IApplicantDocumentService
         return new DocumentChecklistResponse { ApplicationType = applicationType, Requirements = requirements };
     }
 
+    public async Task<DocumentChecklistResponse> GetMyScholarshipChecklistAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var applications = await _scholarshipApplicationRepository.GetByUserIdAsync(userId, cancellationToken);
+        if (applications.Count == 0)
+        {
+            throw new NoScholarshipApplicationException();
+        }
+
+        var uploadedDocuments = await _documentRepository.GetByUserIdAsync(userId, cancellationToken);
+        var uploadedByType = uploadedDocuments.ToDictionary(d => d.DocumentType, StringComparer.Ordinal);
+
+        var requirements = DocumentConstants.RequiredDocumentsForScholarship
+            .Select(type => uploadedByType.TryGetValue(type, out var uploaded)
+                ? uploaded.ToResponse()
+                : new DocumentChecklistItemResponse { DocumentType = type })
+            .ToList();
+
+        return new DocumentChecklistResponse { ApplicationType = "Scholarship", Requirements = requirements };
+    }
+
     public async Task<DocumentChecklistItemResponse> UploadDocumentAsync(
         Guid userId,
         string documentType,
@@ -55,8 +77,12 @@ public class ApplicantDocumentService : IApplicantDocumentService
 
         // Existence check only here - the checklist is what tells the
         // applicant which types apply to them; upload itself just needs an
-        // application on file to attach documents to.
-        await GetLatestApplicationTypeAsync(userId, cancellationToken);
+        // application on file (admission or scholarship) to attach documents to.
+        if ((await _admissionApplicationRepository.GetByUserIdAsync(userId, cancellationToken)).Count == 0
+            && (await _scholarshipApplicationRepository.GetByUserIdAsync(userId, cancellationToken)).Count == 0)
+        {
+            throw new NoAdmissionApplicationException();
+        }
 
         if (fileBytes.Length == 0)
         {
@@ -68,9 +94,9 @@ public class ApplicantDocumentService : IApplicantDocumentService
             throw new InvalidDocumentFileException($"Files must be {DocumentConstants.MaxFileSizeBytes / (1024 * 1024)} MB or smaller.");
         }
 
-        if (!IsPdf(fileName, contentType, fileBytes))
+        if (!DocumentConstants.IsAcceptedFile(fileName, contentType, fileBytes))
         {
-            throw new InvalidDocumentFileException("Only PDF files are accepted.");
+            throw new InvalidDocumentFileException("Only PDF, JPG or PNG files are accepted.");
         }
 
         var document = await _documentRepository.UpsertAsync(userId, documentType, fileName, contentType, fileBytes, cancellationToken);
@@ -89,14 +115,5 @@ public class ApplicantDocumentService : IApplicantDocumentService
 
         // Already ordered most-recent-first by the repository.
         return applications.FirstOrDefault()?.ApplicationType ?? throw new NoAdmissionApplicationException();
-    }
-
-    private static bool IsPdf(string fileName, string contentType, byte[] fileBytes)
-    {
-        var hasPdfExtension = fileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
-        var hasPdfContentType = string.Equals(contentType, "application/pdf", StringComparison.OrdinalIgnoreCase);
-        var hasPdfSignature = fileBytes.Length >= PdfSignature.Length && fileBytes.AsSpan(0, PdfSignature.Length).SequenceEqual(PdfSignature);
-
-        return hasPdfExtension && hasPdfContentType && hasPdfSignature;
     }
 }

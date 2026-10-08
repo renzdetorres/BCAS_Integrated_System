@@ -20,6 +20,7 @@ export const AUDIT_ACTION_LABELS = {
   ExamScheduleCreated: "Created exam schedule",
   ExamScheduleOffered: "Marked exam schedule offered",
   ExamScheduleUnoffered: "Marked exam schedule not offered",
+  ExamScheduleStatusUpdated: "Updated an applicant's exam status",
 };
 
 export async function getAuditLogs({ email, limit = 50, offset = 0 } = {}) {
@@ -38,4 +39,32 @@ export async function getAuditLogs({ email, limit = 50, offset = 0 } = {}) {
   }
 
   return response.json();
+}
+
+// The area of the system an action belongs to, for the Module column and
+// filter. An action added on the backend later falls back to "Other".
+const MODULE_PREFIXES = [
+  ["Login", "Sign-in"],
+  ["Staff", "Accounts"],
+  ["User", "Accounts"],
+  ["Announcement", "Announcements"],
+  ["Scholarship", "Scholarships"],
+  ["ExamSchedule", "Exam schedules"],
+  ["Semester", "Semesters"],
+];
+
+export function auditModule(action) {
+  return MODULE_PREFIXES.find(([prefix]) => action?.startsWith(prefix))?.[1] ?? "Other";
+}
+
+/** Every entry, newest first, fetched page by page (the API caps a page at 200). */
+export async function getAllAuditLogs({ maxEntries = 5000 } = {}) {
+  const pageSize = 200;
+  const all = [];
+  while (all.length < maxEntries) {
+    const page = await getAuditLogs({ limit: pageSize, offset: all.length });
+    all.push(...page);
+    if (page.length < pageSize) break;
+  }
+  return all;
 }

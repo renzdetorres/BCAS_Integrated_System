@@ -30,12 +30,12 @@ export async function getMyExamScheduleSelection() {
   return response.json();
 }
 
-export async function selectExamSchedule(examScheduleId) {
+export async function selectExamSchedule(examScheduleId, examType) {
   const response = await fetch(`${API_BASE_URL}/api/exam-schedules/selection`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ examScheduleId }),
+    body: JSON.stringify({ examScheduleId, examType }),
   });
 
   const data = await response.json().catch(() => null);

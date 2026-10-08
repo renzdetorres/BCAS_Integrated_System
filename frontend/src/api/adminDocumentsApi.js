@@ -1,6 +1,6 @@
 import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
-export const DOCUMENT_TYPES = ["ReportCard", "IdPicture", "PSA", "TOR", "SF10"];
+export const DOCUMENT_TYPES = ["ReportCard", "IdPicture", "PSA", "TOR", "SF10", "ScholarshipForm"];
 
 export const DOCUMENT_STATUSES = ["Pending", "Verified", "Rejected", "Flagged"];
 

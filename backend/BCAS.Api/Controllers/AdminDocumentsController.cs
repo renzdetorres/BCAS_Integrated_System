@@ -1,3 +1,4 @@
+using BCAS.Api.Constants;
 using BCAS.Api.Data;
 using BCAS.Api.Models;
 using BCAS.Api.Services;
@@ -64,11 +65,11 @@ public class AdminDocumentsController : ControllerBase
             });
         }
 
-        var isPdf = string.Equals(file.ContentType, "application/pdf", StringComparison.OrdinalIgnoreCase);
-        var disposition = new ContentDispositionHeaderValue(isPdf ? "inline" : "attachment");
+        var inlineType = DocumentConstants.InlineContentType(file.ContentType);
+        var disposition = new ContentDispositionHeaderValue(inlineType is not null ? "inline" : "attachment");
         disposition.SetHttpFileName(file.FileName);
         Response.Headers[HeaderNames.ContentDisposition] = disposition.ToString();
         Response.Headers[HeaderNames.XContentTypeOptions] = "nosniff";
-        return File(file.FileData, isPdf ? "application/pdf" : "application/octet-stream");
+        return File(file.FileData, inlineType ?? "application/octet-stream");
     }
 }

@@ -18,5 +18,11 @@ public static class AdminExamPermitMappingExtensions
         DocumentsVerified = documentsVerified,
         IsReleased = candidate.IsPermitReleased,
         ReleasedAt = candidate.PermitReleasedAt,
+        ExamType = candidate.ExamType,
+        ExamFee = candidate.ExamFee,
+        InvoiceNumber = candidate.InvoiceNumber,
+        SchoolLastAttended = candidate.SchoolLastAttended,
+        LevelApplying = candidate.LevelApplying,
+        Program = candidate.Program,
     };
 }

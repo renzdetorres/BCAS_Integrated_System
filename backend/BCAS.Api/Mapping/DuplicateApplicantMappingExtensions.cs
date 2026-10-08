@@ -19,5 +19,12 @@ public static class DuplicateApplicantMappingExtensions
         ReviewedByName = flag.ReviewedByName,
         ReviewedAt = flag.ReviewedAt,
         ReviewNotes = flag.ReviewNotes,
+        MatchedApplicationId = flag.MatchedApplicationId,
+        MatchedApplicationStatus = flag.MatchedApplicationStatus,
+        MatchedCourseAppliedFor = flag.MatchedCourseAppliedFor,
+        MatchedDepartment = flag.MatchedDepartment,
+        MatchedSubmittedAt = flag.MatchedSubmittedAt,
+        MatchedDocumentsUploaded = flag.MatchedDocumentsUploaded,
+        MatchedDocumentsVerified = flag.MatchedDocumentsVerified,
     };
 }

@@ -8,4 +8,5 @@ public class ScholarshipApplicationResponse
     public decimal GradeAverage { get; set; }
     public string Status { get; set; } = string.Empty;
     public DateTime SubmittedAt { get; set; }
+    public string? LevelApplied { get; set; }
 }

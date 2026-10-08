@@ -15,6 +15,7 @@ public interface IScholarshipApplicationRepository
         Guid userId,
         int scholarshipId,
         decimal gradeAverage,
+        ScholarshipApplicationDetails details,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<ScholarshipApplication>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
