@@ -42,6 +42,7 @@ const PATHS = {
   clipboard: "M9 4h6v3H9ZM8 5H6v16h12V5h-2M9 12h6M9 16h4",
   alert: "M12 3 2 20h20L12 3Zm0 7v4m0 3v.01",
   help: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5v.2M12 17v.01",
+  trash: "M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v6m4-6v6",
   megaphone: "M3 10v4h3l7 4V6l-7 4H3Zm13-1a4 4 0 0 1 0 6",
 };
 

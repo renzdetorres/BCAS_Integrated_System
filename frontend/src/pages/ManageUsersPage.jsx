@@ -14,7 +14,8 @@ import { useSession } from "../context/SessionContext.jsx";
 import { useToast } from "../context/ToastContext.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import ConfirmDialog from "../components/ui/ConfirmDialog.jsx";
-import DataTable, { RowAction } from "../components/ui/DataTable.jsx";
+import DataTable from "../components/ui/DataTable.jsx";
+import Icon from "../components/ui/Icon.jsx";
 import Modal from "../components/ui/Modal.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./ManageUsersPage.css";
@@ -25,6 +26,10 @@ function roleLabel(role) {
 
 function fullName(user) {
   return `${user.firstName} ${user.lastName}`;
+}
+
+function initials(user) {
+  return `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase();
 }
 
 function EditAccountModal({ user, isSelf, callerIsSuperAdmin, onClose, onSaved }) {
@@ -195,8 +200,6 @@ export default function ManageUsersPage() {
   const [editing, setEditing] = useState(null);
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [nameFilter, setNameFilter] = useState("");
-  const [emailFilter, setEmailFilter] = useState("");
 
   const loadUsers = useCallback(async () => {
     setIsLoading(true);
@@ -256,20 +259,31 @@ export default function ManageUsersPage() {
     [users, roleFilter, statusFilter],
   );
 
+  const activeCount = users.filter((u) => u.isActive).length;
+  const deactivatedCount = users.length - activeCount;
+  const unassignedHeads = users.filter((u) => u.role === "AcademicHead" && !u.department).length;
+
   const columns = [
     {
       key: "name",
-      header: "Name",
-      accessor: (row) => fullName(row),
+      header: "Account",
+      accessor: (row) => `${fullName(row)} ${row.email}`,
       sortable: true,
       render: (row) => (
-        <span className="account-name">
-          {fullName(row)}
-          {row.userId === session.userId ? <span className="account-you">You</span> : null}
+        <span className="account-cell">
+          <span className={`account-avatar${row.isActive ? "" : " account-avatar-off"}`} aria-hidden="true">
+            {initials(row)}
+          </span>
+          <span className="account-cell-text">
+            <span className="account-name">
+              {fullName(row)}
+              {row.userId === session.userId ? <span className="account-you">You</span> : null}
+            </span>
+            <span className="account-email">{row.email}</span>
+          </span>
         </span>
       ),
     },
-    { key: "email", header: "Email", sortable: true },
     {
       key: "role",
       header: "Role",
@@ -277,7 +291,7 @@ export default function ManageUsersPage() {
       sortable: true,
       render: (row) => (
         <span className="account-role">
-          {roleLabel(row.role)}
+          <span className="account-role-chip">{roleLabel(row.role)}</span>
           {row.isSuperAdmin ? <span className="account-super-tag">Full controls</span> : null}
         </span>
       ),
@@ -305,31 +319,52 @@ export default function ManageUsersPage() {
     },
     {
       key: "action",
-      header: "Action",
+      header: "Actions",
       align: "right",
+      searchable: false,
       render: (row) => {
         const isSelf = row.userId === session.userId;
+        const isPending = pendingUserId === row.userId;
         return (
-          <span className="account-actions">
-            <RowAction label="Edit" icon="settings" onClick={() => setEditing(row)} ariaLabel={`Edit ${fullName(row)}`} />
-            <button
-              type="button"
-              className="account-status-button"
-              disabled={isSelf || pendingUserId === row.userId}
-              title={isSelf ? "You can't change your own account's status" : undefined}
-              onClick={() => (row.isActive ? setDeactivateTarget(row) : changeStatus(row, true))}
-            >
-              {pendingUserId === row.userId ? "Saving..." : row.isActive ? "Deactivate" : "Activate"}
+          <span className={`account-actions${callerIsSuperAdmin ? " account-actions-3" : ""}`}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setEditing(row)} aria-label={`Edit ${fullName(row)}`}>
+              <Icon name="settings" size={15} />
+              Edit
             </button>
+            {row.isActive ? (
+              <button
+                type="button"
+                className="btn btn-warning btn-sm"
+                disabled={isSelf || isPending}
+                title={isSelf ? "You can't change your own account's status" : undefined}
+                aria-label={`Deactivate ${fullName(row)}`}
+                onClick={() => setDeactivateTarget(row)}
+              >
+                <Icon name="lock" size={15} />
+                {isPending ? "Saving..." : "Deactivate"}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn btn-success btn-sm"
+                disabled={isPending}
+                aria-label={`Activate ${fullName(row)}`}
+                onClick={() => changeStatus(row, true)}
+              >
+                <Icon name="check" size={15} />
+                {isPending ? "Saving..." : "Activate"}
+              </button>
+            )}
             {callerIsSuperAdmin ? (
               <button
                 type="button"
-                className="account-status-button account-delete-button"
+                className="btn btn-danger btn-sm"
                 disabled={isSelf || isDeleting}
                 title={isSelf ? "You can't delete your own account" : undefined}
                 onClick={() => setDeleteTarget(row)}
                 aria-label={`Delete ${fullName(row)}`}
               >
+                <Icon name="trash" size={15} />
                 Delete
               </button>
             ) : null}
@@ -344,6 +379,12 @@ export default function ManageUsersPage() {
       <DataTable
         title="Account Management"
         subtitle="Every account in the system. Edit a name, email or role, or deactivate an account to block sign-in without deleting it or its records."
+        summary={[
+          { label: "Accounts", value: users.length.toLocaleString(), active: !roleFilter && !statusFilter, onClick: () => { setRoleFilter(""); setStatusFilter(""); } },
+          { label: "Active", value: activeCount.toLocaleString(), tone: "green", active: statusFilter === "active", onClick: () => setStatusFilter(statusFilter === "active" ? "" : "active") },
+          { label: "Deactivated", value: deactivatedCount.toLocaleString(), tone: "amber", active: statusFilter === "inactive", onClick: () => setStatusFilter(statusFilter === "inactive" ? "" : "inactive") },
+          ...(unassignedHeads > 0 ? [{ label: "Academic Heads without a department", value: unassignedHeads.toLocaleString(), tone: "red" }] : []),
+        ]}
         columns={columns}
         rows={rows}
         getRowKey={(row) => row.userId}
@@ -369,10 +410,7 @@ export default function ManageUsersPage() {
             ],
           },
         ]}
-        textFilters={[
-          { key: "name", label: "Filter by name", value: nameFilter, onChange: setNameFilter },
-          { key: "email", label: "Filter by email", value: emailFilter, onChange: setEmailFilter },
-        ]}
+        searchPlaceholder="Search by name or email"
       />
 
       {editing ? (

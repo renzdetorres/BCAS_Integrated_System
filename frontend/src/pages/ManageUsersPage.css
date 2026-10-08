@@ -31,34 +31,27 @@
   color: var(--color-primary);
 }
 
+/* Fixed-width columns, so Edit, Deactivate/Activate and Delete line up on every
+   row whichever of Deactivate or Activate it shows. */
 .account-actions {
-  display: inline-flex;
-  align-items: center;
+  --edit-w: 84px;
+  --status-w: 124px;
+  --delete-w: 96px;
+  display: grid;
+  grid-template-columns: var(--edit-w) var(--status-w);
   gap: 8px;
+  justify-content: end;
 }
 
-.account-status-button {
-  min-height: 32px;
-  padding: 5px 10px;
-  border: none;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--color-text-secondary);
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
+.account-actions-3 {
+  grid-template-columns: var(--edit-w) var(--status-w) var(--delete-w);
 }
 
-.account-status-button:hover:not(:disabled) {
-  background: var(--color-surface-subtle);
-  color: var(--color-text-primary);
+.account-actions .btn {
+  width: 100%;
+  padding-inline: 8px;
 }
 
-.account-status-button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
 
 .account-super-admin {
   display: flex;
@@ -98,11 +91,56 @@
   font-weight: 600;
 }
 
-.account-delete-button {
-  color: var(--color-status-red-text);
+
+
+.account-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
 }
 
-.account-delete-button:hover:not(:disabled) {
-  background: var(--color-status-red-bg);
-  color: var(--color-status-red-text);
+.account-avatar {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-primary-tint-strong);
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* A deactivated account reads as dimmed, not as an error. */
+.account-avatar-off {
+  background: var(--color-status-gray-bg);
+  color: var(--color-status-gray-text);
+}
+
+.account-cell-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.account-email {
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.account-role-chip {
+  padding: 2px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-subtle);
+  color: var(--color-text-primary);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
 }

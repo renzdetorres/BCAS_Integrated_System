@@ -25,9 +25,23 @@
   text-decoration: none;
 }
 
+.btn {
+  transition: background-color 160ms ease-out, border-color 160ms ease-out, transform 160ms ease-out;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
 .btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn:active:not(:disabled) {
+    transform: none;
+  }
 }
 
 /* Primary: the one main action per screen/section. A faint top highlight
@@ -69,6 +83,38 @@
 .btn-danger:hover:not(:disabled) {
   background: var(--color-status-red-bg);
   border-color: rgba(180, 40, 40, 0.45);
+}
+
+/* Warning-outline: a reversible but disruptive action (e.g. Deactivate an
+   account) - amber, the same tone the system uses for "needs care". */
+.btn-warning {
+  background: var(--color-surface);
+  color: var(--color-status-amber-text);
+  border-color: rgba(143, 90, 11, 0.3);
+  box-shadow: var(--shadow-xs);
+}
+
+.btn-warning:hover:not(:disabled) {
+  background: var(--color-status-amber-bg);
+  border-color: rgba(143, 90, 11, 0.5);
+}
+
+/* Success-outline: bringing something back (e.g. Activate an account). */
+.btn-success {
+  background: var(--color-surface);
+  color: var(--color-status-green-text);
+  border-color: rgba(27, 107, 58, 0.3);
+  box-shadow: var(--shadow-xs);
+}
+
+.btn-success:hover:not(:disabled) {
+  background: var(--color-status-green-bg);
+  border-color: rgba(27, 107, 58, 0.5);
+}
+
+.btn:focus-visible {
+  outline: 3px solid var(--color-primary-focus-ring);
+  outline-offset: 2px;
 }
 
 /* Danger-solid: reserved for the actual destructive commit step (inside a
