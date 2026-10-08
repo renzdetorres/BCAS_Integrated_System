@@ -1763,3 +1763,23 @@ IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_ExamSchedul
     ALTER TABLE dbo.ExamScheduleSelections ADD CONSTRAINT CK_ExamScheduleSelections_ExamStatus
         CHECK (ExamStatus IN (N'Scheduled', N'ExamDone', N'Rescheduled', N'DidNotTakeExam'));
 GO
+
+-- -----------------------------------------------------------------------------
+-- dbo.RoleBlockedFeatures
+-- Pages the Super Admin (the principal) has switched off for a whole role. A
+-- row means "blocked"; no row means available, so a page added later is open
+-- until someone turns it off. FeatureKey is the page's route (see
+-- FeatureCatalog in the API). The Super Admin is never affected.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.RoleBlockedFeatures', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.RoleBlockedFeatures
+    (
+        RoleName        NVARCHAR(30)     NOT NULL,
+        FeatureKey      NVARCHAR(100)    NOT NULL,
+        BlockedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_RoleBlockedFeatures_BlockedAt DEFAULT (SYSUTCDATETIME()),
+        BlockedByUserId UNIQUEIDENTIFIER NULL,
+        CONSTRAINT PK_RoleBlockedFeatures PRIMARY KEY (RoleName, FeatureKey)
+    );
+END
+GO

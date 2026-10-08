@@ -1,16 +1,20 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { getSession } from "../api/authApi.js";
+import { getMyBlockedFeatures } from "../api/roleAccessApi.js";
 
 const SessionContext = createContext(undefined);
 
 export function SessionProvider({ children }) {
   const [session, setSession] = useState(null);
+  const [blockedFeatures, setBlockedFeatures] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshSession = useCallback(async () => {
     setIsLoading(true);
     try {
       const user = await getSession();
+      // Fetched with the session so a blocked page is never rendered first.
+      setBlockedFeatures(user ? await getMyBlockedFeatures().catch(() => []) : []);
       setSession(user);
     } finally {
       setIsLoading(false);
@@ -24,7 +28,7 @@ export function SessionProvider({ children }) {
   }, [refreshSession]);
 
   return (
-    <SessionContext.Provider value={{ session, isLoading, setSession, refreshSession }}>
+    <SessionContext.Provider value={{ session, isLoading, setSession, refreshSession, blockedFeatures }}>
       {children}
     </SessionContext.Provider>
   );

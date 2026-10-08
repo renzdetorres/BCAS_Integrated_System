@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import Icon from "../ui/Icon.jsx";
 import BcasSeal from "../ui/BcasSeal.jsx";
+import { useSession } from "../../context/SessionContext.jsx";
 import { NAV_ITEMS_BY_ROLE, ROLE_LABELS } from "../../config/navigation.js";
 import "./Sidebar.css";
 
@@ -37,7 +38,17 @@ function isItemActive(item, allItems, location, searchParams) {
 }
 
 export default function Sidebar({ role, isOpen, onNavigate }) {
-  const groups = NAV_ITEMS_BY_ROLE[role] ?? [];
+  const { session, blockedFeatures } = useSession();
+  // Pages the principal switched off for this role disappear from the menu,
+  // and so does anything marked for Super Admins only.
+  const groups = (NAV_ITEMS_BY_ROLE[role] ?? [])
+    .map((group) => ({
+      ...group,
+      items: group.items.filter(
+        (item) => !blockedFeatures.includes(item.to) && (!item.superAdminOnly || session?.isSuperAdmin),
+      ),
+    }))
+    .filter((group) => group.items.length > 0);
   const subtitle = ROLE_LABELS[role] ?? "Portal";
   const navRef = useRef(null);
   const location = useLocation();

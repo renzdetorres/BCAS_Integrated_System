@@ -6,6 +6,7 @@ import RequireRole from "./components/RequireRole.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
+import AdminRoleAccessPage from "./pages/AdminRoleAccessPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 import PortalRouter from "./pages/PortalRouter.jsx";
 import ProvisionStaffPage from "./pages/ProvisionStaffPage.jsx";
@@ -85,6 +86,7 @@ export default function App() {
                 <Route path="/admin/scholarships" element={<AdminScholarshipsPage />} />
                 <Route path="/admin/reservations" element={<AdminReservationsPage />} />
                 <Route path="/admin/audit-logs" element={<AdminAuditLogsPage />} />
+                <Route path="/admin/access" element={<AdminRoleAccessPage />} />
               </Route>
               <Route element={<RequireRole allowedRoles={["Evaluator"]} />}>
                 <Route

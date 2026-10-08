@@ -25,6 +25,7 @@ public static class DatabaseStartupCheck
         ("columns ScholarshipApplications.LevelApplied/ConsentedAt", "SELECT CASE WHEN COL_LENGTH(N'dbo.ScholarshipApplications', N'LevelApplied') IS NOT NULL AND COL_LENGTH(N'dbo.ScholarshipApplications', N'ConsentedAt') IS NOT NULL THEN 1 END"),
         ("column ExamScheduleSelections.ExamStatus", "SELECT COL_LENGTH(N'dbo.ExamScheduleSelections', N'ExamStatus')"),
         ("table dbo.Semesters", "SELECT OBJECT_ID(N'dbo.Semesters', N'U')"),
+        ("table dbo.RoleBlockedFeatures", "SELECT OBJECT_ID(N'dbo.RoleBlockedFeatures', N'U')"),
         ("table dbo.SentReminders", "SELECT OBJECT_ID(N'dbo.SentReminders', N'U')"),
         ("view dbo.vw_ApplicantDepartments", "SELECT OBJECT_ID(N'dbo.vw_ApplicantDepartments', N'V')"),
     };

@@ -85,6 +85,9 @@ builder.Services.AddScoped<IAcademicHeadScopeService, AcademicHeadScopeService>(
 builder.Services.AddScoped<ISemesterRepository, SemesterRepository>();
 builder.Services.AddScoped<ISemesterService, SemesterService>();
 builder.Services.AddScoped<ISuperAdminGuard, SuperAdminGuard>();
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<IRoleAccessRepository, RoleAccessRepository>();
+builder.Services.AddScoped<IRoleAccessService, RoleAccessService>();
 builder.Services.AddScoped<IAcademicHeadSettingsService, AcademicHeadSettingsService>();
 builder.Services.AddScoped<ISupportStaffDashboardRepository, SupportStaffDashboardRepository>();
 builder.Services.AddScoped<ISupportStaffDashboardService, SupportStaffDashboardService>();
@@ -206,6 +209,9 @@ app.Use(async (context, next) =>
 });
 
 app.UseAuthentication();
+// After authentication (needs the caller's role), before authorization: a page
+// the Super Admin switched off for a role is refused here.
+app.UseMiddleware<RoleAccessMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 
