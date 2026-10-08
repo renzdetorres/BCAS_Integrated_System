@@ -5,7 +5,7 @@ using BCAS.Api.Extensions;
 namespace BCAS.Api.Services;
 
 /// <summary>
-/// Refuses an API call to a page the Super Admin has switched off for the
+/// Refuses an API call to a page an Admin has switched off for the
 /// caller's role. Runs after authentication so it can see the role, and only
 /// does any work for paths that belong to a restrictable feature.
 /// </summary>
@@ -33,7 +33,7 @@ public class RoleAccessMiddleware
                     await context.Response.WriteAsJsonAsync(new Microsoft.AspNetCore.Mvc.ProblemDetails
                     {
                         Title = "Access restricted",
-                        Detail = $"Your role no longer has access to {feature.Label}. Ask a Super Admin if you need it.",
+                        Detail = $"Your role no longer has access to {feature.Label}. Ask an Admin if you need it.",
                         Status = StatusCodes.Status403Forbidden,
                     });
                     return;

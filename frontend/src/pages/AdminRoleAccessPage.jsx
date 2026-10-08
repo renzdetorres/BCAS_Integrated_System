@@ -71,7 +71,7 @@ export default function AdminRoleAccessPage() {
       <Card>
         <p className="role-access-intro">
           Choose which pages each role can open. A page you switch off disappears from that role&apos;s menu and its
-          data is refused by the server. Dashboards and personal settings stay available, and Super Admins are never
+          data is refused by the server. Dashboards and personal settings stay available, and the Admin who manages access is never
           restricted.
         </p>
 
@@ -82,7 +82,7 @@ export default function AdminRoleAccessPage() {
         )}
 
         {overview && !canEdit && (
-          <p className="role-access-note">Only a Super Admin can change these. You can view them.</p>
+          <p className="role-access-note">Your Admin account can view these but not change them.</p>
         )}
 
         {!overview && !errorMessage && <p>Loading...</p>}
