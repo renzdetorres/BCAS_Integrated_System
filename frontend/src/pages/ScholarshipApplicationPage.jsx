@@ -67,23 +67,30 @@ export default function ScholarshipApplicationPage() {
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([getAvailableScholarships(), getMyScholarshipApplications()])
-      .then(([scholarshipData, applicationData]) => {
+    // Settled independently: a failure loading past applications must not
+    // hide the scholarship list (and with it the form).
+    Promise.allSettled([getAvailableScholarships(), getMyScholarshipApplications()]).then(
+      ([scholarshipResult, applicationResult]) => {
         if (cancelled) return;
-        setScholarships(scholarshipData);
-        setApplications(applicationData);
-        if (scholarshipData.length > 0) {
-          setForm((prev) => ({ ...prev, scholarshipId: String(scholarshipData[0].scholarshipId) }));
+
+        if (scholarshipResult.status === "fulfilled") {
+          const scholarshipData = scholarshipResult.value;
+          setScholarships(scholarshipData);
+          if (scholarshipData.length > 0) {
+            setForm((prev) => ({ ...prev, scholarshipId: String(scholarshipData[0].scholarshipId) }));
+          }
         }
-      })
-      .catch((error) => {
-        if (!cancelled) {
-          setErrorMessage(error instanceof ApiError ? error.message : "Failed to load scholarships.");
+        if (applicationResult.status === "fulfilled") {
+          setApplications(applicationResult.value);
         }
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
+
+        const failure = [scholarshipResult, applicationResult].find((result) => result.status === "rejected");
+        if (failure) {
+          setErrorMessage(failure.reason instanceof ApiError ? failure.reason.message : "Failed to load scholarships.");
+        }
+        setIsLoading(false);
+      },
+    );
 
     return () => {
       cancelled = true;
