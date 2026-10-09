@@ -104,7 +104,7 @@ function EditAccountModal({ user, isSelf, callerIsSuperAdmin, onClose, onSaved }
             <label className="ui-label" htmlFor="edit-first-name">
               First name
             </label>
-            <input
+            <input placeholder="e.g. Juan"
               id="edit-first-name"
               className="ui-input"
               data-autofocus
@@ -116,14 +116,14 @@ function EditAccountModal({ user, isSelf, callerIsSuperAdmin, onClose, onSaved }
             <label className="ui-label" htmlFor="edit-last-name">
               Last name
             </label>
-            <input id="edit-last-name" className="ui-input" value={form.lastName} onChange={(e) => setField("lastName", e.target.value)} />
+            <input placeholder="e.g. Dela Cruz" id="edit-last-name" className="ui-input" value={form.lastName} onChange={(e) => setField("lastName", e.target.value)} />
           </div>
         </div>
         <div className="ui-field">
           <label className="ui-label" htmlFor="edit-email">
             Email
           </label>
-          <input id="edit-email" type="email" className="ui-input" value={form.email} onChange={(e) => setField("email", e.target.value)} />
+          <input placeholder="e.g. juan.delacruz@email.com" id="edit-email" type="email" className="ui-input" value={form.email} onChange={(e) => setField("email", e.target.value)} />
         </div>
         <div className="ui-field-row">
           <div className="ui-field">

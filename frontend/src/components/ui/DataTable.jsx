@@ -7,6 +7,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import Icon from "./Icon.jsx";
+import SearchSuggest, { buildSuggestions } from "./SearchSuggest.jsx";
 import "./DataTable.css";
 
 const PAGE_SIZES = [10, 25, 50];
@@ -124,6 +125,19 @@ export default function DataTable({
     );
   }, [rows, textFilters, columns]);
 
+  // Every searchable cell's text, per column - the pool predictive search
+  // draws from. Pass a column key for that column alone, or null for all.
+  const suggestionPools = useMemo(() => {
+    const pools = { all: [] };
+    for (const column of columns) {
+      const values = rows.map((row) => textOf(column.accessor ? column.accessor(row) : row[column.key]));
+      pools[column.key] = values;
+      if (column.searchable !== false) pools.all.push(...values);
+    }
+    return pools;
+  }, [rows, columns]);
+  const suggestionPool = (key) => (key ? suggestionPools[key] ?? [] : suggestionPools.all);
+
   const table = useReactTable({
     data: filteredRows,
     columns: tableColumns,
@@ -229,38 +243,35 @@ export default function DataTable({
           {hasTextFilters ? (
             <div className="ui-datatable-text-filters" style={{ "--filter-count": textFilters.length }}>
               {textFilters.map((filter) => (
-                <label key={filter.key} className="ui-datatable-search">
-                  <Icon name="search" size={16} className="ui-datatable-search-icon" />
-                  <input
-                    type="search"
-                    className="ui-input"
-                    placeholder={filter.label}
-                    aria-label={filter.label}
-                    value={filter.value}
-                    onChange={(event) => {
-                      filter.onChange(event.target.value);
-                      table.setPageIndex(0);
-                    }}
-                  />
-                </label>
+                <SearchSuggest
+                  key={filter.key}
+                  className="ui-datatable-search"
+                  icon={<Icon name="search" size={16} className="ui-datatable-search-icon" />}
+                  placeholder={filter.label}
+                  aria-label={filter.label}
+                  value={filter.value}
+                  suggestions={buildSuggestions(suggestionPool(filter.key), filter.value)}
+                  onChange={(next) => {
+                    filter.onChange(next);
+                    table.setPageIndex(0);
+                  }}
+                />
               ))}
             </div>
           ) : null}
           {hasSearch ? (
-            <label className="ui-datatable-search">
-              <Icon name="search" size={16} className="ui-datatable-search-icon" />
-              <input
-                type="search"
-                className="ui-input"
-                placeholder={search?.placeholder ?? searchPlaceholder ?? "Search..."}
-                aria-label={search?.placeholder ?? searchPlaceholder ?? "Search"}
-                value={searchValue}
-                onChange={(event) => {
-                  onSearchChange(event.target.value);
-                  table.setPageIndex(0);
-                }}
-              />
-            </label>
+            <SearchSuggest
+              className="ui-datatable-search"
+              icon={<Icon name="search" size={16} className="ui-datatable-search-icon" />}
+              placeholder={search?.placeholder ?? searchPlaceholder ?? "Search..."}
+              aria-label={search?.placeholder ?? searchPlaceholder ?? "Search"}
+              value={searchValue}
+              suggestions={buildSuggestions(suggestionPool(null), searchValue)}
+              onChange={(next) => {
+                onSearchChange(next);
+                table.setPageIndex(0);
+              }}
+            />
           ) : null}
         </div>
       ) : null}

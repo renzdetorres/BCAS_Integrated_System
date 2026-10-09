@@ -58,7 +58,7 @@
   text-decoration: underline;
 }
 
-.scholarship-card button {
+.scholarship-card button:not(.btn) {
   padding: 12px 20px;
   background: var(--color-primary);
   color: var(--color-text-inverse);
@@ -69,7 +69,7 @@
   cursor: pointer;
 }
 
-.scholarship-card button:hover {
+.scholarship-card button:not(.btn):hover {
   background: var(--color-primary-dark);
 }
 

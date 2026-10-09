@@ -237,7 +237,7 @@ export default function ScholarshipApplicationPage() {
 
             <div className="form-row">
               <label htmlFor="applicantFullName">Full name (last name, first name, middle name) of scholarship applicant</label>
-              <input id="applicantFullName" name="applicantFullName" maxLength={200} required value={form.applicantFullName} onChange={handleChange} />
+              <input placeholder="e.g. Juan Dela Cruz" id="applicantFullName" name="applicantFullName" maxLength={200} required value={form.applicantFullName} onChange={handleChange} />
             </div>
 
             <div className="form-row">
@@ -255,7 +255,7 @@ export default function ScholarshipApplicationPage() {
 
             <div className="form-row">
               <label htmlFor="schoolLastAttended">School last attended</label>
-              <input id="schoolLastAttended" name="schoolLastAttended" maxLength={200} required value={form.schoolLastAttended} onChange={handleChange} />
+              <input placeholder="e.g. San Isidro Elementary School" id="schoolLastAttended" name="schoolLastAttended" maxLength={200} required value={form.schoolLastAttended} onChange={handleChange} />
             </div>
 
             <h3 className="form-section-title">Your parent / guardian</h3>
@@ -275,17 +275,17 @@ export default function ScholarshipApplicationPage() {
 
             <div className="form-row">
               <label htmlFor="guardianName">Full name of your parent/guardian (last name, first name, middle name)</label>
-              <input id="guardianName" name="guardianName" maxLength={200} required value={form.guardianName} onChange={handleChange} />
+              <input placeholder="e.g. Maria Dela Cruz" id="guardianName" name="guardianName" maxLength={200} required value={form.guardianName} onChange={handleChange} />
             </div>
 
             <div className="form-row">
               <label htmlFor="guardianContact">Contact number of your parent/guardian</label>
-              <input id="guardianContact" name="guardianContact" type="tel" maxLength={50} required value={form.guardianContact} onChange={handleChange} />
+              <input placeholder="e.g. 0917 123 4567" id="guardianContact" name="guardianContact" type="tel" maxLength={50} required value={form.guardianContact} onChange={handleChange} />
             </div>
 
             <div className="form-row">
               <label htmlFor="guardianEmail">Email address of your parent/guardian</label>
-              <input id="guardianEmail" name="guardianEmail" type="email" maxLength={256} required value={form.guardianEmail} onChange={handleChange} />
+              <input placeholder="e.g. maria.delacruz@email.com" id="guardianEmail" name="guardianEmail" type="email" maxLength={256} required value={form.guardianEmail} onChange={handleChange} />
             </div>
 
             <h3 className="form-section-title">Grade qualification</h3>

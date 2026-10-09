@@ -172,7 +172,7 @@ export default function AcademicHeadScholarshipsPage() {
                 <div className="form-row-group">
                   <div className="form-row">
                     <label htmlFor="name">Name</label>
-                    <input
+                    <input placeholder="e.g. Academic Excellence Scholarship"
                       id="name"
                       type="text"
                       required
@@ -182,7 +182,7 @@ export default function AcademicHeadScholarshipsPage() {
                   </div>
                   <div className="form-row">
                     <label htmlFor="scholarshipType">Type</label>
-                    <input
+                    <input placeholder="e.g. Academic"
                       id="scholarshipType"
                       type="text"
                       required

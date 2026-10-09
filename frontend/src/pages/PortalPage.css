@@ -42,7 +42,7 @@
   font-size: 0.9rem;
 }
 
-.portal-card button {
+.portal-card button:not(.btn) {
   width: 100%;
   padding: 12px;
   background: var(--color-primary);
@@ -54,6 +54,6 @@
   cursor: pointer;
 }
 
-.portal-card button:hover {
+.portal-card button:not(.btn):hover {
   background: var(--color-primary-dark);
 }

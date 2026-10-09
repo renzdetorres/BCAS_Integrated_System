@@ -7,6 +7,20 @@ import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import "./ApplicantProfilePage.css";
 
+const SETTINGS_TABS = [
+  {
+    section: "Account",
+    items: [
+      { key: "profile", label: "Profile Details" },
+      { key: "password", label: "Change Password" },
+    ],
+  },
+  {
+    section: "Preferences",
+    items: [{ key: "notifications", label: "Notification Preferences" }],
+  },
+];
+
 const initialPasswordForm = { currentPassword: "", newPassword: "", confirmNewPassword: "" };
 
 function emptyForm(session) {
@@ -39,6 +53,7 @@ function toForm(profile) {
 
 export default function ApplicantProfilePage() {
   const { session } = useSession();
+  const [activeTab, setActiveTab] = useState("profile");
   const [form, setForm] = useState(() => emptyForm(session));
   const [hasExistingProfile, setHasExistingProfile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -192,8 +207,30 @@ export default function ApplicantProfilePage() {
 
   return (
     <AppLayout title="Settings">
+      <div className="settings-layout">
+      <nav className="settings-nav" aria-label="Settings sections">
+        {SETTINGS_TABS.map((group) => (
+          <div key={group.section} className="settings-nav-group">
+            <div className="settings-nav-section">{group.section}</div>
+            {group.items.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                className={activeTab === item.key ? "settings-nav-item active" : "settings-nav-item"}
+                aria-current={activeTab === item.key ? "page" : undefined}
+                onClick={() => setActiveTab(item.key)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        ))}
+      </nav>
+
+      <div className="settings-content">
+      {activeTab === "profile" && (
       <Card className="profile-card">
-          <h2>Profile</h2>
+          <h2>Profile Details</h2>
           <p className="profile-subtitle">
             {hasExistingProfile
               ? "You can update your profile at any time."
@@ -215,11 +252,11 @@ export default function ApplicantProfilePage() {
             <div className="form-row-group">
               <div className="form-row">
                 <label htmlFor="firstName">First name</label>
-                <input id="firstName" name="firstName" type="text" required value={form.firstName} onChange={handleChange} />
+                <input placeholder="e.g. Juan" id="firstName" name="firstName" type="text" required value={form.firstName} onChange={handleChange} />
               </div>
               <div className="form-row">
                 <label htmlFor="lastName">Last name</label>
-                <input id="lastName" name="lastName" type="text" required value={form.lastName} onChange={handleChange} />
+                <input placeholder="e.g. Dela Cruz" id="lastName" name="lastName" type="text" required value={form.lastName} onChange={handleChange} />
               </div>
             </div>
 
@@ -237,7 +274,7 @@ export default function ApplicantProfilePage() {
 
             <div className="form-row">
               <label htmlFor="contactNumber">Contact number</label>
-              <input
+              <input placeholder="e.g. 0917 123 4567"
                 id="contactNumber"
                 name="contactNumber"
                 type="tel"
@@ -263,15 +300,15 @@ export default function ApplicantProfilePage() {
             <div className="form-row-group">
               <div className="form-row">
                 <label htmlFor="city">City</label>
-                <input id="city" name="city" type="text" required value={form.city} onChange={handleChange} />
+                <input placeholder="e.g. Quezon City" id="city" name="city" type="text" required value={form.city} onChange={handleChange} />
               </div>
               <div className="form-row">
                 <label htmlFor="province">Province</label>
-                <input id="province" name="province" type="text" required value={form.province} onChange={handleChange} />
+                <input placeholder="e.g. Metro Manila" id="province" name="province" type="text" required value={form.province} onChange={handleChange} />
               </div>
               <div className="form-row">
                 <label htmlFor="postalCode">Postal code</label>
-                <input
+                <input placeholder="e.g. 1100"
                   id="postalCode"
                   name="postalCode"
                   type="text"
@@ -295,7 +332,9 @@ export default function ApplicantProfilePage() {
             </button>
           </form>
       </Card>
+      )}
 
+      {activeTab === "password" && (
       <Card className="profile-card">
           <h2>Change Password</h2>
           <p className="profile-subtitle">Enter your current password and choose a new one.</p>
@@ -314,7 +353,7 @@ export default function ApplicantProfilePage() {
           <form onSubmit={handlePasswordSubmit} noValidate>
             <div className="form-row">
               <label htmlFor="currentPassword">Current password</label>
-              <input
+              <input placeholder="Enter your current password"
                 id="currentPassword"
                 name="currentPassword"
                 type="password"
@@ -327,7 +366,7 @@ export default function ApplicantProfilePage() {
 
             <div className="form-row">
               <label htmlFor="newPassword">New password</label>
-              <input
+              <input placeholder="At least 8 characters"
                 id="newPassword"
                 name="newPassword"
                 type="password"
@@ -341,7 +380,7 @@ export default function ApplicantProfilePage() {
 
             <div className="form-row">
               <label htmlFor="confirmNewPassword">Confirm new password</label>
-              <input
+              <input placeholder="Re-enter your new password"
                 id="confirmNewPassword"
                 name="confirmNewPassword"
                 type="password"
@@ -358,7 +397,9 @@ export default function ApplicantProfilePage() {
             </button>
           </form>
       </Card>
+      )}
 
+      {activeTab === "notifications" && (
       <Card className="profile-card">
           <h2>Notification Preferences</h2>
           <p className="profile-subtitle">
@@ -398,6 +439,9 @@ export default function ApplicantProfilePage() {
             </ul>
           )}
       </Card>
+      )}
+      </div>
+      </div>
     </AppLayout>
   );
 }

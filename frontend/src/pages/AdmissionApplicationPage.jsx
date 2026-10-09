@@ -291,12 +291,12 @@ export default function AdmissionApplicationPage() {
                 </div>
                 <div className="form-row">
                   <label htmlFor="placeOfBirth">Place of birth</label>
-                  <input id="placeOfBirth" name="placeOfBirth" type="text" maxLength={200} required value={values.placeOfBirth} onChange={handleChange} />
+                  <input placeholder="e.g. Quezon City" id="placeOfBirth" name="placeOfBirth" type="text" maxLength={200} required value={values.placeOfBirth} onChange={handleChange} />
                 </div>
               </div>
               <div className="form-row">
                 <label htmlFor="specialSkills">Special skills (optional)</label>
-                <input id="specialSkills" name="specialSkills" type="text" maxLength={300} value={values.specialSkills} onChange={handleChange} />
+                <input placeholder="e.g. Drawing, basketball, singing" id="specialSkills" name="specialSkills" type="text" maxLength={300} value={values.specialSkills} onChange={handleChange} />
               </div>
 
               <h3 className="form-section-title">Level applied for</h3>
@@ -357,92 +357,72 @@ export default function AdmissionApplicationPage() {
               <h3 className="form-section-title">School last attended</h3>
               <div className="form-row">
                 <label htmlFor="previousSchool">School name</label>
-                <input id="previousSchool" name="previousSchool" type="text" required value={values.previousSchool} onChange={handleChange} />
+                <input placeholder="e.g. San Isidro Elementary School" id="previousSchool" name="previousSchool" type="text" required value={values.previousSchool} onChange={handleChange} />
               </div>
               <div className="form-row">
                 <label htmlFor="previousSchoolAddress">School address</label>
-                <input id="previousSchoolAddress" name="previousSchoolAddress" type="text" maxLength={300} required value={values.previousSchoolAddress} onChange={handleChange} />
+                <input placeholder="e.g. 123 Rizal St., Brgy. San Isidro, Quezon City" id="previousSchoolAddress" name="previousSchoolAddress" type="text" maxLength={300} required value={values.previousSchoolAddress} onChange={handleChange} />
               </div>
 
               <h3 className="form-section-title">Parents and guardian</h3>
-              <div className="form-table-wrap">
-                <table className="family-table">
-                  <thead>
-                    <tr>
-                      <th scope="col"> </th>
-                      <th scope="col">Name</th>
-                      <th scope="col">Occupation</th>
-                      <th scope="col">Phone no.</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {FAMILY_ROWS.map(({ key, label }) => (
-                      <tr key={key}>
-                        <th scope="row">{label}</th>
-                        {["name", "occupation", "phone"].map((field) => (
-                          <td key={field}>
-                            <input
-                              type={field === "phone" ? "tel" : "text"}
-                              aria-label={`${label} ${field}`}
-                              maxLength={field === "name" ? 200 : field === "phone" ? 50 : 100}
-                              value={values[key][field]}
-                              onChange={(event) => handleMemberChange(key, field, event.target.value)}
-                            />
-                          </td>
-                        ))}
-                      </tr>
+              {FAMILY_ROWS.map(({ key, label }) => (
+                <fieldset key={key} className="family-group">
+                  <legend className="family-group-title">{label}</legend>
+                  <div className="family-fields">
+                    {[
+                      ["name", "Name", "text", 200, "e.g. Juan Dela Cruz"],
+                      ["occupation", "Occupation", "text", 100, "e.g. Teacher"],
+                      ["phone", "Phone no.", "tel", 50, "e.g. 0917 123 4567"],
+                    ].map(([field, fieldLabel, type, maxLength, example]) => (
+                      <div className="form-row" key={field}>
+                        <label htmlFor={`${key}-${field}`}>{fieldLabel}</label>
+                        <input
+                          id={`${key}-${field}`}
+                          type={type}
+                          placeholder={example}
+                          maxLength={maxLength}
+                          value={values[key][field]}
+                          onChange={(event) => handleMemberChange(key, field, event.target.value)}
+                        />
+                      </div>
                     ))}
-                  </tbody>
-                </table>
-              </div>
+                  </div>
+                </fieldset>
+              ))}
               {!readOnly && <p className="form-note">Give the name and phone number of at least one of them.</p>}
 
               <h3 className="form-section-title">Brothers and sisters</h3>
               {values.siblings.length === 0 && readOnly ? <p className="form-note">None listed.</p> : null}
-              {values.siblings.length > 0 && (
-                <div className="form-table-wrap">
-                  <table className="family-table">
-                    <thead>
-                      <tr>
-                        <th scope="col">Name</th>
-                        <th scope="col" className="family-age">
-                          Age
-                        </th>
-                        <th scope="col">Occupation</th>
-                        <th scope="col">School / place of work</th>
-                        {!readOnly && <th scope="col" aria-label="Remove" />}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {values.siblings.map((sibling, index) => (
-                        <tr key={index}>
-                          <td>
-                            <input type="text" aria-label={`Sibling ${index + 1} name`} maxLength={200} value={sibling.name} onChange={(e) => handleSiblingChange(index, "name", e.target.value)} />
-                          </td>
-                          <td className="family-age">
-                            <input type="number" min="0" max="120" aria-label={`Sibling ${index + 1} age`} value={sibling.age} onChange={(e) => handleSiblingChange(index, "age", e.target.value)} />
-                          </td>
-                          <td>
-                            <input type="text" aria-label={`Sibling ${index + 1} occupation`} maxLength={100} value={sibling.occupation} onChange={(e) => handleSiblingChange(index, "occupation", e.target.value)} />
-                          </td>
-                          <td>
-                            <input type="text" aria-label={`Sibling ${index + 1} school or place of work`} maxLength={200} value={sibling.schoolOrWork} onChange={(e) => handleSiblingChange(index, "schoolOrWork", e.target.value)} />
-                          </td>
-                          {!readOnly && (
-                            <td>
-                              <button type="button" className="btn btn-secondary btn-sm" onClick={() => removeSibling(index)} aria-label={`Remove sibling ${index + 1}`}>
-                                Remove
-                              </button>
-                            </td>
-                          )}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+              {values.siblings.map((sibling, index) => (
+                <fieldset key={index} className="family-group">
+                  <legend className="family-group-title">Brother or sister {index + 1}</legend>
+                  <div className="family-fields family-fields-sibling">
+                    <div className="form-row">
+                      <label htmlFor={`sibling-${index}-name`}>Name</label>
+                      <input id={`sibling-${index}-name`} type="text" placeholder="e.g. Pedro Dela Cruz" maxLength={200} value={sibling.name} onChange={(e) => handleSiblingChange(index, "name", e.target.value)} />
+                    </div>
+                    <div className="form-row">
+                      <label htmlFor={`sibling-${index}-age`}>Age</label>
+                      <input id={`sibling-${index}-age`} type="number" placeholder="e.g. 15" min="0" max="120" value={sibling.age} onChange={(e) => handleSiblingChange(index, "age", e.target.value)} />
+                    </div>
+                    <div className="form-row">
+                      <label htmlFor={`sibling-${index}-occupation`}>Occupation</label>
+                      <input id={`sibling-${index}-occupation`} type="text" placeholder="e.g. Student" maxLength={100} value={sibling.occupation} onChange={(e) => handleSiblingChange(index, "occupation", e.target.value)} />
+                    </div>
+                    <div className="form-row">
+                      <label htmlFor={`sibling-${index}-school`}>School / place of work</label>
+                      <input id={`sibling-${index}-school`} type="text" placeholder="e.g. San Isidro National High School" maxLength={200} value={sibling.schoolOrWork} onChange={(e) => handleSiblingChange(index, "schoolOrWork", e.target.value)} />
+                    </div>
+                  </div>
+                  {!readOnly && (
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => removeSibling(index)} aria-label={`Remove brother or sister ${index + 1}`}>
+                      Remove
+                    </button>
+                  )}
+                </fieldset>
+              ))}
               {!readOnly && (
-                <button type="button" className="btn btn-secondary btn-sm" onClick={addSibling} disabled={values.siblings.length >= MAX_SIBLINGS}>
+                <button type="button" onClick={addSibling} disabled={values.siblings.length >= MAX_SIBLINGS}>
                   Add a brother or sister
                 </button>
               )}
@@ -451,11 +431,11 @@ export default function AdmissionApplicationPage() {
               <div className="form-grid">
                 <div className="form-row">
                   <label htmlFor="studentSignature">Student's signature over printed name</label>
-                  <input id="studentSignature" name="studentSignature" type="text" maxLength={200} required className="signature-input" value={values.studentSignature} onChange={handleChange} />
+                  <input placeholder="e.g. Juan Dela Cruz" id="studentSignature" name="studentSignature" type="text" maxLength={200} required className="signature-input" value={values.studentSignature} onChange={handleChange} />
                 </div>
                 <div className="form-row">
                   <label htmlFor="guardianSignature">Parent's / guardian's signature over printed name</label>
-                  <input id="guardianSignature" name="guardianSignature" type="text" maxLength={200} required className="signature-input" value={values.guardianSignature} onChange={handleChange} />
+                  <input placeholder="e.g. Maria Dela Cruz" id="guardianSignature" name="guardianSignature" type="text" maxLength={200} required className="signature-input" value={values.guardianSignature} onChange={handleChange} />
                 </div>
               </div>
               {!readOnly && <p className="form-note">Type the full name of each person. Typing it counts as their signature.</p>}

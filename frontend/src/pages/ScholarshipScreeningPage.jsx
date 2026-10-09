@@ -344,7 +344,7 @@ export default function ScholarshipScreeningPage() {
 
                 <div className="form-row">
                   <label htmlFor="remarks">Remarks (optional)</label>
-                  <textarea
+                  <textarea placeholder="e.g. Add a short note for the applicant"
                     id="remarks"
                     value={remarks}
                     onChange={(event) => setRemarks(event.target.value)}

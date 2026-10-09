@@ -116,7 +116,7 @@ export default function InquiriesPage() {
         <form onSubmit={handleSubmit} noValidate>
           <div className="form-row">
             <label htmlFor="subject">Subject</label>
-            <input
+            <input placeholder="e.g. Question about my application requirements"
               id="subject"
               name="subject"
               type="text"
@@ -129,7 +129,7 @@ export default function InquiriesPage() {
 
           <div className="form-row">
             <label htmlFor="body">Message</label>
-            <textarea
+            <textarea placeholder="e.g. Hello, I would like to ask about..."
               id="body"
               name="body"
               rows={4}

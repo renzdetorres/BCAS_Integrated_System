@@ -79,7 +79,7 @@ export default function ProvisionStaffPage() {
         <form onSubmit={handleSubmit} noValidate className="provision-form">
           <div className="form-row">
             <label htmlFor="firstName">First name</label>
-            <input
+            <input placeholder="e.g. Juan"
               id="firstName"
               name="firstName"
               type="text"
@@ -91,7 +91,7 @@ export default function ProvisionStaffPage() {
 
           <div className="form-row">
             <label htmlFor="lastName">Last name</label>
-            <input
+            <input placeholder="e.g. Dela Cruz"
               id="lastName"
               name="lastName"
               type="text"
@@ -103,7 +103,7 @@ export default function ProvisionStaffPage() {
 
           <div className="form-row">
             <label htmlFor="email">Email</label>
-            <input
+            <input placeholder="e.g. juan.delacruz@email.com"
               id="email"
               name="email"
               type="email"
@@ -116,7 +116,7 @@ export default function ProvisionStaffPage() {
 
           <div className="form-row">
             <label htmlFor="password">Temporary password</label>
-            <input
+            <input placeholder="At least 8 characters"
               id="password"
               name="password"
               type="password"

@@ -149,7 +149,7 @@ export default function AcademicHeadSettingsPage() {
             <div className="form-row-group">
               <div className="form-row">
                 <label htmlFor="firstName">First name</label>
-                <input
+                <input placeholder="e.g. Juan"
                   id="firstName"
                   name="firstName"
                   type="text"
@@ -160,7 +160,7 @@ export default function AcademicHeadSettingsPage() {
               </div>
               <div className="form-row">
                 <label htmlFor="lastName">Last name</label>
-                <input
+                <input placeholder="e.g. Dela Cruz"
                   id="lastName"
                   name="lastName"
                   type="text"
@@ -173,7 +173,7 @@ export default function AcademicHeadSettingsPage() {
 
             <div className="form-row">
               <label htmlFor="email">Email</label>
-              <input id="email" name="email" type="email" required value={form.email} onChange={handleChange} />
+              <input placeholder="e.g. juan.delacruz@email.com" id="email" name="email" type="email" required value={form.email} onChange={handleChange} />
             </div>
 
             <button type="submit" disabled={isSubmitting}>
@@ -200,7 +200,7 @@ export default function AcademicHeadSettingsPage() {
           <form onSubmit={handlePasswordSubmit} noValidate>
             <div className="form-row">
               <label htmlFor="currentPassword">Current password</label>
-              <input
+              <input placeholder="Enter your current password"
                 id="currentPassword"
                 name="currentPassword"
                 type="password"
@@ -213,7 +213,7 @@ export default function AcademicHeadSettingsPage() {
 
             <div className="form-row">
               <label htmlFor="newPassword">New password</label>
-              <input
+              <input placeholder="At least 8 characters"
                 id="newPassword"
                 name="newPassword"
                 type="password"
@@ -227,7 +227,7 @@ export default function AcademicHeadSettingsPage() {
 
             <div className="form-row">
               <label htmlFor="confirmNewPassword">Confirm new password</label>
-              <input
+              <input placeholder="Re-enter your new password"
                 id="confirmNewPassword"
                 name="confirmNewPassword"
                 type="password"

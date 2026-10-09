@@ -65,7 +65,7 @@ export default function Sidebar({ role, isOpen, onNavigate }) {
     <aside className={`sidebar ${isOpen ? "sidebar-open" : ""}`}>
       <div className="sidebar-brand">
         <span className="sidebar-brand-seal">
-          <BcasSeal size={30} />
+          <BcasSeal size={44} />
         </span>
         <div className="sidebar-brand-text">
           <span className="sidebar-brand-mark">

@@ -7,7 +7,7 @@
 }
 
 .permit button,
-.reschedule-card button {
+.reschedule-card button:not(.btn) {
   padding: 12px 20px;
   background: var(--color-primary);
   color: var(--color-text-inverse);
@@ -19,7 +19,7 @@
 }
 
 .permit button:hover,
-.reschedule-card button:hover {
+.reschedule-card button:not(.btn):hover {
   background: var(--color-primary-dark);
 }
 

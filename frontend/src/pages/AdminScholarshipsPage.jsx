@@ -129,7 +129,7 @@ function ScholarshipFormModal({ mode, scholarship, lockedBy, onClose, onSaved })
           <label className="ui-label" htmlFor="scholarship-name">
             Name
           </label>
-          <input
+          <input placeholder="e.g. Academic Excellence Scholarship"
             id="scholarship-name"
             className="ui-input"
             required

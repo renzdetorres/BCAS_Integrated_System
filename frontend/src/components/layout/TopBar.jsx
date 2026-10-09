@@ -4,7 +4,9 @@ import { useSession } from "../../context/SessionContext.jsx";
 import { useLogout } from "../../hooks/useLogout.js";
 import { getActiveAnnouncements } from "../../api/announcementApi.js";
 import { PROFILE_MENU_BY_ROLE, ROLE_SHORT_LABELS } from "../../config/navigation.js";
+import { searchApplications } from "../../api/adminApplicationsApi.js";
 import Icon from "../ui/Icon.jsx";
+import SearchSuggest, { buildSuggestions } from "../ui/SearchSuggest.jsx";
 import "./TopBar.css";
 
 function initials(firstName, lastName) {
@@ -38,19 +40,54 @@ function ApplicationSearch() {
   const navigate = useNavigate();
   const [term, setTerm] = useState("");
 
+  const [suggestions, setSuggestions] = useState([]);
+
+  // Predictive: after a short pause in typing, ask the same endpoint the list
+  // page uses and offer the matching applicant names and emails.
+  useEffect(() => {
+    const query = term.trim();
+    if (query.length < 2) {
+      setSuggestions([]);
+      return undefined;
+    }
+    let cancelled = false;
+    const timeout = setTimeout(() => {
+      searchApplications({ search: query })
+        .then((applications) => {
+          if (cancelled) return;
+          const values = applications.flatMap((application) => [application.applicantName, application.applicantEmail]);
+          setSuggestions(buildSuggestions(values, query));
+        })
+        .catch(() => {
+          if (!cancelled) setSuggestions([]);
+        });
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
+  }, [term]);
+
+  function go(value) {
+    const query = value.trim();
+    navigate(query ? `/admin/applications?${new URLSearchParams({ search: query })}` : "/admin/applications");
+  }
+
   function handleSubmit(event) {
     event.preventDefault();
-    const query = term.trim();
-    navigate(query ? `/admin/applications?${new URLSearchParams({ search: query })}` : "/admin/applications");
+    go(term);
   }
 
   return (
     <form className="topbar-search" role="search" onSubmit={handleSubmit}>
-      <Icon name="search" size={16} className="topbar-search-icon" />
-      <input
-        type="search"
+      <SearchSuggest
+        className="topbar-search-field"
+        inputClassName=""
+        icon={<Icon name="search" size={16} className="topbar-search-icon" />}
         value={term}
-        onChange={(event) => setTerm(event.target.value)}
+        suggestions={suggestions}
+        onChange={setTerm}
+        onSelect={go}
         placeholder="Search applicants..."
         aria-label="Search applicants by name or email"
       />
@@ -145,6 +182,7 @@ export default function TopBar({ onMenuClick, leading }) {
           className="topbar-user-button"
           onClick={() => setMenuOpen((open) => !open)}
           aria-haspopup="menu"
+          aria-label={`${session.firstName} ${session.lastName} account menu`}
           aria-expanded={menuOpen}
         >
           <span className="topbar-avatar">{initials(session.firstName, session.lastName)}</span>
@@ -154,11 +192,17 @@ export default function TopBar({ onMenuClick, leading }) {
             </span>
             <span className="topbar-user-role">{ROLE_SHORT_LABELS[session.role] ?? session.role}</span>
           </span>
-          <Icon name="chevron" size={16} />
         </button>
 
         {menuOpen ? (
           <div className="topbar-panel topbar-menu">
+            <div className="topbar-user-text topbar-menu-identity">
+              <span className="topbar-user-name">
+                {session.firstName} {session.lastName}
+              </span>
+              <span className="topbar-user-role">{ROLE_SHORT_LABELS[session.role] ?? session.role}</span>
+            </div>
+            <div className="topbar-menu-divider" />
             {profileMenuItems.map((item) => (
               <Link key={item.to} to={item.to} className="topbar-menu-item" onClick={() => setMenuOpen(false)}>
                 <Icon name={item.icon} size={16} />

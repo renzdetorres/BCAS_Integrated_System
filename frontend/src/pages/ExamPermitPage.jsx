@@ -157,7 +157,7 @@ export default function ExamPermitPage() {
 
             <div className="form-row">
               <label htmlFor="reason">Reason</label>
-              <textarea
+              <textarea placeholder="e.g. I have a conflict with the scheduled exam because..."
                 id="reason"
                 name="reason"
                 rows={4}

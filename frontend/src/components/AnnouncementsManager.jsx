@@ -95,7 +95,7 @@ function CreateAnnouncementModal({ open, onClose, onCreated, createAnnouncement 
             <label className="ui-label" htmlFor="announcement-title">
               Title
             </label>
-            <input
+            <input placeholder="e.g. Entrance exam schedule released"
               id="announcement-title"
               className="ui-input"
               data-autofocus
@@ -109,7 +109,7 @@ function CreateAnnouncementModal({ open, onClose, onCreated, createAnnouncement 
           <label className="ui-label" htmlFor="announcement-body">
             Message
           </label>
-          <textarea
+          <textarea placeholder="e.g. Write the announcement details here..."
             id="announcement-body"
             className="ui-textarea"
             rows={7}

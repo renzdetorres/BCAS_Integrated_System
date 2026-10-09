@@ -110,6 +110,6 @@
   resize: vertical;
 }
 
-.inquiry-reply-form button {
+.inquiry-reply-form button:not(.btn) {
   align-self: flex-end;
 }

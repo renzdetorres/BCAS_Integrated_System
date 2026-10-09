@@ -97,3 +97,97 @@
     gap: 0;
   }
 }
+
+/* ------------------------------------------------------------------
+   Text field redesign - one look for every input, select and textarea,
+   whichever page's markup they live in.
+
+   A field reads as a shallow well cut into the panel: a faintly tinted
+   fill, a soft inset shadow and a visible-but-quiet border. On hover the
+   border firms up; on focus the well lifts to white with a green border
+   and ring. Layout (padding, height) sits behind :where() so a page's own
+   sizing - e.g. the search field's icon gutter - still wins; the surface
+   (border, fill, shadow, radius) is enforced so fields never drift apart.
+   ------------------------------------------------------------------ */
+
+:where(input, select, textarea) {
+  --field-bg: #fbfcfa;
+  --field-border: #c5ccc1;
+  --field-border-hover: #929d8f;
+  min-height: 42px;
+  padding-block: 9px;
+  padding-inline-end: 14px;
+  font-family: var(--font-sans);
+  accent-color: var(--color-primary);
+}
+
+:where(input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"], [type="button"], [type="submit"], [type="reset"], [type="hidden"], [type="image"]), select, textarea) {
+  padding-inline-start: 14px;
+}
+
+html :is(input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"], [type="button"], [type="submit"], [type="reset"], [type="hidden"], [type="image"]), select, textarea) {
+  border: 1px solid var(--field-border, #c5ccc1);
+  border-radius: 10px;
+  background-color: var(--field-bg, #fbfcfa);
+  color: var(--color-text-primary);
+  box-shadow: inset 0 1px 2px rgba(18, 48, 31, 0.06);
+  transition:
+    border-color var(--motion-fast),
+    background-color var(--motion-fast),
+    box-shadow var(--motion-fast);
+}
+
+html :is(input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"], [type="button"], [type="submit"], [type="reset"], [type="hidden"], [type="image"]), select, textarea):hover:not(:focus):not(:disabled):not([readonly]) {
+  border-color: var(--field-border-hover, #929d8f);
+  background-color: var(--color-white);
+}
+
+html :is(input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"], [type="button"], [type="submit"], [type="reset"], [type="hidden"], [type="image"]), select, textarea):focus {
+  outline: none;
+  border-color: var(--color-primary-light);
+  background-color: var(--color-white);
+  box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
+}
+
+html :is(input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"], [type="button"], [type="submit"], [type="reset"], [type="hidden"], [type="image"]), select, textarea)[aria-invalid="true"] {
+  border-color: var(--color-status-red-text);
+  box-shadow: 0 0 0 3px rgba(180, 40, 40, 0.12);
+}
+
+html :is(input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"], [type="button"], [type="submit"], [type="reset"], [type="hidden"], [type="image"]), select, textarea):disabled {
+  border-color: var(--color-border);
+  background-color: var(--color-status-gray-bg);
+  color: var(--color-text-secondary);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* Selects: our own chevron, so the control matches the text fields. */
+/* The :not() chain raises specificity so a page's `background:` shorthand
+   can't strip the chevron. */
+html select:not([multiple]):not([size]):not([data-native]) {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-inline-end: 38px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2356635b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  cursor: pointer;
+}
+
+html select:not([multiple]):not([size]):not([data-native]):disabled {
+  cursor: not-allowed;
+}
+
+html textarea {
+  min-height: 96px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html :is(input, select, textarea) {
+    transition: none;
+  }
+}

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { forgotPassword, ApiError } from "../api/authApi.js";
 import AuthShowcase from "../components/auth/AuthShowcase.jsx";
 import Icon from "../components/ui/Icon.jsx";
+import BcasSeal from "../components/ui/BcasSeal.jsx";
 import "../components/auth/AuthForm.css";
 
 export default function ForgotPasswordPage() {
@@ -33,7 +34,7 @@ export default function ForgotPasswordPage() {
           <section className="auth-form-side">
             <div className="auth-form-panel">
               <div className="auth-mobile-brand">
-                <Icon name="graduation-cap" size={22} />
+                <BcasSeal size={28} />
                 BCAS
               </div>
 
@@ -63,7 +64,7 @@ export default function ForgotPasswordPage() {
         <section className="auth-form-side">
           <div className="auth-form-panel">
             <div className="auth-mobile-brand">
-              <Icon name="graduation-cap" size={22} />
+              <BcasSeal size={28} />
               BCAS
             </div>
 
@@ -75,7 +76,7 @@ export default function ForgotPasswordPage() {
                 <label htmlFor="email">Email</label>
                 <div className="input-with-icon">
                   <Icon name="mail" size={18} className="input-icon" />
-                  <input
+                  <input placeholder="e.g. juan.delacruz@email.com"
                     id="email"
                     name="email"
                     type="email"

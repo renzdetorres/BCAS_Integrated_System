@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { resetPassword, ApiError } from "../api/authApi.js";
 import AuthShowcase from "../components/auth/AuthShowcase.jsx";
 import Icon from "../components/ui/Icon.jsx";
+import BcasSeal from "../components/ui/BcasSeal.jsx";
 import "../components/auth/AuthForm.css";
 
 export default function ResetPasswordPage() {
@@ -57,7 +58,7 @@ export default function ResetPasswordPage() {
           <section className="auth-form-side">
             <div className="auth-form-panel">
               <div className="auth-mobile-brand">
-                <Icon name="graduation-cap" size={22} />
+                <BcasSeal size={28} />
                 BCAS
               </div>
 
@@ -84,7 +85,7 @@ export default function ResetPasswordPage() {
           <section className="auth-form-side">
             <div className="auth-form-panel">
               <div className="auth-mobile-brand">
-                <Icon name="graduation-cap" size={22} />
+                <BcasSeal size={28} />
                 BCAS
               </div>
 
@@ -111,7 +112,7 @@ export default function ResetPasswordPage() {
         <section className="auth-form-side">
           <div className="auth-form-panel">
             <div className="auth-mobile-brand">
-              <Icon name="graduation-cap" size={22} />
+              <BcasSeal size={28} />
               BCAS
             </div>
 
@@ -123,7 +124,7 @@ export default function ResetPasswordPage() {
                 <label htmlFor="newPassword">New password</label>
                 <div className="input-with-icon has-toggle">
                   <Icon name="lock" size={18} className="input-icon" />
-                  <input
+                  <input placeholder="At least 8 characters"
                     id="newPassword"
                     name="newPassword"
                     type={showPassword ? "text" : "password"}
@@ -149,7 +150,7 @@ export default function ResetPasswordPage() {
                 <label htmlFor="confirmPassword">Confirm new password</label>
                 <div className="input-with-icon has-toggle">
                   <Icon name="lock" size={18} className="input-icon" />
-                  <input
+                  <input placeholder="Re-enter your password"
                     id="confirmPassword"
                     name="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}

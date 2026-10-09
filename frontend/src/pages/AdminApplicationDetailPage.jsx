@@ -562,7 +562,7 @@ export default function AdminApplicationDetailPage() {
 
                 <div className="form-row">
                   <label htmlFor="remarks">Remarks (optional)</label>
-                  <textarea
+                  <textarea placeholder="e.g. Add a short note for the applicant"
                     id="remarks"
                     name="remarks"
                     rows={3}
@@ -608,7 +608,7 @@ export default function AdminApplicationDetailPage() {
                   <form onSubmit={handleArchiveSubmit} noValidate>
                     <div className="form-row">
                       <label htmlFor="archiveReason">Reason (optional)</label>
-                      <textarea
+                      <textarea placeholder="e.g. Duplicate application, requested by the applicant"
                         id="archiveReason"
                         name="archiveReason"
                         rows={2}

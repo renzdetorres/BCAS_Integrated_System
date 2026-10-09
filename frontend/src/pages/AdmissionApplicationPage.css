@@ -49,7 +49,7 @@
   text-decoration: underline;
 }
 
-.admission-card button {
+.admission-card button:not(.btn) {
   padding: 12px 20px;
   background: var(--color-primary);
   color: var(--color-text-inverse);
@@ -60,7 +60,7 @@
   cursor: pointer;
 }
 
-.admission-card button:hover {
+.admission-card button:not(.btn):hover {
   background: var(--color-primary-dark);
 }
 
@@ -301,4 +301,45 @@
 
 .form-fieldset .form-note {
   margin-bottom: 16px;
+}
+
+/* Parents/guardian and siblings: one titled block per person, with the
+   labeled fields beneath the title. */
+.family-group {
+  margin: 0 0 16px;
+  padding: 0;
+  border: none;
+}
+
+.family-group-title {
+  padding: 0;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.family-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.family-fields-sibling {
+  grid-template-columns: 2fr 80px 2fr 2fr;
+}
+
+.family-fields .form-row {
+  margin-bottom: 0;
+}
+
+.family-group > button {
+  margin-top: 10px;
+}
+
+@media (max-width: 640px) {
+  .family-fields,
+  .family-fields-sibling {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

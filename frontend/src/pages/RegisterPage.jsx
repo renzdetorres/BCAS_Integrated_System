@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { registerApplicant, ApiError } from "../api/authApi.js";
 import AuthShowcase from "../components/auth/AuthShowcase.jsx";
 import Icon from "../components/ui/Icon.jsx";
+import BcasSeal from "../components/ui/BcasSeal.jsx";
 import "../components/auth/AuthForm.css";
 import "./RegisterPage.css";
 
@@ -69,7 +70,7 @@ export default function RegisterPage() {
           <section className="auth-form-side">
             <div className="auth-form-panel">
               <div className="auth-mobile-brand">
-                <Icon name="graduation-cap" size={22} />
+                <BcasSeal size={28} />
                 BCAS
               </div>
 
@@ -99,7 +100,7 @@ export default function RegisterPage() {
         <section className="auth-form-side">
           <div className="auth-form-panel">
             <div className="auth-mobile-brand">
-              <Icon name="graduation-cap" size={22} />
+              <BcasSeal size={28} />
               BCAS
             </div>
 
@@ -112,7 +113,7 @@ export default function RegisterPage() {
                   <label htmlFor="firstName">First name</label>
                   <div className="input-with-icon">
                     <Icon name="user" size={18} className="input-icon" />
-                    <input
+                    <input placeholder="e.g. Juan"
                       id="firstName"
                       name="firstName"
                       type="text"
@@ -127,7 +128,7 @@ export default function RegisterPage() {
                   <label htmlFor="lastName">Last name</label>
                   <div className="input-with-icon">
                     <Icon name="user" size={18} className="input-icon" />
-                    <input
+                    <input placeholder="e.g. Dela Cruz"
                       id="lastName"
                       name="lastName"
                       type="text"
@@ -144,7 +145,7 @@ export default function RegisterPage() {
                 <label htmlFor="email">Email</label>
                 <div className="input-with-icon">
                   <Icon name="mail" size={18} className="input-icon" />
-                  <input
+                  <input placeholder="e.g. juan.delacruz@email.com"
                     id="email"
                     name="email"
                     type="email"
@@ -160,7 +161,7 @@ export default function RegisterPage() {
                 <label htmlFor="password">Password</label>
                 <div className="input-with-icon has-toggle">
                   <Icon name="lock" size={18} className="input-icon" />
-                  <input
+                  <input placeholder="At least 8 characters"
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
@@ -186,7 +187,7 @@ export default function RegisterPage() {
                 <label htmlFor="confirmPassword">Confirm password</label>
                 <div className="input-with-icon has-toggle">
                   <Icon name="lock" size={18} className="input-icon" />
-                  <input
+                  <input placeholder="Re-enter your password"
                     id="confirmPassword"
                     name="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
