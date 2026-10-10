@@ -120,3 +120,104 @@
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
+
+/* Header quick actions: two compact "start a new application" tiles. The
+   admission tile is the green primary; scholarship carries the seal gold. */
+.history-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.history-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px 7px 8px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  text-decoration: none;
+  box-shadow: var(--shadow-xs);
+  transition: border-color 160ms ease-out, background-color 160ms ease-out, transform 160ms ease-out;
+}
+
+.history-action:hover {
+  border-color: var(--color-primary);
+  background: var(--color-surface-subtle);
+}
+
+.history-action:active {
+  transform: scale(0.98);
+}
+
+.history-action:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.history-action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.history-action-scholarship .history-action-icon {
+  background: rgba(217, 164, 65, 0.18);
+  color: #8a5f10;
+}
+
+.history-action-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.history-action-label {
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.005em;
+}
+
+.history-action-hint {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.history-action-arrow {
+  color: var(--color-text-tertiary);
+  transition: transform 160ms ease-out, color 160ms ease-out;
+}
+
+.history-action:hover .history-action-arrow {
+  color: var(--color-primary);
+  transform: translateX(2px);
+}
+
+@media (max-width: 640px) {
+  .history-actions {
+    width: 100%;
+  }
+  .history-action {
+    flex: 1 1 100%;
+  }
+  .history-action-arrow {
+    margin-left: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .history-action,
+  .history-action-arrow {
+    transition: none;
+  }
+}
