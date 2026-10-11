@@ -1,6 +1,23 @@
 // Minimal dependency-free icon set (stroke-based, inherits currentColor) used
 // by the sidebar/topbar. Kept intentionally small - one path set per name.
-const PATHS = {
+export const PATHS = {
+  pencil: "M4 20h4L19 9l-4-4L4 16v4ZM13.5 6.5l4 4",
+  send: "M21 3 10 14M21 3l-7 18-4-7-7-4 18-7Z",
+  save: "M5 3h11l3 3v15H5V3Zm3 0v5h7V3M8 21v-7h8v7",
+  printer: "M7 8V3h10v5M7 17H4v-7h16v7h-3M7 14h10v7H7v-7Z",
+  download: "M12 4v11m-5-4 5 5 5-5M5 20h14",
+  upload: "M12 16V5m-5 4 5-5 5 5M5 20h14",
+  "arrow-left": "M19 12H5m6-6-6 6 6 6",
+  "arrow-right": "M5 12h14m-6-6 6 6-6 6",
+  "x-circle": "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM9 9l6 6m0-6-6 6",
+  "shield-check": "M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6l-7-3Zm-3.5 9 2.5 2.5 4.5-5",
+  "log-in": "M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3",
+  refresh: "M20 11a8 8 0 0 0-14.5-4M4 4v4h4M4 13a8 8 0 0 0 14.5 4M20 20v-4h-4",
+  "rotate-ccw": "M3 12a9 9 0 1 0 3-6.7M3 4v5h5",
+  "calendar-check": "M4 5h16v16H4Zm0 5h16M8 3v4M16 3v4m-8 9 2.5 2.5L15 14",
+  key: "M14 10a4 4 0 1 0-3.9 4L11 15h2v2h2v2h3v-3l-5.1-5.1A4 4 0 0 0 14 10Zm-5-1h.01",
+  "file-plus": "M7 3h7l5 5v13H7V3Zm7 0v5h5M13 12v6m-3-3h6",
+  loader: "M12 3v4m0 10v4M5.6 5.6l2.8 2.8m7.2 7.2 2.8 2.8M3 12h4m10 0h4M5.6 18.4l2.8-2.8m7.2-7.2 2.8-2.8",
   home: "M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5",
   doc: "M7 3h7l5 5v13H7V3Zm7 0v5h5",
   history: "M3 12a9 9 0 1 0 3-6.7M3 4v5h5M12 8v4l3 2",

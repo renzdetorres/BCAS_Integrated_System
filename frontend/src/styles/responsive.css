@@ -1,0 +1,165 @@
+/* Global responsive layer - phones, tablets, laptops, large desktops.
+   Page-level CSS keeps its own layout; this file sets the rules every
+   screen shares: fluid media, safe areas, touch comfort, overflow guards and
+   mobile-friendly overlays. Breakpoints match the existing ones
+   (960 sidebar drawer, 640 phone). */
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+/* Long words/emails/IDs must wrap instead of widening the page. */
+.app-layout-content,
+.ui-card,
+.ui-modal {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+/* Flex/grid children may shrink below their content width. */
+.app-layout-content > *,
+.ui-card > * {
+  min-width: 0;
+}
+
+/* Tables scroll inside their container, never the page. */
+table {
+  max-width: 100%;
+}
+
+.ui-datatable-wrap,
+.ui-datatable-scroll,
+[class*="table-wrap"],
+[class*="table-scroll"] {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Notches and home indicators: keep content and the bottom edge clear. */
+.app-layout-content {
+  padding-left: max(var(--content-pad-x, 16px), env(safe-area-inset-left));
+  padding-right: max(var(--content-pad-x, 16px), env(safe-area-inset-right));
+  padding-bottom: max(40px, calc(env(safe-area-inset-bottom) + 24px));
+}
+
+@media (min-width: 641px) {
+  .app-layout-content {
+    --content-pad-x: 28px;
+  }
+}
+
+@media (min-width: 1201px) {
+  .app-layout-content {
+    --content-pad-x: 40px;
+  }
+}
+
+/* Very large screens: let content breathe but keep line lengths sane. */
+@media (min-width: 1800px) {
+  :root {
+    --content-max-width: 1600px;
+  }
+}
+
+/* Phones. iOS zooms the page when a focused field is under 16px. */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* Page header: title first, actions beneath, never side-by-side squeeze. */
+  .app-layout-header {
+    align-items: flex-start;
+  }
+
+  .app-layout-actions {
+    width: 100%;
+  }
+
+  /* Dialogs become bottom sheets: reachable by thumb, full width. */
+  .ui-modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .ui-modal {
+    max-width: none;
+    max-height: 92dvh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
+    animation: ui-sheet-in 240ms var(--ease-out);
+  }
+
+  .ui-modal-sm,
+  .ui-modal-md,
+  .ui-modal-lg {
+    max-width: none;
+  }
+
+  /* Multi-column form rows stack. */
+  .form-row,
+  .form-grid,
+  [class*="-form-grid"],
+  [class*="-fields-grid"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@keyframes ui-sheet-in {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Tablets in portrait: two-up grids that were fixed to 3+ columns relax. */
+@media (min-width: 641px) and (max-width: 960px) {
+  .app-layout-content {
+    gap: 20px;
+  }
+}
+
+/* Fixed-width helpers collapse on narrow screens. */
+@media (max-width: 520px) {
+  .ui-card {
+    border-radius: var(--radius-md);
+  }
+}
+
+/* Touch devices: comfortable targets and no sticky hover. */
+@media (pointer: coarse) {
+  .btn,
+  .ui-button,
+  input[type="checkbox"],
+  input[type="radio"],
+  select,
+  input:not([type="checkbox"]):not([type="radio"]) {
+    min-height: 44px;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-width: 22px;
+    min-height: 22px;
+  }
+}
+
+/* Short landscape phones: the modal must not overflow the viewport. */
+@media (max-height: 480px) {
+  .ui-modal-backdrop {
+    padding-top: 12px;
+  }
+  .ui-modal {
+    max-height: calc(100dvh - 24px);
+  }
+}
