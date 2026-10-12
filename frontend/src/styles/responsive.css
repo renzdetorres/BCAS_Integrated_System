@@ -163,3 +163,30 @@ table {
     max-height: calc(100dvh - 24px);
   }
 }
+
+/* Small controls get a bigger tap area without changing how they look. */
+.ui-datatable-sort,
+.ui-switch,
+[role="switch"],
+.ui-help-button {
+  position: relative;
+}
+
+@media (pointer: coarse), (max-width: 640px) {
+  .ui-datatable-sort {
+    min-height: 40px;
+  }
+
+  .ui-datatable-sort::after,
+  [role="switch"]::after,
+  .ui-help-button::after,
+  button[aria-label*="statuses" i]::after {
+    content: "";
+    position: absolute;
+    inset: -10px -6px;
+  }
+
+  button[aria-label*="statuses" i] {
+    position: relative;
+  }
+}

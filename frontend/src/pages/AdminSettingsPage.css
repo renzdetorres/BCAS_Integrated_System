@@ -73,3 +73,23 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Phones: the switch drops below the text so the description gets the full
+   card width instead of a narrow column beside it. */
+.admin-settings-info {
+  min-width: 0;
+}
+
+@media (max-width: 560px) {
+  .admin-settings-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .setting-toggle-on,
+  .setting-toggle-off {
+    align-self: flex-start;
+    min-height: 40px;
+  }
+}

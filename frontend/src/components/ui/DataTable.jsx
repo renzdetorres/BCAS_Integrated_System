@@ -95,6 +95,7 @@ export default function DataTable({
         sortUndefined: "last",
         meta: {
           align: column.align,
+          label: typeof column.header === "string" ? column.header : column.label ?? column.key.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase()),
           width: column.width,
           // Dates, statuses and actions read as one unit - never split them.
           className: [
@@ -276,6 +277,32 @@ export default function DataTable({
         </div>
       ) : null}
 
+      {table.getAllLeafColumns().some((c) => c.getCanSort()) ? (
+        <label className="ui-datatable-mobile-sort">
+          <span>Sort by</span>
+          <select
+            className="ui-select"
+            value={sorting[0] ? `${sorting[0].id}:${sorting[0].desc ? "desc" : "asc"}` : ""}
+            onChange={(event) => {
+              const [id, dir] = event.target.value.split(":");
+              setSorting(id ? [{ id, desc: dir === "desc" }] : []);
+            }}
+          >
+            <option value="">Default order</option>
+            {table
+              .getAllLeafColumns()
+              .filter((c) => c.getCanSort())
+              .flatMap((c) => {
+                const label = c.columnDef.meta?.label || c.id;
+                return [
+                  <option key={c.id + "asc"} value={`${c.id}:asc`}>{label} (A to Z)</option>,
+                  <option key={c.id + "desc"} value={`${c.id}:desc`}>{label} (Z to A)</option>,
+                ];
+              })}
+          </select>
+        </label>
+      ) : null}
+
       <div className="ui-datatable-scroll">
         <table className="ui-datatable-table">
           <thead>
@@ -347,6 +374,7 @@ export default function DataTable({
                     return (
                       <td
                         key={cell.id}
+                        data-label={cell.column.columnDef.meta?.label || undefined}
                         className={[align ? `ui-datatable-align-${align}` : "", className ?? ""].join(" ").trim() || undefined}
                       >
                         {renderDef(cell.column.columnDef.cell, cell.getContext())}

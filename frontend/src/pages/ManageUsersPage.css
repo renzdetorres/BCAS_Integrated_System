@@ -144,3 +144,15 @@
   font-weight: 600;
   white-space: nowrap;
 }
+
+/* Phones: the three buttons share the card's width equally instead of using
+   fixed widths that overflow it. */
+@media (max-width: 900px) {
+  .account-actions,
+  .account-actions-3 {
+    width: 100%;
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    grid-auto-flow: column;
+    justify-content: stretch;
+  }
+}

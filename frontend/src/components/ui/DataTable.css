@@ -626,3 +626,159 @@ h2.ui-datatable-title {
 .ui-card--data .ui-datatable-footer {
   margin: 0 -20px -18px;
 }
+
+/* ---- Phones: rows become cards -------------------------------------------
+   A wide table can't fit a 360px screen without squeezing words apart, so
+   below 900px each row is its own card: the first cell is the title, the
+   rest are label/value pairs, and the action sits at the bottom. The sort
+   headers go away, replaced by one "Sort by" menu. */
+.ui-datatable-mobile-sort {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .ui-datatable-mobile-sort {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0 24px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+  }
+
+  .ui-datatable-scroll {
+    overflow: visible;
+  }
+
+  .ui-datatable-table,
+  .ui-datatable-table tbody,
+  .ui-datatable-table tr,
+  .ui-datatable-table td {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .ui-datatable-table thead {
+    display: none;
+  }
+
+  .ui-datatable-table tbody {
+    padding: 0 24px 8px;
+  }
+
+  .ui-datatable-table tr {
+    margin-bottom: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .ui-datatable-table td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 6px 0;
+    border: none;
+    text-align: right;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .ui-datatable-table td::before {
+    content: attr(data-label);
+    flex: 0 0 34%;
+    max-width: 34%;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+  }
+
+  .ui-datatable-table td:not([data-label])::before,
+  .ui-datatable-table td[data-label=""]::before {
+    display: none;
+  }
+
+  /* First cell is the card title. */
+  .ui-datatable-table td:first-child {
+    justify-content: flex-start;
+    text-align: left;
+    padding-top: 0;
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .ui-datatable-table td:first-child::before {
+    display: none;
+  }
+
+  /* Wrapping is fine in a card - undo the nowrap used for scrolling tables. */
+  .ui-datatable-table td.ui-datatable-nowrap,
+  .ui-cell-person-name {
+    white-space: normal;
+  }
+
+  .ui-datatable-table td.ui-datatable-action {
+    position: static;
+    box-shadow: none;
+    background: transparent;
+    justify-content: flex-end;
+    padding-top: 10px;
+    margin-top: 4px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .ui-datatable-table td.ui-datatable-action::before {
+    display: none;
+  }
+
+  .ui-datatable-table td:empty {
+    display: none;
+  }
+
+  .ui-datatable-table td.ui-datatable-empty,
+  .ui-datatable-table td.ui-datatable-error {
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+/* Pager: one tidy row on a phone - the "Rows" label stays on one line and
+   the page buttons get a full-size tap target. */
+.ui-datatable-page-size {
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .ui-datatable-footer {
+    padding: 12px 16px;
+  }
+
+  .ui-datatable-pager {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  .ui-datatable-page-button {
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 520px) {
+  .ui-datatable-mobile-sort {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .ui-datatable-table tbody {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}

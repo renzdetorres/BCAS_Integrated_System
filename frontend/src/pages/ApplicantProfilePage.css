@@ -199,3 +199,23 @@
   background: var(--color-status-gray-bg);
   color: var(--color-status-gray-text);
 }
+
+/* Phones: the settings menu stacks above the form, and the form must be
+   exactly as wide as the screen - without stretch it sized itself to its
+   widest row and pushed the page sideways. */
+@media (max-width: 720px) {
+  .settings-layout {
+    align-items: stretch;
+  }
+
+  .settings-content {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .form-row-group {
+    flex-direction: column;
+    gap: 0;
+  }
+}
