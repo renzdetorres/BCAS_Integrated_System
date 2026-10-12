@@ -201,7 +201,7 @@ app.Use(async (context, next) =>
             Status = StatusCodes.Status500InternalServerError,
             Detail = app.Environment.IsDevelopment()
                 ? ex.Message
-                : "Something went wrong on the server. Please try again.",
+                : "Something went wrong on the server. Please try again." + DescribeFailure(ex),
         });
     }
 });
@@ -228,3 +228,16 @@ app.MapFallbackToFile("index.html");
 await DatabaseStartupCheck.RunAsync(app.Configuration, app.Environment, app.Logger);
 
 app.Run();
+
+// Non-sensitive cause for production 500s: the exception type (and the SQL
+// Server error number, e.g. 4060 = cannot open database, 18456 = login
+// failed, 208 = missing table, 207 = missing column) - never the message,
+// which can carry names and values. Lets a failed deploy be diagnosed from
+// the browser instead of needing access to the host's logs.
+static string DescribeFailure(Exception ex)
+{
+    var root = ex;
+    while (root.InnerException is not null) root = root.InnerException;
+    var number = root is Microsoft.Data.SqlClient.SqlException sql ? $" SQL {sql.Number}" : "";
+    return $" [{root.GetType().Name}{number}]";
+}
