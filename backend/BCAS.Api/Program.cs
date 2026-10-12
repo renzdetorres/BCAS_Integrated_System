@@ -201,7 +201,7 @@ app.Use(async (context, next) =>
             Status = StatusCodes.Status500InternalServerError,
             Detail = app.Environment.IsDevelopment()
                 ? ex.Message
-                : "Something went wrong on the server. Please try again." + DescribeFailure(ex, app.Configuration, app.Environment),
+                : "Something went wrong on the server. Please try again.",
         });
     }
 });
@@ -228,27 +228,3 @@ app.MapFallbackToFile("index.html");
 await DatabaseStartupCheck.RunAsync(app.Configuration, app.Environment, app.Logger);
 
 app.Run();
-
-// Non-sensitive cause for production 500s: the exception type (and the SQL
-// Server error number, e.g. 4060 = cannot open database, 18456 = login
-// failed, 208 = missing table, 207 = missing column) - never the message,
-// which can carry names and values. Lets a failed deploy be diagnosed from
-// the browser instead of needing access to the host's logs.
-// TEMPORARY diagnostic - remove once the live login works.
-static string DescribeFailure(Exception ex, IConfiguration configuration, IHostEnvironment environment)
-{
-    var root = ex;
-    while (root.InnerException is not null) root = root.InnerException;
-    var text = $" [{root.GetType().Name}";
-    if (root is Microsoft.Data.SqlClient.SqlException sql)
-    {
-        text += $" SQL {sql.Number}; env={environment.EnvironmentName}";
-        try
-        {
-            var b = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(configuration.GetConnectionString("BcasDb"));
-            text += $"; server={b.DataSource}; db={b.InitialCatalog}; user={(b.IntegratedSecurity ? "(windows auth)" : b.UserID)}; pwdLength={b.Password.Length}";
-        }
-        catch { }
-    }
-    return text + "]";
-}
