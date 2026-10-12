@@ -5,6 +5,7 @@ import { APPLICATION_TYPES } from "../api/admissionApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
+import Icon from "../components/ui/Icon.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./MyApplicationHistoryPage.css";
 
@@ -60,11 +61,25 @@ export default function MyApplicationHistoryPage() {
       title="Application History"
       actions={
         <div className="history-actions">
-          <Link className="history-action history-action-admission" data-icon="file-plus" to="/applications">
-            Submit Admission Application
+          <Link className="history-action history-action-admission" to="/applications">
+            <span className="history-action-icon" aria-hidden="true">
+              <Icon name="doc" size={16} />
+            </span>
+            <span className="history-action-text">
+              <span className="history-action-label">Admission</span>
+              <span className="history-action-hint">Start an application</span>
+            </span>
+            <Icon name="chevron-right" size={16} className="history-action-arrow" />
           </Link>
-          <Link className="history-action history-action-scholarship" data-icon="award" to="/scholarships">
-            Submit Scholarship Application
+          <Link className="history-action history-action-scholarship" to="/scholarships">
+            <span className="history-action-icon" aria-hidden="true">
+              <Icon name="award" size={16} />
+            </span>
+            <span className="history-action-text">
+              <span className="history-action-label">Scholarship</span>
+              <span className="history-action-hint">Apply for aid</span>
+            </span>
+            <Icon name="chevron-right" size={16} className="history-action-arrow" />
           </Link>
         </div>
       }
