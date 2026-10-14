@@ -98,22 +98,29 @@
 }
 
 /* ---- Numbered circular tracker (admission) ------------------------------
-   Seven circles on one rule. Done = solid green with a check, current =
-   brand-gold ring that carries the one pulse, pending = outlined, locked =
-   faded. Below 720px the row becomes a vertical list so seven long labels
-   never truncate. */
+   Drawn exactly like the stepper at the top of the admission application, so
+   the two read as one system: a numbered circle per stage on one rule, the
+   label beneath. Done = solid green with a check, current = brand-green circle
+   with the gold ring, anything ahead = outlined and quiet. The rule is green up
+   to and including the current stage. The caption (Completed / Current /
+   Pending / Locked) stays under each label. Below 720px the row becomes a
+   vertical list so seven long labels never truncate. */
 .tracking-stepper-numbered {
   padding-top: 0;
 }
 
 .tracking-stepper-numbered .tracking-step {
-  gap: 10px;
+  gap: 8px;
 }
 
 .tracking-stepper-numbered .tracking-step:not(:first-child)::before {
-  top: 17px;
+  top: 15px;
   height: 2px;
-  border-radius: 1px;
+}
+
+.tracking-stepper-numbered .tracking-step-complete:not(:first-child)::before,
+.tracking-stepper-numbered .tracking-step-current:not(:first-child)::before {
+  background: var(--color-status-green-text);
 }
 
 .tracking-step-circle {
@@ -121,14 +128,14 @@
   z-index: 1;
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   flex-shrink: 0;
   border-radius: var(--radius-full);
   background: var(--color-surface);
   border: 2px solid var(--color-border-strong);
   color: var(--color-text-tertiary);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   transition: background var(--motion-standard), border-color var(--motion-standard), color var(--motion-standard);
@@ -145,18 +152,12 @@
   border-color: var(--color-accent);
   color: var(--color-white);
   box-shadow: 0 0 0 4px rgba(217, 164, 65, 0.22);
-  animation: tracking-circle-pulse 2.4s ease-in-out infinite;
-}
-
-.tracking-stepper-numbered .tracking-step-locked .tracking-step-circle {
-  border-color: var(--color-border);
-  color: var(--color-text-tertiary);
-  background: var(--color-surface-subtle);
 }
 
 .tracking-stepper-numbered .tracking-step-label {
   font-size: 12.5px;
-  color: var(--color-text-primary);
+  font-weight: 500;
+  color: var(--color-text-tertiary);
 }
 
 .tracking-stepper-numbered .tracking-step-complete .tracking-step-label {
@@ -166,11 +167,6 @@
 .tracking-stepper-numbered .tracking-step-current .tracking-step-label {
   color: var(--color-primary);
   font-weight: 700;
-}
-
-.tracking-stepper-numbered .tracking-step-locked .tracking-step-label {
-  color: var(--color-text-tertiary);
-  font-weight: 500;
 }
 
 .tracking-step-caption {
@@ -186,16 +182,6 @@
 .tracking-stepper-numbered .tracking-step-current .tracking-step-caption {
   color: var(--color-accent-dark);
   font-weight: 600;
-}
-
-@keyframes tracking-circle-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 4px rgba(217, 164, 65, 0.22);
-  }
-  50% {
-    box-shadow: 0 0 0 7px rgba(217, 164, 65, 0);
-  }
 }
 
 @media (max-width: 720px) {
@@ -220,7 +206,7 @@
   .tracking-stepper-numbered .tracking-step:not(:first-child)::before {
     top: -18px;
     right: auto;
-    left: 17px;
+    left: 15px;
     width: 2px;
     height: 18px;
   }
@@ -232,7 +218,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tracking-stepper-numbered .tracking-step-current .tracking-step-circle,
   .tracking-step-current .tracking-step-dot {
     animation: none;
   }
