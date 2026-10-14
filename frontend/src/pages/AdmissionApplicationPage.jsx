@@ -20,6 +20,7 @@ import StatusBadge from "../components/ui/StatusBadge.jsx";
 import ConfirmSubmissionModal from "../components/ConfirmSubmissionModal.jsx";
 import AdmissionStepper from "../components/admission/AdmissionStepper.jsx";
 import ApplicationSummary from "../components/admission/ApplicationSummary.jsx";
+import SubmittedDocuments from "../components/admission/SubmittedDocuments.jsx";
 import "./AdmissionApplicationPage.css";
 
 const STEPS = [
@@ -367,6 +368,7 @@ export default function AdmissionApplicationPage() {
             </div>
           </section>
           <ApplicationSummary values={values} profile={profile} />
+          <SubmittedDocuments />
         </Card>
       </AppLayout>
     );
