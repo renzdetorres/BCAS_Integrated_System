@@ -5,6 +5,7 @@ import AppLayout from "../components/layout/AppLayout.jsx";
 import SemestersPanel from "../components/SemestersPanel.jsx";
 import SchoolConfigPanel from "../components/SchoolConfigPanel.jsx";
 import AcademicCatalogPanel from "../components/AcademicCatalogPanel.jsx";
+import EmailSettingsPanel from "../components/EmailSettingsPanel.jsx";
 import Card from "../components/ui/Card.jsx";
 import "./AdminSettingsPage.css";
 
@@ -97,6 +98,8 @@ export default function AdminSettingsPage() {
       <SchoolConfigPanel />
 
       <AcademicCatalogPanel />
+
+      <EmailSettingsPanel />
 
       <SemestersPanel />
     </AppLayout>
