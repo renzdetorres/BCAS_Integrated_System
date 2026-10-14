@@ -1085,3 +1085,63 @@ Request body:
 Admin Dashboard as "Reservations") lists Approved applicants split into
 Unreserved/Reserved sections; each row has a Reserved/Unreserved toggle,
 an optional remarks field, and a Save button hitting the endpoint above.
+
+## Admission redesign (7-stage tracker, payment, results, interview)
+
+Run the whole of `database/schema.sql` against the database before starting this version of the API; the new
+sections at the end are idempotent and add: structured academic fields (year level, term, academic year, mother's
+maiden name, Returnee), `SchoolConfig` (academic year, Pre-Kinder/Kindergarten age policy, exam fee, QR payment),
+`ExamPayments`, `Notifications` (in-app), exam slot `Capacity`, `ExamResults`, `InterviewSchedules` and
+`ApplicationSeq` (application numbers like `BCAS-2026-00042`). On startup the API logs anything still missing.
+
+How the applicant-facing tracker maps onto the staff statuses (staff keep the finer `AdmissionWorkflowConstants` statuses):
+
+| Stage | Staff statuses |
+| --- | --- |
+| 1 Submitted | Submitted |
+| 2 Under Review | UnderReview, PendingDocuments, DocumentsCompleted |
+| 3 Payment for Entrance Exam | DocumentsCleared until the payment is verified |
+| 4 Exam Permit | DocumentsCleared (payment verified), ExamScheduled, DidNotTakeExam |
+| 5 Exam Result | ExamDone |
+| 6 Interview Schedule | Registration |
+| 7 Enrollment | Approved |
+
+Payment is required before choosing an exam schedule or receiving a permit while the **Entrance Exam Payment
+Required** system setting is on (turn it off under System Settings to bypass).
+
+### Scholarship tracker
+
+The applicant-facing scholarship tracker has six stages, derived from the existing staff workflow (which is unchanged):
+
+| Stage | Staff workflow |
+| --- | --- |
+| 1 Application | Submitted, Waitlisted |
+| 2 Evaluation | DocumentsVerified, EligibilityScreening |
+| 3 Scholarship Exam | Evaluation, until the exam result is recorded |
+| 4 Exam Result | Failed closes the scholarship and points to regular admission |
+| 5 Interview / Essay | Passed applicants are scored (`ScholarshipInterviewEvaluations`) |
+| 6 Scholarship Result | Result, then the Academic Head's Approved / Rejected |
+
+Evaluators and Admins record the exam result and the interview / essay scores
+(`/api/staff/scholarship-pipeline`); Academic Heads see their own department. The Top 10 grantees are approved
+scholars ranked by the average of their exam, interview and essay scores. The scholarship exam has no entrance fee and
+is held to the scholarship documents, not the admission ones.
+
+### Academic lists in Settings
+
+The year levels, terms (academic paths), semesters, Senior High strands and College programs are edited by an Admin
+under **System Settings → Academic structure**. They are stored as JSON in `dbo.SchoolConfig` (`Academic.*` keys) and
+read through `AcademicCatalog.Current`, a snapshot the API refreshes at start-up, every minute and right after a save,
+so a change reaches new applications without a deploy. The frontend loads them from `GET /api/academic-catalog` before
+it renders and applies them to `config/academicStructure.js` and `config/departments.js`.
+
+- Pre-Kinder, Kindergarten, Grade 7, Grade 11 and 1st Year can't be removed: the age policy and the scholarship levels depend on them.
+- Removing a program or level stops new applications to it; applications already filed keep their value.
+- The database no longer carries a `CK_AdmissionApplications_CollegeProgram` check (it hard-coded the four original
+  programs); the API validates every application against the list. Run the updated `database/schema.sql` to drop it.
+
+### Notifications sent by hand
+
+Support Staff and Admin can write to one applicant from **Applicant Records → Notify** (`POST /api/staff/notifications`).
+The applicant gets a system notification and an email. It is always delivered (no applicant preference or Admin switch
+applies to a hand-written message) and is recorded in the activity log as `ApplicantNotified`.
