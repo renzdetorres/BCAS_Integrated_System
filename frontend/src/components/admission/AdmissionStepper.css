@@ -1,0 +1,146 @@
+.admission-stepper {
+  margin: 0 0 var(--space-8);
+}
+
+.admission-stepper-list {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.admission-stepper-item {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* The rule between two circles: grey until the stage before it is done. */
+.admission-stepper-item:not(:first-child)::before {
+  content: "";
+  position: absolute;
+  top: 15px;
+  right: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--color-border);
+}
+
+.admission-stepper-done:not(:first-child)::before,
+.admission-stepper-current:not(:first-child)::before {
+  background: var(--color-status-green-text);
+}
+
+.admission-stepper-button {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 160ms var(--ease-out);
+}
+
+.admission-stepper-button:disabled {
+  cursor: default;
+}
+
+.admission-stepper-button:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+.admission-stepper-circle {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text-tertiary);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  transition: background var(--motion-standard), border-color var(--motion-standard), color var(--motion-standard);
+}
+
+.admission-stepper-done .admission-stepper-circle {
+  background: var(--color-status-green-text);
+  border-color: var(--color-status-green-text);
+  color: var(--color-white);
+}
+
+.admission-stepper-current .admission-stepper-circle {
+  background: var(--color-primary);
+  border-color: var(--color-accent);
+  color: var(--color-white);
+  box-shadow: 0 0 0 4px rgba(217, 164, 65, 0.22);
+}
+
+.admission-stepper-label {
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-align: center;
+  color: var(--color-text-tertiary);
+}
+
+.admission-stepper-done .admission-stepper-label {
+  color: var(--color-text-primary);
+}
+
+.admission-stepper-current .admission-stepper-label {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.admission-stepper-compact {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .admission-stepper-done .admission-stepper-button:hover .admission-stepper-label {
+    color: var(--color-primary);
+  }
+}
+
+@media (max-width: 720px) {
+  .admission-stepper-list {
+    display: none;
+  }
+
+  .admission-stepper-compact {
+    display: block;
+  }
+
+  .admission-stepper-compact p {
+    margin: 0 0 8px;
+    font: var(--text-body);
+    color: var(--color-text-secondary);
+  }
+
+  .admission-stepper-compact strong {
+    color: var(--color-text-primary);
+  }
+
+  .admission-stepper-bar {
+    height: 6px;
+    border-radius: var(--radius-full);
+    background: var(--color-border);
+    overflow: hidden;
+  }
+
+  .admission-stepper-bar span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--color-primary-light);
+    transition: width var(--motion-standard);
+  }
+}

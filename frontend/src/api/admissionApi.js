@@ -1,9 +1,12 @@
 import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
 export const APPLICATION_TYPES = [
-  { value: "NewStudent", label: "New Student" },
-  { value: "Transferee", label: "Transferee" },
+  { value: "NewStudent", label: "New Student", blurb: "Applying to BCAS for the first time." },
+  { value: "Transferee", label: "Transferee", blurb: "Coming from another school." },
+  { value: "Returnee", label: "Returnee", blurb: "Previously enrolled at BCAS and coming back." },
 ];
+
+export const APPLICATION_TYPE_LABELS = Object.fromEntries(APPLICATION_TYPES.map((t) => [t.value, t.label]));
 
 export async function getMyAdmissionApplications() {
   const response = await fetch(`${API_BASE_URL}/api/admission-applications`, {
@@ -35,13 +38,10 @@ function toRequest(f) {
       specialSkills: text(f.specialSkills),
       father: member(f.father),
       mother: member(f.mother),
+      motherMaidenName: text(f.motherMaidenName),
       guardian: member(f.guardian),
-      siblings: f.siblings.map((s) => ({
-        name: text(s.name),
-        age: s.age === "" || s.age === null ? null : Number(s.age),
-        occupation: text(s.occupation),
-        schoolOrWork: text(s.schoolOrWork),
-      })),
+      yearLevel: f.yearLevel,
+      academicTerm: f.academicTerm,
       studentSignature: text(f.studentSignature),
       guardianSignature: text(f.guardianSignature),
     },

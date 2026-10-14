@@ -28,6 +28,7 @@ import {
   SCHOOL_NAME,
   SCREENING_STEPS,
 } from "../config/scholarshipForm.js";
+import { PHONE_ERROR, PHONE_HINT, PHONE_PATTERN, cleanPhoneInput, isValidPhone } from "../utils/phone.js";
 import "./ScholarshipApplicationPage.css";
 
 const initialForm = {
@@ -116,13 +117,18 @@ export default function ScholarshipApplicationPage() {
 
   function handleChange(event) {
     const { name, value } = event.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: name === "guardianContact" ? cleanPhoneInput(value) : value }));
   }
 
   function handleSubmit(event) {
     event.preventDefault();
     setErrorMessage(null);
     setProfileIncomplete(false);
+
+    if (!isValidPhone(form.guardianContact)) {
+      setErrorMessage(PHONE_ERROR);
+      return;
+    }
     setConfirming(true);
   }
 
@@ -280,7 +286,7 @@ export default function ScholarshipApplicationPage() {
 
             <div className="form-row">
               <label htmlFor="guardianContact">Contact number of your parent/guardian</label>
-              <input placeholder="e.g. 0917 123 4567" id="guardianContact" name="guardianContact" type="tel" maxLength={50} required value={form.guardianContact} onChange={handleChange} />
+              <input placeholder="09171234567" id="guardianContact" name="guardianContact" type="tel" inputMode="numeric" maxLength={11} pattern={PHONE_PATTERN} title={PHONE_HINT} required value={form.guardianContact} onChange={handleChange} />
             </div>
 
             <div className="form-row">

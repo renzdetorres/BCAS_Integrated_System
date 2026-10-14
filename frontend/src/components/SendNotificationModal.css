@@ -1,0 +1,21 @@
+.send-notification {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.send-notification-hint {
+  margin: 0;
+  font: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+.send-notification textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.send-notification-count {
+  justify-self: end;
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}

@@ -94,9 +94,12 @@ export function getValidNextScholarshipStatuses(currentStatus) {
   return SCHOLARSHIP_STATUSES.filter((status) => SCHOLARSHIP_STAGE_RANK[status] > currentRank);
 }
 
-export async function searchApplications({ search, status, category, program, archived, department } = {}) {
+export async function searchApplications({ search, status, category, program, archived, department, yearLevel, academicYear, academicTerm } = {}) {
   const params = new URLSearchParams();
   if (department) params.set("department", department);
+  if (yearLevel) params.set("yearLevel", yearLevel);
+  if (academicYear) params.set("academicYear", academicYear);
+  if (academicTerm) params.set("academicTerm", academicTerm);
   if (search) params.set("search", search);
   if (status) params.set("status", status);
   if (category) params.set("category", category);

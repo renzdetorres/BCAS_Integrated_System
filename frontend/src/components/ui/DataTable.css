@@ -86,6 +86,15 @@ h2.ui-datatable-title {
   padding-right: 32px;
 }
 
+/* Many dropdowns do not fit in half a row: the filters take the full width and wrap, search sits below. */
+.ui-datatable-toolbar-wide {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.ui-datatable-toolbar-wide .ui-datatable-filters {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
 /* With no dropdowns, search keeps the right half: the row's shape never
    changes between pages. */
 .ui-datatable-toolbar-search-only .ui-datatable-search {
@@ -470,6 +479,12 @@ h2.ui-datatable-title {
   .ui-datatable-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .ui-datatable-toolbar-wide .ui-datatable-filters .ui-select {
+    padding-left: 12px;
+    padding-right: 28px;
+    background-position: right 8px center;
+  }
 }
 
 @media (max-width: 520px) {
@@ -564,6 +579,8 @@ h2.ui-datatable-title {
 
 .ui-card .ui-datatable-scroll {
   margin: 0 -24px;
+  /* responsive.css caps tables at 100%, which would cancel the bleed. */
+  max-width: none;
 }
 
 .ui-card .ui-datatable-footer {
@@ -621,6 +638,7 @@ h2.ui-datatable-title {
    pulls out by exactly that much to sit flush with the card's edge. */
 .ui-card--data .ui-datatable-scroll {
   margin: 0 -20px;
+  max-width: none;
 }
 
 .ui-card--data .ui-datatable-footer {
@@ -780,5 +798,18 @@ h2.ui-datatable-title {
   .ui-datatable-table tbody {
     padding-left: 16px;
     padding-right: 16px;
+  }
+}
+
+/* Phones: many filters sit two to a row instead of a tall column of full-width selects. */
+@media (max-width: 860px) {
+  .ui-datatable-toolbar-wide .ui-datatable-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ui-datatable-toolbar-wide .ui-datatable-filters .ui-select {
+    padding-left: 12px;
+    padding-right: 28px;
+    background-position: right 8px center;
   }
 }

@@ -1,12 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  exportEnrollmentList,
   exportEnrollmentSummary,
   exportSectionFiles,
   getApplicationFunnel,
   getApplicationTrend,
-  getEnrollmentList,
   getEnrollmentSummary,
   getScholarshipApplicantList,
   getScholarshipQualificationList,
@@ -23,6 +21,8 @@ import DataTable, { PersonCell } from "../components/ui/DataTable.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import BarChart from "../components/ui/BarChart.jsx";
 import TrendChart from "../components/ui/TrendChart.jsx";
+import ApplicantStatusReport from "../components/ApplicantStatusReport.jsx";
+import ScholarshipPipelineReport from "../components/ScholarshipPipelineReport.jsx";
 import "./AdminReportsPage.css";
 
 // Two report groups. Trends belong to Admission: the weekly trend and the
@@ -30,13 +30,14 @@ import "./AdminReportsPage.css";
 const CATEGORIES = ["Admission", "Scholarship"];
 
 const REPORTS = [
-  { key: "enrollmentList", category: "Admission", label: "Enrollment List" },
+  { key: "applicantStatus", category: "Admission", label: "Results & Applicant Status" },
   { key: "enrollmentSummary", category: "Admission", label: "Summary of Enrollment" },
   { key: "sectionFiles", category: "Admission", label: "File per Section" },
   { key: "statusDistribution", category: "Admission", label: "Applicant Status Distribution" },
   { key: "applicationTrend", category: "Admission", label: "Applications per Week" },
   { key: "admissionFunnel", category: "Admission", label: "Funnel / Drop-off" },
   { key: "scholarshipApplicants", category: "Scholarship", label: "Scholarship Applications" },
+  { key: "scholarshipPipeline", category: "Scholarship", label: "Exam, Result & Grantees" },
   { key: "scholarshipQualification", category: "Scholarship", label: "Qualified Applicants" },
   { key: "scholarshipResults", category: "Scholarship", label: "Approved Scholars" },
   { key: "scholarshipSlots", category: "Scholarship", label: "Scholarship Slots" },
@@ -98,6 +99,7 @@ function ReportError({ message }) {
 const APPLICATION_TYPE_OPTIONS = [
   { value: "NewStudent", label: "New Student" },
   { value: "Transferee", label: "Transferee" },
+  { value: "Returnee", label: "Returnee" },
 ];
 
 function distinctOptions(rows, pick) {
@@ -129,79 +131,6 @@ function useReportRows(loader) {
   }, [runReport]);
 
   return { rows, isLoading, errorMessage, runReport };
-}
-
-function EnrollmentListReport() {
-  const { rows, isLoading, errorMessage, runReport } = useReportRows(() => getEnrollmentList({}));
-  const [program, setProgram] = useState("");
-  const [applicationType, setApplicationType] = useState("");
-  const [isExporting, setIsExporting] = useState(false);
-
-  const filtered = rows.filter(
-    (row) => (!program || row.courseAppliedFor === program) && (!applicationType || row.applicationType === applicationType),
-  );
-
-  async function handleExport() {
-    setIsExporting(true);
-    await runReport(async () => {
-      await exportEnrollmentList({ program, applicationType });
-      return true;
-    });
-    setIsExporting(false);
-  }
-
-  return (
-    <DataTable
-      title="Enrollment List"
-      titleAs="h2"
-      subtitle="Approved admission applicants who have reserved their slot."
-      actions={
-        <button type="button" className="btn btn-secondary" onClick={handleExport} disabled={isExporting}>
-          {isExporting ? "Exporting..." : "Export to Excel"}
-        </button>
-      }
-      columns={[
-        {
-          key: "applicant",
-          header: "Applicant",
-          accessor: (row) => `${row.applicantName} ${row.applicantEmail}`,
-          sortable: true,
-          render: (row) => <PersonCell name={row.applicantName} detail={row.applicantEmail} />,
-        },
-        {
-          key: "applicationType",
-          header: "Type",
-          accessor: (row) => APPLICATION_TYPE_OPTIONS.find((t) => t.value === row.applicationType)?.label ?? row.applicationType,
-          sortable: true,
-        },
-        { key: "courseAppliedFor", header: "Program", sortable: true },
-        { key: "submittedAt", header: "Submitted", sortable: true, searchable: false, render: (row) => formatDate(row.submittedAt) },
-        { key: "reservedAt", header: "Reserved", sortable: true, searchable: false, render: (row) => formatDate(row.reservedAt) },
-      ]}
-      rows={filtered}
-      getRowKey={(row) => row.applicationId}
-      isLoading={isLoading}
-      errorMessage={errorMessage}
-      emptyMessage="No enrolled applicants match these filters."
-      searchPlaceholder="Search by applicant or email"
-      filters={[
-        {
-          key: "program",
-          label: "All programs",
-          value: program,
-          onChange: setProgram,
-          options: distinctOptions(rows, (row) => row.courseAppliedFor),
-        },
-        {
-          key: "applicationType",
-          label: "All types",
-          value: applicationType,
-          onChange: setApplicationType,
-          options: APPLICATION_TYPE_OPTIONS,
-        },
-      ]}
-    />
-  );
 }
 
 function ScholarshipApplicantListReport() {
@@ -787,14 +716,15 @@ function StatusDistributionReport() {
 }
 
 const REPORT_COMPONENTS = {
-  enrollmentList: EnrollmentListReport,
   enrollmentSummary: EnrollmentSummaryReport,
   sectionFiles: SectionFilesReport,
   scholarshipApplicants: ScholarshipApplicantListReport,
+  scholarshipPipeline: ScholarshipPipelineReport,
   scholarshipQualification: ScholarshipQualificationReport,
   scholarshipResults: ScholarshipResultsReport,
   scholarshipSlots: ScholarshipSlotsReport,
   applicationTrend: ApplicationTrendReport,
+  applicantStatus: ApplicantStatusReport,
   statusDistribution: StatusDistributionReport,
   admissionFunnel: () => <ApplicationFunnelReport kind="admission" />,
   scholarshipFunnel: () => <ApplicationFunnelReport kind="scholarship" />,
@@ -802,7 +732,7 @@ const REPORT_COMPONENTS = {
 
 export default function AdminReportsPage() {
   const [category, setCategory] = useState("Admission");
-  const [activeReport, setActiveReport] = useState("enrollmentList");
+  const [activeReport, setActiveReport] = useState("applicantStatus");
   const ActiveComponent = REPORT_COMPONENTS[activeReport];
 
   function chooseCategory(next) {

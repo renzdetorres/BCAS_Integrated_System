@@ -60,3 +60,17 @@ export async function uploadDocument(documentType, file) {
 
   return data;
 }
+
+/** The signed-in applicant's own uploaded file as a Blob, for the in-page preview (fetched with the auth cookie, never linked directly). */
+export async function getMyDocumentFile(documentType) {
+  const response = await fetch(`${API_BASE_URL}/api/documents/${encodeURIComponent(documentType)}/file`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to load this file."), response.status);
+  }
+
+  return response.blob();
+}

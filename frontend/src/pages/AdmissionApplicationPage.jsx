@@ -1,28 +1,45 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   APPLICATION_TYPES,
   getMyAdmissionApplications,
   submitAdmissionApplication,
 } from "../api/admissionApi.js";
+import { uploadDocument } from "../api/documentApi.js";
 import { getMyProfile } from "../api/profileApi.js";
+import { getAdmissionConfig } from "../api/schoolConfigApi.js";
 import { ApiError } from "../api/apiClient.js";
-import { DEPARTMENT_OPTIONS, programOptionLabel, programsFor } from "../config/departments.js";
+import { ACADEMIC_CATEGORIES, SENIOR_HIGH_STRANDS, ageProblem, categoryFor } from "../config/academicStructure.js";
+import { programOptionLabel, programsFor } from "../config/departments.js";
+import { REQUIRED_NOTE, acceptFor, fileProblem, formatsLabel, requiredDocumentsFor } from "../config/requiredDocuments.js";
+import { PHONE_HINT, PHONE_PATTERN, cleanPhoneInput, isValidPhone } from "../utils/phone.js";
+import { formatDate, formatFileSize } from "../utils/format.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import ConfirmSubmissionModal from "../components/ConfirmSubmissionModal.jsx";
-import { REQUIRED_NOTE, requiredDocumentsFor } from "../config/requiredDocuments.js";
+import AdmissionStepper from "../components/admission/AdmissionStepper.jsx";
+import ApplicationSummary from "../components/admission/ApplicationSummary.jsx";
 import "./AdmissionApplicationPage.css";
 
-const MAX_SIBLINGS = 10;
+const STEPS = [
+  { id: "personal", label: "Personal Information" },
+  { id: "academic", label: "Academic Information" },
+  { id: "type", label: "Application Type" },
+  { id: "documents", label: "Documents" },
+  { id: "review", label: "Review & Submit" },
+];
+
+const DRAFT_KEY = "bcas.admission.draft";
+
 const emptyMember = { name: "", occupation: "", phone: "" };
-const emptySibling = { name: "", age: "", occupation: "", schoolOrWork: "" };
 
 const initialForm = {
-  applicationType: APPLICATION_TYPES[0].value,
+  applicationType: "",
   department: "",
   courseAppliedFor: "",
+  yearLevel: "",
+  academicTerm: "",
   previousSchool: "",
   previousSchoolAddress: "",
   sex: "",
@@ -30,24 +47,41 @@ const initialForm = {
   specialSkills: "",
   father: { ...emptyMember },
   mother: { ...emptyMember },
+  motherMaidenName: "",
   guardian: { ...emptyMember },
-  siblings: [],
   studentSignature: "",
   guardianSignature: "",
 };
 
-const FAMILY_ROWS = [
+const PEOPLE = [
   { key: "father", label: "Father" },
   { key: "mother", label: "Mother" },
-  { key: "guardian", label: "Guardian" },
+  { key: "guardian", label: "Guardian (if applicable)" },
 ];
 
-function formatDate(isoDate) {
-  return new Date(isoDate).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+function readDraft() {
+  try {
+    const raw = sessionStorage.getItem(DRAFT_KEY);
+    return raw ? { ...initialForm, ...JSON.parse(raw) } : initialForm;
+  } catch {
+    return initialForm;
+  }
+}
+
+function saveDraft(form) {
+  try {
+    sessionStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+  } catch {
+    // Private mode or blocked storage: the draft just isn't kept.
+  }
+}
+
+function clearDraft() {
+  try {
+    sessionStorage.removeItem(DRAFT_KEY);
+  } catch {
+    // Nothing to clear.
+  }
 }
 
 /** A submitted application, flattened back into the shape the form edits. */
@@ -58,6 +92,8 @@ function formFromApplication(application) {
     applicationType: application.applicationType,
     department: application.department ?? "",
     courseAppliedFor: application.courseAppliedFor,
+    yearLevel: f.yearLevel ?? "",
+    academicTerm: f.academicTerm ?? "",
     previousSchool: application.previousSchool,
     previousSchoolAddress: f.previousSchoolAddress ?? "",
     sex: f.sex ?? "",
@@ -65,37 +101,59 @@ function formFromApplication(application) {
     specialSkills: f.specialSkills ?? "",
     father: member(f.father),
     mother: member(f.mother),
+    motherMaidenName: f.motherMaidenName ?? "",
     guardian: member(f.guardian),
-    siblings: (f.siblings ?? []).map((s) => ({
-      name: s.name ?? "",
-      age: s.age ?? "",
-      occupation: s.occupation ?? "",
-      schoolOrWork: s.schoolOrWork ?? "",
-    })),
     studentSignature: f.studentSignature ?? "",
     guardianSignature: f.guardianSignature ?? "",
   };
 }
 
+function Field({ id, label, hint, children }) {
+  return (
+    <div className="form-row">
+      <label htmlFor={id}>{label}</label>
+      {children}
+      {hint ? <p className="form-note">{hint}</p> : null}
+    </div>
+  );
+}
+
+function ChoiceTile({ name, value, checked, onChange, title, blurb }) {
+  return (
+    <label className={`choice-tile${checked ? " choice-tile-checked" : ""}`}>
+      <input type="radio" name={name} value={value} checked={checked} onChange={onChange} />
+      <span className="choice-tile-title">{title}</span>
+      {blurb ? <span className="choice-tile-blurb">{blurb}</span> : null}
+    </label>
+  );
+}
+
 export default function AdmissionApplicationPage() {
   const navigate = useNavigate();
+  const headingRef = useRef(null);
   const [applications, setApplications] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [config, setConfig] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState(readDraft);
+  const [files, setFiles] = useState({});
+  const [fileErrors, setFileErrors] = useState({});
+  const [step, setStep] = useState(0);
   const [errorMessage, setErrorMessage] = useState(null);
   const [profileIncomplete, setProfileIncomplete] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [progress, setProgress] = useState(null);
   const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([getMyAdmissionApplications(), getMyProfile().catch(() => null)])
-      .then(([applicationData, profileData]) => {
+    Promise.all([getMyAdmissionApplications(), getMyProfile().catch(() => null), getAdmissionConfig().catch(() => null)])
+      .then(([applicationData, profileData, configData]) => {
         if (cancelled) return;
         setApplications(applicationData);
         setProfile(profileData);
+        setConfig(configData);
       })
       .catch((error) => {
         if (!cancelled) {
@@ -111,66 +169,127 @@ export default function AdmissionApplicationPage() {
     };
   }, []);
 
+  useEffect(() => {
+    saveDraft(form);
+  }, [form]);
+
+  // Moving to another stage lands on its heading, so keyboard and screen reader users start at the top of it.
+  useEffect(() => {
+    headingRef.current?.focus({ preventScroll: true });
+  }, [step]);
+
+  function set(name, value) {
+    setForm((prev) => ({ ...prev, [name]: value }));
+  }
+
   function handleChange(event) {
-    const { name, value } = event.target;
-    // The course choices depend on the department, so changing it clears
-    // a course picked for the previous one.
-    setForm((prev) => ({ ...prev, [name]: value, ...(name === "department" ? { courseAppliedFor: "" } : {}) }));
+    set(event.target.name, event.target.value);
   }
 
-  function handleMemberChange(memberKey, field, value) {
-    setForm((prev) => ({ ...prev, [memberKey]: { ...prev[memberKey], [field]: value } }));
-  }
-
-  function handleSiblingChange(index, field, value) {
+  function handleCategory(event) {
+    // Every level choice depends on the category, so changing it clears them.
     setForm((prev) => ({
       ...prev,
-      siblings: prev.siblings.map((sibling, i) => (i === index ? { ...sibling, [field]: value } : sibling)),
+      department: event.target.value,
+      courseAppliedFor: "",
+      yearLevel: "",
+      academicTerm: "",
     }));
   }
 
-  function addSibling() {
-    setForm((prev) => (prev.siblings.length >= MAX_SIBLINGS ? prev : { ...prev, siblings: [...prev.siblings, { ...emptySibling }] }));
+  function handleMemberChange(memberKey, field, value) {
+    const next = field === "phone" ? cleanPhoneInput(value) : value;
+    setForm((prev) => ({ ...prev, [memberKey]: { ...prev[memberKey], [field]: next } }));
   }
 
-  function removeSibling(index) {
-    setForm((prev) => ({ ...prev, siblings: prev.siblings.filter((_, i) => i !== index) }));
+  function handleFile(doc, event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    const problem = fileProblem(file, doc.formats);
+    setFileErrors((prev) => ({ ...prev, [doc.type]: problem }));
+    if (!problem) setFiles((prev) => ({ ...prev, [doc.type]: file }));
   }
 
-  // A department with a fixed program list (College) picks from it; any
-  // other takes its strand or grade level as typed.
+  function removeFile(docType) {
+    setFiles((prev) => {
+      const { [docType]: _removed, ...rest } = prev;
+      return rest;
+    });
+    setFileErrors((prev) => ({ ...prev, [docType]: null }));
+  }
+
+  const category = categoryFor(form.department);
   const programs = programsFor(form.department);
+  const requiredDocuments = requiredDocumentsFor(form.applicationType || "NewStudent", form.department);
+  const birthDate = profile?.birthDate ?? null;
+  const tooYoung = ageProblem(form.yearLevel, birthDate, config);
 
-  function handleSubmit(event) {
-    event.preventDefault();
+  /** The first thing wrong with a stage, in plain words, or null. */
+  function problemWithStep(index) {
+    if (index === 0) {
+      if (!profile) return "Complete your profile first. Your name, birth date, address and mobile number come from it.";
+      if (!form.sex) return "Choose the student's sex.";
+      if (!form.placeOfBirth.trim()) return "Enter the student's place of birth.";
+      for (const { key, label } of PEOPLE) {
+        if (form[key].phone && !isValidPhone(form[key].phone)) return `${label.replace(" (if applicable)", "")}'s mobile number must be ${PHONE_HINT}.`;
+      }
+      if (form.mother.name.trim() && !form.motherMaidenName.trim()) return "Enter the mother's maiden name.";
+      const reachable = PEOPLE.some(({ key }) => form[key].name.trim() && form[key].phone.trim());
+      if (!reachable) return "Give the name and mobile number of at least one parent or guardian.";
+    }
+
+    if (index === 1) {
+      if (!form.department) return "Choose an academic category.";
+      if (category.hasStrand && !form.courseAppliedFor) return "Choose a strand.";
+      if (form.department === "College" && !form.courseAppliedFor) return "Choose a program.";
+      if (!form.yearLevel) return `Choose a ${category.yearLevelLabel.toLowerCase()}.`;
+      if (tooYoung) return tooYoung;
+      if (category.terms && !form.academicTerm) return `Choose a ${category.termLabel.toLowerCase()}.`;
+      if (!form.previousSchool.trim()) return "Enter the school last attended.";
+      if (!form.previousSchoolAddress.trim()) return "Enter the address of the school last attended.";
+    }
+
+    if (index === 2) {
+      if (!form.applicationType) return "Choose your application type.";
+    }
+
+    if (index === 3) {
+      const missing = requiredDocuments.filter((doc) => doc.required && !files[doc.type]);
+      if (missing.length > 0) return `Attach your ${missing.map((d) => d.label).join(", ")} before continuing.`;
+    }
+
+    if (index === 4) {
+      if (!form.studentSignature.trim()) return "Type the student's name as the student's signature.";
+      if (!form.guardianSignature.trim()) return "Type a parent's or guardian's name as their signature.";
+    }
+
+    return null;
+  }
+
+  function goTo(index) {
     setErrorMessage(null);
     setProfileIncomplete(false);
+    setStep(index);
+  }
 
-    const problem = firstProblem();
+  function handleNext(event) {
+    event.preventDefault();
+    setProfileIncomplete(false);
+
+    const problem = problemWithStep(step);
     if (problem) {
       setErrorMessage(problem);
       return;
     }
 
-    setConfirming(true);
-  }
-
-  function firstProblem() {
-    if (!form.department) return "Choose the department you are applying to.";
-    if (programs && !form.courseAppliedFor) return `Choose a program for the ${form.department} department.`;
-    if (!form.courseAppliedFor.trim()) return "Enter the strand or grade level you are applying for.";
-    if (!form.sex) return "Choose the student's sex.";
-    if (!form.placeOfBirth.trim()) return "Enter the student's place of birth.";
-    if (!form.previousSchool.trim()) return "Enter your previous school.";
-    if (!form.previousSchoolAddress.trim()) return "Enter the address of your previous school.";
-    const reachable = FAMILY_ROWS.some(({ key }) => form[key].name.trim() && form[key].phone.trim());
-    if (!reachable) return "Give the name and phone number of at least one parent or guardian.";
-    if (form.siblings.some((s) => !s.name.trim() && (s.age !== "" || s.occupation.trim() || s.schoolOrWork.trim()))) {
-      return "Every brother or sister listed needs a name.";
+    setErrorMessage(null);
+    if (step < STEPS.length - 1) {
+      setStep(step + 1);
+    } else {
+      setConfirming(true);
     }
-    if (!form.studentSignature.trim()) return "Type the student's name as the student's signature.";
-    if (!form.guardianSignature.trim()) return "Type a parent's or guardian's name as their signature.";
-    return null;
   }
 
   async function sendApplication() {
@@ -178,7 +297,25 @@ export default function AdmissionApplicationPage() {
 
     try {
       const created = await submitAdmissionApplication(form);
-      navigate(`/applications/receipt/${created.applicationId}`);
+      clearDraft();
+
+      // The documents belong to the application, so they go up right after it exists.
+      const failed = [];
+      const toUpload = requiredDocuments.filter((doc) => files[doc.type]);
+      for (const [index, doc] of toUpload.entries()) {
+        setProgress(`Uploading ${doc.label} (${index + 1} of ${toUpload.length})...`);
+        try {
+          await uploadDocument(doc.type, files[doc.type]);
+        } catch {
+          failed.push(doc.label);
+        }
+      }
+
+      if (failed.length > 0) {
+        navigate("/documents", { state: { uploadFailures: failed } });
+      } else {
+        navigate(`/applications/receipt/${created.applicationId}`);
+      }
     } catch (error) {
       if (error instanceof ApiError) {
         setErrorMessage(error.message);
@@ -189,279 +326,401 @@ export default function AdmissionApplicationPage() {
       setConfirming(false);
     } finally {
       setIsSubmitting(false);
+      setProgress(null);
     }
   }
 
-  // One admission application per applicant: once it exists the form stays on
-  // screen, greyed out and read-only, showing what was submitted.
+  // One admission application per applicant: once it exists, the form gives way to a record of it.
   const submitted = applications[0] ?? null;
-  const readOnly = Boolean(submitted);
-  const values = submitted ? formFromApplication(submitted) : form;
-  const shownPrograms = programsFor(values.department);
-  const requiredDocuments = requiredDocumentsFor(values.applicationType);
-  const formDate = submitted ? formatDate(submitted.submittedAt) : formatDate(new Date().toISOString());
-  const studentName = profile ? `${profile.firstName} ${profile.lastName}` : "";
-  const studentAddress = profile ? [profile.addressLine, profile.city, profile.province, profile.postalCode].filter(Boolean).join(", ") : "";
 
-  return (
-    <AppLayout title="My Application">
-      <Card className={`admission-card${readOnly ? " admission-card-submitted" : ""}`}>
-        <h2>{readOnly ? "Your Application Form for Entrance Exam" : "Application Form for Entrance Exam"}</h2>
-
-        {readOnly && (
+  if (submitted) {
+    const values = formFromApplication(submitted);
+    return (
+      <AppLayout title="My Application">
+        <Card className="admission-card admission-card-submitted">
+          <h2>Your Admission Application</h2>
           <div className="admission-submitted-note" role="status">
             <div className="admission-submitted-head">
               <StatusBadge status={submitted.status} />
               <span>Submitted {formatDate(submitted.submittedAt)}</span>
             </div>
             <p>
-              Your application has been submitted and can no longer be edited or sent again. Next, follow its progress under{" "}
-              <Link to="/application-tracking">Application Tracking</Link>, upload your <Link to="/documents">documents</Link>, and
+              Your application has been submitted and can no longer be edited or sent again. Follow its progress under{" "}
+              <Link to="/application-tracking">Application Tracking</Link>, check your <Link to="/documents">documents</Link>, and
               watch <Link to="/announcements">Announcements</Link> for your exam schedule.
             </p>
           </div>
-        )}
+          <section className="admission-receipt-row" aria-label="Application receipt">
+            <div>
+              <h3>Application receipt</h3>
+              <p>
+                {submitted.applicationNumber} &middot; submitted {formatDate(submitted.submittedAt)}
+              </p>
+            </div>
+            <div className="admission-receipt-actions">
+              <Link className="btn btn-secondary" to={`/applications/receipt/${submitted.applicationId}`}>
+                View
+              </Link>
+              <Link className="btn btn-secondary" to={`/applications/receipt/${submitted.applicationId}?download=1`}>
+                Download
+              </Link>
+            </div>
+          </section>
+          <ApplicationSummary values={values} profile={profile} />
+        </Card>
+      </AppLayout>
+    );
+  }
 
-        {isLoading && <p>Loading...</p>}
+  const isLastStep = step === STEPS.length - 1;
 
-        {errorMessage && (
-          <p className="form-error" role="alert">
-            {errorMessage}
-            {profileIncomplete && (
-              <>
-                {" "}
-                <Link to="/profile">Complete your profile</Link>.
-              </>
-            )}
-          </p>
-        )}
+  return (
+    <AppLayout title="My Application">
+      <Card className="admission-card">
+        <h2>Admission Application</h2>
 
-        {!isLoading && (
-          <form onSubmit={handleSubmit} noValidate className={readOnly ? "form-readonly" : undefined}>
-            <fieldset disabled={readOnly || isSubmitting} className="form-fieldset">
-              <h3 className="form-section-title">Student</h3>
-              <dl className="form-profile">
-                <div>
-                  <dt>Date</dt>
-                  <dd>{formDate}</dd>
-                </div>
-                <div>
-                  <dt>Name</dt>
-                  <dd>{studentName || "—"}</dd>
-                </div>
-                <div>
-                  <dt>Date of birth</dt>
-                  <dd>{profile?.birthDate ? formatDate(profile.birthDate) : "—"}</dd>
-                </div>
-                <div>
-                  <dt>Contact no.</dt>
-                  <dd>{profile?.contactNumber || "—"}</dd>
-                </div>
-                <div className="form-profile-wide">
-                  <dt>Address</dt>
-                  <dd>{studentAddress || "—"}</dd>
-                </div>
-              </dl>
-              {!readOnly && (
-                <p className="form-note">
-                  {profile ? (
+        {isLoading ? (
+          <p>Loading...</p>
+        ) : (
+          <>
+            <AdmissionStepper steps={STEPS} current={step} onSelect={goTo} />
+
+            <form onSubmit={handleNext} noValidate className="admission-form">
+              <h3 className="admission-step-heading" tabIndex={-1} ref={headingRef}>
+                {STEPS[step].label}
+              </h3>
+
+              {errorMessage && (
+                <p className="form-error" role="alert">
+                  {errorMessage}
+                  {profileIncomplete && (
                     <>
-                      Your name, date of birth, address and contact number come from your profile.{" "}
-                      <Link to="/profile">Update your profile</Link> if anything is wrong.
-                    </>
-                  ) : (
-                    <>
-                      <Link to="/profile">Complete your profile</Link> first. Your name, date of birth, address and contact number
-                      are taken from it.
+                      {" "}
+                      <Link to="/profile">Complete your profile</Link>.
                     </>
                   )}
                 </p>
               )}
 
-              <div className="form-grid">
-                <div className="form-row">
-                  <label htmlFor="sex">Sex</label>
-                  <select id="sex" name="sex" required value={values.sex} onChange={handleChange}>
-                    <option value="" disabled>
-                      Select
-                    </option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                  </select>
-                </div>
-                <div className="form-row">
-                  <label htmlFor="placeOfBirth">Place of birth</label>
-                  <input placeholder="e.g. Quezon City" id="placeOfBirth" name="placeOfBirth" type="text" maxLength={200} required value={values.placeOfBirth} onChange={handleChange} />
-                </div>
-              </div>
-              <div className="form-row">
-                <label htmlFor="specialSkills">Special skills (optional)</label>
-                <input placeholder="e.g. Drawing, basketball, singing" id="specialSkills" name="specialSkills" type="text" maxLength={300} value={values.specialSkills} onChange={handleChange} />
-              </div>
+              {step === 0 && (
+                <div className="admission-step">
+                  <h4 className="form-section-title">Student</h4>
+                  <dl className="form-profile">
+                    <div>
+                      <dt>Full name</dt>
+                      <dd>{profile ? `${profile.firstName} ${profile.lastName}` : "—"}</dd>
+                    </div>
+                    <div>
+                      <dt>Date of birth</dt>
+                      <dd>{profile?.birthDate ? formatDate(`${profile.birthDate}T00:00:00`) : "—"}</dd>
+                    </div>
+                    <div>
+                      <dt>Mobile number</dt>
+                      <dd>{profile?.contactNumber || "—"}</dd>
+                    </div>
+                    <div className="form-profile-wide">
+                      <dt>Address</dt>
+                      <dd>
+                        {profile
+                          ? [profile.addressLine, profile.city, profile.province, profile.postalCode].filter(Boolean).join(", ")
+                          : "—"}
+                      </dd>
+                    </div>
+                  </dl>
+                  <p className="form-note">
+                    {profile ? (
+                      <>
+                        These come from your profile. <Link to="/profile">Update your profile</Link> if anything is wrong.
+                      </>
+                    ) : (
+                      <>
+                        <Link to="/profile">Complete your profile</Link> first. Your name, birth date, address and mobile number are
+                        taken from it.
+                      </>
+                    )}
+                  </p>
 
-              <h3 className="form-section-title">Level applied for</h3>
-              <div className="form-row">
-                <label htmlFor="applicationType">Application type</label>
-                <select id="applicationType" name="applicationType" value={values.applicationType} onChange={handleChange}>
-                  {APPLICATION_TYPES.map((type) => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-grid">
-                <div className="form-row">
-                  <label htmlFor="department">Department</label>
-                  <select id="department" name="department" required value={values.department ?? ""} onChange={handleChange}>
-                    <option value="" disabled>
-                      Select a department
-                    </option>
-                    {DEPARTMENT_OPTIONS.map((department) => (
-                      <option key={department} value={department}>
-                        {department}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-row">
-                  <label htmlFor="courseAppliedFor">{shownPrograms ? "Program" : "Strand or grade level"}</label>
-                  {shownPrograms ? (
-                    <select id="courseAppliedFor" name="courseAppliedFor" required value={values.courseAppliedFor} onChange={handleChange}>
-                      <option value="" disabled>
-                        Select a program
-                      </option>
-                      {shownPrograms.map((program) => (
-                        <option key={program.code} value={program.code}>
-                          {programOptionLabel(program)}
+                  <div className="form-grid">
+                    <Field id="sex" label="Sex">
+                      <select id="sex" name="sex" required value={form.sex} onChange={handleChange}>
+                        <option value="" disabled>
+                          Select
                         </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      id="courseAppliedFor"
-                      name="courseAppliedFor"
-                      type="text"
-                      required
-                      placeholder={values.department ? "For example: STEM, Grade 7" : "Choose a department first"}
-                      disabled={!values.department}
-                      value={values.courseAppliedFor}
-                      onChange={handleChange}
-                    />
-                  )}
-                </div>
-              </div>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                      </select>
+                    </Field>
+                    <Field id="placeOfBirth" label="Place of birth">
+                      <input id="placeOfBirth" name="placeOfBirth" type="text" maxLength={200} placeholder="e.g. Quezon City" value={form.placeOfBirth} onChange={handleChange} />
+                    </Field>
+                  </div>
+                  <Field id="specialSkills" label="Special skills (optional)">
+                    <input id="specialSkills" name="specialSkills" type="text" maxLength={300} placeholder="e.g. Drawing, basketball, singing" value={form.specialSkills} onChange={handleChange} />
+                  </Field>
 
-              <h3 className="form-section-title">School last attended</h3>
-              <div className="form-row">
-                <label htmlFor="previousSchool">School name</label>
-                <input placeholder="e.g. San Isidro Elementary School" id="previousSchool" name="previousSchool" type="text" required value={values.previousSchool} onChange={handleChange} />
-              </div>
-              <div className="form-row">
-                <label htmlFor="previousSchoolAddress">School address</label>
-                <input placeholder="e.g. 123 Rizal St., Brgy. San Isidro, Quezon City" id="previousSchoolAddress" name="previousSchoolAddress" type="text" maxLength={300} required value={values.previousSchoolAddress} onChange={handleChange} />
-              </div>
-
-              <h3 className="form-section-title">Parents and guardian</h3>
-              {FAMILY_ROWS.map(({ key, label }) => (
-                <fieldset key={key} className="family-group">
-                  <legend className="family-group-title">{label}</legend>
-                  <div className="family-fields">
-                    {[
-                      ["name", "Name", "text", 200, "e.g. Juan Dela Cruz"],
-                      ["occupation", "Occupation", "text", 100, "e.g. Teacher"],
-                      ["phone", "Phone no.", "tel", 50, "e.g. 0917 123 4567"],
-                    ].map(([field, fieldLabel, type, maxLength, example]) => (
-                      <div className="form-row" key={field}>
-                        <label htmlFor={`${key}-${field}`}>{fieldLabel}</label>
-                        <input
-                          id={`${key}-${field}`}
-                          type={type}
-                          placeholder={example}
-                          maxLength={maxLength}
-                          value={values[key][field]}
-                          onChange={(event) => handleMemberChange(key, field, event.target.value)}
-                        />
+                  <h4 className="form-section-title">Parents and guardian</h4>
+                  {PEOPLE.map(({ key, label }) => (
+                    <fieldset key={key} className="family-group">
+                      <legend className="family-group-title">{label}</legend>
+                      <div className="family-fields">
+                        <Field id={`${key}-name`} label="Full name">
+                          <input id={`${key}-name`} type="text" maxLength={200} value={form[key].name} onChange={(e) => handleMemberChange(key, "name", e.target.value)} />
+                        </Field>
+                        {key === "mother" && (
+                          <Field id="motherMaidenName" label="Maiden name">
+                            <input id="motherMaidenName" name="motherMaidenName" type="text" maxLength={200} value={form.motherMaidenName} onChange={handleChange} />
+                          </Field>
+                        )}
+                        <Field id={`${key}-occupation`} label="Occupation">
+                          <input id={`${key}-occupation`} type="text" maxLength={100} value={form[key].occupation} onChange={(e) => handleMemberChange(key, "occupation", e.target.value)} />
+                        </Field>
+                        <Field id={`${key}-phone`} label="Mobile number">
+                          <input
+                            id={`${key}-phone`}
+                            type="tel"
+                            inputMode="numeric"
+                            maxLength={11}
+                            pattern={PHONE_PATTERN}
+                            placeholder="09171234567"
+                            value={form[key].phone}
+                            onChange={(e) => handleMemberChange(key, "phone", e.target.value)}
+                          />
+                        </Field>
                       </div>
-                    ))}
-                  </div>
-                </fieldset>
-              ))}
-              {!readOnly && <p className="form-note">Give the name and phone number of at least one of them.</p>}
-
-              <h3 className="form-section-title">Brothers and sisters</h3>
-              {values.siblings.length === 0 && readOnly ? <p className="form-note">None listed.</p> : null}
-              {values.siblings.map((sibling, index) => (
-                <fieldset key={index} className="family-group">
-                  <legend className="family-group-title">Brother or sister {index + 1}</legend>
-                  <div className="family-fields family-fields-sibling">
-                    <div className="form-row">
-                      <label htmlFor={`sibling-${index}-name`}>Name</label>
-                      <input id={`sibling-${index}-name`} type="text" placeholder="e.g. Pedro Dela Cruz" maxLength={200} value={sibling.name} onChange={(e) => handleSiblingChange(index, "name", e.target.value)} />
-                    </div>
-                    <div className="form-row">
-                      <label htmlFor={`sibling-${index}-age`}>Age</label>
-                      <input id={`sibling-${index}-age`} type="number" placeholder="e.g. 15" min="0" max="120" value={sibling.age} onChange={(e) => handleSiblingChange(index, "age", e.target.value)} />
-                    </div>
-                    <div className="form-row">
-                      <label htmlFor={`sibling-${index}-occupation`}>Occupation</label>
-                      <input id={`sibling-${index}-occupation`} type="text" placeholder="e.g. Student" maxLength={100} value={sibling.occupation} onChange={(e) => handleSiblingChange(index, "occupation", e.target.value)} />
-                    </div>
-                    <div className="form-row">
-                      <label htmlFor={`sibling-${index}-school`}>School / place of work</label>
-                      <input id={`sibling-${index}-school`} type="text" placeholder="e.g. San Isidro National High School" maxLength={200} value={sibling.schoolOrWork} onChange={(e) => handleSiblingChange(index, "schoolOrWork", e.target.value)} />
-                    </div>
-                  </div>
-                  {!readOnly && (
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => removeSibling(index)} aria-label={`Remove brother or sister ${index + 1}`}>
-                      Remove
-                    </button>
-                  )}
-                </fieldset>
-              ))}
-              {!readOnly && (
-                <button type="button" onClick={addSibling} disabled={values.siblings.length >= MAX_SIBLINGS}>
-                  Add a brother or sister
-                </button>
+                    </fieldset>
+                  ))}
+                  <p className="form-note">Give the name and mobile number of at least one of them. Mobile numbers are {PHONE_HINT}.</p>
+                </div>
               )}
 
-              <h3 className="form-section-title">Signatures</h3>
-              <div className="form-grid">
-                <div className="form-row">
-                  <label htmlFor="studentSignature">Student's signature over printed name</label>
-                  <input placeholder="e.g. Juan Dela Cruz" id="studentSignature" name="studentSignature" type="text" maxLength={200} required className="signature-input" value={values.studentSignature} onChange={handleChange} />
-                </div>
-                <div className="form-row">
-                  <label htmlFor="guardianSignature">Parent's / guardian's signature over printed name</label>
-                  <input placeholder="e.g. Maria Dela Cruz" id="guardianSignature" name="guardianSignature" type="text" maxLength={200} required className="signature-input" value={values.guardianSignature} onChange={handleChange} />
-                </div>
-              </div>
-              {!readOnly && <p className="form-note">Type the full name of each person. Typing it counts as their signature.</p>}
-            </fieldset>
+              {step === 1 && (
+                <div className="admission-step">
+                  <fieldset className="choice-group">
+                    <legend className="form-section-title">Academic category</legend>
+                    <div className="choice-grid choice-grid-4">
+                      {ACADEMIC_CATEGORIES.map((c) => (
+                        <ChoiceTile
+                          key={c.value}
+                          name="department"
+                          value={c.value}
+                          checked={form.department === c.value}
+                          onChange={handleCategory}
+                          title={c.label}
+                          blurb={c.blurb}
+                        />
+                      ))}
+                    </div>
+                  </fieldset>
 
-            {!readOnly && (
-              <>
-                <div className="form-guidance">
-                  <p className="form-guidance-title">Documents you will need</p>
-                  <ul className="required-docs">
-                    {requiredDocuments.map((doc) => (
-                      <li key={doc.type}>
-                        {doc.label}
-                        {doc.required ? <span className="required-mark" title="Required"> *</span> : <em> ({doc.note})</em>}
-                      </li>
-                    ))}
+                  {category && (
+                    <>
+                      <h4 className="form-section-title">{category.label} details</h4>
+                      <div className="form-grid">
+                        {form.department === "College" && (
+                          <Field id="courseAppliedFor" label="Program">
+                            <select id="courseAppliedFor" name="courseAppliedFor" value={form.courseAppliedFor} onChange={handleChange}>
+                              <option value="" disabled>
+                                Select a program
+                              </option>
+                              {programs.map((program) => (
+                                <option key={program.code} value={program.code}>
+                                  {programOptionLabel(program)}
+                                </option>
+                              ))}
+                            </select>
+                          </Field>
+                        )}
+                        {category.hasStrand && (
+                          <Field id="courseAppliedFor" label="Strand">
+                            <select id="courseAppliedFor" name="courseAppliedFor" value={form.courseAppliedFor} onChange={handleChange}>
+                              <option value="" disabled>
+                                Select a strand
+                              </option>
+                              {SENIOR_HIGH_STRANDS.map((strand) => (
+                                <option key={strand} value={strand}>
+                                  {strand}
+                                </option>
+                              ))}
+                            </select>
+                          </Field>
+                        )}
+                        <Field id="yearLevel" label={category.yearLevelLabel}>
+                          <select id="yearLevel" name="yearLevel" value={form.yearLevel} onChange={handleChange}>
+                            <option value="" disabled>
+                              Select
+                            </option>
+                            {category.yearLevels.map((level) => (
+                              <option key={level} value={level}>
+                                {level}
+                              </option>
+                            ))}
+                          </select>
+                        </Field>
+                        {category.terms && (
+                          <Field id="academicTerm" label={category.termLabel}>
+                            <select id="academicTerm" name="academicTerm" value={form.academicTerm} onChange={handleChange}>
+                              <option value="" disabled>
+                                Select
+                              </option>
+                              {category.terms.map((term) => (
+                                <option key={term} value={term}>
+                                  {term}
+                                </option>
+                              ))}
+                            </select>
+                          </Field>
+                        )}
+                      </div>
+                      {tooYoung && (
+                        <p className="form-error" role="alert">
+                          {tooYoung}
+                        </p>
+                      )}
+                      {config && <p className="form-note">Applying for academic year {config.academicYear}.</p>}
+                    </>
+                  )}
+
+                  <h4 className="form-section-title">School last attended</h4>
+                  <Field id="previousSchool" label="School name">
+                    <input id="previousSchool" name="previousSchool" type="text" maxLength={200} placeholder="e.g. San Isidro Elementary School" value={form.previousSchool} onChange={handleChange} />
+                  </Field>
+                  <Field id="previousSchoolAddress" label="School address">
+                    <input id="previousSchoolAddress" name="previousSchoolAddress" type="text" maxLength={300} placeholder="e.g. 123 Rizal St., Brgy. San Isidro, Quezon City" value={form.previousSchoolAddress} onChange={handleChange} />
+                  </Field>
+                </div>
+              )}
+
+              {step === 2 && (
+                <div className="admission-step">
+                  <fieldset className="choice-group">
+                    <legend className="form-section-title">Which best describes you?</legend>
+                    <div className="choice-grid choice-grid-3">
+                      {APPLICATION_TYPES.map((type) => (
+                        <ChoiceTile
+                          key={type.value}
+                          name="applicationType"
+                          value={type.value}
+                          checked={form.applicationType === type.value}
+                          onChange={handleChange}
+                          title={type.label}
+                          blurb={type.blurb}
+                        />
+                      ))}
+                    </div>
+                  </fieldset>
+                  {form.applicationType && (
+                    <p className="form-note">
+                      Your documents depend on this choice
+                      {form.applicationType === "Transferee" && form.department === "College"
+                        ? ": a College transferee also submits a Transcript of Records (TOR)."
+                        : "."}{" "}
+                      You attach them in the next step.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {step === 3 && (
+                <div className="admission-step">
+                  <p className="form-note">
+                    {REQUIRED_NOTE} Each file is checked against the format shown beside it. Files up to 10 MB.
+                  </p>
+                  <ul className="admission-docs">
+                    {requiredDocuments.map((doc) => {
+                      const file = files[doc.type];
+                      const inputId = `doc-${doc.type}`;
+                      return (
+                        <li key={doc.type} className="admission-doc">
+                          <div className="admission-doc-head">
+                            <span className="admission-doc-name">
+                              {doc.label}
+                              {doc.required ? (
+                                <span className="required-mark" title="Required" aria-label="required">
+                                  {" "}
+                                  *
+                                </span>
+                              ) : null}
+                              <span className="admission-doc-format"> ({formatsLabel(doc.formats)})</span>
+                            </span>
+                            <span className={`admission-doc-state${file ? " admission-doc-state-ready" : ""}`}>
+                              {file ? "Ready to upload" : doc.required ? "Not attached" : "After the exam"}
+                            </span>
+                          </div>
+
+                          {file && (
+                            <p className="admission-doc-file">
+                              {file.name} <span>&middot; {formatFileSize(file.size)}</span>
+                            </p>
+                          )}
+                          {fileErrors[doc.type] && (
+                            <p className="form-error" role="alert">
+                              {fileErrors[doc.type]}
+                            </p>
+                          )}
+
+                          {doc.required && (
+                            <div className="admission-doc-actions">
+                              <label className="documents-upload-button" htmlFor={inputId}>
+                                {file ? "Replace file" : "Choose file"}
+                              </label>
+                              <input
+                                id={inputId}
+                                className="admission-doc-input"
+                                type="file"
+                                accept={acceptFor(doc.formats)}
+                                onChange={(e) => handleFile(doc, e)}
+                              />
+                              {file && (
+                                <button type="button" className="admission-doc-remove" onClick={() => removeFile(doc.type)}>
+                                  Remove
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
-                  <p className="form-note">{REQUIRED_NOTE} You upload them on the Documents page after submitting.</p>
                 </div>
+              )}
 
-                <button type="submit" disabled={isSubmitting}>
-                  Submit Application
+              {step === 4 && (
+                <div className="admission-step">
+                  <p className="form-note">Check everything below. You can&apos;t change your application after you submit it.</p>
+                  <ApplicationSummary values={form} profile={profile} requiredDocuments={requiredDocuments} files={files} onEdit={goTo} />
+
+                  <h4 className="form-section-title">Declaration</h4>
+                  <div className="form-grid">
+                    <Field id="studentSignature" label="Student's signature over printed name">
+                      <input id="studentSignature" name="studentSignature" type="text" maxLength={200} className="signature-input" placeholder="e.g. Juan Dela Cruz" value={form.studentSignature} onChange={handleChange} />
+                    </Field>
+                    <Field id="guardianSignature" label="Parent's / guardian's signature over printed name">
+                      <input id="guardianSignature" name="guardianSignature" type="text" maxLength={200} className="signature-input" placeholder="e.g. Maria Dela Cruz" value={form.guardianSignature} onChange={handleChange} />
+                    </Field>
+                  </div>
+                  <p className="form-note">Type the full name of each person. Typing it counts as their signature.</p>
+                </div>
+              )}
+
+              <div className="admission-actions">
+                {step > 0 ? (
+                  <button type="button" className="btn btn-secondary" onClick={() => goTo(step - 1)} disabled={isSubmitting}>
+                    Back
+                  </button>
+                ) : (
+                  <span />
+                )}
+                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                  {isLastStep ? "Submit Application" : "Continue"}
                 </button>
-              </>
-            )}
-          </form>
+              </div>
+              {progress && (
+                <p className="form-note" role="status">
+                  {progress}
+                </p>
+              )}
+            </form>
+          </>
         )}
       </Card>
 

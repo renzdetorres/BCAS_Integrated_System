@@ -6,6 +6,7 @@ import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Icon from "../components/ui/Icon.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
+import AdmissionPipeline from "../components/AdmissionPipeline.jsx";
 import { DEPARTMENT_OPTIONS } from "../config/departments.js";
 import "./AdminDashboardPage.css";
 
@@ -480,6 +481,8 @@ export default function AdminDashboardPage() {
 
         </div>
       )}
+
+      {workspace === "admission" && <AdmissionPipeline />}
 
       <ShortcutFab />
     </AppLayout>

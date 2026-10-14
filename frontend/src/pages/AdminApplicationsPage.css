@@ -39,3 +39,7 @@
   display: inline-flex;
   align-items: center;
 }
+
+.admin-applications-cell {
+  min-width: 150px;
+}

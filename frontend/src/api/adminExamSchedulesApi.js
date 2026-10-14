@@ -15,12 +15,12 @@ export async function listExamSchedules() {
   return response.json();
 }
 
-export async function createExamSchedule({ dayType, examDate, examTime, venue, isOffered }) {
+export async function createExamSchedule({ dayType, examDate, examTime, venue, isOffered, capacity }) {
   const response = await fetch(`${API_BASE_URL}/api/admin/exam-schedules`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ dayType, examDate, examTime, venue, isOffered }),
+    body: JSON.stringify({ dayType, examDate, examTime, venue, isOffered, capacity: capacity === "" || capacity == null ? null : Number(capacity) }),
   });
 
   const data = await response.json().catch(() => null);

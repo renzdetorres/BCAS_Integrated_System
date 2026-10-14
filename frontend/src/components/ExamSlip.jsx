@@ -15,6 +15,8 @@ export default function ExamSlip({ permit, released = true }) {
   const fields = [
     ["Type of exam", permit.examType],
     ["Name", permit.applicantName],
+    ["Application no.", permit.applicationNumber],
+    ["Control no.", permit.controlNumber],
     ["School last attended", permit.schoolLastAttended],
     ["Level applying for", level],
     ["Date", formatCalendarDate(permit.examDate)],

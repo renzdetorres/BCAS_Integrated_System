@@ -1,0 +1,118 @@
+.payment-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.payment-layout h2 {
+  margin: 0;
+  font: var(--text-h1);
+}
+
+.payment-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.payment-sub {
+  margin: 2px 0 0;
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.payment-facts {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0 0 var(--space-5);
+}
+
+.payment-facts dt {
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.payment-facts dd {
+  margin: 2px 0 0;
+  font: var(--text-body);
+  font-weight: 600;
+}
+
+.payment-amount {
+  font-size: 28px !important;
+  font-weight: 700 !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  color: var(--color-primary);
+}
+
+.payment-instructions {
+  margin: 0 0 var(--space-5);
+  max-width: 60ch;
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+}
+
+.payment-qr {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.payment-qr img {
+  display: block;
+  width: min(100%, 260px);
+  aspect-ratio: 1;
+  object-fit: contain;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+}
+
+.payment-qr figcaption {
+  font: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+.payment-qr-missing {
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+}
+
+.payment-uploaded {
+  margin: var(--space-4) 0;
+  font: var(--text-dense);
+  overflow-wrap: anywhere;
+}
+
+.payment-uploaded span {
+  color: var(--color-text-secondary);
+}
+
+.payment-form {
+  margin-top: var(--space-5);
+}
+
+.payment-next {
+  margin: var(--space-4) 0 0;
+}
+
+@media (max-width: 860px) {
+  .payment-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.payment-layout .ui-card > h2 {
+  margin-bottom: var(--space-4);
+}

@@ -4,7 +4,8 @@ import { searchApplicants } from "../api/supportStaffApplicantsApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
-import DataTable from "../components/ui/DataTable.jsx";
+import DataTable, { RowAction } from "../components/ui/DataTable.jsx";
+import SendNotificationModal from "../components/SendNotificationModal.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./SupportStaffApplicantsPage.css";
 
@@ -22,6 +23,7 @@ export default function SupportStaffApplicantsPage() {
   const [applicants, setApplicants] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [notifying, setNotifying] = useState(null);
 
   const loadApplicants = useCallback(async (activeSearch) => {
     setIsLoading(true);
@@ -81,9 +83,17 @@ export default function SupportStaffApplicantsPage() {
       key: "actions",
       header: "",
       render: (row) => (
-        <Link className="ss-applicants-verify-link" to={`/support-staff/documents?applicantId=${row.userId}`}>
-          View Documents
-        </Link>
+        <div className="ss-applicants-actions">
+          <Link className="ss-applicants-verify-link" to={`/support-staff/documents?applicantId=${row.userId}`}>
+            View Documents
+          </Link>
+          <RowAction
+            label="Notify"
+            icon="bell"
+            onClick={() => setNotifying(row)}
+            ariaLabel={`Send a notification to ${row.firstName} ${row.lastName}`}
+          />
+        </div>
       ),
     },
   ];
@@ -115,6 +125,8 @@ export default function SupportStaffApplicantsPage() {
           }}
         />
       </Card>
+
+      {notifying && <SendNotificationModal applicant={notifying} onClose={() => setNotifying(null)} />}
     </AppLayout>
   );
 }

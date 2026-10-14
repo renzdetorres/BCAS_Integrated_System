@@ -1,3 +1,6 @@
+import { useSession } from "../context/SessionContext.jsx";
+import { applicationsBasePath } from "../config/navigation.js";
+import { APPLICATION_TYPE_LABELS } from "../api/admissionApi.js";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getApplicationStatusHistory } from "../api/adminApplicationsApi.js";
@@ -7,7 +10,6 @@ import StatusBadge from "./ui/StatusBadge.jsx";
 import WorkflowStepper, { ADMISSION_STEP_LABELS, SCHOLARSHIP_STEP_LABELS } from "./WorkflowStepper.jsx";
 import "./ApplicationDetailModal.css";
 
-const APPLICATION_TYPE_LABELS = { NewStudent: "New Student", Transferee: "Transferee" };
 
 function formatDateTime(isoDateTime) {
   return new Date(isoDateTime).toLocaleString(undefined, {
@@ -25,6 +27,7 @@ function formatDateTime(isoDateTime) {
  * page (one "Manage application" click away) - this is for reading.
  */
 export default function ApplicationDetailModal({ application, onClose }) {
+  const { session } = useSession();
   const [history, setHistory] = useState([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [historyError, setHistoryError] = useState(null);
@@ -78,7 +81,7 @@ export default function ApplicationDetailModal({ application, onClose }) {
           <button type="button" className="btn btn-secondary" onClick={onClose}>
             Close
           </button>
-          <Link to={`/admin/applications/${application.applicationId}`} className="btn btn-primary">
+          <Link to={`${applicationsBasePath(session.role)}/${application.applicationId}`} className="btn btn-primary">
             Manage application
           </Link>
         </>

@@ -93,3 +93,17 @@ export async function bulkReviewDocuments(documentIds, { status, reason }) {
 
   return data;
 }
+
+/** One document's uploaded file as a Blob, for the in-page preview (fetched with the auth cookie, never linked directly). */
+export async function getDocumentFileForReview(documentId) {
+  const response = await fetch(`${API_BASE_URL}/api/support-staff/documents/${documentId}/file`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to load this file."), response.status);
+  }
+
+  return response.blob();
+}

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { getSupportStaffDashboard } from "../api/supportStaffDashboardApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
-import Card, { StatCard } from "../components/ui/Card.jsx";
+import Card from "../components/ui/Card.jsx";
 import NextActionBanner from "../components/ui/NextActionBanner.jsx";
 import "./SupportStaffDashboardPage.css";
 
@@ -62,7 +62,11 @@ export default function SupportStaffDashboardPage() {
               <span className="ui-stat-card-value">{dashboard.flaggedDocsCount}</span>
               <span className="ss-action-tile-hint">Review flagged items</span>
             </Link>
-            <StatCard label="Verified Today" value={dashboard.verifiedTodayCount} />
+            <div className="ui-card ss-action-tile ss-action-tile-static">
+              <span className="ui-stat-card-label">Verified Today</span>
+              <span className="ui-stat-card-value">{dashboard.verifiedTodayCount}</span>
+              <span className="ss-action-tile-hint ss-action-tile-hint-muted">Counted today</span>
+            </div>
             <Link to="/support-staff/applicants" className="ui-card ss-action-tile">
               <span className="ui-stat-card-label">Total Applicants</span>
               <span className="ui-stat-card-value">{dashboard.totalApplicants}</span>

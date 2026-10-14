@@ -42,3 +42,10 @@ export function formatPeso(amount) {
   if (amount === null || amount === undefined) return "";
   return new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" }).format(amount);
 }
+
+/** "240 KB" or "1.3 MB" - a file's size as people read it. */
+export function formatFileSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}

@@ -946,3 +946,8 @@
 .dash-enroll-list strong {
   font-variant-numeric: tabular-nums;
 }
+
+/* The shortcuts button floats over the bottom-right corner: leave room under the last row so it never covers a card. */
+.dash-layout {
+  padding-bottom: 56px;
+}

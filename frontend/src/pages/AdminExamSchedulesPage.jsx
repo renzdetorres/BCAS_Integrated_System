@@ -17,7 +17,7 @@ import Modal from "../components/ui/Modal.jsx";
 import { formatCalendarDate as formatDate, formatDateTime, formatTime } from "../utils/format.js";
 import "./AdminExamSchedulesPage.css";
 
-const initialForm = { dayType: DAY_TYPES[0], examDate: "", examTime: "", venue: "", isOffered: true };
+const initialForm = { dayType: DAY_TYPES[0], examDate: "", examTime: "", venue: "", isOffered: true, capacity: "" };
 
 function scheduleLabel(schedule) {
   return `${formatDate(schedule.examDate)} at ${formatTime(schedule.examTime)}`;
@@ -122,6 +122,23 @@ function AddScheduleModal({ open, onClose, onCreated }) {
             value={form.venue}
             onChange={handleChange}
           />
+        </div>
+        <div className="ui-field">
+          <label className="ui-label" htmlFor="capacity">
+            Seats (optional)
+          </label>
+          <input
+            id="capacity"
+            name="capacity"
+            type="number"
+            min="1"
+            max="5000"
+            className="ui-input"
+            placeholder="Leave blank for no limit"
+            value={form.capacity}
+            onChange={handleChange}
+          />
+          <p className="ui-hint">Once the seats are taken, applicants can no longer pick this slot.</p>
         </div>
         {form.dayType === "Weekday" ? (
           <label className="exam-offer-check">
@@ -281,11 +298,12 @@ export default function AdminExamSchedulesPage() {
     { key: "venue", header: "Venue", sortable: true },
     {
       key: "applicants",
-      header: "Applicants",
+      header: "Seats taken",
       align: "right",
       accessor: (row) => row.assignedApplicants.length,
       sortable: true,
       searchable: false,
+      render: (row) => (row.capacity == null ? row.assignedApplicants.length : `${row.assignedApplicants.length} / ${row.capacity}`),
     },
     {
       key: "offered",

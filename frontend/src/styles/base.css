@@ -17,6 +17,21 @@ body,
 html {
   -webkit-text-size-adjust: 100%;
   scrollbar-color: var(--color-border-strong) transparent;
+  /* The canvas behind the page: same colour as the app, so nothing white can
+     show if the browser ever paints past the content. */
+  background: var(--color-bg);
+}
+
+/* No rubber-band bounce at the top or bottom of the page, and a scrolling
+   panel (sidebar, modal, dropdown, table) stops at its own edge instead of
+   handing the scroll to the page behind it. */
+html,
+body {
+  overscroll-behavior: none;
+}
+
+* {
+  overscroll-behavior: contain;
 }
 
 body {

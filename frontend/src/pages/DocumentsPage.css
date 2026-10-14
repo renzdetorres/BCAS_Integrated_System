@@ -116,3 +116,20 @@
   color: var(--color-status-red-text);
   font-weight: 700;
 }
+.documents-format { font-weight: 500; color: var(--color-text-secondary); font-size: 0.85em; }
+
+.documents-view-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-primary-light);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.documents-view-link:hover {
+  color: var(--color-primary);
+}

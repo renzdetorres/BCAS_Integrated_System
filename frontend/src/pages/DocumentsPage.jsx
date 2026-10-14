@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   DOCUMENT_TYPE_LABELS,
   getMyDocumentChecklist,
   getMyScholarshipDocumentChecklist,
+  getMyDocumentFile,
   uploadDocument,
 } from "../api/documentApi.js";
+import { APPLICATION_TYPE_LABELS } from "../api/admissionApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
+import FilePreviewModal from "../components/FilePreviewModal.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import ProgressBar from "../components/ui/ProgressBar.jsx";
-import { REQUIRED_NOTE, isRequiredDocument } from "../config/requiredDocuments.js";
+import { REQUIRED_NOTE, acceptFor, fileProblem, formatsFor, formatsLabel, isRequiredDocument } from "../config/requiredDocuments.js";
 import "./DocumentsPage.css";
 
 function formatDate(isoDate) {
@@ -26,12 +29,20 @@ function formatDate(isoDate) {
 function DocumentChecklist({ requirements, onUploaded }) {
   const [uploadingType, setUploadingType] = useState(null);
   const [itemErrors, setItemErrors] = useState({});
+  const [previewing, setPreviewing] = useState(null);
   const verified = requirements.filter((r) => r.status === "Verified").length;
 
   async function handleFileSelected(documentType, event) {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
+
+    const requirement = requirements.find((r) => r.documentType === documentType);
+    const problem = fileProblem(file, requirement?.acceptedFormats?.length ? requirement.acceptedFormats : formatsFor(documentType));
+    if (problem) {
+      setItemErrors((prev) => ({ ...prev, [documentType]: problem }));
+      return;
+    }
 
     setUploadingType(documentType);
     setItemErrors((prev) => ({ ...prev, [documentType]: null }));
@@ -58,6 +69,7 @@ function DocumentChecklist({ requirements, onUploaded }) {
           const canUpload = requirement.status === "NotSubmitted" || requirement.status === "Rejected" || requirement.status === "Flagged";
           const isUploading = uploadingType === requirement.documentType;
           const needsAttention = requirement.status === "Flagged" || requirement.status === "Rejected";
+          const formats = requirement.acceptedFormats?.length ? requirement.acceptedFormats : formatsFor(requirement.documentType);
 
           return (
             <li key={requirement.documentType} className={needsAttention ? "documents-item-flagged" : undefined}>
@@ -70,19 +82,24 @@ function DocumentChecklist({ requirements, onUploaded }) {
                       *
                     </span>
                   ) : null}
+                  <span className="documents-format"> ({formatsLabel(formats)})</span>
                 </span>
                 <StatusBadge status={requirement.status === "NotSubmitted" ? "NotUploaded" : requirement.status} />
               </div>
 
               {requirement.fileName && (
                 <p className="documents-meta">
-                  {requirement.fileName} &middot; Submitted {formatDate(requirement.uploadedAt)}
+                  {requirement.fileName} &middot; Submitted {formatDate(requirement.uploadedAt)} &middot;{" "}
+                  <button type="button" className="documents-view-link" onClick={() => setPreviewing(requirement)}>
+                    View
+                  </button>
                 </p>
               )}
 
-              {requirement.status === "Flagged" && requirement.flaggedReason && (
+              {needsAttention && (
                 <p className="documents-flag-reason">
-                  <strong>Needs your attention:</strong> {requirement.flaggedReason}
+                  <strong>{requirement.status === "Rejected" ? "Rejected:" : "Needs your attention:"}</strong>{" "}
+                  {requirement.flaggedReason || "Upload a corrected file."}
                 </p>
               )}
 
@@ -97,7 +114,7 @@ function DocumentChecklist({ requirements, onUploaded }) {
                   {isUploading ? "Uploading..." : requirement.status === "NotSubmitted" ? "Upload" : "Re-upload"}
                   <input
                     type="file"
-                    accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                    accept={acceptFor(formats)}
                     disabled={isUploading}
                     onChange={(event) => handleFileSelected(requirement.documentType, event)}
                   />
@@ -107,11 +124,21 @@ function DocumentChecklist({ requirements, onUploaded }) {
           );
         })}
       </ul>
+
+      {previewing && (
+        <FilePreviewModal
+          title={DOCUMENT_TYPE_LABELS[previewing.documentType] ?? previewing.documentType}
+          fileName={previewing.fileName}
+          loadFile={() => getMyDocumentFile(previewing.documentType)}
+          onClose={() => setPreviewing(null)}
+        />
+      )}
     </>
   );
 }
 
 export default function DocumentsPage() {
+  const uploadFailures = useLocation().state?.uploadFailures ?? [];
   const [applicationType, setApplicationType] = useState(null);
   const [requirements, setRequirements] = useState([]);
   const [scholarshipRequirements, setScholarshipRequirements] = useState(null);
@@ -164,6 +191,11 @@ export default function DocumentsPage() {
 
   return (
     <AppLayout title="Documents">
+      {uploadFailures.length > 0 && (
+        <p className="form-error" role="alert">
+          Your application was submitted, but these documents did not upload: {uploadFailures.join(", ")}. Upload them below.
+        </p>
+      )}
       {(isLoading || needsApplication || errorMessage || showAdmission) && (
         <Card>
           {isLoading && <p>Loading...</p>}
@@ -184,8 +216,8 @@ export default function DocumentsPage() {
           {!isLoading && showAdmission && (
             <>
               <p className="documents-subtitle">
-                Requirements for your {applicationType === "Transferee" ? "Transferee" : "New Student"} application.{" "}
-                {REQUIRED_NOTE} PDF, JPG or PNG files, up to 10 MB each.
+                Requirements for your {APPLICATION_TYPE_LABELS[applicationType] ?? "admission"} application.{" "}
+                {REQUIRED_NOTE} Files up to 10 MB each, in the format shown beside each document.
               </p>
               <DocumentChecklist requirements={requirements} onUploaded={handleUploaded} />
             </>

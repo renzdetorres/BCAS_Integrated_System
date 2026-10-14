@@ -3,6 +3,7 @@ import { getMyApplicationTracking } from "../api/applicationTrackingApi.js";
 import { DOCUMENT_TYPE_LABELS } from "../api/documentApi.js";
 import { ApiError } from "../api/apiClient.js";
 import WorkflowStepper, { ADMISSION_STEP_LABELS, SCHOLARSHIP_STEP_LABELS } from "../components/WorkflowStepper.jsx";
+import TrackerStatus from "../components/TrackerStatus.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
@@ -69,7 +70,8 @@ export default function ApplicationTrackingPage() {
                     Submitted {formatDate(application.submittedAt)}
                   </span>
                 </div>
-                <WorkflowStepper steps={application.steps} labels={ADMISSION_STEP_LABELS} />
+                <WorkflowStepper steps={application.steps} labels={ADMISSION_STEP_LABELS} numbered />
+                <TrackerStatus steps={application.steps} subProcess={application.subProcess} nextAction={application.nextAction} nextActionPath={application.nextActionPath} />
               </div>
             ))}
 
@@ -83,7 +85,14 @@ export default function ApplicationTrackingPage() {
                     Submitted {formatDate(application.submittedAt)}
                   </span>
                 </div>
-                <WorkflowStepper steps={application.steps} labels={SCHOLARSHIP_STEP_LABELS} />
+                <WorkflowStepper steps={application.steps} labels={SCHOLARSHIP_STEP_LABELS} numbered />
+                <TrackerStatus
+                  steps={application.steps}
+                  labels={SCHOLARSHIP_STEP_LABELS}
+                  subProcess={application.subProcess}
+                  nextAction={application.nextAction}
+                  nextActionPath={application.nextActionPath}
+                />
               </div>
             ))}
           </>

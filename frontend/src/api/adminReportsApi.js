@@ -44,10 +44,6 @@ async function downloadFile(path, params, fallbackFileName) {
   URL.revokeObjectURL(url);
 }
 
-export const getEnrollmentList = (filters) => getJson("/api/admin/reports/admission/enrollment-list", filters);
-export const exportEnrollmentList = (filters) =>
-  downloadFile("/api/admin/reports/admission/enrollment-list/export", filters, "enrollment-list.xlsx");
-
 export const getEnrollmentSummary = () => getJson("/api/admin/reports/admission/enrollment-summary");
 export const exportEnrollmentSummary = () =>
   downloadFile("/api/admin/reports/admission/enrollment-summary/export", null, "enrollment-summary.xlsx");
@@ -83,3 +79,5 @@ export async function getScholarshipContract(applicationId) {
 
   return data;
 }
+
+export const getApplicantStatusReport = (filters) => getJson("/api/admin/reports/admission/applicant-status", filters);

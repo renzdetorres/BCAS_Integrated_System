@@ -13,24 +13,13 @@ import StatusBadge from "../components/ui/StatusBadge.jsx";
 import ProgressBar from "../components/ui/ProgressBar.jsx";
 import NextActionBanner from "../components/ui/NextActionBanner.jsx";
 import WorkflowStepper, { ADMISSION_STEP_LABELS, SCHOLARSHIP_STEP_LABELS } from "../components/WorkflowStepper.jsx";
+import TrackerStatus from "../components/TrackerStatus.jsx";
 import "./ApplicantDashboardPage.css";
 
 const DEADLINE_TYPE_LABELS = {
   ScholarshipDeadline: "Scholarship Deadline",
   DocumentDeadline: "Document Deadline",
   EnrollmentPeriod: "Enrollment Period",
-};
-
-const ADMISSION_NEXT_STEP_HINT = {
-  Submitted: "Your application has been received. Upload your requirements so verification can begin.",
-  UnderReview: "The registrar is reviewing your application.",
-  PendingDocuments: "Upload any missing required documents so the registrar can continue.",
-  DocumentsCompleted: "All your required documents are in. The registrar will verify them next.",
-  DocumentsCleared: "Your documents are verified. Choose an entrance exam schedule.",
-  ExamScheduled: "Your entrance exam is scheduled - check your exam permit for the venue and time.",
-  ExamDone: "You took the exam. Wait for the registrar's next step.",
-  Registration: "You passed the exam. Complete your registration with the registrar.",
-  Approved: "Your application has been approved.",
 };
 
 function formatDate(isoDate) {
@@ -107,24 +96,28 @@ export default function ApplicantDashboardPage() {
   const requirements = tracking.documents?.requirements ?? [];
   const verifiedCount = requirements.filter((r) => r.status === "Verified").length;
   const outstandingDocs = requirements.filter((r) => r.status !== "Verified");
+  // SF10 is only asked for after the exam, and an uploaded document is waiting on staff, not on the applicant.
+  const missingDocs = requirements.filter((r) => r.status === "NotSubmitted" && r.documentType !== "SF10");
+  const needsAttentionDocs = requirements.some((r) => r.status === "Flagged" || r.status === "Rejected");
 
   // A single, prioritized "what do I do next" call to action - the thing an
   // applicant actually opens this dashboard to find out.
   let nextAction = null;
   if (!admission) {
     nextAction = { text: "Submit your admission application to get started.", to: "/applications", cta: "Apply Now" };
-  } else if (outstandingDocs.length > 0) {
-    const flagged = outstandingDocs.some((d) => d.status === "Flagged" || d.status === "Rejected");
+  } else if (needsAttentionDocs || missingDocs.length > 0) {
     nextAction = {
-      text: flagged
+      text: needsAttentionDocs
         ? "One or more documents need your attention before they can be verified."
-        : `You still have ${outstandingDocs.length} document${outstandingDocs.length === 1 ? "" : "s"} to submit.`,
+        : `You still have ${missingDocs.length} document${missingDocs.length === 1 ? "" : "s"} to submit.`,
       to: "/documents",
       cta: "Manage Documents",
     };
-  } else if (!examSelection) {
+  } else if (admission.nextActionPath === "/payment") {
+    nextAction = { text: admission.nextAction, to: "/payment", cta: "Go to Payment" };
+  } else if (!examSelection && admission.nextActionPath === "/exam-schedule") {
     nextAction = {
-      text: "All documents are verified. Select your entrance exam schedule next.",
+      text: admission.nextAction,
       to: "/exam-schedule",
       cta: "Select Schedule",
     };
@@ -149,12 +142,8 @@ export default function ApplicantDashboardPage() {
                   <span className="applicant-app-course">{admission.courseAppliedFor}</span>
                   <StatusBadge status={admission.status} />
                 </div>
-                <WorkflowStepper steps={admission.steps} labels={ADMISSION_STEP_LABELS} />
-                {(() => {
-                  const current = admission.steps.find((s) => s.isCurrent);
-                  const hint = current && ADMISSION_NEXT_STEP_HINT[current.step];
-                  return hint ? <p className="dashboard-meta applicant-step-hint">{hint}</p> : null;
-                })()}
+                <WorkflowStepper steps={admission.steps} labels={ADMISSION_STEP_LABELS} numbered />
+                <TrackerStatus steps={admission.steps} subProcess={admission.subProcess} nextAction={admission.nextAction} nextActionPath={admission.nextActionPath} />
 
                 <div className="applicant-requirements">
                   <ProgressBar
@@ -197,7 +186,14 @@ export default function ApplicantDashboardPage() {
                       <span className="applicant-app-course">{scholarship.scholarshipName}</span>
                       <StatusBadge status={scholarship.status} />
                     </div>
-                    <WorkflowStepper steps={scholarship.steps} labels={SCHOLARSHIP_STEP_LABELS} />
+                    <WorkflowStepper steps={scholarship.steps} labels={SCHOLARSHIP_STEP_LABELS} numbered />
+                    <TrackerStatus
+                      steps={scholarship.steps}
+                      labels={SCHOLARSHIP_STEP_LABELS}
+                      subProcess={scholarship.subProcess}
+                      nextAction={scholarship.nextAction}
+                      nextActionPath={scholarship.nextActionPath}
+                    />
                   </li>
                 ))}
               </ul>

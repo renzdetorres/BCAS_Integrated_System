@@ -8,7 +8,9 @@ import ApplicationDetailModal from "../components/ApplicationDetailModal.jsx";
 import DataTable, { RowAction } from "../components/ui/DataTable.jsx";
 import StatusBadge, { statusLabel } from "../components/ui/StatusBadge.jsx";
 import StatusLegend from "../components/ui/StatusLegend.jsx";
-import { DEPARTMENT_OPTIONS } from "../config/departments.js";
+import { useSession } from "../context/SessionContext.jsx";
+import { DEPARTMENT_OPTIONS, programsFor } from "../config/departments.js";
+import { ACADEMIC_CATEGORIES, SENIOR_HIGH_STRANDS, categoryFor } from "../config/academicStructure.js";
 import { ADMISSION_STATUSES, SCHOLARSHIP_STATUSES, statusDescription } from "../config/statusDescriptions.js";
 import "./AdminApplicationsPage.css";
 
@@ -17,7 +19,7 @@ const ARCHIVABLE_STATUS_SET = new Set(ARCHIVABLE_STATUSES);
 // Filters live in the URL, so the sidebar's department links, the dashboard
 // and the top-bar search can all deep-link into a filtered list, and the
 // sidebar can tell which department view is active.
-const FILTER_KEYS = ["search", "status", "category", "program", "department"];
+const FILTER_KEYS = ["search", "status", "category", "program", "department", "yearLevel", "academicYear", "academicTerm"];
 
 const DEPARTMENT_FILTER_OPTIONS = [
   ...DEPARTMENT_OPTIONS.map((department) => ({ value: department, label: department })),
@@ -52,6 +54,7 @@ function formatDate(isoDateTime) {
 }
 
 export default function AdminApplicationsPage() {
+  const { session } = useSession();
   const { showToast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const filterQuery = FILTER_KEYS.map((key) => searchParams.get(key) ?? "").join("\u0000");
@@ -111,7 +114,7 @@ export default function AdminApplicationsPage() {
     const timeout = setTimeout(() => loadApplications(filters), 300);
     return () => clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters.search, filters.category, filters.program, filters.department, loadApplications]);
+  }, [filters.search, filters.category, filters.program, filters.department, filters.yearLevel, filters.academicYear, filters.academicTerm, loadApplications]);
 
   // Most recently active first (last updated, then submitted).
   const applications = useMemo(() => {
@@ -119,9 +122,29 @@ export default function AdminApplicationsPage() {
     return [...shown].sort((a, b) => (b.updatedAt ?? b.submittedAt).localeCompare(a.updatedAt ?? a.submittedAt));
   }, [loaded, filters.status]);
 
-  const archivableApplications = applications.filter(
-    (row) => !row.isArchived && ARCHIVABLE_STATUS_SET.has(row.status),
-  );
+  // Level and term choices belong to the academic category picked in the sidebar or the filter.
+  const category = categoryFor(filters.department);
+  const levelOptions = (category ? category.yearLevels : [...new Set(ACADEMIC_CATEGORIES.flatMap((c) => c.yearLevels))]).map((value) => ({ value, label: value }));
+  const termOptions = (category ? category.terms ?? [] : [...new Set(ACADEMIC_CATEGORIES.flatMap((c) => c.terms ?? []))]).map((value) => ({ value, label: value }));
+  // College names a program, Senior High School a strand; with no department chosen both are offered.
+  const programChoices = filters.department === "College"
+    ? (programsFor("College") ?? []).map((p) => p.code)
+    : category?.hasStrand
+      ? SENIOR_HIGH_STRANDS
+      : category
+        ? []
+        : [...(programsFor("College") ?? []).map((p) => p.code), ...SENIOR_HIGH_STRANDS];
+  const programOptions = programChoices.map((value) => ({ value, label: value }));
+  const programLabel = filters.department === "College" ? "All programs" : category?.hasStrand ? "All strands" : "All programs and strands";
+  const yearOptions = Array.from({ length: 5 }, (_, i) => {
+    const start = (new Date().getMonth() >= 5 ? new Date().getFullYear() : new Date().getFullYear() - 1) - i;
+    return { value: `${start}-${start + 1}`, label: `${start}-${start + 1}` };
+  });
+
+  // Archiving is an Admin action; an Evaluator only reads and evaluates.
+  const archivableApplications = session.role !== "Admin"
+    ? []
+    : applications.filter((row) => !row.isArchived && ARCHIVABLE_STATUS_SET.has(row.status));
   const archivableIds = new Set(archivableApplications.map((row) => row.applicationId));
   const selectedArchivableIds = Array.from(selectedIds).filter((id) => archivableIds.has(id));
   const allArchivableSelected =
@@ -208,14 +231,29 @@ export default function AdminApplicationsPage() {
         <div className="admin-applications-cell">
           <span className="admin-applications-name">{row.applicantName}</span>
           <span className="admin-applications-email">{row.applicantEmail}</span>
+          {row.applicationNumber ? <span className="admin-applications-email">{row.applicationNumber}</span> : null}
         </div>
       ),
     },
-    { key: "category", header: "Type", accessor: (row) => row.category, sortable: true },
+    { key: "category", header: "Type", accessor: (row) => row.category, sortable: true, nowrap: true },
     {
       key: "program",
       header: "Program",
       render: (row) => row.courseAppliedFor ?? row.scholarshipName,
+    },
+    {
+      key: "level",
+      header: "Level",
+      accessor: (row) => [row.yearLevel, row.academicTerm].filter(Boolean).join(" "),
+      render: (row) =>
+        row.yearLevel ? (
+          <div className="admin-applications-cell">
+            <span className="admin-applications-name">{row.yearLevel}</span>
+            {row.academicTerm ? <span className="admin-applications-email">{row.academicTerm}</span> : null}
+          </div>
+        ) : (
+          <span className="applications-department-missing">-</span>
+        ),
     },
     {
       key: "department",
@@ -343,8 +381,42 @@ export default function AdminApplicationsPage() {
             key: "department",
             label: "All departments",
             value: filters.department,
-            onChange: (value) => setFilter("department", value),
+            // A level or term from the previous category would match nothing, so reset them.
+            onChange: (value) => setFilters({ department: value, yearLevel: "", academicTerm: "", program: "" }),
             options: DEPARTMENT_FILTER_OPTIONS,
+          },
+          // High School and Elementary have no program or strand, so the dropdown is left out for them.
+          ...(programOptions.length > 0
+            ? [
+                {
+                  key: "program",
+                  label: programLabel,
+                  value: filters.program,
+                  onChange: (value) => setFilter("program", value),
+                  options: programOptions,
+                },
+              ]
+            : []),
+          {
+            key: "yearLevel",
+            label: "All levels",
+            value: filters.yearLevel,
+            onChange: (value) => setFilter("yearLevel", value),
+            options: levelOptions,
+          },
+          {
+            key: "academicTerm",
+            label: "All terms",
+            value: filters.academicTerm,
+            onChange: (value) => setFilter("academicTerm", value),
+            options: termOptions,
+          },
+          {
+            key: "academicYear",
+            label: "All years",
+            value: filters.academicYear,
+            onChange: (value) => setFilter("academicYear", value),
+            options: yearOptions,
           },
         ]}
       />

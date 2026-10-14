@@ -1,3 +1,4 @@
+import { APPLICATION_TYPE_LABELS } from "../api/admissionApi.js";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { listReservations, recordReservation } from "../api/adminReservationsApi.js";
 import { ApiError } from "../api/apiClient.js";
@@ -9,7 +10,6 @@ import StatusBadge from "../components/ui/StatusBadge.jsx";
 import { formatDate, formatDateTime, formatPeso } from "../utils/format.js";
 import "./AdminReservationsPage.css";
 
-const APPLICATION_TYPE_LABELS = { NewStudent: "New Student", Transferee: "Transferee" };
 
 function ReservationBadge({ isReserved }) {
   return <StatusBadge status={isReserved ? "Active" : "Inactive"} label={isReserved ? "Reserved" : "Not Reserved"} />;

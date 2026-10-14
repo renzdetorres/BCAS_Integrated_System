@@ -1,0 +1,102 @@
+.pipeline {
+  margin-top: var(--space-6);
+}
+
+.pipeline-skeleton {
+  height: 360px;
+  margin-top: var(--space-6);
+}
+
+.pipeline-year {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+.pipeline-year select {
+  min-height: 36px;
+  padding-block: 4px;
+}
+
+.pipeline-figures {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 0;
+  margin: 0 0 var(--space-6);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pipeline-figures > div {
+  padding: var(--space-4) var(--space-3);
+  border-left: 1px solid var(--color-border);
+}
+
+.pipeline-figures > div:first-child {
+  border-left: 0;
+  padding-left: 0;
+}
+
+.pipeline-figures dt {
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+  min-height: 2.8em;
+}
+
+.pipeline-figures dd {
+  margin: var(--space-1) 0 0;
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.pipeline-charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-8);
+  align-items: start;
+  margin-bottom: var(--space-8);
+}
+
+.pipeline-subtitle {
+  margin: 0 0 var(--space-3);
+  font: var(--text-h2);
+}
+
+@media (max-width: 1100px) {
+  .pipeline-figures {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .pipeline-figures > div {
+    border-left: 0;
+    padding-left: 0;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .pipeline-figures > div:nth-child(-n + 3) {
+    border-top: 0;
+  }
+
+  .pipeline-charts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .pipeline-figures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pipeline-figures > div:nth-child(3) {
+    border-top: 1px solid var(--color-border);
+  }
+}
+
+/* This panel already lists the latest applicants with their numbers, level and type. */
+.dash-layout-admission .dash-recent {
+  display: none;
+}

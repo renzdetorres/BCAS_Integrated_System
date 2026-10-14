@@ -49,21 +49,6 @@
   text-decoration: underline;
 }
 
-.admission-card button:not(.btn) {
-  padding: 12px 20px;
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.admission-card button:not(.btn):hover {
-  background: var(--color-primary-dark);
-}
-
 .admission-card button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
@@ -193,6 +178,7 @@
 }
 
 .form-section-title {
+  font-weight: 600;
   margin: 26px 0 12px;
   padding-top: 18px;
   border-top: 1px solid var(--color-border);
@@ -342,4 +328,275 @@
   .family-fields-sibling {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* ---- Multi-step form ---------------------------------------------------- */
+.admission-step-heading {
+  margin: 0 0 var(--space-4);
+  font: var(--text-h1);
+  color: var(--color-text-primary);
+}
+
+.admission-step-heading:focus {
+  outline: none;
+}
+
+.admission-step {
+  animation: admission-step-in 200ms var(--ease-out);
+}
+
+@keyframes admission-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.admission-step h4.form-section-title {
+  font: var(--text-h2);
+}
+
+.admission-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-8);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+
+/* Selectable options (academic category, application type). Real radio
+   inputs, visually the tile, so arrow keys and screen readers just work. */
+.choice-group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choice-group > legend {
+  padding: 0;
+  margin: 0 0 var(--space-3);
+  float: left;
+  width: 100%;
+}
+
+.choice-group > legend + * {
+  clear: both;
+}
+
+.choice-grid {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.choice-grid-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.choice-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.choice-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: border-color var(--motion-fast), background var(--motion-fast), box-shadow var(--motion-fast), transform 160ms var(--ease-out);
+}
+
+.choice-tile input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.choice-tile:active {
+  transform: scale(0.98);
+}
+
+.choice-tile:focus-within {
+  box-shadow: 0 0 0 3px var(--color-accent-focus-ring);
+}
+
+.choice-tile-checked {
+  border-color: var(--color-primary-light);
+  background: var(--color-primary-tint);
+  box-shadow: inset 0 0 0 1px var(--color-primary-light);
+}
+
+.choice-tile-title {
+  font: var(--text-body);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.choice-tile-blurb {
+  font: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .choice-tile:not(.choice-tile-checked):hover {
+    border-color: var(--color-text-tertiary);
+    background: var(--color-surface-subtle);
+  }
+}
+
+/* Documents step */
+.admission-docs {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+}
+
+.admission-doc {
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.admission-doc:last-child {
+  border-bottom: 0;
+}
+
+.admission-doc-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+
+.admission-doc-name {
+  font: var(--text-body);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.admission-doc-format {
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.admission-doc-state {
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.admission-doc-state-ready {
+  color: var(--color-status-green-text);
+  font-weight: 600;
+}
+
+.admission-doc-file {
+  margin: var(--space-2) 0 0;
+  font: var(--text-dense);
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.admission-doc-file span {
+  color: var(--color-text-secondary);
+}
+
+.admission-doc-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.admission-doc-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.admission-doc-input:focus-visible + .admission-doc-remove,
+.admission-doc-actions:focus-within .documents-upload-button {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+.admission-doc-remove {
+  padding: 4px 6px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-status-red-text);
+  cursor: pointer;
+}
+
+@media (max-width: 860px) {
+  .choice-grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .choice-grid-4,
+  .choice-grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .admission-actions .btn {
+    flex: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admission-step {
+    animation: none;
+  }
+}
+
+.admission-receipt-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.admission-receipt-row h3 {
+  margin: 0;
+  font: var(--text-h2);
+}
+
+.admission-receipt-row p {
+  margin: 2px 0 0;
+  font: var(--text-dense);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.admission-receipt-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* The "these come from your profile" note sits between the profile block and the next field. */
+.admission-step .form-profile + .form-note {
+  margin: var(--space-3) 0 var(--space-5);
 }

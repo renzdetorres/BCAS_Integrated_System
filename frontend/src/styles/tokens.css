@@ -14,7 +14,7 @@
   --color-surface: #ffffff;
   --color-surface-subtle: #f9faf8;
   --color-border: #e3e6e0;
-  --color-border-strong: #cfd4cc;
+  --color-border-strong: #cfd4cc;
   --color-white: #ffffff;
 
   /* Text - ink tinted toward the brand green rather than a cool slate gray,
@@ -52,12 +52,12 @@
   --shadow-raised: 0 1px 3px rgba(18, 48, 31, 0.08), 0 12px 28px -8px rgba(18, 48, 31, 0.18);
   --shadow-overlay: 0 2px 6px rgba(18, 48, 31, 0.08), 0 24px 56px -12px rgba(18, 48, 31, 0.3);
 
-  /* Type - one family for the whole system: IBM Plex Sans, with weight and
+  /* Type - one family for the whole system: Poppins, with weight and
      size (not a second face) carrying the difference between a page title
      and a table cell. Real tabular figures keep counts and dates aligned.
      Two body sizes exist on purpose: "comfortable" for screens an applicant
      reads once and acts on, "dense" for screens staff scan all day. */
-  --font-sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-sans: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 
   --text-display: 700 32px/1.15 var(--font-sans);
   --text-page-title: 600 24px/1.25 var(--font-sans);

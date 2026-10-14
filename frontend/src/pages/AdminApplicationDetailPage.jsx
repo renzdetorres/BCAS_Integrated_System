@@ -13,6 +13,8 @@ import {
   updateApplicationStatus,
 } from "../api/adminApplicationsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import { useSession } from "../context/SessionContext.jsx";
+import { applicationsBasePath } from "../config/navigation.js";
 import { DEPARTMENT_OPTIONS, programOptionLabel, programsFor } from "../config/departments.js";
 import WorkflowStepper, { ADMISSION_STEP_LABELS, SCHOLARSHIP_STEP_LABELS } from "../components/WorkflowStepper.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
@@ -34,6 +36,7 @@ function formatDateTime(isoDateTime) {
 }
 
 export default function AdminApplicationDetailPage() {
+  const { session } = useSession();
   const { applicationId } = useParams();
   const [application, setApplication] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -257,6 +260,9 @@ export default function AdminApplicationDetailPage() {
       ]
     : [];
   const stepLabels = application?.category === "Admission" ? ADMISSION_STEP_LABELS : SCHOLARSHIP_STEP_LABELS;
+  // Filing, waitlist promotion and archiving stay with the Admin; an Evaluator reads and moves the evaluation along.
+  const isAdmin = session.role === "Admin";
+  const basePath = applicationsBasePath(session.role);
   const canArchive = application && !application.isArchived && ARCHIVABLE_STATUSES.includes(application.status);
   const isWaitlisted = application?.category === "Scholarship" && application.status === "Waitlisted";
 
@@ -264,7 +270,7 @@ export default function AdminApplicationDetailPage() {
     <AppLayout
       title="Application Detail"
       actions={
-        <Link className="admin-app-detail-back-link" to="/admin/applications">
+        <Link className="admin-app-detail-back-link" to={basePath}>
           &larr; Back to applications
         </Link>
       }
@@ -343,7 +349,7 @@ export default function AdminApplicationDetailPage() {
                   <div>
                     <dt>Department</dt>
                     <dd>
-                      {application.category === "Admission" ? (
+                      {application.category === "Admission" && isAdmin ? (
                         <form className="admin-app-department-form" onSubmit={handleDepartmentSubmit}>
                           <select
                             aria-label="Department"
@@ -498,7 +504,7 @@ export default function AdminApplicationDetailPage() {
               </div>
             </div>
 
-            {isWaitlisted && (
+            {isWaitlisted && isAdmin && (
               <div className="admin-app-detail-card">
                 <h2>Waitlist</h2>
                 <p className="admin-app-detail-subtitle">
@@ -578,6 +584,7 @@ export default function AdminApplicationDetailPage() {
               </form>
             </div>
 
+            {isAdmin && (
             <div className="admin-app-detail-card">
               <h2>Records Archive</h2>
               {application.isArchived ? (
@@ -629,6 +636,7 @@ export default function AdminApplicationDetailPage() {
                 </p>
               )}
             </div>
+            )}
           </>
         )}
     </AppLayout>

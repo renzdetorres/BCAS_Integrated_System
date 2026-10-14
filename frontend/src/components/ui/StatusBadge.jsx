@@ -31,6 +31,7 @@ const TONE_BY_VALUE = {
   Open: "amber",
 
   NotUploaded: "gray",
+  NotPaid: "gray",
   Inactive: "gray",
   Closed: "gray",
 
@@ -58,6 +59,7 @@ const LABEL_OVERRIDES = {
   EligibilityScreening: "Eligibility Screening",
   NotQualified: "Not Qualified",
   NotUploaded: "Not Uploaded",
+  NotPaid: "Not Paid",
   NotEligible: "Not Eligible",
 };
 

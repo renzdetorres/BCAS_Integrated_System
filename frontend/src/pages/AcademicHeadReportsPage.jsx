@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  exportEnrollmentList,
   exportEnrollmentSummary,
   exportSectionFiles,
   getApplicationFunnel,
   getApplicationTrend,
-  getEnrollmentList,
   getEnrollmentSummary,
   getScholarshipApplicantList,
   getScholarshipQualificationList,
@@ -24,7 +22,6 @@ import TrendChart from "../components/ui/TrendChart.jsx";
 import "./AcademicHeadReportsPage.css";
 
 const REPORTS = [
-  { key: "enrollmentList", category: "Admission", label: "Enrollment List" },
   { key: "enrollmentSummary", category: "Admission", label: "Summary of Enrollment" },
   { key: "sectionFiles", category: "Admission", label: "File per Section" },
   { key: "scholarshipApplicants", category: "Scholarship", label: "Scholarship Applicant List" },
@@ -80,101 +77,6 @@ function ReportError({ message }) {
     <p className="form-error" role="alert">
       {message}
     </p>
-  );
-}
-
-function EnrollmentListReport() {
-  const [applicationType, setApplicationType] = useState("");
-  const [rows, setRows] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isExporting, setIsExporting] = useState(false);
-  const { errorMessage, runReport } = useReportError();
-
-  const load = useCallback(
-    async (activeApplicationType) => {
-      setIsLoading(true);
-      const data = await runReport(() => getEnrollmentList({ applicationType: activeApplicationType }));
-      if (data) setRows(data);
-      setIsLoading(false);
-    },
-    [runReport],
-  );
-
-  useEffect(() => {
-    load(applicationType);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function handleExport() {
-    setIsExporting(true);
-    await runReport(async () => {
-      await exportEnrollmentList({ applicationType });
-      return true;
-    });
-    setIsExporting(false);
-  }
-
-  return (
-    <Card className="report-card">
-      <div className="report-card-header">
-        <h2>Enrollment List</h2>
-        <button type="button" onClick={handleExport} disabled={isExporting}>
-          {isExporting ? "Exporting..." : "Export to Excel"}
-        </button>
-      </div>
-      <p className="report-subtitle">
-        Approved admission applicants in your department who have reserved their slot.
-      </p>
-
-      <form
-        className="report-filters"
-        onSubmit={(event) => {
-          event.preventDefault();
-          load(applicationType);
-        }}
-      >
-        <select value={applicationType} onChange={(event) => setApplicationType(event.target.value)}>
-          <option value="">All types</option>
-          <option value="NewStudent">New Student</option>
-          <option value="Transferee">Transferee</option>
-        </select>
-        <button type="submit">Filter</button>
-      </form>
-
-      <ReportError message={errorMessage} />
-
-      {isLoading ? (
-        <p>Loading...</p>
-      ) : rows.length === 0 ? (
-        <p>No enrolled applicants match these filters.</p>
-      ) : (
-        <table className="report-table">
-          <thead>
-            <tr>
-              <th>Applicant</th>
-              <th>Type</th>
-              <th>Program</th>
-              <th>Submitted</th>
-              <th>Reserved</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.applicationId}>
-                <td>
-                  <span className="report-name">{row.applicantName}</span>
-                  <span className="report-email">{row.applicantEmail}</span>
-                </td>
-                <td>{row.applicationType}</td>
-                <td>{row.courseAppliedFor}</td>
-                <td>{formatDate(row.submittedAt)}</td>
-                <td>{formatDate(row.reservedAt)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </Card>
   );
 }
 
@@ -772,7 +674,6 @@ function ApplicationFunnelReport() {
 }
 
 const REPORT_COMPONENTS = {
-  enrollmentList: EnrollmentListReport,
   enrollmentSummary: EnrollmentSummaryReport,
   sectionFiles: SectionFilesReport,
   scholarshipApplicants: ScholarshipApplicantListReport,
@@ -784,7 +685,7 @@ const REPORT_COMPONENTS = {
 };
 
 export default function AcademicHeadReportsPage() {
-  const [activeReport, setActiveReport] = useState("enrollmentList");
+  const [activeReport, setActiveReport] = useState("enrollmentSummary");
   const ActiveComponent = REPORT_COMPONENTS[activeReport];
   const categories = [...new Set(REPORTS.map((report) => report.category))];
   const { department, isLoading: isDepartmentLoading } = useAcademicHeadDepartment();

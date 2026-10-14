@@ -1,0 +1,91 @@
+.school-config-title {
+  margin: 0 0 var(--space-1);
+  font: var(--text-h1);
+}
+
+.school-config-subtitle {
+  margin: 0 0 var(--space-6);
+  max-width: 68ch;
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+}
+
+.school-config-group {
+  padding: var(--space-5) 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.school-config-group h3 {
+  margin: 0 0 var(--space-3);
+  font: var(--text-h2);
+}
+
+.school-config-group textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.school-config-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.school-config-qr {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.school-config-qr img {
+  width: 148px;
+  height: 148px;
+  object-fit: contain;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+}
+
+.school-config-qr-empty {
+  display: grid;
+  place-items: center;
+  width: 148px;
+  height: 148px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.school-config-qr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.school-config-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+
+.school-config-saved {
+  font: var(--text-body);
+  font-weight: 600;
+  color: var(--color-status-green-text);
+}
+
+@media (max-width: 720px) {
+  .school-config-grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .school-config-qr {
+    flex-direction: column;
+  }
+}
+
+.school-config-group > .form-note {
+  margin: 0 0 var(--space-3);
+}

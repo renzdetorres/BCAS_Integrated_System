@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useSession } from "../../context/SessionContext.jsx";
 import { useLogout } from "../../hooks/useLogout.js";
 import { getActiveAnnouncements } from "../../api/announcementApi.js";
+import { getNotifications, markAllNotificationsRead, markNotificationRead } from "../../api/notificationsApi.js";
 import { PROFILE_MENU_BY_ROLE, ROLE_SHORT_LABELS } from "../../config/navigation.js";
 import { searchApplications } from "../../api/adminApplicationsApi.js";
 import Icon from "../ui/Icon.jsx";
@@ -15,6 +16,15 @@ function initials(firstName, lastName) {
 
 function formatDate(isoDateTime) {
   return new Date(isoDateTime).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+/** "5 min ago", "3 h ago", "Oct 12" - the notification's age at a glance. */
+function timeAgo(isoDateTime) {
+  const minutes = Math.round((Date.now() - new Date(isoDateTime).getTime()) / 60000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} min ago`;
+  if (minutes < 60 * 24) return `${Math.round(minutes / 60)} h ago`;
+  return formatDate(isoDateTime);
 }
 
 /** Closes an open panel on an outside click, without swallowing the click
@@ -101,6 +111,7 @@ export default function TopBar({ onMenuClick, leading }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [announcements, setAnnouncements] = useState([]);
+  const [inbox, setInbox] = useState({ unreadCount: 0, items: [] });
   const userRef = useOutsideClick(() => setMenuOpen(false));
   const notifRef = useOutsideClick(() => setNotifOpen(false));
   const profileMenuItems = PROFILE_MENU_BY_ROLE[session.role] ?? [];
@@ -117,7 +128,47 @@ export default function TopBar({ onMenuClick, leading }) {
       .catch(() => setAnnouncements([]));
   }, [showAnnouncements]);
 
-  const recent = announcements.slice(0, 5);
+  // System notifications: loaded up front, refreshed whenever the bell opens
+  // and once a minute, so a verified payment shows up without a page reload.
+  useEffect(() => {
+    if (!showAnnouncements) return undefined;
+    let cancelled = false;
+    const load = () =>
+      getNotifications()
+        .then((data) => {
+          if (!cancelled) setInbox(data);
+        })
+        .catch(() => {});
+    load();
+    const timer = setInterval(load, 60000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [showAnnouncements]);
+
+  function handleBellClick() {
+    const opening = !notifOpen;
+    setNotifOpen(opening);
+    if (opening) getNotifications().then(setInbox).catch(() => {});
+  }
+
+  function handleOpenNotification(notification) {
+    if (notification.isRead) return;
+    setInbox((prev) => ({
+      unreadCount: Math.max(0, prev.unreadCount - 1),
+      items: prev.items.map((n) => (n.notificationId === notification.notificationId ? { ...n, isRead: true } : n)),
+    }));
+    markNotificationRead(notification.notificationId).catch(() => {});
+  }
+
+  function handleMarkAllRead() {
+    setInbox((prev) => ({ unreadCount: 0, items: prev.items.map((n) => ({ ...n, isRead: true })) }));
+    markAllNotificationsRead().catch(() => {});
+  }
+
+  const recent = announcements.slice(0, 3);
+  const recentNotifications = inbox.items.slice(0, 6);
 
   return (
     <header className="topbar">
@@ -140,34 +191,57 @@ export default function TopBar({ onMenuClick, leading }) {
         <button
           type="button"
           className="topbar-icon-button"
-          onClick={() => setNotifOpen((open) => !open)}
-          aria-label="Announcements"
+          onClick={handleBellClick}
+          aria-label={inbox.unreadCount > 0 ? `Notifications, ${inbox.unreadCount} unread` : "Notifications"}
           aria-haspopup="true"
           aria-expanded={notifOpen}
         >
           <Icon name="bell" size={19} />
-          {announcements.length > 0 ? (
-            <span className="topbar-notif-badge">{announcements.length > 9 ? "9+" : announcements.length}</span>
+          {inbox.unreadCount > 0 ? (
+            <span className="topbar-notif-badge">{inbox.unreadCount > 9 ? "9+" : inbox.unreadCount}</span>
           ) : null}
         </button>
 
         {notifOpen ? (
           <div className="topbar-panel topbar-notif-panel">
-            <div className="topbar-panel-header">Announcements</div>
-            {recent.length === 0 ? (
-              <p className="topbar-notif-empty">No active announcements right now.</p>
+            <div className="topbar-panel-header topbar-notif-header">
+              <span>Notifications</span>
+              {inbox.unreadCount > 0 ? (
+                <button type="button" className="topbar-notif-markall" onClick={handleMarkAllRead}>
+                  Mark all read
+                </button>
+              ) : null}
+            </div>
+            {recentNotifications.length === 0 ? (
+              <p className="topbar-notif-empty">You&apos;re all caught up.</p>
             ) : (
               <ul className="topbar-notif-list">
-                {recent.map((announcement) => (
-                  <li key={announcement.announcementId}>
-                    <span className="topbar-notif-title">{announcement.title}</span>
-                    <span className="topbar-notif-meta">
-                      {announcement.category} &middot; {formatDate(announcement.postedAt)}
-                    </span>
+                {recentNotifications.map((notification) => (
+                  <li key={notification.notificationId} className={notification.isRead ? undefined : "topbar-notif-unread"}>
+                    <button type="button" className="topbar-notif-item" onClick={() => handleOpenNotification(notification)}>
+                      <span className="topbar-notif-title">{notification.title}</span>
+                      <span className="topbar-notif-body">{notification.body.replace(/^Hi [^,]+,\s*/, "")}</span>
+                      <span className="topbar-notif-meta">{timeAgo(notification.createdAt)}</span>
+                    </button>
                   </li>
                 ))}
               </ul>
             )}
+            {recent.length > 0 ? (
+              <>
+                <div className="topbar-panel-header">Announcements</div>
+                <ul className="topbar-notif-list">
+                  {recent.map((announcement) => (
+                    <li key={announcement.announcementId}>
+                      <span className="topbar-notif-title">{announcement.title}</span>
+                      <span className="topbar-notif-meta">
+                        {announcement.category} &middot; {formatDate(announcement.postedAt)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
             <Link className="topbar-panel-footer" to="/announcements" onClick={() => setNotifOpen(false)}>
               View all announcements
             </Link>

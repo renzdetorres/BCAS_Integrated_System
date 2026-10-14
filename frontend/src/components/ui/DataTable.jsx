@@ -219,7 +219,7 @@ export default function DataTable({
       ) : null}
 
       {hasToolbar ? (
-        <div className={`ui-datatable-toolbar${filterControls === 0 ? " ui-datatable-toolbar-search-only" : ""}`}>
+        <div className={`ui-datatable-toolbar${filterControls === 0 ? " ui-datatable-toolbar-search-only" : ""}${filterControls > 4 ? " ui-datatable-toolbar-wide" : ""}`}>
           {filterControls > 0 ? (
             <div className="ui-datatable-filters" style={{ "--filter-count": filterControls }}>
               {filters.map((filter) => (

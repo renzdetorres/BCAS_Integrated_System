@@ -3,6 +3,8 @@ import { listSystemSettings, setSystemSettingEnabled } from "../api/systemSettin
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import SemestersPanel from "../components/SemestersPanel.jsx";
+import SchoolConfigPanel from "../components/SchoolConfigPanel.jsx";
+import AcademicCatalogPanel from "../components/AcademicCatalogPanel.jsx";
 import Card from "../components/ui/Card.jsx";
 import "./AdminSettingsPage.css";
 
@@ -91,6 +93,10 @@ export default function AdminSettingsPage() {
           </ul>
         )}
       </Card>
+
+      <SchoolConfigPanel />
+
+      <AcademicCatalogPanel />
 
       <SemestersPanel />
     </AppLayout>

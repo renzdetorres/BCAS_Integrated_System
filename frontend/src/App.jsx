@@ -9,12 +9,20 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
 import AdminRoleAccessPage from "./pages/AdminRoleAccessPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 import PortalRouter from "./pages/PortalRouter.jsx";
+import PaymentPage from "./pages/PaymentPage.jsx";
+import StaffPaymentsPage from "./pages/StaffPaymentsPage.jsx";
+import ExamResultPage from "./pages/ExamResultPage.jsx";
+import InterviewPage from "./pages/InterviewPage.jsx";
+import ExamResultsPage from "./pages/ExamResultsPage.jsx";
+import InterviewsPage from "./pages/InterviewsPage.jsx";
+import ScholarshipPipelinePage from "./pages/ScholarshipPipelinePage.jsx";
 import ProvisionStaffPage from "./pages/ProvisionStaffPage.jsx";
 import ManageUsersPage from "./pages/ManageUsersPage.jsx";
 import NotificationSettingsPage from "./pages/NotificationSettingsPage.jsx";
 import AdminSettingsPage from "./pages/AdminSettingsPage.jsx";
 import AnnouncementsRouter from "./pages/AnnouncementsRouter.jsx";
 import ApplicantProfilePage from "./pages/ApplicantProfilePage.jsx";
+import ApplicantSettingsPage from "./pages/ApplicantSettingsPage.jsx";
 import AdmissionApplicationPage from "./pages/AdmissionApplicationPage.jsx";
 import ScholarshipApplicationPage from "./pages/ScholarshipApplicationPage.jsx";
 import MyApplicationHistoryPage from "./pages/MyApplicationHistoryPage.jsx";
@@ -79,6 +87,10 @@ export default function App() {
                 <Route path="/admin/announcements" element={<AdminAnnouncementsPage />} />
                 <Route path="/admin/reports" element={<AdminReportsPage />} />
                 <Route path="/admin/reports/scholarship/:applicationId/contract" element={<ScholarshipContractPage />} />
+                <Route path="/admin/payments" element={<StaffPaymentsPage />} />
+                <Route path="/admin/scholarship-pipeline" element={<ScholarshipPipelinePage />} />
+                <Route path="/admin/exam-results" element={<ExamResultsPage />} />
+                <Route path="/admin/interviews" element={<InterviewsPage />} />
                 <Route path="/admin/exam-schedules" element={<AdminExamSchedulesPage />} />
                 <Route path="/admin/exam-permits" element={<AdminExamPermitsPage />} />
                 <Route path="/admin/scholarships" element={<AdminScholarshipsPage />} />
@@ -92,6 +104,13 @@ export default function App() {
                   element={<ScholarshipScreeningPage />}
                 />
                 <Route path="/evaluator/scholarship-slots" element={<ScholarshipSlotsPage />} />
+                <Route path="/evaluator/scholarship-pipeline" element={<ScholarshipPipelinePage />} />
+                <Route path="/evaluator/applications" element={<AdminApplicationsPage />} />
+                <Route path="/evaluator/applications/:applicationId" element={<AdminApplicationDetailPage />} />
+                <Route path="/evaluator/documents" element={<SupportStaffDocumentsPage />} />
+                <Route path="/evaluator/exam-permits" element={<AdminExamPermitsPage />} />
+                <Route path="/evaluator/exam-results" element={<ExamResultsPage />} />
+                <Route path="/evaluator/interviews" element={<InterviewsPage />} />
                 <Route path="/evaluator/settings" element={<EvaluatorSettingsPage />} />
               </Route>
               <Route element={<RequireRole allowedRoles={["AcademicHead"]} />}>
@@ -100,6 +119,7 @@ export default function App() {
                   element={<AcademicHeadReviewPage />}
                 />
                 <Route path="/academic-head/scholarships" element={<AcademicHeadScholarshipsPage />} />
+                <Route path="/academic-head/scholarship-pipeline" element={<ScholarshipPipelinePage />} />
                 <Route path="/academic-head/announcements" element={<AcademicHeadAnnouncementsPage />} />
                 <Route path="/academic-head/reports" element={<AcademicHeadReportsPage />} />
                 <Route path="/academic-head/settings" element={<AcademicHeadSettingsPage />} />
@@ -107,16 +127,22 @@ export default function App() {
               <Route element={<RequireRole allowedRoles={["SupportStaff"]} />}>
                 <Route path="/support-staff/documents" element={<SupportStaffDocumentsPage />} />
                 <Route path="/support-staff/documents/archive" element={<SupportStaffDocumentArchivePage />} />
+                <Route path="/support-staff/payments" element={<StaffPaymentsPage />} />
+                <Route path="/support-staff/exam-results" element={<ExamResultsPage />} />
                 <Route path="/support-staff/applicants" element={<SupportStaffApplicantsPage />} />
                 <Route path="/support-staff/settings" element={<SupportStaffSettingsPage />} />
               </Route>
               <Route element={<RequireRole allowedRoles={["Applicant"]} />}>
                 <Route path="/profile" element={<ApplicantProfilePage />} />
+                <Route path="/settings" element={<ApplicantSettingsPage />} />
                 <Route path="/applications" element={<AdmissionApplicationPage />} />
                 <Route path="/applications/history" element={<MyApplicationHistoryPage />} />
                 <Route path="/applications/receipt/:applicationId" element={<ApplicationReceiptPage />} />
                 <Route path="/scholarships" element={<ScholarshipApplicationPage />} />
                 <Route path="/documents" element={<DocumentsPage />} />
+                <Route path="/payment" element={<PaymentPage />} />
+                <Route path="/exam-result" element={<ExamResultPage />} />
+                <Route path="/interview" element={<InterviewPage />} />
                 <Route path="/exam-schedule" element={<ExamSchedulePage />} />
                 <Route path="/exam-permit" element={<ExamPermitPage />} />
                 <Route path="/application-tracking" element={<ApplicationTrackingPage />} />

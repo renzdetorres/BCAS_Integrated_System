@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { getMyApplicationHistory } from "../api/applicationHistoryApi.js";
-import { APPLICATION_TYPES } from "../api/admissionApi.js";
+import { APPLICATION_TYPES, getMyAdmissionApplications } from "../api/admissionApi.js";
 import { ApiError } from "../api/apiClient.js";
+import { buildPdf, downloadBlob } from "../utils/simplePdf.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
@@ -19,23 +20,30 @@ function formatTimestamp(isoDateTime) {
   });
 }
 
+function statusText(status) {
+  return status.replace(/([a-z])([A-Z])/g, "$1 $2");
+}
+
 function admissionTypeLabel(applicationType) {
   return APPLICATION_TYPES.find((t) => t.value === applicationType)?.label ?? applicationType;
 }
 
 export default function ApplicationReceiptPage() {
   const { applicationId } = useParams();
+  const [searchParams] = useSearchParams();
   const [application, setApplication] = useState(null);
+  const [applicationNumber, setApplicationNumber] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    getMyApplicationHistory()
-      .then((data) => {
+    Promise.all([getMyApplicationHistory(), getMyAdmissionApplications().catch(() => [])])
+      .then(([data, admissions]) => {
         if (cancelled) return;
         setApplication(data.find((a) => a.applicationId === applicationId) ?? null);
+        setApplicationNumber(admissions.find((a) => a.applicationId === applicationId)?.applicationNumber ?? null);
       })
       .catch((error) => {
         if (!cancelled) {
@@ -50,6 +58,41 @@ export default function ApplicationReceiptPage() {
       cancelled = true;
     };
   }, [applicationId]);
+
+  // The receipt as a PDF file the applicant can keep.
+  function downloadPdf() {
+    const rows = [
+      ["Application number", applicationNumber ?? application.applicationId],
+      ["Category", application.category],
+      ["Status", statusText(application.status)],
+      ...(application.category === "Admission"
+        ? [
+            ["Application type", admissionTypeLabel(application.applicationType)],
+            ["Course applied for", application.courseAppliedFor],
+            ["Previous school", application.previousSchool],
+          ]
+        : [
+            ["Scholarship", application.scholarshipName],
+            ["Scholarship type", application.scholarshipType],
+            ["Grade average", String(application.gradeAverage)],
+          ]),
+      ["Submitted", formatTimestamp(application.submittedAt)],
+    ];
+    const blob = buildPdf({
+      title: "Application Confirmation Receipt",
+      subtitle: "Batangas College of Arts and Sciences, Inc.",
+      rows,
+      footer: "Keep this receipt. Your application number identifies your application on every BCAS screen and email.",
+    });
+    downloadBlob(blob, `BCAS-receipt-${applicationNumber ?? application.applicationId}.pdf`);
+  }
+
+  // "Download" on the application page opens this page with ?download=1.
+  const wantsDownload = searchParams.get("download") === "1";
+  useEffect(() => {
+    if (wantsDownload && application) downloadPdf();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantsDownload, application]);
 
   return (
     <AppLayout title="Application Receipt">
@@ -79,7 +122,7 @@ export default function ApplicationReceiptPage() {
             <BcasSeal size={40} />
             <div>
               <p className="receipt-eyebrow">BCAS Application Confirmation Receipt</p>
-              <p className="receipt-application-id">{application.applicationId}</p>
+              <p className="receipt-application-id">{applicationNumber ?? application.applicationId}</p>
             </div>
           </div>
 
@@ -135,9 +178,14 @@ export default function ApplicationReceiptPage() {
             </div>
           </dl>
 
-          <button type="button" className="no-print" onClick={() => window.print()}>
-            Print / Save as PDF
-          </button>
+          <div className="receipt-actions no-print">
+            <button type="button" className="btn btn-primary" onClick={downloadPdf}>
+              Download PDF
+            </button>
+            <button type="button" className="btn btn-secondary" onClick={() => window.print()}>
+              Print
+            </button>
+          </div>
         </Card>
       )}
     </AppLayout>

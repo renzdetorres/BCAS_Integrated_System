@@ -2,12 +2,16 @@ import { useCallback, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   bulkReviewDocuments,
+  getDocumentFileForReview,
   listDocumentsForApplicant,
   listPendingAndFlaggedDocuments,
   reviewDocument,
 } from "../api/supportStaffDocumentsApi.js";
 import { ApiError } from "../api/apiClient.js";
 import { useToast } from "../context/ToastContext.jsx";
+import { useSession } from "../context/SessionContext.jsx";
+import { DOCUMENT_TYPE_LABELS } from "../api/documentApi.js";
+import FilePreviewModal from "../components/FilePreviewModal.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
@@ -29,6 +33,11 @@ export default function SupportStaffDocumentsPage() {
   const [searchParams] = useSearchParams();
   const applicantId = searchParams.get("applicantId");
   const { showToast } = useToast();
+  const { session } = useSession();
+  // Document Archive and the full queue are Support Staff pages; an Evaluator reviews from this queue only.
+  const isSupportStaff = session.role === "SupportStaff";
+  const queuePath = isSupportStaff ? "/support-staff/documents" : "/evaluator/documents";
+  const [previewing, setPreviewing] = useState(null);
 
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -206,7 +215,7 @@ export default function SupportStaffDocumentsPage() {
             ) : (
               "Showing every document for this applicant, any status."
             )}{" "}
-            <Link className="ss-documents-queue-link" to="/support-staff/documents">
+            <Link className="ss-documents-queue-link" to={queuePath}>
               View the full verification queue
             </Link>
             {" instead."}
@@ -215,10 +224,14 @@ export default function SupportStaffDocumentsPage() {
           <p className="ss-documents-subtitle">
             Documents awaiting review or currently flagged. Rejecting or flagging a document requires a reason; the
             applicant can re-upload a corrected document afterward.{" "}
-            <Link className="ss-documents-queue-link" to="/support-staff/documents/archive">
-              View the document archive
-            </Link>
-            .
+            {isSupportStaff ? (
+              <>
+                <Link className="ss-documents-queue-link" to="/support-staff/documents/archive">
+                  View the document archive
+                </Link>
+                .
+              </>
+            ) : null}
           </p>
         )}
 
@@ -354,6 +367,9 @@ export default function SupportStaffDocumentsPage() {
                     </td>
                     <td>{formatDateTime(document.uploadedAt)}</td>
                     <td className="ss-documents-actions-cell">
+                      <button type="button" className="documents-view-link ss-documents-view" onClick={() => setPreviewing(document)}>
+                        View file
+                      </button>
                       {!REVIEWABLE_STATUSES.has(document.status) ? null : reasonPromptId === document.documentId ? (
                         <div className="ss-documents-reason-form">
                           <textarea
@@ -422,6 +438,15 @@ export default function SupportStaffDocumentsPage() {
             </>
           )}
         </Card>
+      {previewing && (
+        <FilePreviewModal
+          title={DOCUMENT_TYPE_LABELS[previewing.documentType] ?? previewing.documentType}
+          subtitle={`${previewing.applicantName} · ${previewing.applicantEmail}`}
+          fileName={previewing.fileName}
+          loadFile={() => getDocumentFileForReview(previewing.documentId)}
+          onClose={() => setPreviewing(null)}
+        />
+      )}
     </AppLayout>
   );
 }

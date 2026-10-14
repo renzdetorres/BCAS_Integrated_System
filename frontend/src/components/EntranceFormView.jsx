@@ -28,8 +28,9 @@ export default function EntranceFormView({ data }) {
     ["Date of birth", dateText(data.birthDate)],
     ["Place of birth", f.placeOfBirth],
     ["Address", data.address],
-    ["Contact no.", data.contactNumber],
-    ["Level applied for", [data.department, programLabel].filter(Boolean).join(" \u00b7 ")],
+    ["Mobile no.", data.contactNumber],
+    ["Level applied for", [data.department, programLabel, f.yearLevel, f.academicTerm].filter(Boolean).join(" \u00b7 ")],
+    ["Academic year", f.academicYear],
     ["School last attended", data.previousSchool],
     ["School address", f.previousSchoolAddress],
     ["Special skills", f.specialSkills],
@@ -52,13 +53,13 @@ export default function EntranceFormView({ data }) {
             <th scope="col"> </th>
             <th scope="col">Name</th>
             <th scope="col">Occupation</th>
-            <th scope="col">Phone no.</th>
+            <th scope="col">Mobile no.</th>
           </tr>
         </thead>
         <tbody>
           {[
             ["Father", f.father],
-            ["Mother", f.mother],
+            ["Mother", f.mother?.name && f.motherMaidenName ? { ...f.mother, name: `${f.mother.name} (maiden name ${f.motherMaidenName})` } : f.mother],
             ["Guardian", f.guardian],
           ].map(([label, m]) => (
             <tr key={label}>
@@ -70,32 +71,6 @@ export default function EntranceFormView({ data }) {
           ))}
         </tbody>
       </table>
-
-      <p className="entrance-form-subtitle">Brothers and sisters</p>
-      {f.siblings.length === 0 ? (
-        <p className="entrance-form-empty">None listed.</p>
-      ) : (
-        <table className="entrance-form-table">
-          <thead>
-            <tr>
-              <th scope="col">Name</th>
-              <th scope="col">Age</th>
-              <th scope="col">Occupation</th>
-              <th scope="col">School / place of work</th>
-            </tr>
-          </thead>
-          <tbody>
-            {f.siblings.map((s, index) => (
-              <tr key={index}>
-                <td>{s.name || DASH}</td>
-                <td>{s.age ?? DASH}</td>
-                <td>{s.occupation || DASH}</td>
-                <td>{s.schoolOrWork || DASH}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
 
       <div className="entrance-form-signatures">
         <div>

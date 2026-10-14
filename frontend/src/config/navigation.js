@@ -26,9 +26,15 @@ export const NAV_ITEMS_BY_ROLE = {
     {
       section: "Entrance Exam",
       items: [
+        { to: "/payment", label: "Payment", icon: "clipboard" },
         { to: "/exam-schedule", label: "Exam Schedule", icon: "calendar" },
         { to: "/exam-permit", label: "Exam Permit", icon: "ticket" },
+        { to: "/exam-result", label: "Exam Result", icon: "chart" },
       ],
+    },
+    {
+      section: "Admission Result",
+      items: [{ to: "/interview", label: "Interview & Result", icon: "users" }],
     },
     {
       section: null,
@@ -60,9 +66,12 @@ export const NAV_ITEMS_BY_ROLE = {
       section: "Admission Management",
       items: [
         { to: "/admin/applications", label: "Applications", icon: "doc" },
-        { to: "/admin/documents", label: "Document Verification Log", icon: "folder" },
+        { to: "/admin/documents", label: "Document Log", icon: "folder" },
+        { to: "/admin/payments", label: "Payments", icon: "clipboard" },
         { to: "/admin/exam-schedules", label: "Exam Schedules", icon: "calendar" },
         { to: "/admin/exam-permits", label: "Exam Permits", icon: "ticket" },
+        { to: "/admin/exam-results", label: "Exam Results", icon: "chart" },
+        { to: "/admin/interviews", label: "Interviews & Results", icon: "users" },
         { to: "/admin/reservations", label: "Reservations", icon: "bookmark" },
         { to: "/admin/records", label: "Records", icon: "clipboard" },
         { to: "/admin/archive", label: "Archives", icon: "archive" },
@@ -70,7 +79,10 @@ export const NAV_ITEMS_BY_ROLE = {
     },
     {
       section: "Scholarships",
-      items: [{ to: "/admin/scholarships", label: "Scholarships", icon: "award" }],
+      items: [
+        { to: "/admin/scholarships", label: "Scholarships", icon: "award" },
+        { to: "/admin/scholarship-pipeline", label: "Exam & Grantees", icon: "chart" },
+      ],
     },
     {
       section: "Communications",
@@ -99,6 +111,12 @@ export const NAV_ITEMS_BY_ROLE = {
       items: [
         { to: "/portal", label: "Dashboard", icon: "home", end: true },
         { to: "/evaluator/scholarship-slots", label: "Scholarship Slots", icon: "award" },
+        { to: "/evaluator/scholarship-pipeline", label: "Scholarship Grantees", icon: "chart" },
+        { to: "/evaluator/applications", label: "Applications", icon: "doc" },
+        { to: "/evaluator/documents", label: "Document Verification", icon: "folder" },
+        { to: "/evaluator/exam-permits", label: "Exam Permits", icon: "ticket" },
+        { to: "/evaluator/exam-results", label: "Exam Results", icon: "chart" },
+        { to: "/evaluator/interviews", label: "Interviews & Results", icon: "users" },
       ],
     },
   ],
@@ -111,6 +129,7 @@ export const NAV_ITEMS_BY_ROLE = {
       section: "Scholarship Oversight",
       items: [
         { to: "/academic-head/scholarships", label: "Scholarships", icon: "award" },
+        { to: "/academic-head/scholarship-pipeline", label: "Exam & Grantees", icon: "chart" },
         { to: "/academic-head/announcements", label: "Announcements", icon: "bell" },
         { to: "/academic-head/reports", label: "Reports", icon: "chart" },
       ],
@@ -126,6 +145,8 @@ export const NAV_ITEMS_BY_ROLE = {
       items: [
         { to: "/support-staff/documents", label: "Verification Queue", icon: "folder" },
         { to: "/support-staff/documents/archive", label: "Document Archive", icon: "archive" },
+        { to: "/support-staff/payments", label: "Payment Verification", icon: "clipboard" },
+        { to: "/support-staff/exam-results", label: "Exam Results", icon: "chart" },
       ],
     },
     {
@@ -142,7 +163,10 @@ export const NAV_ITEMS_BY_ROLE = {
 // nav - account-level settings live here for every role instead of
 // competing for space with the actual work the sidebar is for.
 export const PROFILE_MENU_BY_ROLE = {
-  Applicant: [{ to: "/profile", label: "Settings", icon: "settings" }],
+  Applicant: [
+    { to: "/profile", label: "Profile", icon: "user" },
+    { to: "/settings", label: "Settings", icon: "settings" },
+  ],
   Admin: [
     { to: "/admin/notification-settings", label: "Notification Settings", icon: "mail" },
     { to: "/admin/settings", label: "System Settings", icon: "settings" },
@@ -169,3 +193,8 @@ export const ROLE_SHORT_LABELS = {
   AcademicHead: "Academic Head",
   SupportStaff: "Support Staff",
 };
+
+/** Where the applications list lives for a staff role: Admins and Evaluators each have their own route. */
+export function applicationsBasePath(role) {
+  return role === "Evaluator" ? "/evaluator/applications" : "/admin/applications";
+}

@@ -1,0 +1,12 @@
+.payment-review {
+  margin-top: var(--space-4);
+}
+
+.payment-review .form-row:last-child {
+  margin-bottom: 0;
+}
+
+.payment-review textarea {
+  min-height: 84px;
+  resize: vertical;
+}

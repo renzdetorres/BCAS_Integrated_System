@@ -1,18 +1,26 @@
 import "./WorkflowStepper.css";
 
+// The seven stages an applicant sees on the admission tracker. Document
+// verification, payment verification, exam scheduling, the exam itself,
+// interview and result processing are sub-processes shown beneath the
+// tracker, never stages of their own.
 export const ADMISSION_STEP_LABELS = {
   Submitted: "Submitted",
   UnderReview: "Under Review",
-  PendingDocuments: "Pending Documents",
-  DocumentsCompleted: "Documents Completed",
-  DocumentsCleared: "Documents Cleared",
-  ExamScheduled: "Exam Scheduled",
-  ExamDone: "Exam Done",
-  Registration: "Registration",
-  Approved: "Approved",
+  ExamPayment: "Payment for Entrance Exam",
+  ExamPermit: "Exam Permit",
+  ExamResult: "Exam Result",
+  InterviewSchedule: "Interview Schedule",
+  Enrollment: "Enrollment",
 };
 
 export const SCHOLARSHIP_STEP_LABELS = {
+  // The six stages an applicant sees (the rest are the staff workflow's own steps).
+  Application: "Application",
+  ScholarshipExam: "Scholarship Exam",
+  ExamResult: "Exam Result",
+  InterviewEssay: "Interview / Essay",
+  ScholarshipResult: "Scholarship Result",
   Submitted: "Submitted",
   DocumentsVerified: "Documents Verified",
   EligibilityScreening: "Eligibility Screening",
@@ -20,25 +28,58 @@ export const SCHOLARSHIP_STEP_LABELS = {
   Result: "Result",
 };
 
-// A workflow step-pill row (BISAASS-22), shared by ApplicationTrackingPage
-// (an applicant's own applications) and AdminApplicationDetailPage (any
-// application, BISAASS-31) so the two never drift apart.
-export default function WorkflowStepper({ steps, labels }) {
+// What each stage reads as relative to where the applicant is: finished,
+// the one they are on, the very next one, or one that cannot start yet.
+function stageCaption(step, index, currentIndex) {
+  if (step.isComplete) return "Completed";
+  if (step.isCurrent) return "Current";
+  if (currentIndex === -1) return "Locked";
+  return index === currentIndex + 1 ? "Pending" : "Locked";
+}
+
+// A workflow step row (BISAASS-22), shared by ApplicationTrackingPage
+// (an applicant's own applications), the applicant dashboard and
+// AdminApplicationDetailPage (any application, BISAASS-31) so they never
+// drift apart. `numbered` draws the circular 1-7 tracker used for
+// admission; without it, the compact diamond rail used for scholarships.
+export default function WorkflowStepper({ steps, labels, numbered = false }) {
+  const currentIndex = steps.findIndex((step) => step.isCurrent);
+
   return (
-    <ol className="tracking-stepper">
-      {steps.map((step) => (
-        <li
-          key={step.step}
-          className={
-            "tracking-step" +
-            (step.isComplete ? " tracking-step-complete" : "") +
-            (step.isCurrent ? " tracking-step-current" : "")
-          }
-        >
-          <span className="tracking-step-dot" aria-hidden="true" />
-          <span className="tracking-step-label">{labels[step.step] ?? step.step}</span>
-        </li>
-      ))}
+    <ol className={"tracking-stepper" + (numbered ? " tracking-stepper-numbered" : "")}>
+      {steps.map((step, index) => {
+        const caption = numbered ? stageCaption(step, index, currentIndex) : null;
+        return (
+          <li
+            key={step.step}
+            className={
+              "tracking-step" +
+              (step.isComplete ? " tracking-step-complete" : "") +
+              (step.isCurrent ? " tracking-step-current" : "") +
+              (caption === "Locked" ? " tracking-step-locked" : "")
+            }
+            aria-current={step.isCurrent ? "step" : undefined}
+          >
+            {numbered ? (
+              <span className="tracking-step-circle" aria-hidden="true">
+                {step.isComplete ? (
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m3.5 8.5 3 3 6-7" />
+                  </svg>
+                ) : (
+                  index + 1
+                )}
+              </span>
+            ) : (
+              <span className="tracking-step-dot" aria-hidden="true" />
+            )}
+            <span className="tracking-step-text">
+              <span className="tracking-step-label">{labels[step.step] ?? step.step}</span>
+              {caption && <span className="tracking-step-caption">{caption}</span>}
+            </span>
+          </li>
+        );
+      })}
     </ol>
   );
 }
