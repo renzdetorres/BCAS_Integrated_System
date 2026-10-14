@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace BCAS.Api.Controllers;
 
 /// <summary>Admin-Registrar's system-wide application list (BISAASS-28).</summary>
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin,Evaluator")]
 [ApiController]
 [Route("api/admin/applications")]
 public class AdminApplicationsController : ControllerBase
@@ -45,9 +45,13 @@ public class AdminApplicationsController : ControllerBase
         [FromQuery] string? program,
         [FromQuery] bool? archived,
         [FromQuery] string? department,
+        [FromQuery] string? yearLevel,
+        [FromQuery] string? academicYear,
+        [FromQuery] string? academicTerm,
         CancellationToken cancellationToken)
     {
-        var applications = await _applicationsService.SearchAsync(search, status, category, program, archived, department, cancellationToken);
+        var applications = await _applicationsService.SearchAsync(
+            search, status, category, program, archived, department, yearLevel, academicYear, academicTerm, cancellationToken);
         return Ok(applications);
     }
 
@@ -128,6 +132,7 @@ public class AdminApplicationsController : ControllerBase
     /// Scholarship applications can't be set directly - they follow their
     /// applicant's admission application.
     /// </summary>
+    [Authorize(Roles = "Admin")]
     [HttpPatch("{applicationId:guid}/department")]
     [ProducesResponseType(typeof(AdminApplicationListItemResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -258,6 +263,7 @@ public class AdminApplicationsController : ControllerBase
     /// application, the applicant's documents) is flagged, never deleted,
     /// keeping it retrievable for the school's 5-year retention practice.
     /// </summary>
+    [Authorize(Roles = "Admin")]
     [HttpPost("{applicationId:guid}/archive")]
     [ProducesResponseType(typeof(AdminApplicationListItemResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -319,6 +325,7 @@ public class AdminApplicationsController : ControllerBase
     /// for any rows that couldn't be archived (e.g. already archived, or
     /// not yet in a completed status).
     /// </summary>
+    [Authorize(Roles = "Admin")]
     [HttpPost("bulk-archive")]
     [ProducesResponseType(typeof(BulkOperationResultResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<BulkOperationResultResponse>> BulkArchive(
@@ -335,6 +342,7 @@ public class AdminApplicationsController : ControllerBase
     /// application to "Submitted", where it re-enters the ordinary
     /// Evaluator screening workflow.
     /// </summary>
+    [Authorize(Roles = "Admin")]
     [HttpPost("{applicationId:guid}/promote-from-waitlist")]
     [ProducesResponseType(typeof(AdminApplicationListItemResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

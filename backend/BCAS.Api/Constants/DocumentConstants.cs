@@ -23,12 +23,37 @@ public static class DocumentConstants
         (new[] { ".png" }, "image/png", new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }),
     };
 
-    public static bool IsAcceptedFile(string fileName, string contentType, byte[] fileBytes) =>
-        AcceptedFileTypes.Any(t =>
-            t.Extensions.Any(e => fileName.EndsWith(e, StringComparison.OrdinalIgnoreCase))
+    /// <summary>
+    /// The 2x2 photo is an image (JPG or PNG); every other document is a PDF.
+    /// Shown next to each document so applicants know the format before they pick a file.
+    /// </summary>
+    public static IReadOnlyList<string> AcceptedFormatsFor(string documentType) =>
+        documentType == IdPicture ? new[] { "JPG", "PNG" } : new[] { "PDF" };
+
+    public static bool IsAcceptedFile(string documentType, string fileName, string contentType, byte[] fileBytes)
+    {
+        var formats = AcceptedFormatsFor(documentType);
+        return AcceptedFileTypes.Any(t =>
+            formats.Contains(FormatName(t.ContentType), StringComparer.Ordinal)
+            && MatchesFileType(t, fileName, contentType, fileBytes));
+    }
+
+    private static string FormatName(string contentType) => contentType switch
+    {
+        "application/pdf" => "PDF",
+        "image/jpeg" => "JPG",
+        _ => "PNG",
+    };
+
+    private static bool MatchesFileType((string[] Extensions, string ContentType, byte[] Signature) t, string fileName, string contentType, byte[] fileBytes) =>
+        t.Extensions.Any(e => fileName.EndsWith(e, StringComparison.OrdinalIgnoreCase))
             && string.Equals(contentType, t.ContentType, StringComparison.OrdinalIgnoreCase)
             && fileBytes.Length >= t.Signature.Length
-            && fileBytes.AsSpan(0, t.Signature.Length).SequenceEqual(t.Signature));
+            && fileBytes.AsSpan(0, t.Signature.Length).SequenceEqual(t.Signature);
+
+    /// <summary>Any PDF/JPG/PNG whose extension, content type and first bytes agree - for uploads that are not a checklist document (e.g. proof of payment).</summary>
+    public static bool IsAcceptedAnyFile(string fileName, string contentType, byte[] fileBytes) =>
+        AcceptedFileTypes.Any(t => MatchesFileType(t, fileName, contentType, fileBytes));
 
     /// <summary>The content type to serve a stored file with inline, or null if it should only be downloaded.</summary>
     public static string? InlineContentType(string storedContentType) =>
@@ -44,7 +69,26 @@ public static class DocumentConstants
         {
             ["NewStudent"] = new[] { ReportCard, IdPicture, Psa, Sf10 },
             ["Transferee"] = new[] { ReportCard, IdPicture, Psa, Tor, Sf10 },
+            ["Returnee"] = new[] { ReportCard, IdPicture, Psa, Sf10 },
         };
+
+    /// <summary>
+    /// The checklist for one application: only a College transferee submits
+    /// a Transcript of Records; a transferee to any other level submits the
+    /// same documents as everyone else. The department is null for
+    /// applications filed before departments existed, which keep the old
+    /// type-only checklist.
+    /// </summary>
+    public static IReadOnlyList<string> RequiredDocumentsFor(string applicationType, string? department)
+    {
+        var byType = RequiredDocumentsByApplicationType[applicationType];
+        if (applicationType == "Transferee" && department is not null && department != "College")
+        {
+            return byType.Where(t => t != Tor).ToList();
+        }
+
+        return byType;
+    }
 
     /// <summary>
     /// The scholarship application's documentary requirements (the signed

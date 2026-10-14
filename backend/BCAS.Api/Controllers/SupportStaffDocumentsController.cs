@@ -1,3 +1,4 @@
+using BCAS.Api.Data;
 using BCAS.Api.Exceptions;
 using BCAS.Api.Extensions;
 using BCAS.Api.Models;
@@ -8,16 +9,28 @@ using Microsoft.AspNetCore.Mvc;
 namespace BCAS.Api.Controllers;
 
 /// <summary>Support Staff's Document Verification screen (BISAASS-51 quick link; approve/reject/flag added by BISAASS-52).</summary>
-[Authorize(Roles = "SupportStaff")]
+[Authorize(Roles = "SupportStaff,Evaluator")]
 [ApiController]
 [Route("api/support-staff/documents")]
 public class SupportStaffDocumentsController : ControllerBase
 {
     private readonly ISupportStaffDocumentsService _documentsService;
+    private readonly IAdminDocumentsRepository _fileRepository;
 
-    public SupportStaffDocumentsController(ISupportStaffDocumentsService documentsService)
+    public SupportStaffDocumentsController(ISupportStaffDocumentsService documentsService, IAdminDocumentsRepository fileRepository)
     {
         _documentsService = documentsService;
+        _fileRepository = fileRepository;
+    }
+
+    /// <summary>The uploaded file itself, served inline so staff can look at it before they verify it.</summary>
+    [HttpGet("{documentId:guid}/file")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetFile(Guid documentId, CancellationToken cancellationToken)
+    {
+        var file = await _fileRepository.GetFileAsync(documentId, cancellationToken);
+        return file is null ? NotFound() : ExamPaymentController.ServeInline(this, file);
     }
 
     /// <summary>

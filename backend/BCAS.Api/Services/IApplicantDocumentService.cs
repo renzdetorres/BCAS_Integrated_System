@@ -32,6 +32,9 @@ public interface IApplicantDocumentService
         byte[] fileBytes,
         CancellationToken cancellationToken = default);
 
+    /// <summary>The signed-in applicant's own stored file for one document type, or null if they have not uploaded it.</summary>
+    Task<DocumentFile?> GetMyFileAsync(Guid userId, string documentType, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Marks every document belonging to this user as archived (BISAASS-35).
     /// Metadata-only flag - files are never deleted, keeping them

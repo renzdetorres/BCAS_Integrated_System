@@ -27,6 +27,11 @@ public class AdminApplicationListItemResponse
     public Guid? ArchivedByUserId { get; set; }
     public string? ArchiveReason { get; set; }
 
+    public string? YearLevel { get; set; }
+    public string? AcademicTerm { get; set; }
+    public string? AcademicYear { get; set; }
+    public string? ApplicationNumber { get; set; }
+
     public string? ApplicationType { get; set; }
     public string? CourseAppliedFor { get; set; }
     public string? PreviousSchool { get; set; }

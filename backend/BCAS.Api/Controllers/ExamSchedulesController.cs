@@ -58,6 +58,15 @@ public class ExamSchedulesController : ControllerBase
             var selection = await _examScheduleService.SelectAsync(User.GetUserId(), request, cancellationToken);
             return Ok(selection);
         }
+        catch (PaymentNotVerifiedException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Payment not verified",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
         catch (ExamScheduleNotFoundException ex)
         {
             return NotFound(new ProblemDetails

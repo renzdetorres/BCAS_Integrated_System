@@ -5,6 +5,7 @@ using BCAS.Api.Models;
 using BCAS.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Net.Http.Headers;
 
 namespace BCAS.Api.Controllers;
 
@@ -71,6 +72,26 @@ public class DocumentsController : ControllerBase
         }
     }
 
+    /// <summary>The applicant's own uploaded file, served inline so they can preview it.</summary>
+    [HttpGet("{documentType}/file")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetMyFile(string documentType, CancellationToken cancellationToken)
+    {
+        var file = await _documentService.GetMyFileAsync(User.GetUserId(), documentType, cancellationToken);
+        if (file is null)
+        {
+            return NotFound();
+        }
+
+        var inlineType = DocumentConstants.InlineContentType(file.ContentType);
+        var disposition = new ContentDispositionHeaderValue(inlineType is not null ? "inline" : "attachment");
+        disposition.SetHttpFileName(file.FileName);
+        Response.Headers[HeaderNames.ContentDisposition] = disposition.ToString();
+        Response.Headers[HeaderNames.XContentTypeOptions] = "nosniff";
+        return File(file.FileData, inlineType ?? "application/octet-stream");
+    }
+
     /// <summary>
     /// Uploads (or re-uploads) a document for the signed-in applicant.
     /// Only PDF, JPG or PNG files are accepted. Re-uploading replaces the previous file
@@ -90,7 +111,7 @@ public class DocumentsController : ControllerBase
             return BadRequest(new ProblemDetails
             {
                 Title = "File required",
-                Detail = "Attach a PDF file to upload.",
+                Detail = "Attach a file to upload.",
                 Status = StatusCodes.Status400BadRequest,
             });
         }

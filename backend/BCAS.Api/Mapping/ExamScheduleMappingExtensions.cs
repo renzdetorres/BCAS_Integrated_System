@@ -11,6 +11,9 @@ public static class ExamScheduleMappingExtensions
         ExamDate = schedule.ExamDate,
         ExamTime = schedule.ExamTime,
         Venue = schedule.Venue,
+        Capacity = schedule.Capacity,
+        SeatsLeft = schedule.Capacity is null ? null : Math.Max(0, schedule.Capacity.Value - schedule.Taken),
+        IsFull = schedule.Capacity is not null && schedule.Taken >= schedule.Capacity.Value,
     };
 
     public static ExamScheduleSelectionResponse ToResponse(this ExamScheduleSelection selection) => new()
@@ -31,6 +34,7 @@ public static class ExamScheduleMappingExtensions
         ExamTime = schedule.ExamTime,
         Venue = schedule.Venue,
         IsOffered = schedule.IsOffered,
+        Capacity = schedule.Capacity,
         AssignedApplicants = schedule.AssignedApplicants.Select(a => a.ToResponse()).ToList(),
     };
 

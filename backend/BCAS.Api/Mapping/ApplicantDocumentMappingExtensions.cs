@@ -1,3 +1,4 @@
+using BCAS.Api.Constants;
 using BCAS.Api.Models;
 
 namespace BCAS.Api.Mapping;
@@ -11,5 +12,6 @@ public static class ApplicantDocumentMappingExtensions
         FileName = document.FileName,
         UploadedAt = document.UploadedAt,
         FlaggedReason = document.FlaggedReason,
+        AcceptedFormats = DocumentConstants.AcceptedFormatsFor(document.DocumentType),
     };
 }

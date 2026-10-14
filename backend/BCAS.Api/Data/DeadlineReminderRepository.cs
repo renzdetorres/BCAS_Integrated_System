@@ -48,13 +48,13 @@ WHERE sch.ExamDate = @ExamDate;";
         return results;
     }
 
-    public async Task<IReadOnlyList<(Guid UserId, string FirstName, string Email, string ApplicationType)>>
+    public async Task<IReadOnlyList<(Guid UserId, string FirstName, string Email, string ApplicationType, string? Department)>>
         GetStaleAdmissionApplicantsAsync(DateTime submittedAtOrBeforeUtc, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
-SELECT u.UserId, u.FirstName, u.Email, a.ApplicationType
+SELECT u.UserId, u.FirstName, u.Email, a.ApplicationType, a.Department
 FROM dbo.AdmissionApplications a
 JOIN dbo.Users u ON u.UserId = a.UserId
 WHERE a.IsArchived = 0 AND a.Status <> N'Rejected' AND a.SubmittedAt <= @Cutoff;";
@@ -64,14 +64,15 @@ WHERE a.IsArchived = 0 AND a.Status <> N'Rejected' AND a.SubmittedAt <= @Cutoff;
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
-        var results = new List<(Guid, string, string, string)>();
+        var results = new List<(Guid, string, string, string, string?)>();
         while (await reader.ReadAsync(cancellationToken))
         {
             results.Add((
                 reader.GetGuid(reader.GetOrdinal("UserId")),
                 reader.GetString(reader.GetOrdinal("FirstName")),
                 reader.GetString(reader.GetOrdinal("Email")),
-                reader.GetString(reader.GetOrdinal("ApplicationType"))));
+                reader.GetString(reader.GetOrdinal("ApplicationType")),
+                reader.IsDBNull(reader.GetOrdinal("Department")) ? null : reader.GetString(reader.GetOrdinal("Department"))));
         }
 
         return results;

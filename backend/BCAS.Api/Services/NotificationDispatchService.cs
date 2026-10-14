@@ -8,17 +8,20 @@ public class NotificationDispatchService : INotificationDispatchService
     private readonly IEmailSender _emailSender;
     private readonly INotificationPreferenceRepository _preferenceRepository;
     private readonly INotificationSettingsRepository _adminTriggerRepository;
+    private readonly INotificationInboxRepository _inbox;
     private readonly ILogger<NotificationDispatchService> _logger;
 
     public NotificationDispatchService(
         IEmailSender emailSender,
         INotificationPreferenceRepository preferenceRepository,
         INotificationSettingsRepository adminTriggerRepository,
+        INotificationInboxRepository inbox,
         ILogger<NotificationDispatchService> logger)
     {
         _emailSender = emailSender;
         _preferenceRepository = preferenceRepository;
         _adminTriggerRepository = adminTriggerRepository;
+        _inbox = inbox;
         _logger = logger;
     }
 
@@ -49,14 +52,14 @@ public class NotificationDispatchService : INotificationDispatchService
             cancellationToken);
 
     public Task NotifyExamScheduleAsync(
-        Guid userId, string email, string firstName, DateOnly examDate, TimeOnly examTime, string venue, CancellationToken cancellationToken = default) =>
+        Guid userId, string email, string firstName, DateOnly examDate, TimeOnly examTime, string venue, string examType = "Entrance Exam", CancellationToken cancellationToken = default) =>
         DispatchAsync(
             userId,
             email,
             NotificationEventTypes.ExamSchedule,
-            "Your Entrance Exam Schedule Is Confirmed",
+            $"Your {examType} Schedule Is Confirmed",
             $"Hi {firstName},\n\n" +
-            $"Your entrance exam is scheduled for {examDate:MMMM d, yyyy} at {examTime:h:mm tt}, at {venue}.\n\n" +
+            $"Your {examType.ToLowerInvariant()} is scheduled for {examDate:MMMM d, yyyy} at {examTime:h:mm tt}, at {venue}.\n\n" +
             "Please arrive at least 30 minutes early.",
             cancellationToken);
 
@@ -195,6 +198,78 @@ public class NotificationDispatchService : INotificationDispatchService
             "Please log in to your applicant portal and upload it so we can continue reviewing your application.",
             cancellationToken);
 
+    public Task NotifyScholarshipExamResultAsync(
+        Guid userId, string email, string firstName, bool passed, string scholarshipName, CancellationToken cancellationToken = default) =>
+        DispatchAsync(
+            userId,
+            email,
+            NotificationEventTypes.ScholarshipResult,
+            passed ? $"You Passed the {scholarshipName} Exam" : $"Your {scholarshipName} Exam Result",
+            passed
+                ? $"Hi {firstName},\n\nYou passed the scholarship exam and are qualified for the interview / essay. The school will contact you about the schedule."
+                : $"Hi {firstName},\n\nYou did not pass the scholarship exam. Please proceed with the regular admission process from your applicant portal.",
+            cancellationToken);
+
+    public Task NotifyRequirementsVerifiedAsync(Guid userId, string email, string firstName, CancellationToken cancellationToken = default) =>
+        DispatchAsync(
+            userId,
+            email,
+            NotificationEventTypes.RequirementsVerified,
+            "Your Requirements Have Been Verified",
+            $"Hi {firstName},\n\n" +
+            "All of your submitted requirements have been verified. Next, pay the entrance exam fee from the Payment page of your applicant portal.",
+            cancellationToken);
+
+    public Task NotifyPaymentReviewedAsync(
+        Guid userId, string email, string firstName, string status, string? reason, CancellationToken cancellationToken = default) =>
+        DispatchAsync(
+            userId,
+            email,
+            NotificationEventTypes.PaymentReview,
+            status == "Verified" ? "Your Entrance Exam Payment Was Verified" : "Your Entrance Exam Payment Was Rejected",
+            status == "Verified"
+                ? $"Hi {firstName},\n\nYour entrance exam payment has been verified. You can now choose your exam schedule from your applicant portal."
+                : $"Hi {firstName},\n\nYour entrance exam payment could not be verified.\n\nReason: {reason}\n\nPlease upload a clear, correct proof of payment from the Payment page of your applicant portal.",
+            cancellationToken);
+
+    public Task NotifyExamResultAsync(Guid userId, string email, string firstName, string result, CancellationToken cancellationToken = default) =>
+        DispatchAsync(
+            userId,
+            email,
+            NotificationEventTypes.ExamResult,
+            "Your Entrance Exam Result Is Out",
+            $"Hi {firstName},\n\n" +
+            result switch
+            {
+                "Passed" => "Your entrance exam result is Passed. You will receive your interview schedule next.",
+                "Retake" => "Your entrance exam result is Retake. A new exam schedule will be arranged for you; check your applicant portal.",
+                _ => "Your entrance exam result is Failed. Log in to your applicant portal for details.",
+            },
+            cancellationToken);
+
+    public Task NotifyInterviewScheduledAsync(
+        Guid userId, string email, string firstName, DateOnly date, TimeOnly time, string location, string? instructions, CancellationToken cancellationToken = default) =>
+        DispatchAsync(
+            userId,
+            email,
+            NotificationEventTypes.InterviewSchedule,
+            "Your Admission Interview Is Scheduled",
+            $"Hi {firstName},\n\n" +
+            $"Your admission interview is on {date:MMMM d, yyyy} at {time:h:mm tt}, at {location}.\n\n" +
+            (string.IsNullOrWhiteSpace(instructions) ? string.Empty : $"{instructions}\n\n") +
+            "Please bring the original copies of your submitted documents to the interview.",
+            cancellationToken);
+
+    public Task NotifyEnrollmentInstructionAsync(Guid userId, string email, string firstName, CancellationToken cancellationToken = default) =>
+        DispatchAsync(
+            userId,
+            email,
+            NotificationEventTypes.EnrollmentInstruction,
+            "You Passed Admission: Proceed to Enrollment",
+            $"Hi {firstName},\n\n" +
+            "Congratulations, you passed the admission process. Please proceed to enrollment with the registrar's office.",
+            cancellationToken);
+
     public Task NotifyInquiryReplyAsync(
         Guid userId, string email, string firstName, string threadSubject, CancellationToken cancellationToken = default) =>
         DispatchAsync(
@@ -205,6 +280,16 @@ public class NotificationDispatchService : INotificationDispatchService
             $"Hi {firstName},\n\n" +
             $"You have a new reply on your inquiry \"{threadSubject}\".\n\n" +
             "Log in to your applicant portal to read it and respond.",
+            cancellationToken);
+
+    public Task NotifyStaffMessageAsync(
+        Guid userId, string email, string firstName, string subject, string message, CancellationToken cancellationToken = default) =>
+        DispatchAsync(
+            userId,
+            email,
+            NotificationEventTypes.StaffMessage,
+            subject,
+            $"Hi {firstName},\n\n{message}\n\n- BCAS Admissions",
             cancellationToken);
 
     /// <summary>
@@ -229,9 +314,22 @@ public class NotificationDispatchService : INotificationDispatchService
                 }
             }
 
-            if (!await _preferenceRepository.IsEnabledAsync(userId, notificationType, cancellationToken))
+            // A message a staff member wrote by hand is not an automatic event, so no preference can switch it off.
+            if (notificationType != NotificationEventTypes.StaffMessage
+                && !await _preferenceRepository.IsEnabledAsync(userId, notificationType, cancellationToken))
             {
                 return;
+            }
+
+            // The system notification is written first and on its own, so an
+            // email outage never costs the applicant the in-app copy.
+            try
+            {
+                await _inbox.InsertAsync(userId, notificationType, subject, body, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to store {NotificationType} notification for {UserId}", notificationType, userId);
             }
 
             await _emailSender.SendAsync(email, subject, body, cancellationToken);

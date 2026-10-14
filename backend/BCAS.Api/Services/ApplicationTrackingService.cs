@@ -22,13 +22,22 @@ public class ApplicationTrackingService : IApplicationTrackingService
     private readonly IScholarshipApplicationRepository _scholarshipApplicationRepository;
     private readonly IExamScheduleRepository _examScheduleRepository;
     private readonly IApplicantDocumentService _documentService;
+    private readonly IExamPaymentService _paymentService;
+    private readonly IInterviewRepository _interviewRepository;
+    private readonly IScholarshipPipelineService _scholarshipPipeline;
 
     public ApplicationTrackingService(
         IAdmissionApplicationRepository admissionApplicationRepository,
         IScholarshipApplicationRepository scholarshipApplicationRepository,
         IExamScheduleRepository examScheduleRepository,
-        IApplicantDocumentService documentService)
+        IApplicantDocumentService documentService,
+        IExamPaymentService paymentService,
+        IInterviewRepository interviewRepository,
+        IScholarshipPipelineService scholarshipPipeline)
     {
+        _scholarshipPipeline = scholarshipPipeline;
+        _paymentService = paymentService;
+        _interviewRepository = interviewRepository;
         _admissionApplicationRepository = admissionApplicationRepository;
         _scholarshipApplicationRepository = scholarshipApplicationRepository;
         _examScheduleRepository = examScheduleRepository;
@@ -43,6 +52,22 @@ public class ApplicationTrackingService : IApplicationTrackingService
         var documents = await GetDocumentsOrNullAsync(userId, cancellationToken);
 
         var documentsVerified = documents is not null && documents.Requirements.All(r => r.Status == "Verified");
+        var paymentState = admissionApplications.Any(a => a.Status == "DocumentsCleared")
+            ? await _paymentService.GetPaymentStateAsync(userId, cancellationToken)
+            : ApplicationWorkflowSteps.PaymentState.NotRequired;
+
+        var scholarshipProgress = (await _scholarshipPipeline.GetMyProgressAsync(userId, cancellationToken))
+            .ToDictionary(p => p.Row.ApplicationId, p => p.Progress);
+
+        ApplicationWorkflowSteps.InterviewSummary? interview = null;
+        if (admissionApplications.Any(a => a.Status == "Registration"))
+        {
+            var booked = await _interviewRepository.GetByUserIdAsync(userId, cancellationToken);
+            if (booked is not null)
+            {
+                interview = new ApplicationWorkflowSteps.InterviewSummary(booked.InterviewDate, booked.InterviewTime, booked.Location);
+            }
+        }
 
         return new ApplicationTrackingResponse
         {
@@ -53,7 +78,10 @@ public class ApplicationTrackingService : IApplicationTrackingService
                     ApplicationType = a.ApplicationType,
                     CourseAppliedFor = a.CourseAppliedFor,
                     Status = a.Status,
-                    Steps = ApplicationWorkflowSteps.BuildAdmissionSteps(a.Status),
+                    Steps = ApplicationWorkflowSteps.BuildAdmissionSteps(a.Status, paymentState, interview),
+                    SubProcess = ApplicationWorkflowSteps.DescribeAdmission(a.Status, paymentState, interview)?.SubProcess,
+                    NextAction = ApplicationWorkflowSteps.DescribeAdmission(a.Status, paymentState, interview)?.NextAction,
+                    NextActionPath = ApplicationWorkflowSteps.DescribeAdmission(a.Status, paymentState, interview)?.NextActionPath,
                     SubmittedAt = a.SubmittedAt,
                 })
                 .ToList(),
@@ -63,7 +91,12 @@ public class ApplicationTrackingService : IApplicationTrackingService
                     ApplicationId = s.ApplicationId,
                     ScholarshipName = s.ScholarshipName,
                     Status = s.Status,
-                    Steps = ApplicationWorkflowSteps.BuildScholarshipSteps(s.Status, documentsVerified),
+                    Steps = scholarshipProgress.TryGetValue(s.ApplicationId, out var progress)
+                        ? progress.Steps
+                        : ApplicationWorkflowSteps.BuildScholarshipSteps(s.Status, documentsVerified),
+                    SubProcess = scholarshipProgress.GetValueOrDefault(s.ApplicationId)?.SubProcess,
+                    NextAction = scholarshipProgress.GetValueOrDefault(s.ApplicationId)?.NextAction,
+                    NextActionPath = scholarshipProgress.GetValueOrDefault(s.ApplicationId)?.NextActionPath,
                     SubmittedAt = s.SubmittedAt,
                 })
                 .ToList(),

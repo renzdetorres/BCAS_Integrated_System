@@ -15,6 +15,8 @@ public class AdminApplicationsService : IAdminApplicationsService
     private readonly INotificationDispatchService _notificationDispatchService;
     private readonly IScholarshipApplicationRepository _scholarshipApplicationRepository;
     private readonly IDepartmentScopeRepository _departmentScopeRepository;
+    private readonly IExamPaymentService _paymentService;
+    private readonly Lazy<IScholarshipPipelineService> _scholarshipPipeline;
 
     public AdminApplicationsService(
         IAdminApplicationsRepository applicationsRepository,
@@ -23,8 +25,13 @@ public class AdminApplicationsService : IAdminApplicationsService
         IApplicationStatusHistoryRepository statusHistoryRepository,
         INotificationDispatchService notificationDispatchService,
         IScholarshipApplicationRepository scholarshipApplicationRepository,
-        IDepartmentScopeRepository departmentScopeRepository)
+        IDepartmentScopeRepository departmentScopeRepository,
+        IExamPaymentService paymentService,
+        IServiceProvider services)
     {
+        _paymentService = paymentService;
+        // Resolved on first use: the scholarship pipeline itself depends on this service.
+        _scholarshipPipeline = new Lazy<IScholarshipPipelineService>(() => services.GetRequiredService<IScholarshipPipelineService>());
         _departmentScopeRepository = departmentScopeRepository;
         _applicationsRepository = applicationsRepository;
         _examScheduleRepository = examScheduleRepository;
@@ -41,9 +48,12 @@ public class AdminApplicationsService : IAdminApplicationsService
         string? program,
         bool? archived = null,
         string? department = null,
+        string? yearLevel = null,
+        string? academicYear = null,
+        string? academicTerm = null,
         CancellationToken cancellationToken = default)
     {
-        var items = await _applicationsRepository.SearchAsync(search, status, category, program, archived, department, cancellationToken);
+        var items = await _applicationsRepository.SearchAsync(search, status, category, program, archived, department, yearLevel, academicYear, academicTerm, cancellationToken);
 
         // Cached per applicant (UserId): the same applicant can have more than
         // one application and the document signal is shared across them.
@@ -115,7 +125,7 @@ public class AdminApplicationsService : IAdminApplicationsService
 
         // Application/Scholarship Result notification (BISAASS-59) - only
         // for an actual decision, not every intermediate status change.
-        if (status is "Approved" or "Rejected")
+        if (status is "Approved" or "Rejected" && !request.SuppressNotification)
         {
             var applicantFirstName = updated.ApplicantName.Split(' ', 2)[0];
             if (category == "Admission")
@@ -401,13 +411,23 @@ public class AdminApplicationsService : IAdminApplicationsService
         // look at the documents.
         if (item.Category == "Admission")
         {
-            return ApplicationWorkflowSteps.BuildAdmissionSteps(item.Status);
+            var paymentState = item.Status == "DocumentsCleared"
+                ? await _paymentService.GetPaymentStateAsync(item.UserId, cancellationToken)
+                : ApplicationWorkflowSteps.PaymentState.NotRequired;
+            return ApplicationWorkflowSteps.BuildAdmissionSteps(item.Status, paymentState);
         }
 
         if (!documentsCache.TryGetValue(item.UserId, out var documents))
         {
             documents = await GetDocumentsOrNullAsync(item.UserId, cancellationToken);
             documentsCache[item.UserId] = documents;
+        }
+
+        var progress = (await _scholarshipPipeline.Value.GetProgressByApplicationAsync(new[] { item.ApplicationId }, cancellationToken))
+            .GetValueOrDefault(item.ApplicationId);
+        if (progress is not null)
+        {
+            return progress.Steps;
         }
 
         var documentsVerified = documents is not null && documents.Requirements.All(r => r.Status == "Verified");

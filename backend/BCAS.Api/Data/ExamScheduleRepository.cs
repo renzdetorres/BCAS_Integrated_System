@@ -19,10 +19,13 @@ public class ExamScheduleRepository : IExamScheduleRepository
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
-SELECT ExamScheduleId, DayType, ExamDate, ExamTime, Venue, IsOffered
-FROM dbo.ExamSchedules
-WHERE DayType = N'Saturday' OR (DayType = N'Weekday' AND IsOffered = 1)
-ORDER BY ExamDate ASC, ExamTime ASC;";
+SELECT sch.ExamScheduleId, sch.DayType, sch.ExamDate, sch.ExamTime, sch.Venue, sch.IsOffered, sch.Capacity,
+       (SELECT COUNT(*) FROM dbo.ExamScheduleSelections sel
+        WHERE sel.ExamScheduleId = sch.ExamScheduleId AND sel.ExamStatus IN (N'Scheduled', N'ExamDone')) AS Taken
+FROM dbo.ExamSchedules sch
+WHERE (sch.DayType = N'Saturday' OR (sch.DayType = N'Weekday' AND sch.IsOffered = 1))
+  AND sch.ExamDate >= CAST(SWITCHOFFSET(SYSDATETIMEOFFSET(), N'+08:00') AS DATE)
+ORDER BY sch.ExamDate ASC, sch.ExamTime ASC;";
 
         await using var command = new SqlCommand(sql, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -44,12 +47,12 @@ ORDER BY ExamDate ASC, ExamTime ASC;";
 SELECT sel.ExamScheduleSelectionId, sel.UserId, sel.ExamScheduleId, sch.DayType, sch.ExamDate, sch.ExamTime,
        sch.Venue, sel.SelectedAt, sel.IsPermitReleased, sel.PermitReleasedAt,
        sel.ExamType, sel.ExamFee, sel.InvoiceNumber,
-       u.FirstName, u.LastName, app.PreviousSchool, app.Department, app.CourseAppliedFor
+       u.FirstName, u.LastName, app.PreviousSchool, app.Department, app.CourseAppliedFor, app.ApplicationSeq, app.AppSubmittedAt
 FROM dbo.ExamScheduleSelections sel
 JOIN dbo.ExamSchedules sch ON sch.ExamScheduleId = sel.ExamScheduleId
 JOIN dbo.Users u ON u.UserId = sel.UserId
 OUTER APPLY (
-    SELECT TOP (1) aa.PreviousSchool, aa.Department, aa.CourseAppliedFor
+    SELECT TOP (1) aa.PreviousSchool, aa.Department, aa.CourseAppliedFor, aa.ApplicationSeq, aa.SubmittedAt AS AppSubmittedAt
     FROM dbo.AdmissionApplications aa
     WHERE aa.UserId = sel.UserId
     ORDER BY aa.SubmittedAt DESC
@@ -70,7 +73,7 @@ WHERE sel.UserId = @UserId;";
 
         try
         {
-            await EnsureSelectableAsync(connection, transaction, examScheduleId, cancellationToken);
+            await EnsureSelectableAsync(connection, transaction, userId, examScheduleId, cancellationToken);
 
             const string upsertSql = @"
 MERGE dbo.ExamScheduleSelections AS target
@@ -111,11 +114,19 @@ WHEN NOT MATCHED THEN
     /// the check and the write it gates see a consistent snapshot.
     /// </summary>
     private static async Task EnsureSelectableAsync(
-        SqlConnection connection, SqlTransaction transaction, int examScheduleId, CancellationToken cancellationToken)
+        SqlConnection connection, SqlTransaction transaction, Guid userId, int examScheduleId, CancellationToken cancellationToken)
     {
-        const string sql = "SELECT DayType, IsOffered FROM dbo.ExamSchedules WHERE ExamScheduleId = @ExamScheduleId;";
+        // UPDLOCK on the slot row serializes two applicants taking the last seat.
+        const string sql = @"
+SELECT DayType, IsOffered, Capacity, ExamDate,
+       CAST(SWITCHOFFSET(SYSDATETIMEOFFSET(), N'+08:00') AS DATE) AS Today,
+       (SELECT COUNT(*) FROM dbo.ExamScheduleSelections sel
+        WHERE sel.ExamScheduleId = @ExamScheduleId AND sel.UserId <> @UserId AND sel.ExamStatus IN (N'Scheduled', N'ExamDone')) AS Taken
+FROM dbo.ExamSchedules WITH (UPDLOCK, ROWLOCK)
+WHERE ExamScheduleId = @ExamScheduleId;";
         await using var command = new SqlCommand(sql, connection, transaction);
         command.Parameters.Add(new SqlParameter("@ExamScheduleId", SqlDbType.Int) { Value = examScheduleId });
+        command.Parameters.Add(new SqlParameter("@UserId", SqlDbType.UniqueIdentifier) { Value = userId });
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken))
@@ -129,6 +140,16 @@ WHEN NOT MATCHED THEN
         {
             throw new ExamScheduleNotAvailableException("This weekday schedule is not currently being offered.");
         }
+
+        if (reader.GetDateTime(reader.GetOrdinal("ExamDate")) < reader.GetDateTime(reader.GetOrdinal("Today")))
+        {
+            throw new ExamScheduleNotAvailableException("This exam date has already passed. Choose a later slot.");
+        }
+
+        if (!reader.IsDBNull(reader.GetOrdinal("Capacity")) && reader.GetInt32(reader.GetOrdinal("Taken")) >= reader.GetInt32(reader.GetOrdinal("Capacity")))
+        {
+            throw new ExamScheduleNotAvailableException("That time slot is already full. Choose another.");
+        }
     }
 
     public async Task<ExamSchedule> CreateAsync(
@@ -137,14 +158,15 @@ WHEN NOT MATCHED THEN
         TimeOnly examTime,
         string venue,
         bool isOffered,
+        int? capacity,
         CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
-INSERT INTO dbo.ExamSchedules (DayType, ExamDate, ExamTime, Venue, IsOffered)
-OUTPUT inserted.ExamScheduleId, inserted.DayType, inserted.ExamDate, inserted.ExamTime, inserted.Venue, inserted.IsOffered
-VALUES (@DayType, @ExamDate, @ExamTime, @Venue, @IsOffered);";
+INSERT INTO dbo.ExamSchedules (DayType, ExamDate, ExamTime, Venue, IsOffered, Capacity)
+OUTPUT inserted.ExamScheduleId, inserted.DayType, inserted.ExamDate, inserted.ExamTime, inserted.Venue, inserted.IsOffered, inserted.Capacity
+VALUES (@DayType, @ExamDate, @ExamTime, @Venue, @IsOffered, @Capacity);";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.Add(new SqlParameter("@DayType", SqlDbType.NVarChar, 10) { Value = dayType });
@@ -152,6 +174,7 @@ VALUES (@DayType, @ExamDate, @ExamTime, @Venue, @IsOffered);";
         command.Parameters.Add(new SqlParameter("@ExamTime", SqlDbType.Time) { Value = examTime.ToTimeSpan() });
         command.Parameters.Add(new SqlParameter("@Venue", SqlDbType.NVarChar, 200) { Value = venue });
         command.Parameters.Add(new SqlParameter("@IsOffered", SqlDbType.Bit) { Value = isOffered });
+        command.Parameters.Add(new SqlParameter("@Capacity", SqlDbType.Int) { Value = (object?)capacity ?? DBNull.Value });
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         await reader.ReadAsync(cancellationToken);
@@ -165,7 +188,7 @@ VALUES (@DayType, @ExamDate, @ExamTime, @Venue, @IsOffered);";
         const string sql = @"
 UPDATE dbo.ExamSchedules
 SET IsOffered = @IsOffered
-OUTPUT inserted.ExamScheduleId, inserted.DayType, inserted.ExamDate, inserted.ExamTime, inserted.Venue, inserted.IsOffered
+OUTPUT inserted.ExamScheduleId, inserted.DayType, inserted.ExamDate, inserted.ExamTime, inserted.Venue, inserted.IsOffered, inserted.Capacity
 WHERE ExamScheduleId = @ExamScheduleId;";
 
         await using var command = new SqlCommand(sql, connection);
@@ -176,6 +199,33 @@ WHERE ExamScheduleId = @ExamScheduleId;";
         return await reader.ReadAsync(cancellationToken) ? MapSchedule(reader) : null;
     }
 
+    public async Task<ExamSchedule?> SetCapacityAsync(int examScheduleId, int? capacity, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+UPDATE dbo.ExamSchedules
+SET Capacity = @Capacity
+OUTPUT inserted.ExamScheduleId, inserted.DayType, inserted.ExamDate, inserted.ExamTime, inserted.Venue, inserted.IsOffered, inserted.Capacity
+WHERE ExamScheduleId = @ExamScheduleId;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@Capacity", SqlDbType.Int) { Value = (object?)capacity ?? DBNull.Value });
+        command.Parameters.Add(new SqlParameter("@ExamScheduleId", SqlDbType.Int) { Value = examScheduleId });
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        return await reader.ReadAsync(cancellationToken) ? MapSchedule(reader) : null;
+    }
+
+    public async Task<bool> DeleteSelectionAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        await using var command = new SqlCommand("DELETE FROM dbo.ExamScheduleSelections WHERE UserId = @UserId;", connection);
+        command.Parameters.Add(new SqlParameter("@UserId", SqlDbType.UniqueIdentifier) { Value = userId });
+        return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
+    }
+
     public async Task<IReadOnlyList<AdminExamSchedule>> GetAllWithApplicantsAsync(CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
@@ -184,7 +234,7 @@ WHERE ExamScheduleId = @ExamScheduleId;";
         var applicantsBySchedule = new Dictionary<int, List<AssignedApplicant>>();
 
         const string schedulesSql = @"
-SELECT ExamScheduleId, DayType, ExamDate, ExamTime, Venue, IsOffered
+SELECT ExamScheduleId, DayType, ExamDate, ExamTime, Venue, IsOffered, Capacity
 FROM dbo.ExamSchedules
 ORDER BY ExamDate ASC, ExamTime ASC;";
 
@@ -202,6 +252,7 @@ ORDER BY ExamDate ASC, ExamTime ASC;";
                     ExamTime = schedule.ExamTime,
                     Venue = schedule.Venue,
                     IsOffered = schedule.IsOffered,
+                    Capacity = schedule.Capacity,
                 };
                 applicantsBySchedule[schedule.ExamScheduleId] = new List<AssignedApplicant>();
             }
@@ -254,7 +305,19 @@ ORDER BY sel.SelectedAt ASC;";
         ExamTime = TimeOnly.FromTimeSpan(reader.GetTimeSpan(reader.GetOrdinal("ExamTime"))),
         Venue = reader.GetString(reader.GetOrdinal("Venue")),
         IsOffered = reader.GetBoolean(reader.GetOrdinal("IsOffered")),
+        Capacity = reader.IsDBNull(reader.GetOrdinal("Capacity")) ? null : reader.GetInt32(reader.GetOrdinal("Capacity")),
+        Taken = HasColumn(reader, "Taken") ? reader.GetInt32(reader.GetOrdinal("Taken")) : 0,
     };
+
+    private static bool HasColumn(SqlDataReader reader, string name)
+    {
+        for (var i = 0; i < reader.FieldCount; i++)
+        {
+            if (string.Equals(reader.GetName(i), name, StringComparison.OrdinalIgnoreCase)) return true;
+        }
+
+        return false;
+    }
 
     private static ExamScheduleSelection MapSelection(SqlDataReader reader) => new()
     {
@@ -275,6 +338,9 @@ ORDER BY sel.SelectedAt ASC;";
         SchoolLastAttended = reader.IsDBNull(reader.GetOrdinal("PreviousSchool")) ? null : reader.GetString(reader.GetOrdinal("PreviousSchool")),
         LevelApplying = reader.IsDBNull(reader.GetOrdinal("Department")) ? null : reader.GetString(reader.GetOrdinal("Department")),
         Program = reader.IsDBNull(reader.GetOrdinal("CourseAppliedFor")) ? null : reader.GetString(reader.GetOrdinal("CourseAppliedFor")),
+        ApplicationNumber = reader.IsDBNull(reader.GetOrdinal("ApplicationSeq"))
+            ? null
+            : Constants.ApplicationNumbers.Format(reader.GetInt32(reader.GetOrdinal("ApplicationSeq")), reader.GetDateTime(reader.GetOrdinal("AppSubmittedAt"))),
     };
 
     public async Task<IReadOnlyList<AdminExamPermitCandidate>> GetAllSelectionsWithApplicantsAsync(CancellationToken cancellationToken = default)
@@ -349,7 +415,7 @@ WHERE sel.UserId = @UserId;";
         return await reader.ReadAsync(cancellationToken) ? MapCandidate(reader) : null;
     }
 
-    public async Task<AdminExamPermitCandidate?> ReleasePermitAsync(Guid userId, Guid releasedByUserId, decimal examFee, string invoiceNumber, CancellationToken cancellationToken = default)
+    public async Task<AdminExamPermitCandidate?> ReleasePermitAsync(Guid userId, Guid releasedByUserId, decimal examFee, string? invoiceNumber, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
@@ -367,7 +433,7 @@ WHERE UserId = @UserId AND IsPermitReleased = 0;";
             command.Parameters.Add(new SqlParameter("@UserId", SqlDbType.UniqueIdentifier) { Value = userId });
             command.Parameters.Add(new SqlParameter("@ReleasedByUserId", SqlDbType.UniqueIdentifier) { Value = releasedByUserId });
             command.Parameters.Add(new SqlParameter("@ExamFee", SqlDbType.Decimal) { Precision = 10, Scale = 2, Value = examFee });
-            command.Parameters.Add(new SqlParameter("@InvoiceNumber", SqlDbType.NVarChar, 50) { Value = invoiceNumber });
+            command.Parameters.Add(new SqlParameter("@InvoiceNumber", SqlDbType.NVarChar, 50) { Value = (object?)invoiceNumber ?? DBNull.Value });
             await command.ExecuteNonQueryAsync(cancellationToken);
         }
 

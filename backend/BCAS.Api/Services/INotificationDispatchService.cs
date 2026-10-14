@@ -19,7 +19,7 @@ public interface INotificationDispatchService
         Guid userId, string email, string firstName, string documentType, string status, string reason, CancellationToken cancellationToken = default);
 
     Task NotifyExamScheduleAsync(
-        Guid userId, string email, string firstName, DateOnly examDate, TimeOnly examTime, string venue, CancellationToken cancellationToken = default);
+        Guid userId, string email, string firstName, DateOnly examDate, TimeOnly examTime, string venue, string examType = "Entrance Exam", CancellationToken cancellationToken = default);
 
     Task NotifyExamPermitAvailableAsync(Guid userId, string email, string firstName, CancellationToken cancellationToken = default);
 
@@ -56,7 +56,31 @@ public interface INotificationDispatchService
     Task NotifyMissingDocumentReminderAsync(
         Guid userId, string email, string firstName, string documentType, CancellationToken cancellationToken = default);
 
+    /// <summary>The scholarship exam result: passed moves on to the interview / essay, failed points to regular admission.</summary>
+    Task NotifyScholarshipExamResultAsync(
+        Guid userId, string email, string firstName, bool passed, string scholarshipName, CancellationToken cancellationToken = default);
+
+    /// <summary>Staff verified every required document.</summary>
+    Task NotifyRequirementsVerifiedAsync(Guid userId, string email, string firstName, CancellationToken cancellationToken = default);
+
+    /// <summary>status is "Verified" or "Rejected"; reason is only used for a rejection.</summary>
+    Task NotifyPaymentReviewedAsync(
+        Guid userId, string email, string firstName, string status, string? reason, CancellationToken cancellationToken = default);
+
+    /// <summary>result is "Passed", "Failed" or "Retake".</summary>
+    Task NotifyExamResultAsync(Guid userId, string email, string firstName, string result, CancellationToken cancellationToken = default);
+
+    Task NotifyInterviewScheduledAsync(
+        Guid userId, string email, string firstName, DateOnly date, TimeOnly time, string location, string? instructions, CancellationToken cancellationToken = default);
+
+    /// <summary>The applicant passed admission: proceed to enrollment.</summary>
+    Task NotifyEnrollmentInstructionAsync(Guid userId, string email, string firstName, CancellationToken cancellationToken = default);
+
     /// <summary>Support Staff/Admin replied to the applicant's own inquiry thread.</summary>
     Task NotifyInquiryReplyAsync(
         Guid userId, string email, string firstName, string threadSubject, CancellationToken cancellationToken = default);
+
+    /// <summary>A message a staff member wrote to this applicant: a system notification plus an email, always delivered.</summary>
+    Task NotifyStaffMessageAsync(
+        Guid userId, string email, string firstName, string subject, string message, CancellationToken cancellationToken = default);
 }

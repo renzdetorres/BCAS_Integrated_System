@@ -86,6 +86,33 @@ WHERE UserId = @UserId AND DocumentType = @DocumentType;";
         return MapDocument(reader);
     }
 
+    public async Task<DocumentFile?> GetFileAsync(Guid userId, string documentType, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+SELECT FileName, ContentType, FileData
+FROM dbo.ApplicantDocuments
+WHERE UserId = @UserId AND DocumentType = @DocumentType;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@UserId", SqlDbType.UniqueIdentifier) { Value = userId });
+        command.Parameters.Add(new SqlParameter("@DocumentType", SqlDbType.NVarChar, 30) { Value = documentType });
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        if (!await reader.ReadAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        return new DocumentFile
+        {
+            FileName = reader.GetString(reader.GetOrdinal("FileName")),
+            ContentType = reader.GetString(reader.GetOrdinal("ContentType")),
+            FileData = (byte[])reader["FileData"],
+        };
+    }
+
     public async Task ArchiveByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);

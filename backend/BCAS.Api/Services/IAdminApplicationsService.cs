@@ -11,6 +11,9 @@ public interface IAdminApplicationsService
         string? program,
         bool? archived = null,
         string? department = null,
+        string? yearLevel = null,
+        string? academicYear = null,
+        string? academicTerm = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

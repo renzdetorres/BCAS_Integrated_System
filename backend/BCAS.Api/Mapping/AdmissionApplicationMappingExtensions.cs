@@ -13,6 +13,7 @@ public static class AdmissionApplicationMappingExtensions
         PreviousSchool = application.PreviousSchool,
         Status = application.Status,
         SubmittedAt = application.SubmittedAt,
+        ApplicationNumber = BCAS.Api.Constants.ApplicationNumbers.Format(application.ApplicationSeq, application.SubmittedAt),
         Form = application.Form,
     };
 }

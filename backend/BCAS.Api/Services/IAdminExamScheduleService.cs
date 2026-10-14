@@ -20,6 +20,9 @@ public interface IAdminExamScheduleService
     Task SetApplicantExamStatusAsync(Guid userId, string status, Guid changedByUserId, CancellationToken cancellationToken = default);
 
     /// <summary>Throws ExamScheduleNotFoundException if no schedule has that id.</summary>
+    /// <summary>Sets how many applicants a slot holds (null = no limit). Throws ExamScheduleNotFoundException if there is no such schedule.</summary>
+    Task<ExamScheduleResponse> SetCapacityAsync(int examScheduleId, int? capacity, CancellationToken cancellationToken = default);
+
     Task<ExamScheduleResponse> SetOfferedAsync(
         int examScheduleId,
         bool isOffered,

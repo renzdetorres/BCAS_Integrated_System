@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace BCAS.Api.Controllers;
 
 /// <summary>Admin-Registrar exam permit generation and release (BISAASS-30).</summary>
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin,Evaluator")]
 [ApiController]
 [Route("api/admin/exam-permits")]
 public class AdminExamPermitsController : ControllerBase
@@ -44,7 +44,7 @@ public class AdminExamPermitsController : ControllerBase
     {
         try
         {
-            var released = await _examPermitService.ReleaseAsync(userId, User.GetUserId(), request.InvoiceNumber!, cancellationToken);
+            var released = await _examPermitService.ReleaseAsync(userId, User.GetUserId(), request.InvoiceNumber ?? string.Empty, cancellationToken);
             return Ok(released);
         }
         catch (NoExamScheduleSelectedException ex)
@@ -52,6 +52,24 @@ public class AdminExamPermitsController : ControllerBase
             return BadRequest(new ProblemDetails
             {
                 Title = "No exam schedule selected",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (PaymentNotVerifiedException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Payment not verified",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (InvoiceNumberRequiredException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Invoice number required",
                 Detail = ex.Message,
                 Status = StatusCodes.Status400BadRequest,
             });

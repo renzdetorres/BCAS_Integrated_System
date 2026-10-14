@@ -1,5 +1,4 @@
 using System.Data;
-using System.Text.Json;
 using BCAS.Api.Models;
 using Microsoft.Data.SqlClient;
 
@@ -11,8 +10,8 @@ internal static class AdmissionFormColumns
     /// <summary>The column list, unqualified, for a SELECT.</summary>
     public const string Select =
         "Sex, PlaceOfBirth, PreviousSchoolAddress, SpecialSkills, FatherName, FatherOccupation, FatherPhone, " +
-        "MotherName, MotherOccupation, MotherPhone, GuardianName, GuardianOccupation, GuardianPhone, Siblings, " +
-        "StudentSignature, GuardianSignature";
+        "MotherName, MotherOccupation, MotherPhone, MotherMaidenName, GuardianName, GuardianOccupation, GuardianPhone, " +
+        "YearLevel, AcademicTerm, AcademicYear, StudentSignature, GuardianSignature";
 
     /// <summary>The same list qualified with a table alias, e.g. "inserted" or "a".</summary>
     public static string Qualified(string alias) => string.Join(", ", Select.Split(", ").Select(c => $"{alias}.{c}"));
@@ -21,7 +20,6 @@ internal static class AdmissionFormColumns
     {
         string? Text(string column) => reader.IsDBNull(reader.GetOrdinal(column)) ? null : reader.GetString(reader.GetOrdinal(column));
 
-        var siblingsJson = Text("Siblings");
         return new AdmissionFormDetails
         {
             Sex = Text("Sex"),
@@ -31,9 +29,10 @@ internal static class AdmissionFormColumns
             Father = new FamilyMember { Name = Text("FatherName"), Occupation = Text("FatherOccupation"), Phone = Text("FatherPhone") },
             Mother = new FamilyMember { Name = Text("MotherName"), Occupation = Text("MotherOccupation"), Phone = Text("MotherPhone") },
             Guardian = new FamilyMember { Name = Text("GuardianName"), Occupation = Text("GuardianOccupation"), Phone = Text("GuardianPhone") },
-            Siblings = string.IsNullOrWhiteSpace(siblingsJson)
-                ? new List<Sibling>()
-                : JsonSerializer.Deserialize<List<Sibling>>(siblingsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<Sibling>(),
+            MotherMaidenName = Text("MotherMaidenName"),
+            YearLevel = Text("YearLevel"),
+            AcademicTerm = Text("AcademicTerm"),
+            AcademicYear = Text("AcademicYear"),
             StudentSignature = Text("StudentSignature"),
             GuardianSignature = Text("GuardianSignature"),
         };
@@ -59,10 +58,10 @@ internal static class AdmissionFormColumns
         Add("@GuardianName", 200, form.Guardian.Name);
         Add("@GuardianOccupation", 100, form.Guardian.Occupation);
         Add("@GuardianPhone", 50, form.Guardian.Phone);
-        command.Parameters.Add(new SqlParameter("@Siblings", SqlDbType.NVarChar, -1)
-        {
-            Value = form.Siblings.Count == 0 ? DBNull.Value : JsonSerializer.Serialize(form.Siblings),
-        });
+        Add("@MotherMaidenName", 200, form.MotherMaidenName);
+        Add("@YearLevel", 40, form.YearLevel);
+        Add("@AcademicTerm", 40, form.AcademicTerm);
+        Add("@AcademicYear", 9, form.AcademicYear);
         Add("@StudentSignature", 200, form.StudentSignature);
         Add("@GuardianSignature", 200, form.GuardianSignature);
     }

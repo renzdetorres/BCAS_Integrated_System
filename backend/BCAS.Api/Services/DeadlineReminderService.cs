@@ -90,7 +90,7 @@ public class DeadlineReminderService : IDeadlineReminderService
             foreach (var applicant in applicants)
             {
                 var uploaded = await _repository.GetUploadedDocumentTypesAsync(applicant.UserId, cancellationToken);
-                var required = DocumentConstants.RequiredDocumentsByApplicationType[applicant.ApplicationType];
+                var required = DocumentConstants.RequiredDocumentsFor(applicant.ApplicationType, applicant.Department);
                 missing.AddRange(
                     required.Where(type => !uploaded.Contains(type))
                         .Select(type => (applicant.UserId, applicant.FirstName, applicant.Email, DocumentType: type)));

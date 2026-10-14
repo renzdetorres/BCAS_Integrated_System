@@ -44,6 +44,9 @@ public static class AdmissionWorkflowConstants
         {
             next.Add(Steps[index + 1]);
             if (currentStatus == "ExamScheduled") next.Add(DidNotTakeExam);
+
+            // A retake result sends the applicant back to choose a new exam schedule.
+            if (currentStatus == "ExamDone") next.Add("DocumentsCleared");
         }
         else if (currentStatus == DidNotTakeExam)
         {

@@ -9,5 +9,6 @@ public class AdminExamSchedule
     public TimeOnly ExamTime { get; set; }
     public string Venue { get; set; } = string.Empty;
     public bool IsOffered { get; set; }
+    public int? Capacity { get; set; }
     public IReadOnlyList<AssignedApplicant> AssignedApplicants { get; set; } = Array.Empty<AssignedApplicant>();
 }

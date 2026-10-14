@@ -13,6 +13,7 @@ public class AdmissionApplicationService : IAdmissionApplicationService
     private readonly ISystemSettingsRepository _systemSettingsRepository;
     private readonly IApplicationStatusHistoryRepository _statusHistoryRepository;
     private readonly IUserRepository _userRepository;
+    private readonly ISchoolConfigService _schoolConfigService;
     private readonly INotificationDispatchService _notificationDispatchService;
     private readonly ILogger<AdmissionApplicationService> _logger;
 
@@ -22,6 +23,7 @@ public class AdmissionApplicationService : IAdmissionApplicationService
         ISystemSettingsRepository systemSettingsRepository,
         IApplicationStatusHistoryRepository statusHistoryRepository,
         IUserRepository userRepository,
+        ISchoolConfigService schoolConfigService,
         INotificationDispatchService notificationDispatchService,
         ILogger<AdmissionApplicationService> logger)
     {
@@ -30,6 +32,7 @@ public class AdmissionApplicationService : IAdmissionApplicationService
         _systemSettingsRepository = systemSettingsRepository;
         _statusHistoryRepository = statusHistoryRepository;
         _userRepository = userRepository;
+        _schoolConfigService = schoolConfigService;
         _notificationDispatchService = notificationDispatchService;
         _logger = logger;
     }
@@ -59,14 +62,30 @@ public class AdmissionApplicationService : IAdmissionApplicationService
 
         // A department with a fixed program list (College) only takes those
         // programs; stored by code so reports group them consistently.
-        request.CourseAppliedFor = DepartmentConstants.NormalizeProgram(request.Department, request.CourseAppliedFor)
+        var program = DepartmentConstants.NormalizeProgram(request.Department, request.CourseAppliedFor)
             ?? throw new InvalidCourseProgramException(request.Department, request.CourseAppliedFor);
 
         AdmissionFormConstants.ValidateAndNormalize(request.Form!);
 
-        if (!await _profileRepository.ExistsAsync(userId, cancellationToken))
+        // The year level, term/semester and strand have to fit the academic
+        // category; the course stored is the program (College), strand
+        // (Senior High School) or grade level.
+        var form = request.Form!;
+        request.CourseAppliedFor = AcademicStructure.ValidateLevel(request.Department, form.YearLevel, form.AcademicTerm, request.Department == AcademicStructure.College ? program : request.CourseAppliedFor);
+        form.YearLevel = AcademicStructure.NormalizeYearLevel(request.Department, form.YearLevel);
+        form.AcademicTerm = AcademicStructure.NormalizeTerm(request.Department, form.AcademicTerm);
+
+        var profile = await _profileRepository.GetByUserIdAsync(userId, cancellationToken)
+            ?? throw new ProfileIncompleteException();
+
+        // Pre-Kinder and Kindergarten are age-gated against the admission
+        // year's cutoff, not against the day the form is filed.
+        var config = await _schoolConfigService.GetAdmissionConfigAsync(DateOnly.FromDateTime(DateTime.UtcNow), cancellationToken);
+        form.AcademicYear = config.AcademicYear;
+        var minAge = AcademicStructure.MinAgeFor(form.YearLevel, config.PreKinderMinAge, config.KinderMinAge);
+        if (minAge is not null)
         {
-            throw new ProfileIncompleteException();
+            AcademicStructure.ValidateAge(form.YearLevel, profile.BirthDate, minAge.Value, config.AgeCutoffMonth, config.AgeCutoffYear);
         }
 
         // One admission application per applicant. The repository's INSERT

@@ -20,6 +20,9 @@ public interface IApplicantDocumentRepository
         byte[] fileData,
         CancellationToken cancellationToken = default);
 
+    /// <summary>The user's stored file for one document type, or null if none has been uploaded.</summary>
+    Task<DocumentFile?> GetFileAsync(Guid userId, string documentType, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Marks every document belonging to this user as archived (BISAASS-35)
     /// - cascaded when their admission application is archived, since the

@@ -35,7 +35,7 @@ public class SubmitScholarshipApplicationRequest
     public string? GuardianName { get; set; }
 
     [Required]
-    [StringLength(50, MinimumLength = 1)]
+    [RegularExpression(PhilippinePhone.Pattern, ErrorMessage = PhilippinePhone.ErrorMessage)]
     public string? GuardianContact { get; set; }
 
     [Required]

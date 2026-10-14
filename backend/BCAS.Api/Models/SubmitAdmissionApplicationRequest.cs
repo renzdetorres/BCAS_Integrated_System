@@ -4,7 +4,7 @@ namespace BCAS.Api.Models;
 
 public class SubmitAdmissionApplicationRequest
 {
-    /// <summary>NewStudent or Transferee - validated server-side against the allowed set.</summary>
+    /// <summary>NewStudent, Transferee or Returnee - validated server-side against the allowed set.</summary>
     [Required]
     public string ApplicationType { get; set; } = string.Empty;
 

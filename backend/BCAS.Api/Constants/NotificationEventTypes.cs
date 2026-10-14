@@ -17,6 +17,21 @@ public static class NotificationEventTypes
     public const string ScholarshipResult = "ScholarshipResult";
     public const string Announcement = "Announcement";
 
+    /// <summary>Requirements (documents) were verified by staff.</summary>
+    public const string RequirementsVerified = "RequirementsVerified";
+
+    /// <summary>The entrance exam payment was verified or rejected.</summary>
+    public const string PaymentReview = "PaymentReview";
+
+    /// <summary>The entrance exam result (Passed, Failed or Retake) was released.</summary>
+    public const string ExamResult = "ExamResult";
+
+    /// <summary>An interview was scheduled.</summary>
+    public const string InterviewSchedule = "InterviewSchedule";
+
+    /// <summary>The applicant passed admission and should proceed to enrollment.</summary>
+    public const string EnrollmentInstruction = "EnrollmentInstruction";
+
     /// <summary>Proactive reminder, not tied to a status change - see DeadlineReminderService.</summary>
     public const string ExamReminder = "ExamReminder";
 
@@ -25,6 +40,13 @@ public static class NotificationEventTypes
 
     /// <summary>Support Staff/Admin replied to the applicant's own inquiry thread - see IStaffInquiryService.</summary>
     public const string InquiryReply = "InquiryReply";
+
+    /// <summary>
+    /// A message a staff member wrote to one applicant by hand. It is a direct
+    /// message, not an automatic event, so it is always delivered: it has no
+    /// applicant preference or Admin switch, and is not listed in DisplayNames.
+    /// </summary>
+    public const string StaffMessage = "StaffMessage";
 
     public static readonly IReadOnlyDictionary<string, string> DisplayNames = new Dictionary<string, string>(StringComparer.Ordinal)
     {
@@ -35,6 +57,11 @@ public static class NotificationEventTypes
         [ApplicationResult] = "Application Result",
         [ScholarshipResult] = "Scholarship Result",
         [Announcement] = "Important Announcements",
+        [RequirementsVerified] = "Requirements Verified",
+        [PaymentReview] = "Payment Verified or Rejected",
+        [ExamResult] = "Exam Result",
+        [InterviewSchedule] = "Interview Schedule",
+        [EnrollmentInstruction] = "Enrollment Instructions",
         [ExamReminder] = "Upcoming Exam Reminder",
         [MissingDocumentReminder] = "Missing Document Reminder",
         [InquiryReply] = "Inquiry Reply",
@@ -57,8 +84,14 @@ public static class NotificationEventTypes
         [ApplicationResult] = "StatusChange",
         [ScholarshipResult] = "StatusChange",
         [Announcement] = null,
+        [RequirementsVerified] = null,
+        [PaymentReview] = null,
+        [ExamResult] = "StatusChange",
+        [InterviewSchedule] = null,
+        [EnrollmentInstruction] = "StatusChange",
         [ExamReminder] = "ExamReminder",
         [MissingDocumentReminder] = "MissingDocumentReminder",
         [InquiryReply] = "InquiryReply",
+        [StaffMessage] = null,
     };
 }

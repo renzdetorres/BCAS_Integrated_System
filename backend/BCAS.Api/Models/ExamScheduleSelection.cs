@@ -19,4 +19,5 @@ public class ExamScheduleSelection
     public string? SchoolLastAttended { get; set; }
     public string? LevelApplying { get; set; }
     public string? Program { get; set; }
+    public string? ApplicationNumber { get; set; }
 }

@@ -21,6 +21,9 @@ public class AdminApplicationsRepository : IAdminApplicationsRepository
         string? program,
         bool? archived = null,
         string? department = null,
+        string? yearLevel = null,
+        string? academicYear = null,
+        string? academicTerm = null,
         CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
@@ -40,6 +43,9 @@ WHERE (@Search IS NULL
   AND (@Department IS NULL
        OR (@Department = N'Unassigned' AND dep.Department IS NULL)
        OR dep.Department = @Department)
+  AND (@YearLevel IS NULL OR lv.YearLevel = @YearLevel)
+  AND (@AcademicTerm IS NULL OR lv.AcademicTerm = @AcademicTerm)
+  AND (@AcademicYear IS NULL OR lv.AcademicYear = @AcademicYear)
 ORDER BY h.SubmittedAt DESC;";
 
         await using var command = new SqlCommand(sql, connection);
@@ -49,6 +55,9 @@ ORDER BY h.SubmittedAt DESC;";
         command.Parameters.Add(new SqlParameter("@Program", SqlDbType.NVarChar, 200) { Value = (object?)NullIfEmpty(program) ?? DBNull.Value });
         command.Parameters.Add(new SqlParameter("@Archived", SqlDbType.Bit) { Value = (object?)archived ?? DBNull.Value });
         command.Parameters.Add(new SqlParameter("@Department", SqlDbType.NVarChar, 100) { Value = (object?)NullIfEmpty(department) ?? DBNull.Value });
+        command.Parameters.Add(new SqlParameter("@YearLevel", SqlDbType.NVarChar, 40) { Value = (object?)NullIfEmpty(yearLevel) ?? DBNull.Value });
+        command.Parameters.Add(new SqlParameter("@AcademicTerm", SqlDbType.NVarChar, 40) { Value = (object?)NullIfEmpty(academicTerm) ?? DBNull.Value });
+        command.Parameters.Add(new SqlParameter("@AcademicYear", SqlDbType.NVarChar, 9) { Value = (object?)NullIfEmpty(academicYear) ?? DBNull.Value });
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
@@ -275,7 +284,7 @@ SELECT
     h.Category, h.ApplicationType, h.CourseAppliedFor, h.PreviousSchool,
     h.ScholarshipName, h.ScholarshipType, h.GradeAverage, h.Status, h.Remarks, h.SubmittedAt, h.UpdatedAt,
     h.IsArchived, h.ArchivedAt, h.ArchivedByUserId, h.ArchiveReason,
-    dep.Department";
+    dep.Department, lv.YearLevel, lv.AcademicTerm, lv.AcademicYear, lv.ApplicationSeq";
 
     // An admission application's own department; a scholarship
     // application's is its applicant's latest admission application's.
@@ -287,7 +296,15 @@ CROSS APPLY (
         THEN (SELECT x.Department FROM dbo.AdmissionApplications x WHERE x.ApplicationId = h.ApplicationId)
         ELSE (SELECT d.Department FROM dbo.vw_ApplicantDepartments d WHERE d.UserId = h.UserId)
     END AS Department
-) dep";
+) dep
+OUTER APPLY (
+    SELECT x.YearLevel, x.AcademicTerm, x.ApplicationSeq,
+           COALESCE(x.AcademicYear,
+                    CASE WHEN MONTH(h.SubmittedAt) >= 6 THEN CONCAT(YEAR(h.SubmittedAt), N'-', YEAR(h.SubmittedAt) + 1)
+                         ELSE CONCAT(YEAR(h.SubmittedAt) - 1, N'-', YEAR(h.SubmittedAt)) END) AS AcademicYear
+    FROM dbo.AdmissionApplications x
+    WHERE x.ApplicationId = h.ApplicationId
+) lv";
 
     private static AdminApplicationListItem MapItem(SqlDataReader reader) => new()
     {
@@ -311,6 +328,12 @@ CROSS APPLY (
         ArchivedByUserId = reader.IsDBNull(reader.GetOrdinal("ArchivedByUserId")) ? null : reader.GetGuid(reader.GetOrdinal("ArchivedByUserId")),
         ArchiveReason = reader.IsDBNull(reader.GetOrdinal("ArchiveReason")) ? null : reader.GetString(reader.GetOrdinal("ArchiveReason")),
         Department = reader.IsDBNull(reader.GetOrdinal("Department")) ? null : reader.GetString(reader.GetOrdinal("Department")),
+        YearLevel = reader.IsDBNull(reader.GetOrdinal("YearLevel")) ? null : reader.GetString(reader.GetOrdinal("YearLevel")),
+        AcademicTerm = reader.IsDBNull(reader.GetOrdinal("AcademicTerm")) ? null : reader.GetString(reader.GetOrdinal("AcademicTerm")),
+        AcademicYear = reader.IsDBNull(reader.GetOrdinal("AcademicYear")) ? null : reader.GetString(reader.GetOrdinal("AcademicYear")),
+        ApplicationNumber = reader.IsDBNull(reader.GetOrdinal("ApplicationSeq"))
+            ? null
+            : Constants.ApplicationNumbers.Format(reader.GetInt32(reader.GetOrdinal("ApplicationSeq")), reader.GetDateTime(reader.GetOrdinal("SubmittedAt"))),
     };
 
     private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

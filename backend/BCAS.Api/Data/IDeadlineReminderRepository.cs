@@ -15,7 +15,7 @@ public interface IDeadlineReminderRepository
     /// nagging for documents an application that will never proceed needs
     /// isn't useful.
     /// </summary>
-    Task<IReadOnlyList<(Guid UserId, string FirstName, string Email, string ApplicationType)>>
+    Task<IReadOnlyList<(Guid UserId, string FirstName, string Email, string ApplicationType, string? Department)>>
         GetStaleAdmissionApplicantsAsync(DateTime submittedAtOrBeforeUtc, CancellationToken cancellationToken = default);
 
     /// <summary>The document types (non-archived) a user has already uploaded, regardless of review status.</summary>

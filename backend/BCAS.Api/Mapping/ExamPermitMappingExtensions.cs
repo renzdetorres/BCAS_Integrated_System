@@ -23,6 +23,8 @@ public static class ExamPermitMappingExtensions
         SchoolLastAttended = selection.SchoolLastAttended,
         LevelApplying = selection.LevelApplying,
         Program = selection.Program,
+        ApplicationNumber = selection.ApplicationNumber,
+        ControlNumber = $"CN-{selection.ExamDate:yyyyMMdd}-{selection.ExamScheduleSelectionId:D4}",
     };
 
     public static ExamRescheduleRequestResponse ToResponse(this ExamRescheduleRequest request) => new()

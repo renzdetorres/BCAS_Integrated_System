@@ -16,4 +16,8 @@ public class ExamPermitResponse
     public string? SchoolLastAttended { get; set; }
     public string? LevelApplying { get; set; }
     public string? Program { get; set; }
+    public string? ApplicationNumber { get; set; }
+
+    /// <summary>Printed on the permit and checked at the exam room door.</summary>
+    public string ControlNumber { get; set; } = string.Empty;
 }

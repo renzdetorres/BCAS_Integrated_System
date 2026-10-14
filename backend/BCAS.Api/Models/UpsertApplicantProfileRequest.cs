@@ -16,7 +16,7 @@ public class UpsertApplicantProfileRequest
     public DateOnly? BirthDate { get; set; }
 
     [Required]
-    [StringLength(30, MinimumLength = 1)]
+    [RegularExpression(BCAS.Api.Constants.PhilippinePhone.Pattern, ErrorMessage = BCAS.Api.Constants.PhilippinePhone.ErrorMessage)]
     public string ContactNumber { get; set; } = string.Empty;
 
     [Required]

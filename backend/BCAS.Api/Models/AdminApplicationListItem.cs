@@ -23,6 +23,12 @@ public class AdminApplicationListItem
     public string? ArchiveReason { get; set; }
 
     // Admission-specific - null when Category is "Scholarship".
+    // Admission-only structured level; null for scholarships and for applications filed before it existed.
+    public string? YearLevel { get; set; }
+    public string? AcademicTerm { get; set; }
+    public string? AcademicYear { get; set; }
+    public string? ApplicationNumber { get; set; }
+
     public string? ApplicationType { get; set; }
     public string? CourseAppliedFor { get; set; }
     public string? PreviousSchool { get; set; }

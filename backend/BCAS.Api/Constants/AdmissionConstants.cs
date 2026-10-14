@@ -6,6 +6,7 @@ public static class AdmissionConstants
     {
         "NewStudent",
         "Transferee",
+        "Returnee",
     };
 
     /// <summary>

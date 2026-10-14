@@ -24,6 +24,7 @@ public interface IExamScheduleRepository
         TimeOnly examTime,
         string venue,
         bool isOffered,
+        int? capacity,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -32,6 +33,12 @@ public interface IExamScheduleRepository
     /// Returns the updated schedule, or null if no schedule has that id.
     /// </summary>
     Task<ExamSchedule?> SetOfferedAsync(int examScheduleId, bool isOffered, CancellationToken cancellationToken = default);
+
+    /// <summary>Admin-only: sets how many seats a slot has (null = no limit). Null result if the schedule does not exist.</summary>
+    Task<ExamSchedule?> SetCapacityAsync(int examScheduleId, int? capacity, CancellationToken cancellationToken = default);
+
+    /// <summary>Removes the applicant's exam schedule selection (used when a retake sends them back to choose a new slot). False if they had none.</summary>
+    Task<bool> DeleteSelectionAsync(Guid userId, CancellationToken cancellationToken = default);
 
     /// <summary>Admin-only: every exam schedule (offered or not), each with the applicants who selected it.</summary>
     Task<IReadOnlyList<AdminExamSchedule>> GetAllWithApplicantsAsync(CancellationToken cancellationToken = default);
@@ -50,5 +57,5 @@ public interface IExamScheduleRepository
     /// no-op if already released). Returns null if the applicant has no
     /// exam schedule selected.
     /// </summary>
-    Task<AdminExamPermitCandidate?> ReleasePermitAsync(Guid userId, Guid releasedByUserId, decimal examFee, string invoiceNumber, CancellationToken cancellationToken = default);
+    Task<AdminExamPermitCandidate?> ReleasePermitAsync(Guid userId, Guid releasedByUserId, decimal examFee, string? invoiceNumber, CancellationToken cancellationToken = default);
 }

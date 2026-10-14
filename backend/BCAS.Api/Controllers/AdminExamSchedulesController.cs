@@ -91,6 +91,33 @@ public class AdminExamSchedulesController : ControllerBase
         }
     }
 
+    /// <summary>Admin-only: sets how many applicants a slot holds (blank = no limit).</summary>
+    [HttpPatch("{examScheduleId:int}/capacity")]
+    [ProducesResponseType(typeof(ExamScheduleResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ExamScheduleResponse>> SetCapacity(
+        int examScheduleId,
+        [FromBody] SetExamScheduleCapacityRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var schedule = await _examScheduleService.SetCapacityAsync(examScheduleId, request.Capacity, cancellationToken);
+            await _auditLogService.LogAsync(
+                User, "ExamScheduleCapacityChanged", $"{schedule.DayType} {schedule.ExamDate} {schedule.ExamTime}: {(request.Capacity?.ToString() ?? "no limit")} seats", cancellationToken);
+            return Ok(schedule);
+        }
+        catch (ExamScheduleNotFoundException ex)
+        {
+            return NotFound(new ProblemDetails
+            {
+                Title = "Exam schedule not found",
+                Detail = ex.Message,
+                Status = StatusCodes.Status404NotFound,
+            });
+        }
+    }
+
     /// <summary>
     /// Admin-only: turns a Weekday schedule's availability on or off based
     /// on whether a teacher can currently assist with it. Has no effect on

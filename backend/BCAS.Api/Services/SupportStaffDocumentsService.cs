@@ -10,10 +10,14 @@ public class SupportStaffDocumentsService : ISupportStaffDocumentsService
 {
     private readonly ISupportStaffDocumentsRepository _documentsRepository;
     private readonly INotificationDispatchService _notificationDispatchService;
+    private readonly IApplicantDocumentService _applicantDocumentService;
 
     public SupportStaffDocumentsService(
-        ISupportStaffDocumentsRepository documentsRepository, INotificationDispatchService notificationDispatchService)
+        ISupportStaffDocumentsRepository documentsRepository,
+        INotificationDispatchService notificationDispatchService,
+        IApplicantDocumentService applicantDocumentService)
     {
+        _applicantDocumentService = applicantDocumentService;
         _documentsRepository = documentsRepository;
         _notificationDispatchService = notificationDispatchService;
     }
@@ -76,7 +80,33 @@ public class SupportStaffDocumentsService : ISupportStaffDocumentsService
                 updated.UserId, updated.ApplicantEmail, applicantFirstName, updated.DocumentType, request.Status, reason!, cancellationToken);
         }
 
+        // Requirements Verified notification: sent once, by the review that completes the set.
+        if (request.Status == "Verified")
+        {
+            await NotifyIfAllRequirementsVerifiedAsync(updated, cancellationToken);
+        }
+
         return updated.ToResponse();
+    }
+
+    private async Task NotifyIfAllRequirementsVerifiedAsync(AdminDocumentListItem verified, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var checklist = await _applicantDocumentService.GetMyChecklistAsync(verified.UserId, cancellationToken);
+
+            // SF10 is only submitted after the exam, so it isn't part of "all requirements".
+            var required = checklist.Requirements.Where(r => r.DocumentType != DocumentConstants.Sf10).ToList();
+            if (required.Count > 0 && required.All(r => r.Status == "Verified") && required.Any(r => r.DocumentType == verified.DocumentType))
+            {
+                var firstName = verified.ApplicantName.Split(' ', 2)[0];
+                await _notificationDispatchService.NotifyRequirementsVerifiedAsync(verified.UserId, verified.ApplicantEmail, firstName, cancellationToken);
+            }
+        }
+        catch (NoAdmissionApplicationException)
+        {
+            // A scholarship-only applicant has no admission checklist to complete.
+        }
     }
 
     public async Task<IReadOnlyList<AdminDocumentListItemResponse>> SearchArchivedAsync(

@@ -11,6 +11,9 @@ public class AdmissionApplication
     public string Status { get; set; } = string.Empty;
     public DateTime SubmittedAt { get; set; }
 
+    /// <summary>Running number, shown as BCAS-2026-00042 (see ApplicationNumbers).</summary>
+    public int ApplicationSeq { get; set; }
+
     /// <summary>The entrance-exam form answers; empty fields on applications filed before the form existed.</summary>
     public AdmissionFormDetails Form { get; set; } = new();
 }

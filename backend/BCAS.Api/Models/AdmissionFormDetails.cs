@@ -15,23 +15,6 @@ public class FamilyMember
     public string? Phone { get; set; }
 }
 
-/// <summary>A brother or sister listed on the form.</summary>
-public class Sibling
-{
-    [StringLength(200)]
-    public string? Name { get; set; }
-
-    [Range(0, 120)]
-    public int? Age { get; set; }
-
-    [StringLength(100)]
-    public string? Occupation { get; set; }
-
-    /// <summary>School, or place of work.</summary>
-    [StringLength(200)]
-    public string? SchoolOrWork { get; set; }
-}
-
 /// <summary>
 /// The fields of the school's "Application Form for Entrance Exam" that are not
 /// already part of the application or the applicant's profile.
@@ -54,9 +37,23 @@ public class AdmissionFormDetails
 
     public FamilyMember Father { get; set; } = new();
     public FamilyMember Mother { get; set; } = new();
+
+    /// <summary>The mother's maiden name, as on the PSA birth certificate.</summary>
+    [StringLength(200)]
+    public string? MotherMaidenName { get; set; }
     public FamilyMember Guardian { get; set; } = new();
 
-    public List<Sibling> Siblings { get; set; } = new();
+    /// <summary>Grade level or year level, e.g. "Grade 7" or "1st Year".</summary>
+    [StringLength(40)]
+    public string? YearLevel { get; set; }
+
+    /// <summary>The term (High School, Senior High School) or semester (College) applied for.</summary>
+    [StringLength(40)]
+    public string? AcademicTerm { get; set; }
+
+    /// <summary>Set by the server from the admission settings, e.g. "2026-2027".</summary>
+    [StringLength(9)]
+    public string? AcademicYear { get; set; }
 
     /// <summary>The student's signature over printed name, typed.</summary>
     [StringLength(200)]

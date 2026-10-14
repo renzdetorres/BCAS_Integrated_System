@@ -20,6 +20,9 @@ public interface IAdminApplicationsRepository
         string? program,
         bool? archived = null,
         string? department = null,
+        string? yearLevel = null,
+        string? academicYear = null,
+        string? academicTerm = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>A single application (admission or scholarship) by id, or null if none exists.</summary>

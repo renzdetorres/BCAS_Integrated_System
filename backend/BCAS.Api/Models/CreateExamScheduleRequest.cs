@@ -25,4 +25,8 @@ public class CreateExamScheduleRequest
     /// applicants can select this slot.
     /// </summary>
     public bool IsOffered { get; set; } = true;
+
+    /// <summary>How many applicants the slot holds. Leave blank for no limit.</summary>
+    [Range(1, 5000)]
+    public int? Capacity { get; set; }
 }

@@ -79,6 +79,7 @@ public class AdminExamScheduleService : IAdminExamScheduleService
             request.ExamTime!.Value,
             request.Venue.Trim(),
             request.IsOffered,
+            request.Capacity,
             cancellationToken);
 
         _logger.LogInformation(
@@ -87,6 +88,19 @@ public class AdminExamScheduleService : IAdminExamScheduleService
             schedule.DayType,
             schedule.ExamDate,
             schedule.ExamTime);
+
+        return schedule.ToResponse();
+    }
+
+    public async Task<ExamScheduleResponse> SetCapacityAsync(
+        int examScheduleId,
+        int? capacity,
+        CancellationToken cancellationToken = default)
+    {
+        var schedule = await _examScheduleRepository.SetCapacityAsync(examScheduleId, capacity, cancellationToken)
+            ?? throw new ExamScheduleNotFoundException(examScheduleId);
+
+        _logger.LogInformation("Exam schedule {ExamScheduleId} capacity set to {Capacity}", examScheduleId, capacity);
 
         return schedule.ToResponse();
     }

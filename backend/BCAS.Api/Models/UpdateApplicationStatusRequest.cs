@@ -14,4 +14,11 @@ public class UpdateApplicationStatusRequest
 
     [StringLength(1000)]
     public string? Remarks { get; set; }
+
+    /// <summary>
+    /// Set by server code that sends its own, more specific notification (an exam
+    /// or interview result), so the applicant isn't emailed twice. Never read from the request body.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool SuppressNotification { get; set; }
 }
