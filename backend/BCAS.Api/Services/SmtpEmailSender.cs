@@ -1,17 +1,21 @@
-using System.Net;
-using System.Net.Mail;
 using BCAS.Api.Models;
+using MailKit.Net.Smtp;
+using MailKit.Security;
 using Microsoft.Extensions.Options;
+using MimeKit;
 
 namespace BCAS.Api.Services;
 
 /// <summary>
-/// Plain SMTP relay via the .NET BCL's SmtpClient - no extra package
-/// dependency for what's a simple send-and-forget text email. Configured
-/// via the "Smtp" appsettings section (SmtpOptions).
+/// SMTP relay through MailKit, which negotiates the secure connection the way
+/// Gmail and other modern servers expect (the old built-in SmtpClient does not)
+/// and reports a specific reason when a login is refused. Configured via the
+/// "Smtp" appsettings section (SmtpOptions).
 /// </summary>
 public class SmtpEmailSender : IEmailSender
 {
+    private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(20);
+
     private readonly SmtpOptions _options;
 
     public SmtpEmailSender(IOptions<SmtpOptions> options)
@@ -21,23 +25,27 @@ public class SmtpEmailSender : IEmailSender
 
     public async Task SendAsync(string toAddress, string subject, string body, CancellationToken cancellationToken = default)
     {
-        using var client = new SmtpClient(_options.Host, _options.Port)
-        {
-            EnableSsl = _options.EnableSsl,
-            Credentials = string.IsNullOrEmpty(_options.Username)
-                ? null
-                : new NetworkCredential(_options.Username, _options.Password),
-        };
+        var message = new MimeMessage();
+        message.From.Add(new MailboxAddress(_options.FromName, _options.FromAddress));
+        message.To.Add(MailboxAddress.Parse(toAddress));
+        message.Subject = subject;
+        message.Body = new TextPart("plain") { Text = body };
 
-        using var message = new MailMessage
-        {
-            From = new MailAddress(_options.FromAddress, _options.FromName),
-            Subject = subject,
-            Body = body,
-            IsBodyHtml = false,
-        };
-        message.To.Add(toAddress);
+        using var client = new SmtpClient { Timeout = (int)Timeout.TotalMilliseconds };
 
-        await client.SendMailAsync(message, cancellationToken);
+        // Port 465 is secure from the first byte; the usual 587 starts plain and upgrades (STARTTLS).
+        var security = !_options.EnableSsl
+            ? SecureSocketOptions.None
+            : _options.Port == 465 ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTls;
+
+        await client.ConnectAsync(_options.Host, _options.Port, security, cancellationToken);
+
+        if (!string.IsNullOrEmpty(_options.Username))
+        {
+            await client.AuthenticateAsync(_options.Username, _options.Password, cancellationToken);
+        }
+
+        await client.SendAsync(message, cancellationToken);
+        await client.DisconnectAsync(true, cancellationToken);
     }
 }

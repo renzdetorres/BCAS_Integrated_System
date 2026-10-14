@@ -1145,3 +1145,17 @@ it renders and applies them to `config/academicStructure.js` and `config/departm
 Support Staff and Admin can write to one applicant from **Applicant Records → Notify** (`POST /api/staff/notifications`).
 The applicant gets a system notification and an email. It is always delivered (no applicant preference or Admin switch
 applies to a hand-written message) and is recorded in the activity log as `ApplicantNotified`.
+
+### Email (password reset links and notifications)
+
+Mail goes out through MailKit using the `Smtp` settings: `Host`, `Port` (587), `EnableSsl`, `Username`, `Password`,
+`FromAddress`. The password must never be committed: set them on the server that runs the API as environment variables
+(`Smtp__Username`, `Smtp__Password`, `Smtp__FromAddress`; `Smtp__Host` is `smtp.gmail.com` by default) or in that
+server's own `appsettings.Production.json`, which is git-ignored.
+
+For Gmail: turn on 2-Step Verification, create an app password (myaccount.google.com/apppasswords) and use the Gmail
+address as both the username and the sender.
+
+**System Settings → Email** shows whether anything is still missing and has a "Send a test email" button that reports the
+mail server's real answer (for example "Username and Password not accepted"). The API also logs a warning at start-up while
+email isn't set up.

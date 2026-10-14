@@ -183,6 +183,13 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Without a mail login, password reset links and notification emails silently never arrive; say so in the log at start-up.
+var smtpProblems = app.Services.GetRequiredService<Microsoft.Extensions.Options.IOptions<SmtpOptions>>().Value.Problems();
+if (smtpProblems.Count > 0)
+{
+    app.Logger.LogWarning("Email is not set up, so password reset and notification emails will not be sent. {Problems}", string.Join(" ", smtpProblems));
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
