@@ -1628,45 +1628,17 @@ GO
 
 -- -----------------------------------------------------------------------------
 -- College programs
--- The College department offers four programs: BSBA, BSED, BSA and BSIT. An
--- admission application filed under College must name one of them, stored by
--- code. The API already enforces this (DepartmentConstants.FixedPrograms);
--- this constraint keeps the database itself honest for anything that writes
--- to it directly. Other departments (Senior High School, High School,
--- Elementary) carry a strand or grade level, so they are not restricted.
---
--- Applications with no department (filed before departments existed) are
--- unaffected. If rows already filed under College hold some other course,
--- the constraint is still added - it then applies to new and changed rows
--- only - and a warning lists how many to correct.
+-- The College programs (BSBA, BSED, BSA, BSIT and any the registrar adds) are
+-- now an admin-editable list in dbo.SchoolConfig ('Academic.Programs'), and
+-- the API validates every application against it. A CHECK constraint with the
+-- four codes written into it would reject any new program, so it is removed.
 -- -----------------------------------------------------------------------------
-IF NOT EXISTS (
+IF EXISTS (
     SELECT 1 FROM sys.check_constraints
     WHERE name = N'CK_AdmissionApplications_CollegeProgram'
       AND parent_object_id = OBJECT_ID(N'dbo.AdmissionApplications')
 )
-BEGIN
-    DECLARE @CollegeOutsideList INT = (
-        SELECT COUNT(*) FROM dbo.AdmissionApplications
-        WHERE Department = N'College' AND CourseAppliedFor NOT IN (N'BSBA', N'BSED', N'BSA', N'BSIT')
-    );
-
-    IF @CollegeOutsideList = 0
-        ALTER TABLE dbo.AdmissionApplications WITH CHECK
-            ADD CONSTRAINT CK_AdmissionApplications_CollegeProgram
-            CHECK (Department IS NULL OR Department <> N'College' OR CourseAppliedFor IN (N'BSBA', N'BSED', N'BSA', N'BSIT'));
-    ELSE
-    BEGIN
-        ALTER TABLE dbo.AdmissionApplications WITH NOCHECK
-            ADD CONSTRAINT CK_AdmissionApplications_CollegeProgram
-            CHECK (Department IS NULL OR Department <> N'College' OR CourseAppliedFor IN (N'BSBA', N'BSED', N'BSA', N'BSIT'));
-
-        PRINT CONCAT(N'WARNING: ', @CollegeOutsideList, N' College application(s) have a course outside BSBA, BSED, BSA, BSIT. ',
-                     N'The rule applies to new and changed rows; correct these with: ',
-                     N'SELECT ApplicationId, CourseAppliedFor FROM dbo.AdmissionApplications ',
-                     N'WHERE Department = N''College'' AND CourseAppliedFor NOT IN (N''BSBA'', N''BSED'', N''BSA'', N''BSIT'').');
-    END
-END
+    ALTER TABLE dbo.AdmissionApplications DROP CONSTRAINT CK_AdmissionApplications_CollegeProgram;
 GO
 
 -- -----------------------------------------------------------------------------
@@ -1825,4 +1797,285 @@ GO
 IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_AdmissionApplications_Siblings')
     ALTER TABLE dbo.AdmissionApplications WITH NOCHECK
         ADD CONSTRAINT CK_AdmissionApplications_Siblings CHECK (Siblings IS NULL OR ISJSON(Siblings) = 1);
+GO
+
+-- =============================================================================
+-- Admission redesign, part 1
+-- Structured academic information (year level, term/semester, academic year),
+-- mother's maiden name, the Returnee application type, and the SchoolConfig
+-- table the admin edits (academic year, Pre-Kinder/Kindergarten age policy,
+-- exam fee and payment details). Safe to re-run.
+--
+-- The old Brothers and sisters section is gone from the form; the Siblings
+-- column is left in place so already-filed applications keep their data.
+-- =============================================================================
+IF COL_LENGTH(N'dbo.AdmissionApplications', N'MotherMaidenName') IS NULL
+    ALTER TABLE dbo.AdmissionApplications ADD MotherMaidenName NVARCHAR(200) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.AdmissionApplications', N'YearLevel') IS NULL
+    ALTER TABLE dbo.AdmissionApplications ADD YearLevel NVARCHAR(40) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.AdmissionApplications', N'AcademicTerm') IS NULL
+    ALTER TABLE dbo.AdmissionApplications ADD AcademicTerm NVARCHAR(40) NULL;
+GO
+
+IF COL_LENGTH(N'dbo.AdmissionApplications', N'AcademicYear') IS NULL
+    ALTER TABLE dbo.AdmissionApplications ADD AcademicYear NVARCHAR(9) NULL;
+GO
+
+-- Returnee joins NewStudent and Transferee.
+IF EXISTS (
+    SELECT 1 FROM sys.check_constraints
+    WHERE name = N'CK_AdmissionApplications_ApplicationType'
+      AND parent_object_id = OBJECT_ID(N'dbo.AdmissionApplications')
+      AND definition NOT LIKE N'%Returnee%'
+)
+    ALTER TABLE dbo.AdmissionApplications DROP CONSTRAINT CK_AdmissionApplications_ApplicationType;
+GO
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.check_constraints
+    WHERE name = N'CK_AdmissionApplications_ApplicationType'
+      AND parent_object_id = OBJECT_ID(N'dbo.AdmissionApplications')
+)
+    ALTER TABLE dbo.AdmissionApplications
+        ADD CONSTRAINT CK_AdmissionApplications_ApplicationType CHECK (ApplicationType IN (N'NewStudent', N'Transferee', N'Returnee'));
+GO
+
+-- -----------------------------------------------------------------------------
+-- SchoolConfig
+-- Admin-editable values the admission process reads. A key with no row falls
+-- back to the default in SchoolConfigKeys, so nothing breaks before an admin
+-- saves anything.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.SchoolConfig', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.SchoolConfig
+    (
+        ConfigKey    NVARCHAR(60)  NOT NULL CONSTRAINT PK_SchoolConfig PRIMARY KEY,
+        ConfigValue  NVARCHAR(MAX) NULL,
+        UpdatedAt    DATETIME2(3)  NOT NULL CONSTRAINT DF_SchoolConfig_UpdatedAt DEFAULT SYSUTCDATETIME()
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.SchoolConfig WHERE ConfigKey = N'AgePolicy.PreKinderMinAge')
+    INSERT INTO dbo.SchoolConfig (ConfigKey, ConfigValue) VALUES (N'AgePolicy.PreKinderMinAge', N'4');
+IF NOT EXISTS (SELECT 1 FROM dbo.SchoolConfig WHERE ConfigKey = N'AgePolicy.KinderMinAge')
+    INSERT INTO dbo.SchoolConfig (ConfigKey, ConfigValue) VALUES (N'AgePolicy.KinderMinAge', N'5');
+IF NOT EXISTS (SELECT 1 FROM dbo.SchoolConfig WHERE ConfigKey = N'AgePolicy.CutoffMonth')
+    INSERT INTO dbo.SchoolConfig (ConfigKey, ConfigValue) VALUES (N'AgePolicy.CutoffMonth', N'12');
+GO
+
+-- =============================================================================
+-- Admission redesign, part 2: entrance exam payment
+-- One payment per admission application: the applicant uploads proof of a QR
+-- payment, Support Staff / Admin verify (or reject, with a reason). A verified
+-- payment is what lets the applicant pick an exam schedule and receive a
+-- permit while the ExamPaymentRequired setting is on. Safe to re-run.
+-- =============================================================================
+IF OBJECT_ID(N'dbo.ExamPayments', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ExamPayments
+    (
+        PaymentId           UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_ExamPayments_PaymentId DEFAULT NEWID(),
+        ApplicationId       UNIQUEIDENTIFIER NOT NULL,
+        UserId              UNIQUEIDENTIFIER NOT NULL,
+        PaymentType         NVARCHAR(30)     NOT NULL CONSTRAINT DF_ExamPayments_PaymentType DEFAULT (N'QR Payment'),
+        Amount              DECIMAL(10,2)    NOT NULL,
+        ReferenceNumber     NVARCHAR(60)     NULL,
+        ProofFileName       NVARCHAR(260)    NOT NULL,
+        ProofContentType    NVARCHAR(100)    NOT NULL,
+        ProofFileData       VARBINARY(MAX)   NOT NULL,
+        ProofUploadedAt     DATETIME2(3)     NOT NULL CONSTRAINT DF_ExamPayments_ProofUploadedAt DEFAULT SYSUTCDATETIME(),
+        Status              NVARCHAR(20)     NOT NULL CONSTRAINT DF_ExamPayments_Status DEFAULT (N'Pending'),
+        RejectionReason     NVARCHAR(500)    NULL,
+        InvoiceNumber       NVARCHAR(50)     NULL,
+        VerifiedByUserId    UNIQUEIDENTIFIER NULL,
+        VerifiedAt          DATETIME2(3)     NULL,
+        CreatedAt           DATETIME2(3)     NOT NULL CONSTRAINT DF_ExamPayments_CreatedAt DEFAULT SYSUTCDATETIME(),
+        UpdatedAt           DATETIME2(3)     NOT NULL CONSTRAINT DF_ExamPayments_UpdatedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_ExamPayments PRIMARY KEY (PaymentId),
+        CONSTRAINT UQ_ExamPayments_ApplicationId UNIQUE (ApplicationId),
+        CONSTRAINT FK_ExamPayments_Applications FOREIGN KEY (ApplicationId) REFERENCES dbo.AdmissionApplications (ApplicationId),
+        CONSTRAINT FK_ExamPayments_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT FK_ExamPayments_VerifiedBy FOREIGN KEY (VerifiedByUserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT CK_ExamPayments_Status CHECK (Status IN (N'Pending', N'Verified', N'Rejected'))
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_ExamPayments_Status' AND object_id = OBJECT_ID(N'dbo.ExamPayments'))
+    CREATE NONCLUSTERED INDEX IX_ExamPayments_Status ON dbo.ExamPayments (Status, ProofUploadedAt);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM dbo.SystemSettings WHERE SettingKey = N'ExamPaymentRequired')
+    INSERT INTO dbo.SystemSettings (SettingKey, DisplayName, Description, IsEnabled) VALUES
+        (N'ExamPaymentRequired', N'Entrance Exam Payment Required', N'When on, an applicant must have a verified entrance exam payment before choosing an exam schedule or receiving an exam permit. Turn off to let applicants schedule without paying online.', 1);
+GO
+
+-- =============================================================================
+-- Admission redesign, part 3: system (in-app) notifications
+-- Every emailed event is also stored here so the applicant sees it in the
+-- portal. Safe to re-run.
+-- =============================================================================
+IF OBJECT_ID(N'dbo.Notifications', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Notifications
+    (
+        NotificationId  UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_Notifications_NotificationId DEFAULT NEWID(),
+        UserId          UNIQUEIDENTIFIER NOT NULL,
+        EventType       NVARCHAR(30)     NOT NULL,
+        Title           NVARCHAR(200)    NOT NULL,
+        Body            NVARCHAR(2000)   NOT NULL,
+        IsRead          BIT              NOT NULL CONSTRAINT DF_Notifications_IsRead DEFAULT (0),
+        CreatedAt       DATETIME2(3)     NOT NULL CONSTRAINT DF_Notifications_CreatedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_Notifications PRIMARY KEY (NotificationId),
+        CONSTRAINT FK_Notifications_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId)
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_Notifications_UserId_CreatedAt' AND object_id = OBJECT_ID(N'dbo.Notifications'))
+    CREATE NONCLUSTERED INDEX IX_Notifications_UserId_CreatedAt ON dbo.Notifications (UserId, CreatedAt DESC);
+GO
+
+-- =============================================================================
+-- Admission redesign, part 4: exam slot capacity, exam results, interviews
+-- Safe to re-run.
+-- =============================================================================
+
+-- A slot can be limited to a number of seats; NULL means no limit.
+IF COL_LENGTH(N'dbo.ExamSchedules', N'Capacity') IS NULL
+    ALTER TABLE dbo.ExamSchedules ADD Capacity INT NULL;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = N'CK_ExamSchedules_Capacity')
+    ALTER TABLE dbo.ExamSchedules WITH NOCHECK ADD CONSTRAINT CK_ExamSchedules_Capacity CHECK (Capacity IS NULL OR Capacity > 0);
+GO
+
+-- -----------------------------------------------------------------------------
+-- ExamResults
+-- One row per attempt at the entrance exam, so a retake keeps the earlier
+-- result as history. Passed sends the applicant to the interview, Failed
+-- ends the application, Retake sends them back to pick a new exam schedule.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.ExamResults', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ExamResults
+    (
+        ResultId            UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_ExamResults_ResultId DEFAULT NEWID(),
+        ApplicationId       UNIQUEIDENTIFIER NOT NULL,
+        UserId              UNIQUEIDENTIFIER NOT NULL,
+        Attempt             INT              NOT NULL,
+        Result              NVARCHAR(10)     NOT NULL,
+        Score               DECIMAL(5,2)     NULL,
+        Remarks             NVARCHAR(500)    NULL,
+        ExamDate            DATE             NULL,
+        RecordedByUserId    UNIQUEIDENTIFIER NOT NULL,
+        RecordedAt          DATETIME2(3)     NOT NULL CONSTRAINT DF_ExamResults_RecordedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_ExamResults PRIMARY KEY (ResultId),
+        CONSTRAINT UQ_ExamResults_Attempt UNIQUE (ApplicationId, Attempt),
+        CONSTRAINT FK_ExamResults_Applications FOREIGN KEY (ApplicationId) REFERENCES dbo.AdmissionApplications (ApplicationId),
+        CONSTRAINT FK_ExamResults_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT FK_ExamResults_RecordedBy FOREIGN KEY (RecordedByUserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT CK_ExamResults_Result CHECK (Result IN (N'Passed', N'Failed', N'Retake'))
+    );
+END
+GO
+
+-- -----------------------------------------------------------------------------
+-- InterviewSchedules
+-- One interview per application, for applicants who passed the exam. The
+-- evaluation (Passed / Failed) is the admission result: Passed moves the
+-- application on to enrollment, Failed closes it.
+-- -----------------------------------------------------------------------------
+IF OBJECT_ID(N'dbo.InterviewSchedules', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.InterviewSchedules
+    (
+        InterviewId         UNIQUEIDENTIFIER NOT NULL CONSTRAINT DF_InterviewSchedules_InterviewId DEFAULT NEWID(),
+        ApplicationId       UNIQUEIDENTIFIER NOT NULL,
+        UserId              UNIQUEIDENTIFIER NOT NULL,
+        InterviewDate       DATE             NOT NULL,
+        InterviewTime       TIME(0)          NOT NULL,
+        Location            NVARCHAR(200)    NOT NULL,
+        Instructions        NVARCHAR(500)    NULL,
+        Status              NVARCHAR(12)     NOT NULL CONSTRAINT DF_InterviewSchedules_Status DEFAULT (N'Scheduled'),
+        Evaluation          NVARCHAR(10)     NULL,
+        EvaluationNotes     NVARCHAR(500)    NULL,
+        ScheduledByUserId   UNIQUEIDENTIFIER NOT NULL,
+        ScheduledAt         DATETIME2(3)     NOT NULL CONSTRAINT DF_InterviewSchedules_ScheduledAt DEFAULT SYSUTCDATETIME(),
+        EvaluatedByUserId   UNIQUEIDENTIFIER NULL,
+        EvaluatedAt         DATETIME2(3)     NULL,
+        CONSTRAINT PK_InterviewSchedules PRIMARY KEY (InterviewId),
+        CONSTRAINT UQ_InterviewSchedules_ApplicationId UNIQUE (ApplicationId),
+        CONSTRAINT FK_InterviewSchedules_Applications FOREIGN KEY (ApplicationId) REFERENCES dbo.AdmissionApplications (ApplicationId),
+        CONSTRAINT FK_InterviewSchedules_Users FOREIGN KEY (UserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT FK_InterviewSchedules_ScheduledBy FOREIGN KEY (ScheduledByUserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT FK_InterviewSchedules_EvaluatedBy FOREIGN KEY (EvaluatedByUserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT CK_InterviewSchedules_Status CHECK (Status IN (N'Scheduled', N'Completed', N'NoShow')),
+        CONSTRAINT CK_InterviewSchedules_Evaluation CHECK (Evaluation IS NULL OR Evaluation IN (N'Passed', N'Failed'))
+    );
+END
+GO
+
+-- =============================================================================
+-- Admission redesign, part 5: application numbers
+-- A running number per admission application. It is shown as
+-- BCAS-<year>-<number, 5 digits> (see ApplicationNumbers.Format) on the
+-- receipt, the exam permit and the staff lists. Safe to re-run.
+-- =============================================================================
+IF COL_LENGTH(N'dbo.AdmissionApplications', N'ApplicationSeq') IS NULL
+    ALTER TABLE dbo.AdmissionApplications ADD ApplicationSeq INT IDENTITY(1,1) NOT NULL;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_AdmissionApplications_ApplicationSeq' AND object_id = OBJECT_ID(N'dbo.AdmissionApplications'))
+    CREATE UNIQUE NONCLUSTERED INDEX UX_AdmissionApplications_ApplicationSeq ON dbo.AdmissionApplications (ApplicationSeq);
+GO
+
+-- =============================================================================
+-- Admission redesign, part 6: scholarship exam and interview / essay
+-- The scholarship exam result (Passed sends the applicant to the interview /
+-- essay, Failed closes the scholarship and points them to regular admission)
+-- and the interview / essay scores that rank the Top 10 grantees. They sit
+-- beside the existing screening and Academic Head decision; nothing there
+-- changes. Safe to re-run.
+-- =============================================================================
+IF OBJECT_ID(N'dbo.ScholarshipExamResults', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ScholarshipExamResults
+    (
+        ApplicationId       UNIQUEIDENTIFIER NOT NULL,
+        Result              NVARCHAR(10)     NOT NULL,
+        Score               DECIMAL(5,2)     NULL,
+        Remarks             NVARCHAR(500)    NULL,
+        RecordedByUserId    UNIQUEIDENTIFIER NOT NULL,
+        RecordedAt          DATETIME2(3)     NOT NULL CONSTRAINT DF_ScholarshipExamResults_RecordedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_ScholarshipExamResults PRIMARY KEY (ApplicationId),
+        CONSTRAINT FK_ScholarshipExamResults_Applications FOREIGN KEY (ApplicationId) REFERENCES dbo.ScholarshipApplications (ApplicationId),
+        CONSTRAINT FK_ScholarshipExamResults_RecordedBy FOREIGN KEY (RecordedByUserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT CK_ScholarshipExamResults_Result CHECK (Result IN (N'Passed', N'Failed'))
+    );
+END
+GO
+
+IF OBJECT_ID(N'dbo.ScholarshipInterviewEvaluations', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ScholarshipInterviewEvaluations
+    (
+        ApplicationId       UNIQUEIDENTIFIER NOT NULL,
+        InterviewScore      DECIMAL(5,2)     NULL,
+        EssayScore          DECIMAL(5,2)     NULL,
+        Notes               NVARCHAR(500)    NULL,
+        EvaluatedByUserId   UNIQUEIDENTIFIER NOT NULL,
+        EvaluatedAt         DATETIME2(3)     NOT NULL CONSTRAINT DF_ScholarshipInterviewEvaluations_EvaluatedAt DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT PK_ScholarshipInterviewEvaluations PRIMARY KEY (ApplicationId),
+        CONSTRAINT FK_ScholarshipInterviewEvaluations_Applications FOREIGN KEY (ApplicationId) REFERENCES dbo.ScholarshipApplications (ApplicationId),
+        CONSTRAINT FK_ScholarshipInterviewEvaluations_EvaluatedBy FOREIGN KEY (EvaluatedByUserId) REFERENCES dbo.Users (UserId),
+        CONSTRAINT CK_ScholarshipInterviewEvaluations_Scores CHECK (InterviewScore IS NOT NULL OR EssayScore IS NOT NULL)
+    );
+END
 GO
