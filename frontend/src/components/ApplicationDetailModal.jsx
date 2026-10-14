@@ -7,6 +7,7 @@ import { getApplicationStatusHistory } from "../api/adminApplicationsApi.js";
 import { ApiError } from "../api/apiClient.js";
 import Modal, { DetailList } from "./ui/Modal.jsx";
 import StatusBadge from "./ui/StatusBadge.jsx";
+import { academicDetails } from "../utils/academicDetails.js";
 import WorkflowStepper, { ADMISSION_STEP_LABELS, SCHOLARSHIP_STEP_LABELS } from "./WorkflowStepper.jsx";
 import "./ApplicationDetailModal.css";
 
@@ -60,7 +61,9 @@ export default function ApplicationDetailModal({ application, onClose }) {
   const details = isAdmission
     ? [
         { label: "Application type", value: APPLICATION_TYPE_LABELS[application.applicationType] ?? application.applicationType },
-        { label: "Course applied for", value: application.courseAppliedFor },
+        ...(academicDetails(application).length > 0
+          ? academicDetails(application).map(([label, value]) => ({ label, value }))
+          : [{ label: "Course applied for", value: application.courseAppliedFor }]),
         { label: "Previous school", value: application.previousSchool },
       ]
     : [

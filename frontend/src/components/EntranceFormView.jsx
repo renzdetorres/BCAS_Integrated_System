@@ -1,4 +1,4 @@
-import { programOptionLabel, programsFor } from "../config/departments.js";
+import { academicDetails } from "../utils/academicDetails.js";
 import "./EntranceFormView.css";
 
 const DASH = "\u2014";
@@ -17,10 +17,8 @@ export default function EntranceFormView({ data }) {
     );
   }
 
-  const programLabel =
-    programsFor(data.department)
-      ?.map((p) => (p.code === data.courseAppliedFor ? programOptionLabel(p) : null))
-      .find(Boolean) ?? data.courseAppliedFor;
+  // Category, program or strand, year level, term and academic year each get their own row.
+  const levelRows = academicDetails({ department: data.department, courseAppliedFor: data.courseAppliedFor, form: f });
   const rows = [
     ["Date", dateText(data.submittedAt)],
     ["Name", data.applicantName],
@@ -29,8 +27,7 @@ export default function EntranceFormView({ data }) {
     ["Place of birth", f.placeOfBirth],
     ["Address", data.address],
     ["Mobile no.", data.contactNumber],
-    ["Level applied for", [data.department, programLabel, f.yearLevel, f.academicTerm].filter(Boolean).join(" \u00b7 ")],
-    ["Academic year", f.academicYear],
+    ...(levelRows.length > 0 ? levelRows : [["Level applied for", data.courseAppliedFor]]),
     ["School last attended", data.previousSchool],
     ["School address", f.previousSchoolAddress],
     ["Special skills", f.specialSkills],

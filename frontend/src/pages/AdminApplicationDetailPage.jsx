@@ -23,6 +23,7 @@ import StatusBadge, { statusLabel } from "../components/ui/StatusBadge.jsx";
 import { searchDocuments } from "../api/adminDocumentsApi.js";
 import { DOCUMENT_TYPE_LABELS } from "../api/documentApi.js";
 import { statusDescription } from "../config/statusDescriptions.js";
+import { academicDetails } from "../utils/academicDetails.js";
 import "./AdminApplicationDetailPage.css";
 
 function formatDateTime(isoDateTime) {
@@ -319,10 +320,19 @@ export default function AdminApplicationDetailPage() {
                         <dt>Application Type</dt>
                         <dd>{application.applicationType}</dd>
                       </div>
-                      <div>
-                        <dt>Course Applied For</dt>
-                        <dd>{application.courseAppliedFor}</dd>
-                      </div>
+                      {academicDetails(application).length > 0 ? (
+                        academicDetails(application).map(([label, value]) => (
+                          <div key={label}>
+                            <dt>{label}</dt>
+                            <dd>{value}</dd>
+                          </div>
+                        ))
+                      ) : (
+                        <div>
+                          <dt>Course Applied For</dt>
+                          <dd>{application.courseAppliedFor}</dd>
+                        </div>
+                      )}
                       {application.previousSchool && (
                         <div>
                           <dt>Previous School</dt>

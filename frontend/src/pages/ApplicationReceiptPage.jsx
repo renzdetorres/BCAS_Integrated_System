@@ -4,6 +4,7 @@ import { getMyApplicationHistory } from "../api/applicationHistoryApi.js";
 import { APPLICATION_TYPES, getMyAdmissionApplications } from "../api/admissionApi.js";
 import { ApiError } from "../api/apiClient.js";
 import { buildPdf, downloadBlob } from "../utils/simplePdf.js";
+import { academicDetails } from "../utils/academicDetails.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
@@ -32,7 +33,7 @@ export default function ApplicationReceiptPage() {
   const { applicationId } = useParams();
   const [searchParams] = useSearchParams();
   const [application, setApplication] = useState(null);
-  const [applicationNumber, setApplicationNumber] = useState(null);
+  const [admission, setAdmission] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
 
@@ -43,7 +44,7 @@ export default function ApplicationReceiptPage() {
       .then(([data, admissions]) => {
         if (cancelled) return;
         setApplication(data.find((a) => a.applicationId === applicationId) ?? null);
-        setApplicationNumber(admissions.find((a) => a.applicationId === applicationId)?.applicationNumber ?? null);
+        setAdmission(admissions.find((a) => a.applicationId === applicationId) ?? null);
       })
       .catch((error) => {
         if (!cancelled) {
@@ -59,6 +60,10 @@ export default function ApplicationReceiptPage() {
     };
   }, [applicationId]);
 
+  const applicationNumber = admission?.applicationNumber ?? null;
+  // The category, program or strand, year level, term and academic year this application is for.
+  const levelDetails = admission ? academicDetails(admission) : [];
+
   // The receipt as a PDF file the applicant can keep.
   function downloadPdf() {
     const rows = [
@@ -68,7 +73,7 @@ export default function ApplicationReceiptPage() {
       ...(application.category === "Admission"
         ? [
             ["Application type", admissionTypeLabel(application.applicationType)],
-            ["Course applied for", application.courseAppliedFor],
+            ...(levelDetails.length > 0 ? levelDetails : [["Course applied for", application.courseAppliedFor]]),
             ["Previous school", application.previousSchool],
           ]
         : [
@@ -144,10 +149,19 @@ export default function ApplicationReceiptPage() {
                   <dt>Application type</dt>
                   <dd>{admissionTypeLabel(application.applicationType)}</dd>
                 </div>
-                <div>
-                  <dt>Course applied for</dt>
-                  <dd>{application.courseAppliedFor}</dd>
-                </div>
+                {levelDetails.length > 0 ? (
+                  levelDetails.map(([label, value]) => (
+                    <div key={label}>
+                      <dt>{label}</dt>
+                      <dd>{value}</dd>
+                    </div>
+                  ))
+                ) : (
+                  <div>
+                    <dt>Course applied for</dt>
+                    <dd>{application.courseAppliedFor}</dd>
+                  </div>
+                )}
                 <div>
                   <dt>Previous school</dt>
                   <dd>{application.previousSchool}</dd>

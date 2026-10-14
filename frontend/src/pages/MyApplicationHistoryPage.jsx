@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getMyApplicationHistory } from "../api/applicationHistoryApi.js";
-import { APPLICATION_TYPES } from "../api/admissionApi.js";
+import { APPLICATION_TYPES, getMyAdmissionApplications } from "../api/admissionApi.js";
+import { academicDetails } from "../utils/academicDetails.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
@@ -27,6 +28,7 @@ function applicationTitle(application) {
 
 export default function MyApplicationHistoryPage() {
   const [applications, setApplications] = useState([]);
+  const [admissions, setAdmissions] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -34,10 +36,12 @@ export default function MyApplicationHistoryPage() {
   useEffect(() => {
     let cancelled = false;
 
-    getMyApplicationHistory()
-      .then((data) => {
+    // The history list has no year level; the admission applications do, so both load and are matched by id.
+    Promise.all([getMyApplicationHistory(), getMyAdmissionApplications().catch(() => [])])
+      .then(([data, admissionList]) => {
         if (cancelled) return;
         setApplications(data);
+        setAdmissions(admissionList);
         if (data.length > 0) setSelectedId(data[0].applicationId);
       })
       .catch((error) => {
@@ -55,6 +59,8 @@ export default function MyApplicationHistoryPage() {
   }, []);
 
   const selectedApplication = applications.find((a) => a.applicationId === selectedId) ?? null;
+  const selectedAdmission = admissions.find((a) => a.applicationId === selectedId) ?? null;
+  const levelDetails = selectedAdmission ? academicDetails(selectedAdmission) : [];
 
   return (
     <AppLayout
@@ -157,10 +163,19 @@ export default function MyApplicationHistoryPage() {
                       <span className="history-detail-label">Application type</span>
                       <span>{admissionTypeLabel(selectedApplication.applicationType)}</span>
                     </div>
-                    <div className="history-detail-row">
-                      <span className="history-detail-label">Course applied for</span>
-                      <span>{selectedApplication.courseAppliedFor}</span>
-                    </div>
+                    {levelDetails.length > 0 ? (
+                      levelDetails.map(([label, value]) => (
+                        <div className="history-detail-row" key={label}>
+                          <span className="history-detail-label">{label}</span>
+                          <span>{value}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="history-detail-row">
+                        <span className="history-detail-label">Course applied for</span>
+                        <span>{selectedApplication.courseAppliedFor}</span>
+                      </div>
+                    )}
                     <div className="history-detail-row">
                       <span className="history-detail-label">Previous school</span>
                       <span>{selectedApplication.previousSchool}</span>
