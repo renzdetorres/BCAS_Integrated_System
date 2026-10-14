@@ -56,7 +56,7 @@ export const GRANTS = {
       ["Gold", "100% off tuition fee", "97%"],
       ["Silver", "50% off tuition fee", "96%"],
       ["Bronze", "25% off tuition fee", "95%"],
-      ["IRC Grant", "20% off tuition fee", "94%"],
+      ["JRC Grant", "20% off tuition fee", "94%"],
       ["RMC Grant", "15% off tuition fee", "93%"],
     ],
   },
