@@ -20,14 +20,14 @@ public class AdminReportsService : IAdminReportsService
     public async Task<IReadOnlyList<EnrollmentListItemResponse>> GetEnrollmentListAsync(
         string? program, string? applicationType, string? department = null, CancellationToken cancellationToken = default)
     {
-        var items = await _reportsRepository.GetEnrollmentListAsync(program, applicationType, department, cancellationToken);
+        var items = await _reportsRepository.GetEnrollmentListAsync(program, applicationType, department, null, cancellationToken);
         return items.Select(i => i.ToResponse()).ToList();
     }
 
     public async Task<EnrollmentSummaryResponse> GetEnrollmentSummaryAsync(
-        string? program = null, string? department = null, CancellationToken cancellationToken = default)
+        string? program = null, string? department = null, string? academicYear = null, CancellationToken cancellationToken = default)
     {
-        var enrolled = await _reportsRepository.GetEnrollmentListAsync(program, null, department, cancellationToken);
+        var enrolled = await _reportsRepository.GetEnrollmentListAsync(program, null, department, academicYear, cancellationToken);
 
         var byProgram = enrolled
             .GroupBy(e => e.CourseAppliedFor, StringComparer.Ordinal)
@@ -54,7 +54,7 @@ public class AdminReportsService : IAdminReportsService
     public async Task<IReadOnlyList<SectionFileResponse>> GetSectionFilesAsync(
         string? program = null, string? department = null, CancellationToken cancellationToken = default)
     {
-        var enrolled = await _reportsRepository.GetEnrollmentListAsync(program, null, department, cancellationToken);
+        var enrolled = await _reportsRepository.GetEnrollmentListAsync(program, null, department, null, cancellationToken);
 
         return enrolled
             .GroupBy(e => e.CourseAppliedFor, StringComparer.Ordinal)
@@ -91,7 +91,7 @@ public class AdminReportsService : IAdminReportsService
     public async Task<byte[]> ExportEnrollmentSummaryAsync(
         string? program = null, string? department = null, CancellationToken cancellationToken = default)
     {
-        var summary = await GetEnrollmentSummaryAsync(program, department, cancellationToken);
+        var summary = await GetEnrollmentSummaryAsync(program, department, null, cancellationToken);
 
         var headers = new List<string> { "Summary of Enrollment" };
         var rows = new List<IReadOnlyList<string>>

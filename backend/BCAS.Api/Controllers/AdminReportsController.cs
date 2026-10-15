@@ -44,9 +44,9 @@ public class AdminReportsController : ControllerBase
     /// <summary>Admission Report: Summary of Enrollment - counts by program and by application type.</summary>
     [HttpGet("admission/enrollment-summary")]
     [ProducesResponseType(typeof(EnrollmentSummaryResponse), StatusCodes.Status200OK)]
-    public async Task<ActionResult<EnrollmentSummaryResponse>> GetEnrollmentSummary(CancellationToken cancellationToken)
+    public async Task<ActionResult<EnrollmentSummaryResponse>> GetEnrollmentSummary([FromQuery] string? academicYear, CancellationToken cancellationToken)
     {
-        var summary = await _reportsService.GetEnrollmentSummaryAsync(cancellationToken: cancellationToken);
+        var summary = await _reportsService.GetEnrollmentSummaryAsync(academicYear: string.IsNullOrWhiteSpace(academicYear) ? null : academicYear, cancellationToken: cancellationToken);
         return Ok(summary);
     }
 

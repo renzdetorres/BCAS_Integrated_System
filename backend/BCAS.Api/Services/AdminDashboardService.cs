@@ -15,18 +15,18 @@ public class AdminDashboardService : IAdminDashboardService
         _dashboardRepository = dashboardRepository;
     }
 
-    public async Task<AdminDashboardResponse> GetDashboardAsync(string? department = null, CancellationToken cancellationToken = default)
+    public async Task<AdminDashboardResponse> GetDashboardAsync(string? department = null, string? academicYear = null, CancellationToken cancellationToken = default)
     {
-        var analytics = await _dashboardRepository.GetAnalyticsAsync(department, cancellationToken);
-        var byProgram = await _dashboardRepository.GetByProgramAsync(department, cancellationToken);
-        var byDepartment = await _dashboardRepository.GetByDepartmentAsync(department, cancellationToken);
-        var recent = await _dashboardRepository.GetRecentAsync(RecentApplicationsCount, department, cancellationToken);
+        var analytics = await _dashboardRepository.GetAnalyticsAsync(department, academicYear, cancellationToken);
+        var byProgram = await _dashboardRepository.GetByProgramAsync(department, academicYear, cancellationToken);
+        var byDepartment = await _dashboardRepository.GetByDepartmentAsync(department, academicYear, cancellationToken);
+        var recent = await _dashboardRepository.GetRecentAsync(RecentApplicationsCount, department, academicYear, cancellationToken);
         var pendingDocuments = await _dashboardRepository.GetPendingDocumentsCountAsync(department, cancellationToken);
 
-        var scholarshipAnalytics = await _dashboardRepository.GetScholarshipAnalyticsAsync(department, cancellationToken);
-        var scholarshipByDepartment = await _dashboardRepository.GetScholarshipByDepartmentAsync(department, cancellationToken);
-        var scholarshipByProgram = await _dashboardRepository.GetScholarshipByProgramAsync(department, cancellationToken);
-        var scholarshipRecent = await _dashboardRepository.GetRecentScholarshipAsync(RecentApplicationsCount, department, cancellationToken);
+        var scholarshipAnalytics = await _dashboardRepository.GetScholarshipAnalyticsAsync(department, academicYear, cancellationToken);
+        var scholarshipByDepartment = await _dashboardRepository.GetScholarshipByDepartmentAsync(department, academicYear, cancellationToken);
+        var scholarshipByProgram = await _dashboardRepository.GetScholarshipByProgramAsync(department, academicYear, cancellationToken);
+        var scholarshipRecent = await _dashboardRepository.GetRecentScholarshipAsync(RecentApplicationsCount, department, academicYear, cancellationToken);
 
         return new AdminDashboardResponse
         {

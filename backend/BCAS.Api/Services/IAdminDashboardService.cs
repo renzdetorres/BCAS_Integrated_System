@@ -10,5 +10,5 @@ public interface IAdminDashboardService
     /// department - an Academic Head's view; null is the school-wide
     /// Admin-Registrar view.
     /// </summary>
-    Task<AdminDashboardResponse> GetDashboardAsync(string? department = null, CancellationToken cancellationToken = default);
+    Task<AdminDashboardResponse> GetDashboardAsync(string? department = null, string? academicYear = null, CancellationToken cancellationToken = default);
 }

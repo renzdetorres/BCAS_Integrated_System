@@ -20,7 +20,7 @@ public interface IAdminReportsRepository
     /// per Section reports, which all derive from this same set.
     /// </summary>
     Task<IReadOnlyList<EnrollmentListItem>> GetEnrollmentListAsync(
-        string? program, string? applicationType, string? department = null, CancellationToken cancellationToken = default);
+        string? program, string? applicationType, string? department = null, string? academicYear = null, CancellationToken cancellationToken = default);
 
     /// <summary>Every scholarship application regardless of status, optionally narrowed by scholarship name (partial match) and/or status.</summary>
     Task<IReadOnlyList<ScholarshipApplicantListItem>> GetScholarshipApplicantListAsync(

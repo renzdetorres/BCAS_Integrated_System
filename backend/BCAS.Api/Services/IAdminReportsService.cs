@@ -22,7 +22,7 @@ public interface IAdminReportsService
     /// program (course, partial match) and/or department.
     /// </summary>
     Task<EnrollmentSummaryResponse> GetEnrollmentSummaryAsync(
-        string? program = null, string? department = null, CancellationToken cancellationToken = default);
+        string? program = null, string? department = null, string? academicYear = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Enrolled applicants grouped by section (their applied-for course -

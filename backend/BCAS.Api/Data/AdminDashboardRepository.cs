@@ -7,6 +7,11 @@ namespace BCAS.Api.Data;
 
 public class AdminDashboardRepository : IAdminDashboardRepository
 {
+    // An application belongs to the academic year it was filed for. One filed before that was recorded
+    // counts in the school year (June to May) it was submitted in - the same rule AdmissionSummaryService uses.
+    private const string AdmissionYear = @"COALESCE(a.AcademicYear, CASE WHEN MONTH(a.SubmittedAt) >= 6 THEN CONCAT(YEAR(a.SubmittedAt), N'-', YEAR(a.SubmittedAt) + 1) ELSE CONCAT(YEAR(a.SubmittedAt) - 1, N'-', YEAR(a.SubmittedAt)) END)";
+    private const string ScholarshipYear = @"CASE WHEN MONTH(sa.SubmittedAt) >= 6 THEN CONCAT(YEAR(sa.SubmittedAt), N'-', YEAR(sa.SubmittedAt) + 1) ELSE CONCAT(YEAR(sa.SubmittedAt) - 1, N'-', YEAR(sa.SubmittedAt)) END";
+
     private readonly IDbConnectionFactory _connectionFactory;
 
     public AdminDashboardRepository(IDbConnectionFactory connectionFactory)
@@ -14,7 +19,7 @@ public class AdminDashboardRepository : IAdminDashboardRepository
         _connectionFactory = connectionFactory;
     }
 
-    public async Task<AdmissionAnalytics> GetAnalyticsAsync(string? department = null, CancellationToken cancellationToken = default)
+    public async Task<AdmissionAnalytics> GetAnalyticsAsync(string? department = null, string? academicYear = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
@@ -27,15 +32,17 @@ SELECT
     SUM(CASE WHEN Status = N'Rejected' THEN 1 ELSE 0 END) AS RejectedCount,
     SUM(CASE WHEN SubmittedAt >= DATEADD(DAY, -7, SYSUTCDATETIME()) THEN 1 ELSE 0 END) AS SubmittedThisWeek,
     SUM(CASE WHEN Department IS NULL THEN 1 ELSE 0 END) AS UnassignedCount
-FROM dbo.AdmissionApplications
-WHERE @Department IS NULL OR Department = @Department;";
+FROM dbo.AdmissionApplications a
+WHERE (@Department IS NULL OR Department = @Department)
+  AND (@AcademicYear IS NULL OR " + AdmissionYear + @" = @AcademicYear);";
 
         await using var command = new SqlCommand(sql, connection);
         AddDepartmentParameter(command, department);
+        AddAcademicYearParameter(command, academicYear);
         return await ReadAnalyticsAsync(command, cancellationToken);
     }
 
-    public async Task<ProgramBreakdown> GetByProgramAsync(string? department = null, CancellationToken cancellationToken = default)
+    public async Task<ProgramBreakdown> GetByProgramAsync(string? department = null, string? academicYear = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
@@ -43,11 +50,13 @@ WHERE @Department IS NULL OR Department = @Department;";
         // applicant who typed two spellings of the same program counts once.
         const string sql = @"
 SELECT DISTINCT UserId, CourseAppliedFor, Department
-FROM dbo.AdmissionApplications
-WHERE @Department IS NULL OR Department = @Department;";
+FROM dbo.AdmissionApplications a
+WHERE (@Department IS NULL OR Department = @Department)
+  AND (@AcademicYear IS NULL OR " + AdmissionYear + @" = @AcademicYear);";
 
         await using var command = new SqlCommand(sql, connection);
         AddDepartmentParameter(command, department);
+        AddAcademicYearParameter(command, academicYear);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
         var applicantsByProgram = DepartmentConstants.FixedPrograms["College"]
@@ -92,23 +101,25 @@ WHERE @Department IS NULL OR Department = @Department;";
         };
     }
 
-    public async Task<IReadOnlyList<DepartmentCount>> GetByDepartmentAsync(string? department = null, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<DepartmentCount>> GetByDepartmentAsync(string? department = null, string? academicYear = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
 SELECT Department, COUNT(*) AS Count
-FROM dbo.AdmissionApplications
-WHERE @Department IS NULL OR Department = @Department
+FROM dbo.AdmissionApplications a
+WHERE (@Department IS NULL OR Department = @Department)
+  AND (@AcademicYear IS NULL OR " + AdmissionYear + @" = @AcademicYear)
 GROUP BY Department;";
 
         await using var command = new SqlCommand(sql, connection);
         AddDepartmentParameter(command, department);
+        AddAcademicYearParameter(command, academicYear);
         return await ReadDepartmentCountsAsync(command, cancellationToken);
     }
 
     public async Task<IReadOnlyList<RecentAdmissionApplication>> GetRecentAsync(
-        int take, string? department = null, CancellationToken cancellationToken = default)
+        int take, string? department = null, string? academicYear = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
@@ -117,12 +128,14 @@ SELECT TOP (@Take)
     a.ApplicationId, u.FirstName, u.LastName, a.ApplicationType, a.CourseAppliedFor, a.Department, a.Status, a.SubmittedAt
 FROM dbo.AdmissionApplications a
 JOIN dbo.Users u ON u.UserId = a.UserId
-WHERE @Department IS NULL OR a.Department = @Department
+WHERE (@Department IS NULL OR a.Department = @Department)
+  AND (@AcademicYear IS NULL OR " + AdmissionYear + @" = @AcademicYear)
 ORDER BY a.SubmittedAt DESC;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.Add(new SqlParameter("@Take", SqlDbType.Int) { Value = take });
         AddDepartmentParameter(command, department);
+        AddAcademicYearParameter(command, academicYear);
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
@@ -166,9 +179,10 @@ WHERE doc.Status = N'Pending' AND doc.IsArchived = 0
     private const string ScholarshipFromClause = @"
 FROM dbo.ScholarshipApplications sa
 LEFT JOIN dbo.vw_ApplicantDepartments d ON d.UserId = sa.UserId
-WHERE @Department IS NULL OR d.Department = @Department";
+WHERE (@Department IS NULL OR d.Department = @Department)
+  AND (@AcademicYear IS NULL OR " + ScholarshipYear + @" = @AcademicYear)";
 
-    public async Task<AdmissionAnalytics> GetScholarshipAnalyticsAsync(string? department = null, CancellationToken cancellationToken = default)
+    public async Task<AdmissionAnalytics> GetScholarshipAnalyticsAsync(string? department = null, string? academicYear = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
@@ -184,10 +198,11 @@ SELECT
 
         await using var command = new SqlCommand(sql, connection);
         AddDepartmentParameter(command, department);
+        AddAcademicYearParameter(command, academicYear);
         return await ReadAnalyticsAsync(command, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<DepartmentCount>> GetScholarshipByDepartmentAsync(string? department = null, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<DepartmentCount>> GetScholarshipByDepartmentAsync(string? department = null, string? academicYear = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
@@ -196,10 +211,11 @@ GROUP BY d.Department;";
 
         await using var command = new SqlCommand(sql, connection);
         AddDepartmentParameter(command, department);
+        AddAcademicYearParameter(command, academicYear);
         return await ReadDepartmentCountsAsync(command, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<ProgramApplicantCount>> GetScholarshipByProgramAsync(string? department = null, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<ProgramApplicantCount>> GetScholarshipByProgramAsync(string? department = null, string? academicYear = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
@@ -208,12 +224,14 @@ SELECT sc.Name AS Program, COUNT(DISTINCT sa.UserId) AS Count
 FROM dbo.ScholarshipApplications sa
 JOIN dbo.Scholarships sc ON sc.ScholarshipId = sa.ScholarshipId
 LEFT JOIN dbo.vw_ApplicantDepartments d ON d.UserId = sa.UserId
-WHERE @Department IS NULL OR d.Department = @Department
+WHERE (@Department IS NULL OR d.Department = @Department)
+  AND (@AcademicYear IS NULL OR " + ScholarshipYear + @" = @AcademicYear)
 GROUP BY sc.Name
 ORDER BY COUNT(DISTINCT sa.UserId) DESC, sc.Name ASC;";
 
         await using var command = new SqlCommand(sql, connection);
         AddDepartmentParameter(command, department);
+        AddAcademicYearParameter(command, academicYear);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
         var counts = new List<ProgramApplicantCount>();
@@ -230,7 +248,7 @@ ORDER BY COUNT(DISTINCT sa.UserId) DESC, sc.Name ASC;";
     }
 
     public async Task<IReadOnlyList<RecentScholarshipApplication>> GetRecentScholarshipAsync(
-        int take, string? department = null, CancellationToken cancellationToken = default)
+        int take, string? department = null, string? academicYear = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
@@ -241,12 +259,14 @@ FROM dbo.ScholarshipApplications sa
 JOIN dbo.Users u ON u.UserId = sa.UserId
 JOIN dbo.Scholarships sc ON sc.ScholarshipId = sa.ScholarshipId
 LEFT JOIN dbo.vw_ApplicantDepartments d ON d.UserId = sa.UserId
-WHERE @Department IS NULL OR d.Department = @Department
+WHERE (@Department IS NULL OR d.Department = @Department)
+  AND (@AcademicYear IS NULL OR " + ScholarshipYear + @" = @AcademicYear)
 ORDER BY sa.SubmittedAt DESC;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.Add(new SqlParameter("@Take", SqlDbType.Int) { Value = take });
         AddDepartmentParameter(command, department);
+        AddAcademicYearParameter(command, academicYear);
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
@@ -310,4 +330,7 @@ ORDER BY sa.SubmittedAt DESC;";
 
     private static void AddDepartmentParameter(SqlCommand command, string? department) =>
         command.Parameters.Add(new SqlParameter("@Department", SqlDbType.NVarChar, 100) { Value = (object?)department ?? DBNull.Value });
+
+    private static void AddAcademicYearParameter(SqlCommand command, string? academicYear) =>
+        command.Parameters.Add(new SqlParameter("@AcademicYear", SqlDbType.NVarChar, 9) { Value = (object?)academicYear ?? DBNull.Value });
 }

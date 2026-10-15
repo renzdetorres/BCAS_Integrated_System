@@ -1,3 +1,4 @@
+using BCAS.Api.Constants;
 using BCAS.Api.Exceptions;
 using BCAS.Api.Extensions;
 using BCAS.Api.Models;
@@ -34,8 +35,15 @@ public class AdminDashboardController : ControllerBase
     [HttpGet]
     [ProducesResponseType(typeof(AdminDashboardResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<AdminDashboardResponse>> GetDashboard(CancellationToken cancellationToken)
+    public async Task<ActionResult<AdminDashboardResponse>> GetDashboard([FromQuery] string? academicYear, CancellationToken cancellationToken)
     {
+        // Narrows every figure to one academic year (e.g. 2025-2026); left out, the dashboard covers all years.
+        if (!string.IsNullOrWhiteSpace(academicYear) && !AcademicStructure.IsValidAcademicYear(academicYear))
+        {
+            return BadRequest(new ProblemDetails { Title = "Invalid academic year", Detail = "Use two consecutive years, like 2025-2026.", Status = StatusCodes.Status400BadRequest });
+        }
+
+        academicYear = string.IsNullOrWhiteSpace(academicYear) ? null : academicYear;
         string? department = null;
         if (User.IsInRole("AcademicHead"))
         {
@@ -54,7 +62,7 @@ public class AdminDashboardController : ControllerBase
             }
         }
 
-        var dashboard = await _dashboardService.GetDashboardAsync(department, cancellationToken);
+        var dashboard = await _dashboardService.GetDashboardAsync(department, academicYear, cancellationToken);
         return Ok(dashboard);
     }
 }

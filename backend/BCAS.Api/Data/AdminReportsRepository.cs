@@ -23,7 +23,7 @@ public class AdminReportsRepository : IAdminReportsRepository
       WHERE dept.UserId = sa.UserId AND dept.Department = @Department))";
 
     public async Task<IReadOnlyList<EnrollmentListItem>> GetEnrollmentListAsync(
-        string? program, string? applicationType, string? department = null, CancellationToken cancellationToken = default)
+        string? program, string? applicationType, string? department = null, string? academicYear = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
@@ -39,12 +39,14 @@ WHERE a.Status = N'Approved' AND r.IsReserved = 1
   AND (@Program IS NULL OR a.CourseAppliedFor LIKE '%' + @Program + '%')
   AND (@ApplicationType IS NULL OR a.ApplicationType = @ApplicationType)
   AND (@Department IS NULL OR a.Department = @Department)
+  AND (@AcademicYear IS NULL OR COALESCE(a.AcademicYear, CASE WHEN MONTH(a.SubmittedAt) >= 6 THEN CONCAT(YEAR(a.SubmittedAt), N'-', YEAR(a.SubmittedAt) + 1) ELSE CONCAT(YEAR(a.SubmittedAt) - 1, N'-', YEAR(a.SubmittedAt)) END) = @AcademicYear)
 ORDER BY a.CourseAppliedFor ASC, u.LastName ASC, u.FirstName ASC;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.Add(new SqlParameter("@Program", SqlDbType.NVarChar, 200) { Value = (object?)NullIfEmpty(program) ?? DBNull.Value });
         command.Parameters.Add(new SqlParameter("@ApplicationType", SqlDbType.NVarChar, 20) { Value = (object?)NullIfEmpty(applicationType) ?? DBNull.Value });
         AddDepartmentParameter(command, department);
+        command.Parameters.Add(new SqlParameter("@AcademicYear", SqlDbType.NVarChar, 9) { Value = (object?)NullIfEmpty(academicYear) ?? DBNull.Value });
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 

@@ -1159,3 +1159,15 @@ address as both the username and the sender.
 **System Settings → Email** shows whether anything is still missing and has a "Send a test email" button that reports the
 mail server's real answer (for example "Username and Password not accepted"). The API also logs a warning at start-up while
 email isn't set up.
+
+### Admin academic year filter and applicant search
+
+The Admin top bar has an **academic year** filter (all years, or the school's current year and the four before it, taken
+from the academic year in Settings; the choice is remembered in the browser). It limits every dashboard figure, for both
+Admission and Scholarship, plus the enrollment panel, the admission summary and the search results
+(`GET /api/admin/dashboard?academicYear=2025-2026`, `GET /api/admin/reports/admission/enrollment-summary?academicYear=...`).
+An admission application belongs to the academic year saved on it, or, for an older one with none, to the school year
+(June to May) of its submission date; a scholarship application to the school year of its submission date.
+
+The search next to it suggests applicant names (with their email and program) from the first letter typed.
+Both are for the Admin role only.

@@ -30,7 +30,7 @@ public class AcademicHeadReportsService : IAcademicHeadReportsService
     public async Task<EnrollmentSummaryResponse> GetEnrollmentSummaryAsync(Guid academicHeadUserId, CancellationToken cancellationToken = default)
     {
         var department = await _scopeService.GetAssignedDepartmentAsync(academicHeadUserId, cancellationToken);
-        return await _reportsService.GetEnrollmentSummaryAsync(null, department, cancellationToken);
+        return await _reportsService.GetEnrollmentSummaryAsync(null, department, null, cancellationToken);
     }
 
     public async Task<byte[]> ExportEnrollmentSummaryAsync(Guid academicHeadUserId, CancellationToken cancellationToken = default)
