@@ -44,7 +44,8 @@ async function downloadFile(path, params, fallbackFileName) {
   URL.revokeObjectURL(url);
 }
 
-export const getEnrollmentSummary = () => getJson("/api/admin/reports/admission/enrollment-summary");
+export const getEnrollmentSummary = (academicYear) =>
+  getJson("/api/admin/reports/admission/enrollment-summary", academicYear ? { academicYear } : undefined);
 export const exportEnrollmentSummary = () =>
   downloadFile("/api/admin/reports/admission/enrollment-summary/export", null, "enrollment-summary.xlsx");
 

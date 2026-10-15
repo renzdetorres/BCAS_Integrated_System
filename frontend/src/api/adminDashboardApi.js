@@ -1,7 +1,9 @@
 import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
-export async function getAdminDashboard() {
-  const response = await fetch(`${API_BASE_URL}/api/admin/dashboard`, {
+/** The dashboard figures, for one academic year (e.g. "2025-2026") or, left empty, all of them. */
+export async function getAdminDashboard(academicYear) {
+  const query = academicYear ? `?academicYear=${encodeURIComponent(academicYear)}` : "";
+  const response = await fetch(`${API_BASE_URL}/api/admin/dashboard${query}`, {
     method: "GET",
     credentials: "include",
   });

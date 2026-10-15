@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { SessionProvider } from "./context/SessionContext.jsx";
+import { AcademicYearProvider } from "./context/AcademicYearContext.jsx";
 import { ToastProvider } from "./context/ToastContext.jsx";
 import RequireAuth from "./components/RequireAuth.jsx";
 import RequireRole from "./components/RequireRole.jsx";
@@ -65,6 +66,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <SessionProvider>
+        <AcademicYearProvider>
         <ToastProvider>
           <Routes>
             <Route path="/register" element={<RegisterPage />} />
@@ -157,6 +159,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </ToastProvider>
+        </AcademicYearProvider>
       </SessionProvider>
     </BrowserRouter>
   );

@@ -100,3 +100,8 @@
 .dash-layout-admission .dash-recent {
   display: none;
 }
+
+.pipeline-year-note {
+  font: var(--text-dense);
+  color: var(--color-text-secondary);
+}

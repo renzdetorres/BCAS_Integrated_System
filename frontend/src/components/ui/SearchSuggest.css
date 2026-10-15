@@ -45,3 +45,13 @@
 .search-suggest-option.is-active {
   background: var(--color-surface-subtle);
 }
+
+/* A suggestion with a second line (the applicant's email under their name). */
+.search-suggest-detail {
+  display: block;
+  margin-top: 1px;
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

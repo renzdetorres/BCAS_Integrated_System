@@ -389,14 +389,6 @@
   box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
 }
 
-/* The workspace switch keeps the room on a narrow screen; search is one
-   sidebar tap away in Applications. */
-@media (max-width: 760px) {
-  .topbar-search {
-    display: none;
-  }
-}
-
 /* With the workspace switch and search sharing the bar, the name and role
    give way first - the avatar still opens the same menu. */
 @media (max-width: 1100px) {
@@ -481,4 +473,78 @@
   height: 7px;
   border-radius: var(--radius-full);
   background: var(--color-accent);
+}
+
+/* ---- Admin: academic year filter and the longer, predictive search ------- */
+
+/* The workspace switch keeps its size; it is the search that gives way. */
+.topbar-leading {
+  flex-shrink: 0;
+}
+
+.topbar-year {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.topbar-year-icon {
+  position: absolute;
+  left: 11px;
+  color: var(--color-text-tertiary);
+  pointer-events: none;
+}
+
+.topbar-year select {
+  height: 38px;
+  padding: 0 28px 0 34px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text-primary);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.topbar-year select:hover {
+  border-color: var(--color-border-strong);
+}
+
+/* The search takes the room that is left, up to a generous length. */
+.topbar-search {
+  flex: 1 1 100%;
+  width: auto;
+  max-width: 640px;
+  min-width: 180px;
+}
+
+/* Phones: the switch, the year and the search can't share one row. The bar grows to two rows, with the
+   year and the search together on the second (or all on one when there's no switch on the page). */
+@media (max-width: 760px) {
+  .topbar {
+    height: auto;
+    min-height: var(--topbar-height);
+    flex-wrap: wrap;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    row-gap: 8px;
+  }
+
+  .topbar-year,
+  .topbar-search {
+    order: 10;
+  }
+
+  .topbar-year {
+    margin-left: 0;
+  }
+
+  .topbar-search {
+    flex: 1 1 180px;
+    max-width: none;
+    margin-left: 0;
+  }
 }

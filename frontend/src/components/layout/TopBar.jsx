@@ -7,8 +7,11 @@ import { getNotifications, markAllNotificationsRead, markNotificationRead } from
 import { PROFILE_MENU_BY_ROLE, ROLE_SHORT_LABELS } from "../../config/navigation.js";
 import { searchApplications } from "../../api/adminApplicationsApi.js";
 import Icon from "../ui/Icon.jsx";
-import SearchSuggest, { buildSuggestions } from "../ui/SearchSuggest.jsx";
+import SearchSuggest from "../ui/SearchSuggest.jsx";
+import { useAcademicYear } from "../../context/AcademicYearContext.jsx";
 import "./TopBar.css";
+
+const MAX_APPLICANT_SUGGESTIONS = 8;
 
 function initials(firstName, lastName) {
   return `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase();
@@ -42,45 +45,94 @@ function useOutsideClick(onOutside) {
 }
 
 /**
+ * Admin-only: the academic year the dashboard figures and the search are limited
+ * to - the school's current year and the four before it, or all years.
+ */
+function AcademicYearFilter() {
+  const { academicYear, setAcademicYear, years } = useAcademicYear();
+  return (
+    <label className="topbar-year" title="Academic year: limits the dashboard figures and the search">
+      <Icon name="calendar" size={16} className="topbar-year-icon" />
+      <select
+        value={academicYear}
+        onChange={(event) => setAcademicYear(event.target.value)}
+        aria-label="Academic year for the dashboard figures and the search"
+      >
+        <option value="">All years</option>
+        {years.map((year) => (
+          <option key={year} value={year}>
+            {year}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+/**
+ * Orders matching applicants for the dropdown: names that start with what was typed,
+ * then names with a word that starts with it (a last name), then any other name match,
+ * then people found only through their email or program. One row per person.
+ */
+function rankApplicants(applications, query) {
+  const needle = query.trim().toLowerCase();
+  const tiers = [[], [], [], []];
+  const seen = new Set();
+  for (const application of applications) {
+    const name = String(application.applicantName ?? "").trim();
+    const key = String(application.applicantEmail ?? name).toLowerCase();
+    if (!name || seen.has(key)) continue;
+    seen.add(key);
+    const lower = name.toLowerCase();
+    const tier = lower.startsWith(needle) ? 0 : lower.split(/\s+/).some((word) => word.startsWith(needle)) ? 1 : lower.includes(needle) ? 2 : 3;
+    tiers[tier].push({
+      value: name,
+      detail: [application.applicantEmail, application.courseAppliedFor].filter(Boolean).join(" \u00b7 "),
+    });
+  }
+  return tiers.flat().slice(0, MAX_APPLICANT_SUGGESTIONS);
+}
+
+/**
  * Admin-only: searches applicants by name or email by opening the
  * Applications list with that search already applied - the list page owns
- * the actual query, so there's one search behaviour, not two.
+ * the actual query, so there's one search behaviour, not two. As soon as one
+ * letter is typed it suggests matching applicant names (for the chosen academic year).
  */
 function ApplicationSearch() {
   const navigate = useNavigate();
+  const { academicYear } = useAcademicYear();
   const [term, setTerm] = useState("");
-
   const [suggestions, setSuggestions] = useState([]);
 
-  // Predictive: after a short pause in typing, ask the same endpoint the list
-  // page uses and offer the matching applicant names and emails.
   useEffect(() => {
     const query = term.trim();
-    if (query.length < 2) {
+    if (query.length < 1) {
       setSuggestions([]);
       return undefined;
     }
     let cancelled = false;
     const timeout = setTimeout(() => {
-      searchApplications({ search: query })
+      searchApplications({ search: query, ...(academicYear ? { academicYear } : {}) })
         .then((applications) => {
-          if (cancelled) return;
-          const values = applications.flatMap((application) => [application.applicantName, application.applicantEmail]);
-          setSuggestions(buildSuggestions(values, query));
+          if (!cancelled) setSuggestions(rankApplicants(applications, query));
         })
         .catch(() => {
           if (!cancelled) setSuggestions([]);
         });
-    }, 250);
+    }, 180);
     return () => {
       cancelled = true;
       clearTimeout(timeout);
     };
-  }, [term]);
+  }, [term, academicYear]);
 
   function go(value) {
-    const query = value.trim();
-    navigate(query ? `/admin/applications?${new URLSearchParams({ search: query })}` : "/admin/applications");
+    const params = new URLSearchParams();
+    if (value.trim()) params.set("search", value.trim());
+    if (academicYear) params.set("academicYear", academicYear);
+    const query = params.toString();
+    navigate(query ? `/admin/applications?${query}` : "/admin/applications");
   }
 
   function handleSubmit(event) {
@@ -98,7 +150,7 @@ function ApplicationSearch() {
         suggestions={suggestions}
         onChange={setTerm}
         onSelect={go}
-        placeholder="Search applicants..."
+        placeholder="Search applicants by name or email..."
         aria-label="Search applicants by name or email"
       />
     </form>
@@ -182,6 +234,7 @@ export default function TopBar({ onMenuClick, leading }) {
       </button>
 
       {leading ? <div className="topbar-leading">{leading}</div> : null}
+      {session.role === "Admin" && <AcademicYearFilter />}
       {session.role === "Admin" && <ApplicationSearch />}
 
       <div className="topbar-spacer" />

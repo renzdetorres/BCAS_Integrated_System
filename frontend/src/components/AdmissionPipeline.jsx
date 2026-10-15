@@ -47,8 +47,7 @@ function collegeData(points, years) {
 }
 
 /** The admission process at a glance: where applicants are, who applied last, and five academic years of trend. */
-export default function AdmissionPipeline() {
-  const [academicYear, setAcademicYear] = useState("");
+export default function AdmissionPipeline({ academicYear = "" }) {
   const [summary, setSummary] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
 
@@ -86,17 +85,7 @@ export default function AdmissionPipeline() {
         <h2 id="pipeline-title" className="dash-panel-title">
           Admission summary
         </h2>
-        <label className="pipeline-year">
-          <span>Academic year</span>
-          <select value={academicYear} onChange={(event) => setAcademicYear(event.target.value)}>
-            <option value="">All years</option>
-            {summary.academicYears.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
-        </label>
+        <span className="pipeline-year-note">{academicYear ? `Academic year ${academicYear}` : "All academic years"}</span>
       </div>
 
       <dl className="pipeline-figures">

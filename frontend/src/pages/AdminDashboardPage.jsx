@@ -8,6 +8,7 @@ import Icon from "../components/ui/Icon.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import AdmissionPipeline from "../components/AdmissionPipeline.jsx";
 import { DEPARTMENT_OPTIONS } from "../config/departments.js";
+import { useAcademicYear } from "../context/AcademicYearContext.jsx";
 import "./AdminDashboardPage.css";
 
 const WORKSPACES = [
@@ -238,6 +239,8 @@ export default function AdminDashboardPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const workspace = searchParams.get("workspace") === "scholarship" ? "scholarship" : "admission";
+  // The Admin's choice in the top bar: every figure below is for this academic year (empty = all years).
+  const { academicYear } = useAcademicYear();
 
   const [dashboard, setDashboard] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -246,14 +249,15 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     let cancelled = false;
+    setIsLoading(true);
 
-    getEnrollmentSummary()
+    getEnrollmentSummary(academicYear)
       .then((data) => {
         if (!cancelled) setEnrollment(data);
       })
       .catch(() => {});
 
-    getAdminDashboard()
+    getAdminDashboard(academicYear)
       .then((data) => {
         if (!cancelled) setDashboard(data);
       })
@@ -269,7 +273,7 @@ export default function AdminDashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [academicYear]);
 
   function setWorkspace(next) {
     setSearchParams(next === "admission" ? {} : { workspace: next }, { replace: true });
@@ -293,7 +297,7 @@ export default function AdminDashboardPage() {
           label: workspace === "scholarship" ? "In screening" : "Awaiting a decision",
           detail: "Submitted and not yet approved or rejected",
           tone: "amber",
-          to: applicationsLink({ category: view.category }),
+          to: applicationsLink({ category: view.category, academicYear }),
         },
         {
           count: view.pendingDocumentsCount,
@@ -307,7 +311,7 @@ export default function AdminDashboardPage() {
           label: "Without a department",
           detail: "No Academic Head can see these yet",
           tone: "red",
-          to: applicationsLink({ category: view.category, department: "Unassigned" }),
+          to: applicationsLink({ category: view.category, department: "Unassigned", academicYear }),
         },
       ]
     : [];
@@ -317,11 +321,9 @@ export default function AdminDashboardPage() {
       <header className="dash-intro">
         <div className="dash-intro-text">
           <h1 className="dash-title">{workspaceLabel}</h1>
-          <p className="dash-intro-meta">
-            Academic Year {currentAcademicYear()}
-          </p>
+          <p className="dash-intro-meta">{academicYear ? `Academic Year ${academicYear}` : `All academic years (current: ${currentAcademicYear()})`}</p>
         </div>
-        <Link to={applicationsLink({ category: workspaceLabel })} className="btn btn-primary dash-intro-cta">
+        <Link to={applicationsLink({ category: workspaceLabel, academicYear })} className="btn btn-primary dash-intro-cta">
           Open the queue
           <Icon name="chevron-right" size={16} />
         </Link>
@@ -482,7 +484,7 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {workspace === "admission" && <AdmissionPipeline />}
+      {workspace === "admission" && <AdmissionPipeline academicYear={academicYear} />}
 
       <ShortcutFab />
     </AppLayout>

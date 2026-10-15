@@ -58,7 +58,9 @@ export default function SearchSuggest({
   const [highlight, setHighlight] = useState(-1);
   const wrapperRef = useRef(null);
   const listId = useRef(`search-suggest-${Math.random().toString(36).slice(2, 8)}`).current;
-  const visible = open && suggestions.length > 0;
+  // A suggestion is a string, or { value, detail } to show a second line under it (the value is what gets picked).
+  const items = suggestions.map((s) => (typeof s === "string" ? { value: s } : s));
+  const visible = open && items.length > 0;
 
   useEffect(() => {
     function handleClick(event) {
@@ -80,18 +82,18 @@ export default function SearchSuggest({
       setOpen(false);
       return;
     }
-    if (!suggestions.length) return;
+    if (!items.length) return;
     if (event.key === "ArrowDown") {
       event.preventDefault();
       setOpen(true);
-      setHighlight((current) => (current + 1) % suggestions.length);
+      setHighlight((current) => (current + 1) % items.length);
     } else if (event.key === "ArrowUp") {
       event.preventDefault();
       setOpen(true);
-      setHighlight((current) => (current <= 0 ? suggestions.length - 1 : current - 1));
+      setHighlight((current) => (current <= 0 ? items.length - 1 : current - 1));
     } else if (event.key === "Enter" && visible && highlight >= 0) {
       event.preventDefault();
-      pick(suggestions[highlight]);
+      pick(items[highlight].value);
     }
   }
 
@@ -118,20 +120,21 @@ export default function SearchSuggest({
       />
       {visible ? (
         <ul className="search-suggest-list" id={listId} role="listbox">
-          {suggestions.map((suggestion, index) => (
+          {items.map((suggestion, index) => (
             <li
-              key={suggestion}
+              key={suggestion.value + (suggestion.detail ?? "")}
               role="option"
               aria-selected={index === highlight}
               className={index === highlight ? "search-suggest-option is-active" : "search-suggest-option"}
               // mousedown, not click: the input would blur and close the list first.
               onMouseDown={(event) => {
                 event.preventDefault();
-                pick(suggestion);
+                pick(suggestion.value);
               }}
               onMouseEnter={() => setHighlight(index)}
             >
-              <Highlighted text={suggestion} query={value} />
+              <Highlighted text={suggestion.value} query={value} />
+              {suggestion.detail ? <span className="search-suggest-detail">{suggestion.detail}</span> : null}
             </li>
           ))}
         </ul>
