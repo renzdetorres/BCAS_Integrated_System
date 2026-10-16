@@ -1,9 +1,12 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 using BCAS.Api.Constants;
 using BCAS.Api.Data;
 using BCAS.Api.Models;
 using BCAS.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,7 +19,16 @@ builder.Services.AddSwaggerGen();
 
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("Jwt configuration section is missing.");
+// A placeholder or short signing key would let anyone forge a login, so outside local development the site won't start with one.
+if (!builder.Environment.IsDevelopment() && jwtOptions.SigningKeyProblem() is { } signingKeyProblem)
+{
+    throw new InvalidOperationException(signingKeyProblem);
+}
+
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<AttemptLimiter>();
+builder.Services.AddHsts(options => options.MaxAge = TimeSpan.FromDays(180));
 builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection(SmtpOptions.SectionName));
 builder.Services.Configure<FrontendOptions>(builder.Configuration.GetSection(FrontendOptions.SectionName));
 builder.Services.Configure<AuthCookieOptions>(builder.Configuration.GetSection(AuthCookieOptions.SectionName));
@@ -150,6 +162,32 @@ builder.Services
 
                 return Task.CompletedTask;
             },
+
+            // A login is a signed token that stays valid until it expires, so on its own a deactivated account or a
+            // changed role would keep working. This re-checks the account (cached for 30 seconds) on every request.
+            OnTokenValidated = async context =>
+            {
+                var subject = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Sub);
+                if (!Guid.TryParse(subject, out var userId))
+                {
+                    context.Fail("The login has no valid user.");
+                    return;
+                }
+
+                var services = context.HttpContext.RequestServices;
+                var state = await services.GetRequiredService<IMemoryCache>().GetOrCreateAsync($"session:{userId}", async entry =>
+                {
+                    entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30);
+                    var user = await services.GetRequiredService<IUserRepository>().GetByIdAsync(userId, context.HttpContext.RequestAborted);
+                    return user is null ? null : new SessionState(user.IsActive, user.RoleName);
+                });
+
+                var roleInToken = context.Principal?.FindFirstValue(ClaimTypes.Role);
+                if (state is null || !state.IsActive || !string.Equals(state.Role, roleInToken, StringComparison.Ordinal))
+                {
+                    context.Fail("The account was deactivated or its role changed.");
+                }
+            },
         };
     });
 builder.Services.AddAuthorization();
@@ -190,11 +228,46 @@ if (smtpProblems.Count > 0)
     app.Logger.LogWarning("Email is not set up, so password reset and notification emails will not be sent. {Problems}", string.Join(" ", smtpProblems));
 }
 
+// A site with no explicit address and any host allowed builds password reset links from whatever Host header
+// a request carries, so a forged header could point a reset email at someone else's site.
+if (!app.Environment.IsDevelopment()
+    && string.IsNullOrWhiteSpace(app.Configuration["Frontend:BaseUrl"])
+    && (app.Configuration["AllowedHosts"] ?? "*") == "*")
+{
+    app.Logger.LogWarning("Frontend__BaseUrl is not set and AllowedHosts is '*', so password reset links are built from the request's Host header. Set Frontend__BaseUrl (or AllowedHosts) to this site's address.");
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    // Tell browsers to use HTTPS for this site from now on.
+    app.UseHsts();
+}
+
+// Headers that cost nothing and shut off whole classes of attack: no guessing file types, no framing the app
+// inside another site, a short referrer, and a policy that only lets the page load its own scripts, styles and
+// fonts. (Development skips the policy: the Swagger page there uses inline scripts.)
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+    headers["X-Content-Type-Options"] = "nosniff";
+    headers["X-Frame-Options"] = "DENY";
+    headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()";
+    if (!app.Environment.IsDevelopment())
+    {
+        headers["Content-Security-Policy"] =
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; " +
+            "font-src 'self' data:; connect-src 'self'; frame-src 'self' blob:; object-src 'self' blob:; " +
+            "base-uri 'self'; form-action 'self'; frame-ancestors 'none'";
+    }
+
+    await next();
+});
 
 app.UseHttpsRedirection();
 app.UseCors(FrontendCorsPolicy);
@@ -248,3 +321,6 @@ app.MapFallbackToFile("index.html");
 await DatabaseStartupCheck.RunAsync(app.Configuration, app.Environment, app.Logger);
 
 app.Run();
+
+/// <summary>What the login check remembers about an account for 30 seconds.</summary>
+internal sealed record SessionState(bool IsActive, string Role);

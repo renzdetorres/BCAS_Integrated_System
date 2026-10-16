@@ -15,4 +15,31 @@ public class AuthCookieOptions
     /// true as soon as HTTPS is available.
     /// </summary>
     public bool RequireHttps { get; set; } = true;
+
+    /// <summary>
+    /// "Lax" (the default outside local development), "Strict", or "None". None sends the cookie on
+    /// cross-site requests, which also lets other sites trigger actions as a signed-in user, so it is
+    /// only for a frontend hosted on a different site than the API (set AuthCookie__SameSite=None for that).
+    /// </summary>
+    public string? SameSite { get; set; }
+
+    /// <summary>
+    /// The two cookie attributes for this request. The cookie is Secure whenever the request came over HTTPS
+    /// (it must never travel over plain HTTP), and also whenever SameSite is None (browsers refuse None
+    /// otherwise). Local development with the frontend and API on different origins keeps SameSite=None.
+    /// </summary>
+    public (bool Secure, SameSiteMode SameSite) Resolve(bool requestIsHttps, bool isDevelopment)
+    {
+        SameSiteMode mode;
+        if (Enum.TryParse<SameSiteMode>(SameSite, ignoreCase: true, out var configured) && configured != SameSiteMode.Unspecified)
+        {
+            mode = configured;
+        }
+        else
+        {
+            mode = isDevelopment && RequireHttps ? SameSiteMode.None : SameSiteMode.Lax;
+        }
+
+        return (requestIsHttps || mode == SameSiteMode.None, mode);
+    }
 }

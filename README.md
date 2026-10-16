@@ -1171,3 +1171,21 @@ An admission application belongs to the academic year saved on it, or, for an ol
 
 The search next to it suggests applicant names (with their email and program) from the first letter typed.
 Both are for the Admin role only.
+
+### Security settings the server depends on
+
+- **`Jwt__SigningKey`** (required outside local development): a long random secret, at least 32 characters. The key in
+  `appsettings.json` is a public placeholder, so the site refuses to start with it (or with a short key). Set it on the
+  server, never in a committed file.
+- **`Frontend__BaseUrl`** and **`AllowedHosts`**: set at least one to this site's address, otherwise password-reset links
+  are built from the request's Host header (the API logs a warning at start-up while neither is set).
+- **Sign-in cookie**: Secure whenever the request is HTTPS, `SameSite=Lax` by default. Set `AuthCookie__SameSite=None`
+  only if the frontend is hosted on a different site than the API.
+- **Throttling** (per server instance, in memory): 5 failed sign-ins per address and email per 10 minutes (and 30 per
+  email, 40 per address), 10 registrations per address per hour, 5 forgot-password requests per address per 15 minutes
+  and 3 reset emails per email address per hour, 10 reset attempts per address per 15 minutes. Over a limit the API
+  answers 429 with a `Retry-After`.
+- **Sessions** are re-checked against the database every 30 seconds, so a deactivated account or a changed role stops
+  working within that time instead of when its login expires.
+- **Headers**: `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`, a
+  `Content-Security-Policy` (own scripts and styles only; blob previews allowed) and HSTS are sent outside development.

@@ -19,17 +19,46 @@ public class AuthController : ControllerBase
     private readonly AuthCookieOptions _cookieOptions;
     private readonly FrontendOptions _frontendOptions;
     private readonly IAuditLogService _auditLogService;
+    private readonly AttemptLimiter _limiter;
+    private readonly IHostEnvironment _environment;
+
+    // Throttling. Sign-in failures are counted per (address + email), per email and per address, so one
+    // person typing a wrong password is not locked out by someone else, and a guesser can't just rotate emails.
+    private static readonly TimeSpan LoginWindow = TimeSpan.FromMinutes(10);
+    private const int LoginFailuresPerPairLimit = 5;
+    private const int LoginFailuresPerEmailLimit = 30;
+    private const int LoginFailuresPerIpLimit = 40;
 
     public AuthController(
         IAuthService authService,
         IOptions<AuthCookieOptions> cookieOptions,
         IOptions<FrontendOptions> frontendOptions,
-        IAuditLogService auditLogService)
+        IAuditLogService auditLogService,
+        AttemptLimiter limiter,
+        IHostEnvironment environment)
     {
         _authService = authService;
         _cookieOptions = cookieOptions.Value;
         _frontendOptions = frontendOptions.Value;
         _auditLogService = auditLogService;
+        _limiter = limiter;
+        _environment = environment;
+    }
+
+    private string ClientIp => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+    /// <summary>429 with a Retry-After header and a message that says how long to wait.</summary>
+    private ObjectResult TooManyAttempts(int retryAfterSeconds)
+    {
+        var seconds = Math.Max(1, retryAfterSeconds);
+        Response.Headers.RetryAfter = seconds.ToString();
+        var minutes = (int)Math.Ceiling(seconds / 60.0);
+        return StatusCode(StatusCodes.Status429TooManyRequests, new ProblemDetails
+        {
+            Title = "Too many attempts",
+            Detail = $"Too many attempts. Please wait {minutes} minute{(minutes == 1 ? "" : "s")} and try again.",
+            Status = StatusCodes.Status429TooManyRequests,
+        });
     }
 
     /// <summary>
@@ -50,7 +79,7 @@ public class AuthController : ControllerBase
     /// than hardcoded.
     /// </summary>
     private (bool Secure, SameSiteMode SameSite) CookieSecurity =>
-        _cookieOptions.RequireHttps ? (true, SameSiteMode.None) : (false, SameSiteMode.Lax);
+        _cookieOptions.Resolve(Request.IsHttps, _environment.IsDevelopment());
 
     /// <summary>
     /// Public self-service registration. Always creates an Applicant account;
@@ -64,6 +93,11 @@ public class AuthController : ControllerBase
         [FromBody] RegisterRequest request,
         CancellationToken cancellationToken)
     {
+        if (!_limiter.TryRecord($"register:ip:{ClientIp}", 10, TimeSpan.FromHours(1)))
+        {
+            return TooManyAttempts(_limiter.SecondsUntilFree($"register:ip:{ClientIp}", TimeSpan.FromHours(1)));
+        }
+
         try
         {
             var response = await _authService.RegisterApplicantAsync(request, cancellationToken);
@@ -93,9 +127,28 @@ public class AuthController : ControllerBase
         [FromBody] LoginRequest request,
         CancellationToken cancellationToken)
     {
+        var email = request.Email.Trim().ToLowerInvariant();
+        var pairKey = $"login:{ClientIp}:{email}";
+        var emailKey = $"login:email:{email}";
+        var ipKey = $"login:ip:{ClientIp}";
+
+        // Over the failure limit: refuse before even checking the password. This applies the same way to
+        // an email that has no account, so it can't be used to tell which emails exist.
+        var locked = new[]
+        {
+            (Key: pairKey, Limit: LoginFailuresPerPairLimit),
+            (Key: emailKey, Limit: LoginFailuresPerEmailLimit),
+            (Key: ipKey, Limit: LoginFailuresPerIpLimit),
+        }.Where(k => _limiter.Count(k.Key, LoginWindow) >= k.Limit).ToList();
+        if (locked.Count > 0)
+        {
+            return TooManyAttempts(locked.Max(k => _limiter.SecondsUntilFree(k.Key, LoginWindow)));
+        }
+
         try
         {
             var result = await _authService.LoginAsync(request, cancellationToken);
+            _limiter.Clear(pairKey);
 
             var (secure, sameSite) = CookieSecurity;
             Response.Cookies.Append(AuthConstants.AuthCookieName, result.Token, new CookieOptions
@@ -120,6 +173,9 @@ public class AuthController : ControllerBase
         }
         catch (InvalidCredentialsException ex)
         {
+            _limiter.Record(pairKey, LoginWindow);
+            _limiter.Record(emailKey, LoginWindow);
+            _limiter.Record(ipKey, LoginWindow);
             return Unauthorized(new ProblemDetails
             {
                 Title = "Login failed",
@@ -139,6 +195,20 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
     {
+        var ipKey = $"forgot:ip:{ClientIp}";
+        if (!_limiter.TryRecord(ipKey, 5, TimeSpan.FromMinutes(15)))
+        {
+            return TooManyAttempts(_limiter.SecondsUntilFree(ipKey, TimeSpan.FromMinutes(15)));
+        }
+
+        // At most three reset emails per address per hour. Past that the answer is still 204 and nothing is
+        // sent, so the endpoint can't be used to flood someone's inbox and still reveals nothing about accounts.
+        var emailKey = $"forgot:email:{request.Email.Trim().ToLowerInvariant()}";
+        if (!_limiter.TryRecord(emailKey, 3, TimeSpan.FromHours(1)))
+        {
+            return NoContent();
+        }
+
         await _authService.ForgotPasswordAsync(request.Email, FrontendBaseUrl, cancellationToken);
         return NoContent();
     }
@@ -149,6 +219,12 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
     {
+        var ipKey = $"reset:ip:{ClientIp}";
+        if (!_limiter.TryRecord(ipKey, 10, TimeSpan.FromMinutes(15)))
+        {
+            return TooManyAttempts(_limiter.SecondsUntilFree(ipKey, TimeSpan.FromMinutes(15)));
+        }
+
         try
         {
             await _authService.ResetPasswordAsync(request.Token, request.NewPassword, cancellationToken);
