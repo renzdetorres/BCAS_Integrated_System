@@ -2,11 +2,12 @@
 -- Removes everything sample-data.sql added, and nothing else.
 --
 -- "Sample" means an account whose email ends in @sample.bcas.test, plus the
--- two semesters named "... (sample)". Each such account's records go with
+-- semesters named "... (sample)". Each such account's records go with
 -- it: profile, admission and scholarship applications, status history,
--- reservations, screenings and decisions, documents, exam selections, and
+-- reservations, screenings, exam and interview results, payments, decisions,
+-- documents, exam selections, and
 -- anything created by signing in as them (audit entries, preferences,
--- inquiries, password-reset tokens). Real accounts are not touched.
+-- inquiries, notifications, password-reset tokens). Real accounts are not touched.
 --
 -- Scholarship slot counts are recalculated at the end.
 -- -----------------------------------------------------------------------------
@@ -27,6 +28,11 @@ UNION
 SELECT ApplicationId FROM dbo.ScholarshipApplications WHERE UserId IN (SELECT UserId FROM @SampleUsers);
 
 DELETE FROM dbo.ApplicationStatusHistory           WHERE ApplicationId IN (SELECT ApplicationId FROM @SampleApps);
+DELETE FROM dbo.ScholarshipInterviewEvaluations    WHERE ApplicationId IN (SELECT ApplicationId FROM @SampleApps);
+DELETE FROM dbo.ScholarshipExamResults             WHERE ApplicationId IN (SELECT ApplicationId FROM @SampleApps);
+DELETE FROM dbo.InterviewSchedules                 WHERE ApplicationId IN (SELECT ApplicationId FROM @SampleApps);
+DELETE FROM dbo.ExamResults                        WHERE ApplicationId IN (SELECT ApplicationId FROM @SampleApps);
+DELETE FROM dbo.ExamPayments                       WHERE ApplicationId IN (SELECT ApplicationId FROM @SampleApps);
 DELETE FROM dbo.ScholarshipFinalDecisions          WHERE ApplicationId IN (SELECT ApplicationId FROM @SampleApps);
 DELETE FROM dbo.ScholarshipEligibilityScreenings   WHERE ApplicationId IN (SELECT ApplicationId FROM @SampleApps);
 DELETE FROM dbo.AdmissionReservations              WHERE ApplicationId IN (SELECT ApplicationId FROM @SampleApps);
@@ -44,6 +50,7 @@ DELETE FROM dbo.InquiryMessages                    WHERE SenderUserId IN (SELECT
 DELETE FROM dbo.InquiryThreads                     WHERE UserId IN (SELECT UserId FROM @SampleUsers);
 DELETE FROM dbo.NotificationPreferences            WHERE UserId IN (SELECT UserId FROM @SampleUsers);
 DELETE FROM dbo.PasswordResetTokens                WHERE UserId IN (SELECT UserId FROM @SampleUsers);
+DELETE FROM dbo.Notifications                      WHERE UserId IN (SELECT UserId FROM @SampleUsers);
 DELETE FROM dbo.AuditLogs                          WHERE UserId IN (SELECT UserId FROM @SampleUsers);
 
 DELETE FROM dbo.Semesters WHERE Name LIKE N'% (sample)'
