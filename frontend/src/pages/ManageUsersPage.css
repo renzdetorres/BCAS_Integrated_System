@@ -1,7 +1,10 @@
+/* The tag wraps below the name when the column is tight, rather than squeezing
+   into a broken "Yo / u". */
 .account-name {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 2px 8px;
   font-weight: 600;
   color: var(--color-text-primary);
 }
@@ -12,6 +15,11 @@
   border-radius: var(--radius-sm);
   font-size: 11.5px;
   font-weight: 600;
+  white-space: nowrap;
+}
+
+.account-you {
+  flex-shrink: 0;
 }
 
 .account-you {
@@ -127,11 +135,19 @@
   min-width: 0;
 }
 
+/* Break only where the email has to (never mid-word like "bcas.te / st"):
+   the column keeps enough width for a normal address on one line. */
 .account-email {
   font-size: 12.5px;
   font-weight: 400;
   color: var(--color-text-secondary);
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+}
+
+@media (min-width: 721px) {
+  .account-cell-text {
+    min-width: 210px;
+  }
 }
 
 .account-role-chip {
