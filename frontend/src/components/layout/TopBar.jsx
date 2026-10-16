@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSession } from "../../context/SessionContext.jsx";
 import { useLogout } from "../../hooks/useLogout.js";
 import { getActiveAnnouncements } from "../../api/announcementApi.js";
@@ -159,6 +159,7 @@ function ApplicationSearch() {
 
 export default function TopBar({ onMenuClick, leading }) {
   const { session } = useSession();
+  const { pathname } = useLocation();
   const handleLogout = useLogout();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -172,6 +173,10 @@ export default function TopBar({ onMenuClick, leading }) {
   // applicant-only - staff manage announcements from their own page - so
   // the bell (and the request behind it) is for applicants alone.
   const showAnnouncements = session.role === "Applicant";
+
+  // The academic year filter and applicant search belong to the Admin's
+  // dashboard (the /portal home) only - not to the other Admin pages.
+  const showAdminDashboardTools = session.role === "Admin" && pathname === "/portal";
 
   useEffect(() => {
     if (!showAnnouncements) return;
@@ -234,8 +239,8 @@ export default function TopBar({ onMenuClick, leading }) {
       </button>
 
       {leading ? <div className="topbar-leading">{leading}</div> : null}
-      {session.role === "Admin" && <AcademicYearFilter />}
-      {session.role === "Admin" && <ApplicationSearch />}
+      {showAdminDashboardTools && <AcademicYearFilter />}
+      {showAdminDashboardTools && <ApplicationSearch />}
 
       <div className="topbar-spacer" />
 
