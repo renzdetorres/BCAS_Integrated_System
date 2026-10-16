@@ -21,6 +21,7 @@ public class AuthController : ControllerBase
     private readonly IAuditLogService _auditLogService;
     private readonly AttemptLimiter _limiter;
     private readonly IHostEnvironment _environment;
+    private readonly ISuperAdminGuard _superAdminGuard;
 
     // Throttling. Sign-in failures are counted per (address + email), per email and per address, so one
     // person typing a wrong password is not locked out by someone else, and a guesser can't just rotate emails.
@@ -35,7 +36,8 @@ public class AuthController : ControllerBase
         IOptions<FrontendOptions> frontendOptions,
         IAuditLogService auditLogService,
         AttemptLimiter limiter,
-        IHostEnvironment environment)
+        IHostEnvironment environment,
+        ISuperAdminGuard superAdminGuard)
     {
         _authService = authService;
         _cookieOptions = cookieOptions.Value;
@@ -43,6 +45,7 @@ public class AuthController : ControllerBase
         _auditLogService = auditLogService;
         _limiter = limiter;
         _environment = environment;
+        _superAdminGuard = superAdminGuard;
     }
 
     private string ClientIp => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
@@ -270,11 +273,12 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public IActionResult Me()
+    public async Task<IActionResult> Me(CancellationToken cancellationToken)
     {
+        var userId = User.GetUserId();
         return Ok(new UserProfileResponse
         {
-            UserId = User.GetUserId(),
+            UserId = userId,
             Email = User.FindFirstValue(JwtRegisteredClaimNames.Email) ?? string.Empty,
             FirstName = User.FindFirstValue(ClaimTypes.GivenName) ?? string.Empty,
             LastName = User.FindFirstValue(ClaimTypes.Surname) ?? string.Empty,
@@ -284,6 +288,9 @@ public class AuthController : ControllerBase
             // reflects status as of login, not a deactivation that happened
             // since - the JWT itself isn't re-checked against the database.
             IsActive = true,
+            // Not in the JWT, so read fresh: without it a page reload would hide
+            // every Super Admin-only page until the next sign-in.
+            IsSuperAdmin = await _superAdminGuard.IsSuperAdminAsync(userId, cancellationToken),
         });
     }
 }
