@@ -21,10 +21,7 @@ const ARCHIVABLE_STATUS_SET = new Set(ARCHIVABLE_STATUSES);
 // sidebar can tell which department view is active.
 const FILTER_KEYS = ["search", "status", "category", "program", "department", "yearLevel", "academicYear", "academicTerm"];
 
-const DEPARTMENT_FILTER_OPTIONS = [
-  ...DEPARTMENT_OPTIONS.map((department) => ({ value: department, label: department })),
-  { value: "Unassigned", label: "Unassigned" },
-];
+const DEPARTMENT_FILTER_OPTIONS = DEPARTMENT_OPTIONS.map((department) => ({ value: department, label: department }));
 
 // The status filter only offers statuses the chosen type can actually have.
 function statusOptionsFor(category) {
@@ -260,7 +257,7 @@ export default function AdminApplicationsPage() {
       header: "Department",
       accessor: (row) => row.department ?? "",
       sortable: true,
-      render: (row) => row.department ?? <span className="applications-department-missing">Unassigned</span>,
+      render: (row) => row.department ?? <span className="applications-department-missing">-</span>,
     },
     {
       key: "status",
@@ -295,7 +292,6 @@ export default function AdminApplicationsPage() {
     },
   ];
 
-  const unassignedCount = loaded.filter((row) => !row.department).length;
   const underReviewCount = loaded.filter((row) => row.status === "UnderReview").length;
   const newCount = loaded.filter((row) => row.status === "Submitted").length;
 
@@ -320,13 +316,6 @@ export default function AdminApplicationsPage() {
         actions={bulkActions}
         summary={[
           {
-            label: "Unassigned",
-            value: unassignedCount.toLocaleString(),
-            tone: "red",
-            active: filters.department === "Unassigned",
-            onClick: () => setFilter("department", filters.department === "Unassigned" ? "" : "Unassigned"),
-          },
-          {
             label: "Under review",
             value: underReviewCount.toLocaleString(),
             tone: "amber",
@@ -341,7 +330,7 @@ export default function AdminApplicationsPage() {
             onClick: () => setFilter("status", filters.status === "Submitted" ? "" : "Submitted"),
           },
         ]}
-        summaryNote="Select a card to filter the list. Unassigned means no department has been set yet."
+        summaryNote="Select a card to filter the list."
         columns={columns}
         rows={applications}
         getRowKey={(row) => row.applicationId}

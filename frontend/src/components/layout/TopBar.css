@@ -521,8 +521,8 @@
   min-width: 180px;
 }
 
-/* Phones: the switch, the year and the search can't share one row. The bar grows to two rows, with the
-   year and the search together on the second (or all on one when there's no switch on the page). */
+/* Phones: the switch, the search and the year can't share one row. The bar grows to two rows, with the
+   search and the year together on the second (or all on one when there's no switch on the page). */
 @media (max-width: 760px) {
   .topbar {
     height: auto;
@@ -538,8 +538,12 @@
     order: 10;
   }
 
-  .topbar-year {
+  .topbar-search {
     margin-left: 0;
+  }
+
+  .topbar-year {
+    margin-left: 8px;
   }
 
   .topbar-search {

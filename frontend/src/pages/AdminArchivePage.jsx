@@ -134,7 +134,7 @@ export default function AdminArchivePage() {
             label: "All departments",
             value: filters.department,
             onChange: (value) => setFilter("department", value),
-            options: [...DEPARTMENT_OPTIONS, "Unassigned"].map((d) => ({ value: d, label: d })),
+            options: DEPARTMENT_OPTIONS.map((d) => ({ value: d, label: d })),
           },
         ]}
       />

@@ -282,11 +282,8 @@ export default function AdminDashboardPage() {
   const view = dashboard ? workspaceView(dashboard, workspace) : null;
   const workspaceLabel = workspace === "scholarship" ? "Scholarship" : "Admission";
 
-  const countByDepartment = new Map((view?.byDepartment ?? []).map((d) => [d.department ?? "Unassigned", d.count]));
-  const departments = [
-    ...DEPARTMENT_OPTIONS.map((department) => ({ department, count: countByDepartment.get(department) ?? 0 })),
-    ...(view?.unassignedCount > 0 ? [{ department: "Unassigned", count: view.unassignedCount, unassigned: true }] : []),
-  ];
+  const countByDepartment = new Map((view?.byDepartment ?? []).map((d) => [d.department, d.count]));
+  const departments = DEPARTMENT_OPTIONS.map((department) => ({ department, count: countByDepartment.get(department) ?? 0 }));
   const largestDepartment = Math.max(1, ...departments.map((d) => d.count));
 
 
@@ -305,13 +302,6 @@ export default function AdminDashboardPage() {
           detail: "Uploaded by applicants, not yet reviewed",
           tone: "amber",
           to: "/admin/documents",
-        },
-        {
-          count: view.unassignedCount,
-          label: "Without a department",
-          detail: "No Academic Head can see these yet",
-          tone: "red",
-          to: applicationsLink({ category: view.category, department: "Unassigned", academicYear }),
         },
       ]
     : [];
@@ -406,7 +396,7 @@ export default function AdminDashboardPage() {
                   <li key={d.department}>
                     <Link
                       to={applicationsLink({ category: view.category, department: d.department })}
-                      className={`dash-dept${d.unassigned ? " dash-dept-unassigned" : ""}`}
+                      className="dash-dept"
                     >
                       <span className="dash-dept-name">{d.department}</span>
                       <span className="dash-dept-track" aria-hidden="true">
@@ -465,7 +455,7 @@ export default function AdminDashboardPage() {
                             <span className="dash-table-sub">{application.scholarshipName}</span>
                           ) : null}
                         </td>
-                        <td>{application.department ?? <span className="dash-unassigned-text">Unassigned</span>}</td>
+                        <td>{application.department ?? <span className="dash-unassigned-text">&mdash;</span>}</td>
                         <td>
                           <StatusBadge status={application.status} adminContext />
                         </td>

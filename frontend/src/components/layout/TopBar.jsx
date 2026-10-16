@@ -58,7 +58,7 @@ function AcademicYearFilter() {
         onChange={(event) => setAcademicYear(event.target.value)}
         aria-label="Academic year for the dashboard figures and the search"
       >
-        <option value="">All years</option>
+        <option value="">Academic year</option>
         {years.map((year) => (
           <option key={year} value={year}>
             {year}
@@ -239,8 +239,8 @@ export default function TopBar({ onMenuClick, leading }) {
       </button>
 
       {leading ? <div className="topbar-leading">{leading}</div> : null}
-      {showAdminDashboardTools && <AcademicYearFilter />}
       {showAdminDashboardTools && <ApplicationSearch />}
+      {showAdminDashboardTools && <AcademicYearFilter />}
 
       <div className="topbar-spacer" />
 

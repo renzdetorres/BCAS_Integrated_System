@@ -507,15 +507,6 @@
   color: var(--color-text-tertiary);
 }
 
-.dash-dept-unassigned .dash-dept-name,
-.dash-dept-unassigned .dash-dept-count {
-  color: var(--color-status-amber-text);
-}
-
-.dash-dept-unassigned .dash-dept-bar {
-  background: var(--color-accent);
-}
-
 @keyframes dash-grow {
   from {
     transform: scaleX(0);

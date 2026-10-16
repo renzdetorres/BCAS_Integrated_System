@@ -22,16 +22,33 @@ html {
   background: var(--color-bg);
 }
 
-/* No rubber-band bounce at the top or bottom of the page, and a scrolling
-   panel (sidebar, modal, dropdown, table) stops at its own edge instead of
-   handing the scroll to the page behind it. */
+/* No rubber-band bounce at the top or bottom of the page. */
 html,
 body {
   overscroll-behavior: none;
 }
 
-* {
-  overscroll-behavior: contain;
+/* Only panels that genuinely scroll on their own hold the scroll at their
+   edge (modal, dropdown lists). This must never be set on every element:
+   a table wrapper that only scrolls sideways is still a scroll container,
+   and would swallow the mouse wheel and freeze the page under the cursor. */
+.ui-modal-backdrop,
+.ui-modal-body,
+.topbar-notif-list,
+[class*="suggest"] ul {
+  overscroll-behavior-y: contain;
+}
+
+/* Sideways scrollers (tables, chart plots) never trap vertical scrolling. */
+.ui-datatable-wrap,
+.ui-datatable-scroll,
+.dash-table-scroll,
+.form-table-wrap,
+.ui-trendchart-plot,
+[class*="table-wrap"],
+[class*="table-scroll"] {
+  overscroll-behavior-x: contain;
+  overscroll-behavior-y: auto;
 }
 
 body {

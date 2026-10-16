@@ -100,7 +100,7 @@ export default function ApplicationDetailModal({ application, onClose }) {
             ...details,
             {
               label: "Department",
-              value: application.department ?? <span className="app-modal-unassigned">Unassigned</span>,
+              value: application.department ?? <span className="app-modal-unassigned">-</span>,
             },
             { label: "Submitted", value: formatDateTime(application.submittedAt) },
             { label: "Last updated", value: formatDateTime(application.updatedAt) },

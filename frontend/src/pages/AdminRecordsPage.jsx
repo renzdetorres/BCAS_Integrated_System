@@ -62,7 +62,7 @@ export default function AdminRecordsPage() {
       header: "Department",
       accessor: (row) => row.department ?? "",
       sortable: true,
-      render: (row) => row.department ?? <span className="ui-cell-muted">Unassigned</span>,
+      render: (row) => row.department ?? <span className="ui-cell-muted">-</span>,
     },
     { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} adminContext /> },
     {
@@ -120,7 +120,7 @@ export default function AdminRecordsPage() {
             label: "All departments",
             value: filters.department,
             onChange: (value) => setFilter("department", value),
-            options: [...DEPARTMENT_OPTIONS, "Unassigned"].map((d) => ({ value: d, label: d })),
+            options: DEPARTMENT_OPTIONS.map((d) => ({ value: d, label: d })),
           },
         ]}
       />

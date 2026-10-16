@@ -372,7 +372,7 @@ export default function AdminApplicationDetailPage() {
                             disabled={isSavingDepartment}
                           >
                             <option value="" disabled>
-                              Unassigned
+                              Choose a department
                             </option>
                             {DEPARTMENT_OPTIONS.map((department) => (
                               <option key={department} value={department}>
@@ -410,7 +410,7 @@ export default function AdminApplicationDetailPage() {
                         </form>
                       ) : (
                         <>
-                          {application.department ?? <span className="admin-app-department-missing">Unassigned</span>}
+                          {application.department ?? <span className="admin-app-department-missing">-</span>}
                           <span className="admin-app-department-note">From the applicant's admission application</span>
                         </>
                       )}
