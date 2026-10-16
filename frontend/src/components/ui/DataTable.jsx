@@ -159,8 +159,6 @@ export default function DataTable({
   const filteredCount = table.getFilteredRowModel().rows.length;
   const pageRows = table.getRowModel().rows;
   const pageCount = Math.max(1, table.getPageCount());
-  const firstShown = filteredCount === 0 ? 0 : pageIndex * pageSize + 1;
-  const lastShown = Math.min(filteredCount, (pageIndex + 1) * pageSize);
 
   const searchValue = search ? search.value : globalFilter;
   const onSearchChange = search ? search.onChange : setGlobalFilter;
@@ -390,11 +388,11 @@ export default function DataTable({
 
       {!isLoading && !errorMessage && filteredCount > 0 ? (
         <footer className="ui-datatable-footer">
-          <p className="ui-datatable-count">
-            {footerNote ? <span className="ui-datatable-footer-note">{footerNote}</span> : null}
-            Showing <strong>{firstShown.toLocaleString()}</strong>-<strong>{lastShown.toLocaleString()}</strong> of{" "}
-            <strong>{filteredCount.toLocaleString()}</strong>
-          </p>
+          {footerNote ? (
+            <p className="ui-datatable-count">
+              <span className="ui-datatable-footer-note">{footerNote}</span>
+            </p>
+          ) : null}
           <div className="ui-datatable-pager">
             <label className="ui-datatable-page-size">
               Rows
