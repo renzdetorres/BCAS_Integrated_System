@@ -70,7 +70,8 @@ jobs:
       #   SERVER_USERNAME
       #   SERVER_PASSWORD
       - name: Deploy to MonsterASP.NET
-        uses: rasmusbuchholdt/simply-web-deploy@2.1.0
+        # Pinned to the exact commit of 2.1.0: this action receives the host's deploy password, and a tag can be moved.
+        uses: rasmusbuchholdt/simply-web-deploy@026998dd5857dd5f3645cc13ed48335e07d7f94b # 2.1.0
         with:
           website-name: ${{ secrets.WEBSITE_NAME }}
           server-computer-name: ${{ secrets.SERVER_COMPUTER_NAME }}
