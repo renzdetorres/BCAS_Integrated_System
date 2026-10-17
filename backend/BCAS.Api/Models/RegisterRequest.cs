@@ -19,5 +19,6 @@ public class RegisterRequest
 
     [Required]
     [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be at least 8 characters long.")]
+    [StrongPassword]
     public string Password { get; set; } = string.Empty;
 }

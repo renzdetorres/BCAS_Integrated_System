@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using BCAS.Api.Models;
 using BCAS.Api.Services;
 using Microsoft.AspNetCore.Http;
@@ -151,5 +152,54 @@ public class AuthCookiePolicyTests
         Assert.Equal(expected, sameSite);
         Assert.Equal(secureOverHttps, secure);
         Assert.True(new AuthCookieOptions { SameSite = "None" }.Resolve(requestIsHttps: false, isDevelopment: false).Secure);
+    }
+}
+
+public class StrongPasswordTests
+{
+    [Theory]
+    [InlineData("password")]
+    [InlineData("Password123")]
+    [InlineData("12345678")]
+    [InlineData("qwerty123")]
+    [InlineData("aaaaaaaa")]
+    [InlineData("abcdefgh")]
+    [InlineData("98765432")]
+    [InlineData("BCAS2026")]
+    public void Common_repeated_and_straight_run_passwords_are_guessable(string password)
+    {
+        Assert.True(StrongPasswordAttribute.IsGuessable(password, null));
+    }
+
+    [Theory]
+    [InlineData("Verify#12345")]
+    [InlineData("Applicant123")]
+    [InlineData("tulip-River-88")]
+    [InlineData("N0t-So-Simple!")]
+    public void Ordinary_passwords_are_accepted(string password)
+    {
+        Assert.False(StrongPasswordAttribute.IsGuessable(password, null));
+    }
+
+    [Fact]
+    public void A_password_built_from_the_email_name_is_guessable()
+    {
+        Assert.True(StrongPasswordAttribute.IsGuessable("maria.santos2026!", "maria.santos@gmail.com"));
+        Assert.False(StrongPasswordAttribute.IsGuessable("tulip-River-88", "maria.santos@gmail.com"));
+        // A very short email name is too common to count (it would reject innocent passwords).
+        Assert.False(StrongPasswordAttribute.IsGuessable("abXcdYef9!", "ab@gmail.com"));
+    }
+
+    [Fact]
+    public void The_registration_request_is_rejected_with_a_readable_message()
+    {
+        var weak = new RegisterRequest { FirstName = "A", LastName = "B", Email = "a.b@gmail.com", Password = "Password123" };
+        var results = new List<ValidationResult>();
+
+        Assert.False(Validator.TryValidateObject(weak, new ValidationContext(weak), results, validateAllProperties: true));
+        Assert.Contains(results, r => r.ErrorMessage!.Contains("harder to guess"));
+
+        var fine = new RegisterRequest { FirstName = "A", LastName = "B", Email = "a.b@gmail.com", Password = "tulip-River-88" };
+        Assert.True(Validator.TryValidateObject(fine, new ValidationContext(fine), new List<ValidationResult>(), validateAllProperties: true));
     }
 }

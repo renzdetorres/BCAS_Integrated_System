@@ -9,5 +9,6 @@ public class ResetPasswordRequest
 
     [Required]
     [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be at least 8 characters long.")]
+    [StrongPassword]
     public string NewPassword { get; set; } = string.Empty;
 }
