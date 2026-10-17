@@ -222,7 +222,9 @@ export default function ApplicantDashboardPage() {
           <Card className="ui-card-flat">
             <div className="applicant-announcements-header">
               <h2>Announcements</h2>
-              <Link to="/announcements">View all</Link>
+              <Link to="/announcements" className="target-link">
+                View all
+              </Link>
             </div>
             {announcements.length === 0 ? (
               <p className="dashboard-meta">No active announcements right now.</p>

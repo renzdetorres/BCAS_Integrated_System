@@ -211,7 +211,7 @@
   border-radius: var(--radius-sm);
   background: var(--color-status-gray-bg);
   color: var(--color-status-gray-text);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
 }
 

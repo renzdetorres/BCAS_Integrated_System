@@ -190,3 +190,80 @@ table {
     position: relative;
   }
 }
+
+/* ---- Tap targets, round two ----------------------------------------------
+   A check of every page found controls smaller than these sizes. Standalone text links and buttons are at least
+   28px tall at every width (WCAG 2.2 asks for 24), table checkboxes are 24px, and on phones and touch screens the
+   everyday controls reach 44px. They live here because this file loads after the component styles and so wins ties. */
+.ss-applicants-verify-link,
+.documents-view-link,
+.dash-table-name,
+.dash-link,
+.target-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+}
+
+.ui-datatable input[type="checkbox"],
+.ss-documents-table input[type="checkbox"] {
+  width: 24px;
+  height: 24px;
+  accent-color: var(--color-primary);
+}
+
+@media (pointer: coarse), (max-width: 760px) {
+  .btn,
+  .next-action-button,
+  .report-tab,
+  .report-category,
+  .role-access-tab,
+  .ui-datatable-row-action,
+  .trigger-toggle-on,
+  .trigger-toggle-off,
+  .exam-switch,
+  .scholarship-status-button,
+  .inquiry-status-button,
+  .action-approve,
+  .action-reject,
+  .action-flag,
+  .dash-dept,
+  select.ui-select,
+  .ui-datatable-page-size .ui-select,
+  .ui-datatable-filters .ui-select {
+    min-height: 44px;
+  }
+
+  .ss-applicants-verify-link,
+  .documents-view-link,
+  .dash-table-name,
+  .dash-link,
+  .target-link {
+    min-height: 40px;
+  }
+
+  .exam-icon-button,
+  .slot-calendar-nav {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .catalog-chip-remove {
+    min-width: 32px;
+    min-height: 32px;
+  }
+}
+
+/* The navigation drawer's links are tapped, so they get the full 44px (the desktop sidebar stays compact). */
+@media (pointer: coarse), (max-width: 960px) {
+  .sidebar-link,
+  .sidebar-group-categories .sidebar-link {
+    min-height: 44px;
+  }
+}
+
+/* The floating shortcuts button sits under the navigation drawer's dimming layer, so it is dimmed with the page
+   instead of floating above it while the drawer is open (layer 35; the drawer itself is 40). */
+.dash-fab {
+  z-index: 30;
+}
