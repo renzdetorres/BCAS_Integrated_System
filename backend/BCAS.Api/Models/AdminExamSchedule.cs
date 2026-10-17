@@ -7,7 +7,6 @@ public class AdminExamSchedule
     public string DayType { get; set; } = string.Empty;
     public DateOnly ExamDate { get; set; }
     public TimeOnly ExamTime { get; set; }
-    public string Venue { get; set; } = string.Empty;
     public bool IsOffered { get; set; }
     public int? Capacity { get; set; }
     public IReadOnlyList<AssignedApplicant> AssignedApplicants { get; set; } = Array.Empty<AssignedApplicant>();

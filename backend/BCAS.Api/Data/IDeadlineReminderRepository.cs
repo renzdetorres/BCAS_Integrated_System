@@ -3,7 +3,7 @@ namespace BCAS.Api.Data;
 public interface IDeadlineReminderRepository
 {
     /// <summary>Every applicant with a confirmed exam schedule on exactly this date.</summary>
-    Task<IReadOnlyList<(Guid UserId, string FirstName, string Email, int ExamScheduleId, DateOnly ExamDate, TimeOnly ExamTime, string Venue)>>
+    Task<IReadOnlyList<(Guid UserId, string FirstName, string Email, int ExamScheduleId, DateOnly ExamDate, TimeOnly ExamTime)>>
         GetExamsOnDateAsync(DateOnly examDate, CancellationToken cancellationToken = default);
 
     /// <summary>

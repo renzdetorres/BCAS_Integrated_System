@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { getAdminDashboard } from "../api/adminDashboardApi.js";
 import { getEnrollmentSummary } from "../api/adminReportsApi.js";
+import { getScholarshipSummary } from "../api/scholarshipPipelineApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Icon from "../components/ui/Icon.jsx";
@@ -9,6 +10,7 @@ import StatusBadge from "../components/ui/StatusBadge.jsx";
 import AdmissionPipeline from "../components/AdmissionPipeline.jsx";
 import { DEPARTMENT_OPTIONS } from "../config/departments.js";
 import { useAcademicYear } from "../context/AcademicYearContext.jsx";
+import "../components/AdmissionPipeline.css";
 import "./AdminDashboardPage.css";
 
 const WORKSPACES = [
@@ -221,6 +223,66 @@ function EnrollmentSummary({ summary, approvedCount }) {
       ) : (
         <p className="dash-empty">No enrolled applicants yet.</p>
       )}
+    </section>
+  );
+}
+
+const SCHOLARSHIP_FIGURES = [
+  { key: "totalApplicants", label: "Total applicants" },
+  { key: "tookExam", label: "Took the exam" },
+  { key: "passed", label: "Passed the exam" },
+  { key: "pending", label: "Pending", note: "Applications still awaiting a decision" },
+];
+
+/** The scholarship process at a glance, mirroring the admission summary: the exam, who passed, and what is still open. */
+function ScholarshipSummary({ academicYear }) {
+  const [summary, setSummary] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setSummary(null);
+    getScholarshipSummary(academicYear)
+      .then((data) => {
+        if (!cancelled) {
+          setSummary(data);
+          setErrorMessage(null);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) setErrorMessage(error instanceof ApiError ? error.message : "Failed to load the scholarship summary.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [academicYear]);
+
+  if (errorMessage) {
+    return (
+      <p className="form-error" role="alert">
+        {errorMessage}
+      </p>
+    );
+  }
+
+  if (!summary) return <div className="dash-skeleton pipeline-skeleton" aria-busy="true" aria-label="Loading scholarship summary" />;
+
+  return (
+    <section className="dash-panel pipeline" aria-labelledby="scholarship-summary-title">
+      <div className="dash-panel-head">
+        <h2 id="scholarship-summary-title" className="dash-panel-title">
+          Scholarship summary
+        </h2>
+        <span className="pipeline-year-note">{academicYear ? `Academic year ${academicYear}` : "All academic years"}</span>
+      </div>
+      <dl className="pipeline-figures" style={{ "--figure-count": SCHOLARSHIP_FIGURES.length }}>
+        {SCHOLARSHIP_FIGURES.map((figure) => (
+          <div key={figure.key}>
+            <dt>{figure.label}</dt>
+            <dd>{summary[figure.key].toLocaleString()}</dd>
+          </div>
+        ))}
+      </dl>
     </section>
   );
 }
@@ -475,6 +537,7 @@ export default function AdminDashboardPage() {
       )}
 
       {workspace === "admission" && <AdmissionPipeline academicYear={academicYear} />}
+      {workspace === "scholarship" && <ScholarshipSummary academicYear={academicYear} />}
 
       <ShortcutFab />
     </AppLayout>

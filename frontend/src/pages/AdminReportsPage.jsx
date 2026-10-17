@@ -23,25 +23,32 @@ import BarChart from "../components/ui/BarChart.jsx";
 import TrendChart from "../components/ui/TrendChart.jsx";
 import ApplicantStatusReport from "../components/ApplicantStatusReport.jsx";
 import ScholarshipPipelineReport from "../components/ScholarshipPipelineReport.jsx";
+import { AdmissionListReport, AdmissionPerLevelReport, AdmissionResultsReport } from "../components/AdmissionReports.jsx";
+import { ScholarshipGranteesReport, ScholarshipQualifiedReport } from "../components/ScholarshipReports.jsx";
 import "./AdminReportsPage.css";
 
-// Two report groups. Trends belong to Admission: the weekly trend and the
-// funnel are about admission intake, so they sit with the other admission reports.
+// Two report groups, four reports each. The reports that came before this
+// layout stay reachable under "More reports" so no existing figure is lost.
 const CATEGORIES = ["Admission", "Scholarship"];
 
 const REPORTS = [
-  { key: "applicantStatus", category: "Admission", label: "Results & Applicant Status" },
-  { key: "enrollmentSummary", category: "Admission", label: "Summary of Enrollment" },
-  { key: "sectionFiles", category: "Admission", label: "File per Section" },
-  { key: "statusDistribution", category: "Admission", label: "Applicant Status Distribution" },
-  { key: "applicationTrend", category: "Admission", label: "Applications per Week" },
-  { key: "admissionFunnel", category: "Admission", label: "Funnel / Drop-off" },
-  { key: "scholarshipApplicants", category: "Scholarship", label: "Scholarship Applications" },
-  { key: "scholarshipPipeline", category: "Scholarship", label: "Exam, Result & Grantees" },
-  { key: "scholarshipQualification", category: "Scholarship", label: "Qualified Applicants" },
-  { key: "scholarshipResults", category: "Scholarship", label: "Approved Scholars" },
-  { key: "scholarshipSlots", category: "Scholarship", label: "Scholarship Slots" },
-  { key: "scholarshipFunnel", category: "Scholarship", label: "Funnel / Drop-off" },
+  { key: "admissionList", category: "Admission", label: "Admission List" },
+  { key: "admissionPerLevel", category: "Admission", label: "Admission per Level" },
+  { key: "admissionResults", category: "Admission", label: "Admission Results" },
+  { key: "applicantStatus", category: "Admission", label: "Applicant Status" },
+  { key: "enrollmentSummary", category: "Admission", label: "Summary of Enrollment", more: true },
+  { key: "sectionFiles", category: "Admission", label: "File per Section", more: true },
+  { key: "statusDistribution", category: "Admission", label: "Applicant Status Distribution", more: true },
+  { key: "applicationTrend", category: "Admission", label: "Applications per Week", more: true },
+  { key: "admissionFunnel", category: "Admission", label: "Funnel / Drop-off", more: true },
+  { key: "scholarshipApplicants", category: "Scholarship", label: "Scholarship Applicants List" },
+  { key: "scholarshipQualified", category: "Scholarship", label: "Qualified Applicants" },
+  { key: "scholarshipGrantees", category: "Scholarship", label: "Scholarship Grantees" },
+  { key: "scholarshipResults", category: "Scholarship", label: "Scholarship Results" },
+  { key: "scholarshipPipeline", category: "Scholarship", label: "Exam, Result & Grantees", more: true },
+  { key: "scholarshipQualification", category: "Scholarship", label: "Eligibility Screening", more: true },
+  { key: "scholarshipSlots", category: "Scholarship", label: "Scholarship Slots", more: true },
+  { key: "scholarshipFunnel", category: "Scholarship", label: "Funnel / Drop-off", more: true },
 ];
 
 const TREND_SERIES = [{ key: "admission", label: "Admission", color: "var(--color-primary)" }];
@@ -716,6 +723,11 @@ function StatusDistributionReport() {
 }
 
 const REPORT_COMPONENTS = {
+  admissionList: AdmissionListReport,
+  admissionPerLevel: AdmissionPerLevelReport,
+  admissionResults: AdmissionResultsReport,
+  scholarshipQualified: ScholarshipQualifiedReport,
+  scholarshipGrantees: ScholarshipGranteesReport,
   enrollmentSummary: EnrollmentSummaryReport,
   sectionFiles: SectionFilesReport,
   scholarshipApplicants: ScholarshipApplicantListReport,
@@ -732,12 +744,12 @@ const REPORT_COMPONENTS = {
 
 export default function AdminReportsPage() {
   const [category, setCategory] = useState("Admission");
-  const [activeReport, setActiveReport] = useState("applicantStatus");
+  const [activeReport, setActiveReport] = useState("admissionList");
   const ActiveComponent = REPORT_COMPONENTS[activeReport];
 
   function chooseCategory(next) {
     setCategory(next);
-    setActiveReport(REPORTS.find((report) => report.category === next).key);
+    setActiveReport(REPORTS.find((report) => report.category === next && !report.more).key);
   }
 
   return (
@@ -763,18 +775,26 @@ export default function AdminReportsPage() {
       </div>
 
       <nav className="admin-reports-nav" aria-label={`${category} reports`}>
-        <div className="admin-reports-nav-buttons">
-          {REPORTS.filter((report) => report.category === category).map((report) => (
-            <button
-              key={report.key}
-              type="button"
-              className={report.key === activeReport ? "report-tab report-tab-active" : "report-tab"}
-              onClick={() => setActiveReport(report.key)}
-            >
-              {report.label}
-            </button>
-          ))}
-        </div>
+        {[
+          { label: null, reports: REPORTS.filter((report) => report.category === category && !report.more) },
+          { label: "More reports", reports: REPORTS.filter((report) => report.category === category && report.more) },
+        ].map((group) => (
+          <div key={group.label ?? "main"} className="admin-reports-nav-group">
+            {group.label ? <span className="admin-reports-nav-label">{group.label}</span> : null}
+            <div className="admin-reports-nav-buttons">
+              {group.reports.map((report) => (
+                <button
+                  key={report.key}
+                  type="button"
+                  className={report.key === activeReport ? "report-tab report-tab-active" : "report-tab"}
+                  onClick={() => setActiveReport(report.key)}
+                >
+                  {report.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
       </nav>
 
       <ActiveComponent />

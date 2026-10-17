@@ -90,7 +90,7 @@ export default function ApplicantStatusReport() {
   return (
     <>
       <Card>
-        <h2 className="status-report-title">Admission results & applicant status</h2>
+        <h2 className="status-report-title">Applicant Status</h2>
         <p className="status-report-sub">
           Where each applicant stands in the entrance exam, the interview and enrollment. Use the filters to narrow it to a date range,
           academic year, level or program.

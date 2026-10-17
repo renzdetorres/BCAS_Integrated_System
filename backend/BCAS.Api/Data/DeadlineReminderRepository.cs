@@ -15,13 +15,13 @@ public class DeadlineReminderRepository : IDeadlineReminderRepository
         _connectionFactory = connectionFactory;
     }
 
-    public async Task<IReadOnlyList<(Guid UserId, string FirstName, string Email, int ExamScheduleId, DateOnly ExamDate, TimeOnly ExamTime, string Venue)>>
+    public async Task<IReadOnlyList<(Guid UserId, string FirstName, string Email, int ExamScheduleId, DateOnly ExamDate, TimeOnly ExamTime)>>
         GetExamsOnDateAsync(DateOnly examDate, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
-SELECT u.UserId, u.FirstName, u.Email, sch.ExamScheduleId, sch.ExamDate, sch.ExamTime, sch.Venue
+SELECT u.UserId, u.FirstName, u.Email, sch.ExamScheduleId, sch.ExamDate, sch.ExamTime
 FROM dbo.ExamScheduleSelections sel
 JOIN dbo.ExamSchedules sch ON sch.ExamScheduleId = sel.ExamScheduleId
 JOIN dbo.Users u ON u.UserId = sel.UserId
@@ -32,7 +32,7 @@ WHERE sch.ExamDate = @ExamDate;";
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
 
-        var results = new List<(Guid, string, string, int, DateOnly, TimeOnly, string)>();
+        var results = new List<(Guid, string, string, int, DateOnly, TimeOnly)>();
         while (await reader.ReadAsync(cancellationToken))
         {
             results.Add((
@@ -41,8 +41,7 @@ WHERE sch.ExamDate = @ExamDate;";
                 reader.GetString(reader.GetOrdinal("Email")),
                 reader.GetInt32(reader.GetOrdinal("ExamScheduleId")),
                 DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("ExamDate"))),
-                TimeOnly.FromTimeSpan(reader.GetTimeSpan(reader.GetOrdinal("ExamTime"))),
-                reader.GetString(reader.GetOrdinal("Venue"))));
+                TimeOnly.FromTimeSpan(reader.GetTimeSpan(reader.GetOrdinal("ExamTime")))));
         }
 
         return results;

@@ -9,7 +9,6 @@ public class AdminExamPermitListItemResponse
     public string DayType { get; set; } = string.Empty;
     public DateOnly ExamDate { get; set; }
     public TimeOnly ExamTime { get; set; }
-    public string Venue { get; set; } = string.Empty;
     public bool DocumentsVerified { get; set; }
     public bool IsReleased { get; set; }
     public DateTime? ReleasedAt { get; set; }

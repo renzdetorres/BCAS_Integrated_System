@@ -23,8 +23,10 @@ SELECT sch.ExamScheduleId, sch.DayType, sch.ExamDate, sch.ExamTime, sch.Venue, s
        (SELECT COUNT(*) FROM dbo.ExamScheduleSelections sel
         WHERE sel.ExamScheduleId = sch.ExamScheduleId AND sel.ExamStatus IN (N'Scheduled', N'ExamDone')) AS Taken
 FROM dbo.ExamSchedules sch
-WHERE (sch.DayType = N'Saturday' OR (sch.DayType = N'Weekday' AND sch.IsOffered = 1))
-  AND sch.ExamDate >= CAST(SWITCHOFFSET(SYSDATETIMEOFFSET(), N'+08:00') AS DATE)
+WHERE sch.IsOffered = 1
+  AND (sch.ExamDate > CAST(SWITCHOFFSET(SYSDATETIMEOFFSET(), N'+08:00') AS DATE)
+       OR (sch.ExamDate = CAST(SWITCHOFFSET(SYSDATETIMEOFFSET(), N'+08:00') AS DATE)
+           AND sch.ExamTime > CAST(SWITCHOFFSET(SYSDATETIMEOFFSET(), N'+08:00') AS TIME)))
 ORDER BY sch.ExamDate ASC, sch.ExamTime ASC;";
 
         await using var command = new SqlCommand(sql, connection);
@@ -118,8 +120,9 @@ WHEN NOT MATCHED THEN
     {
         // UPDLOCK on the slot row serializes two applicants taking the last seat.
         const string sql = @"
-SELECT DayType, IsOffered, Capacity, ExamDate,
+SELECT IsOffered, Capacity, ExamDate, ExamTime,
        CAST(SWITCHOFFSET(SYSDATETIMEOFFSET(), N'+08:00') AS DATE) AS Today,
+       CAST(SWITCHOFFSET(SYSDATETIMEOFFSET(), N'+08:00') AS TIME) AS NowTime,
        (SELECT COUNT(*) FROM dbo.ExamScheduleSelections sel
         WHERE sel.ExamScheduleId = @ExamScheduleId AND sel.UserId <> @UserId AND sel.ExamStatus IN (N'Scheduled', N'ExamDone')) AS Taken
 FROM dbo.ExamSchedules WITH (UPDLOCK, ROWLOCK)
@@ -134,16 +137,18 @@ WHERE ExamScheduleId = @ExamScheduleId;";
             throw new ExamScheduleNotFoundException(examScheduleId);
         }
 
-        var dayType = reader.GetString(reader.GetOrdinal("DayType"));
-        var isOffered = reader.GetBoolean(reader.GetOrdinal("IsOffered"));
-        if (dayType == "Weekday" && !isOffered)
+        if (!reader.GetBoolean(reader.GetOrdinal("IsOffered")))
         {
-            throw new ExamScheduleNotAvailableException("This weekday schedule is not currently being offered.");
+            throw new ExamScheduleNotAvailableException("This exam date is not being offered. Choose an available date.");
         }
 
-        if (reader.GetDateTime(reader.GetOrdinal("ExamDate")) < reader.GetDateTime(reader.GetOrdinal("Today")))
+        var examDate = reader.GetDateTime(reader.GetOrdinal("ExamDate"));
+        var today = reader.GetDateTime(reader.GetOrdinal("Today"));
+        var hasStarted = examDate < today
+            || (examDate == today && reader.GetTimeSpan(reader.GetOrdinal("ExamTime")) <= reader.GetTimeSpan(reader.GetOrdinal("NowTime")));
+        if (hasStarted)
         {
-            throw new ExamScheduleNotAvailableException("This exam date has already passed. Choose a later slot.");
+            throw new ExamScheduleNotAvailableException("This exam time has already passed. Choose a later slot.");
         }
 
         if (!reader.IsDBNull(reader.GetOrdinal("Capacity")) && reader.GetInt32(reader.GetOrdinal("Taken")) >= reader.GetInt32(reader.GetOrdinal("Capacity")))
@@ -153,32 +158,174 @@ WHERE ExamScheduleId = @ExamScheduleId;";
     }
 
     public async Task<ExamSchedule> CreateAsync(
-        string dayType,
         DateOnly examDate,
         TimeOnly examTime,
-        string venue,
         bool isOffered,
         int? capacity,
         CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
+        // Venue is no longer part of an exam schedule, but the column is still NOT NULL
+        // in databases created before it was removed, so new slots store an empty one.
         const string sql = @"
 INSERT INTO dbo.ExamSchedules (DayType, ExamDate, ExamTime, Venue, IsOffered, Capacity)
 OUTPUT inserted.ExamScheduleId, inserted.DayType, inserted.ExamDate, inserted.ExamTime, inserted.Venue, inserted.IsOffered, inserted.Capacity
-VALUES (@DayType, @ExamDate, @ExamTime, @Venue, @IsOffered, @Capacity);";
+VALUES (@DayType, @ExamDate, @ExamTime, N'', @IsOffered, @Capacity);";
 
         await using var command = new SqlCommand(sql, connection);
-        command.Parameters.Add(new SqlParameter("@DayType", SqlDbType.NVarChar, 10) { Value = dayType });
+        command.Parameters.Add(new SqlParameter("@DayType", SqlDbType.NVarChar, 10) { Value = examDate.DayOfWeek == DayOfWeek.Saturday ? "Saturday" : "Weekday" });
         command.Parameters.Add(new SqlParameter("@ExamDate", SqlDbType.Date) { Value = examDate.ToDateTime(TimeOnly.MinValue) });
         command.Parameters.Add(new SqlParameter("@ExamTime", SqlDbType.Time) { Value = examTime.ToTimeSpan() });
-        command.Parameters.Add(new SqlParameter("@Venue", SqlDbType.NVarChar, 200) { Value = venue });
         command.Parameters.Add(new SqlParameter("@IsOffered", SqlDbType.Bit) { Value = isOffered });
         command.Parameters.Add(new SqlParameter("@Capacity", SqlDbType.Int) { Value = (object?)capacity ?? DBNull.Value });
 
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         await reader.ReadAsync(cancellationToken);
         return MapSchedule(reader);
+    }
+
+    public async Task<bool> SlotExistsAsync(DateOnly examDate, TimeOnly examTime, int? exceptExamScheduleId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+SELECT COUNT(*) FROM dbo.ExamSchedules
+WHERE ExamDate = @ExamDate AND ExamTime = @ExamTime AND (@Except IS NULL OR ExamScheduleId <> @Except);";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@ExamDate", SqlDbType.Date) { Value = examDate.ToDateTime(TimeOnly.MinValue) });
+        command.Parameters.Add(new SqlParameter("@ExamTime", SqlDbType.Time) { Value = examTime.ToTimeSpan() });
+        command.Parameters.Add(new SqlParameter("@Except", SqlDbType.Int) { Value = (object?)exceptExamScheduleId ?? DBNull.Value });
+        return (int)(await command.ExecuteScalarAsync(cancellationToken))! > 0;
+    }
+
+    public async Task<int> SetOfferedForDateAsync(DateOnly examDate, bool isOffered, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = "UPDATE dbo.ExamSchedules SET IsOffered = @IsOffered WHERE ExamDate = @ExamDate;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@IsOffered", SqlDbType.Bit) { Value = isOffered });
+        command.Parameters.Add(new SqlParameter("@ExamDate", SqlDbType.Date) { Value = examDate.ToDateTime(TimeOnly.MinValue) });
+        return await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    public async Task<ExamSchedule?> UpdateAsync(int examScheduleId, TimeOnly examTime, int? capacity, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+        var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            // Locking the slot row keeps a booking from slipping in between the seat check and the update.
+            const string takenSql = @"
+SELECT (SELECT COUNT(*) FROM dbo.ExamScheduleSelections sel
+        WHERE sel.ExamScheduleId = @ExamScheduleId AND sel.ExamStatus IN (N'Scheduled', N'ExamDone'))
+FROM dbo.ExamSchedules WITH (UPDLOCK, ROWLOCK)
+WHERE ExamScheduleId = @ExamScheduleId;";
+
+            int? taken;
+            await using (var takenCommand = new SqlCommand(takenSql, connection, transaction))
+            {
+                takenCommand.Parameters.Add(new SqlParameter("@ExamScheduleId", SqlDbType.Int) { Value = examScheduleId });
+                var scalar = await takenCommand.ExecuteScalarAsync(cancellationToken);
+                taken = scalar is null or DBNull ? null : (int)scalar;
+            }
+
+            if (taken is null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return null;
+            }
+
+            if (capacity is not null && capacity < taken)
+            {
+                throw new ExamScheduleConflictException(
+                    $"{taken} applicant{(taken == 1 ? " has" : "s have")} already booked this slot, so it can't hold fewer than {taken}.");
+            }
+
+            const string updateSql = @"
+UPDATE dbo.ExamSchedules
+SET ExamTime = @ExamTime, Capacity = @Capacity
+OUTPUT inserted.ExamScheduleId, inserted.DayType, inserted.ExamDate, inserted.ExamTime, inserted.Venue, inserted.IsOffered, inserted.Capacity
+WHERE ExamScheduleId = @ExamScheduleId;";
+
+            ExamSchedule? updated;
+            await using (var command = new SqlCommand(updateSql, connection, transaction))
+            {
+                command.Parameters.Add(new SqlParameter("@ExamTime", SqlDbType.Time) { Value = examTime.ToTimeSpan() });
+                command.Parameters.Add(new SqlParameter("@Capacity", SqlDbType.Int) { Value = (object?)capacity ?? DBNull.Value });
+                command.Parameters.Add(new SqlParameter("@ExamScheduleId", SqlDbType.Int) { Value = examScheduleId });
+                await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+                updated = await reader.ReadAsync(cancellationToken) ? MapSchedule(reader) : null;
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return updated;
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+        finally
+        {
+            await transaction.DisposeAsync();
+        }
+    }
+
+    public async Task<bool> DeleteAsync(int examScheduleId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+        var transaction = (SqlTransaction)await connection.BeginTransactionAsync(cancellationToken);
+
+        try
+        {
+            const string countSql = @"
+SELECT (SELECT COUNT(*) FROM dbo.ExamScheduleSelections sel WHERE sel.ExamScheduleId = @ExamScheduleId)
+FROM dbo.ExamSchedules WITH (UPDLOCK, ROWLOCK)
+WHERE ExamScheduleId = @ExamScheduleId;";
+
+            int? booked;
+            await using (var countCommand = new SqlCommand(countSql, connection, transaction))
+            {
+                countCommand.Parameters.Add(new SqlParameter("@ExamScheduleId", SqlDbType.Int) { Value = examScheduleId });
+                var scalar = await countCommand.ExecuteScalarAsync(cancellationToken);
+                booked = scalar is null or DBNull ? null : (int)scalar;
+            }
+
+            if (booked is null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return false;
+            }
+
+            if (booked > 0)
+            {
+                throw new ExamScheduleConflictException(
+                    $"{booked} applicant{(booked == 1 ? " has" : "s have")} booked this slot. Move them to another slot first, or mark the date as not offered.");
+            }
+
+            await using (var deleteCommand = new SqlCommand("DELETE FROM dbo.ExamSchedules WHERE ExamScheduleId = @ExamScheduleId;", connection, transaction))
+            {
+                deleteCommand.Parameters.Add(new SqlParameter("@ExamScheduleId", SqlDbType.Int) { Value = examScheduleId });
+                await deleteCommand.ExecuteNonQueryAsync(cancellationToken);
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+            return true;
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+        finally
+        {
+            await transaction.DisposeAsync();
+        }
     }
 
     public async Task<ExamSchedule?> SetOfferedAsync(int examScheduleId, bool isOffered, CancellationToken cancellationToken = default)
@@ -250,7 +397,6 @@ ORDER BY ExamDate ASC, ExamTime ASC;";
                     DayType = schedule.DayType,
                     ExamDate = schedule.ExamDate,
                     ExamTime = schedule.ExamTime,
-                    Venue = schedule.Venue,
                     IsOffered = schedule.IsOffered,
                     Capacity = schedule.Capacity,
                 };
@@ -259,7 +405,7 @@ ORDER BY ExamDate ASC, ExamTime ASC;";
         }
 
         const string applicantsSql = @"
-SELECT sel.ExamScheduleId, sel.UserId, u.FirstName, u.LastName, u.Email, sel.SelectedAt, sel.ExamStatus
+SELECT sel.ExamScheduleId, sel.UserId, u.FirstName, u.LastName, u.Email, sel.SelectedAt, sel.ExamStatus, sel.ExamType
 FROM dbo.ExamScheduleSelections sel
 JOIN dbo.Users u ON u.UserId = sel.UserId
 ORDER BY sel.SelectedAt ASC;";
@@ -282,6 +428,7 @@ ORDER BY sel.SelectedAt ASC;";
                     ApplicantEmail = reader.GetString(reader.GetOrdinal("Email")),
                     SelectedAt = reader.GetDateTime(reader.GetOrdinal("SelectedAt")),
                     ExamStatus = reader.GetString(reader.GetOrdinal("ExamStatus")),
+                    ExamType = reader.GetString(reader.GetOrdinal("ExamType")),
                 });
             }
         }

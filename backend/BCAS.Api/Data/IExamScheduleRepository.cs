@@ -4,7 +4,7 @@ namespace BCAS.Api.Data;
 
 public interface IExamScheduleRepository
 {
-    /// <summary>Saturday schedules (always) plus Weekday schedules currently offered, soonest first.</summary>
+    /// <summary>Offered slots that have not started yet (Philippine time), soonest first.</summary>
     Task<IReadOnlyList<ExamSchedule>> GetAvailableAsync(CancellationToken cancellationToken = default);
 
     Task<ExamScheduleSelection?> GetSelectionByUserIdAsync(Guid userId, CancellationToken cancellationToken = default);
@@ -12,26 +12,35 @@ public interface IExamScheduleRepository
     /// <summary>
     /// Records (or replaces) the applicant's confirmed exam schedule. Throws
     /// ExamScheduleNotFoundException if no such schedule exists, or
-    /// ExamScheduleNotAvailableException if it's a Weekday slot that isn't
-    /// currently offered.
+    /// ExamScheduleNotAvailableException if the slot is not offered, has already
+    /// started, or is full.
     /// </summary>
     Task<ExamScheduleSelection> SelectAsync(Guid userId, int examScheduleId, string examType, CancellationToken cancellationToken = default);
 
-    /// <summary>Admin-only: creates a new Saturday or Weekday exam schedule.</summary>
+    /// <summary>Admin-only: adds a time slot on a date (the day type follows the date).</summary>
     Task<ExamSchedule> CreateAsync(
-        string dayType,
         DateOnly examDate,
         TimeOnly examTime,
-        string venue,
         bool isOffered,
         int? capacity,
         CancellationToken cancellationToken = default);
 
+    /// <summary>Admin-only: whether the date already has a slot at this time (ignoring one slot, when editing it).</summary>
+    Task<bool> SlotExistsAsync(DateOnly examDate, TimeOnly examTime, int? exceptExamScheduleId, CancellationToken cancellationToken = default);
+
+    /// <summary>Admin-only: offers or withdraws every slot on a date. Returns how many slots there are on it.</summary>
+    Task<int> SetOfferedForDateAsync(DateOnly examDate, bool isOffered, CancellationToken cancellationToken = default);
+
     /// <summary>
-    /// Admin-only: turns a schedule's IsOffered flag on or off (relevant for
-    /// Weekday rows - Saturday rows are always selectable regardless).
-    /// Returns the updated schedule, or null if no schedule has that id.
+    /// Admin-only: changes a slot's time and seats. Null if there is no such slot; throws
+    /// ExamScheduleConflictException if the seats would be fewer than the applicants already booked.
     /// </summary>
+    Task<ExamSchedule?> UpdateAsync(int examScheduleId, TimeOnly examTime, int? capacity, CancellationToken cancellationToken = default);
+
+    /// <summary>Admin-only: removes a slot. False if there is none; throws ExamScheduleConflictException if applicants booked it.</summary>
+    Task<bool> DeleteAsync(int examScheduleId, CancellationToken cancellationToken = default);
+
+    /// <summary>Admin-only: offers or withdraws one slot. Null if no schedule has that id.</summary>
     Task<ExamSchedule?> SetOfferedAsync(int examScheduleId, bool isOffered, CancellationToken cancellationToken = default);
 
     /// <summary>Admin-only: sets how many seats a slot has (null = no limit). Null result if the schedule does not exist.</summary>

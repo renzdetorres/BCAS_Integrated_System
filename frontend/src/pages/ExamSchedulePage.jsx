@@ -164,7 +164,6 @@ export default function ExamSchedulePage() {
                           onChange={() => setSlotId(slot.examScheduleId)}
                         />
                         <span className="exam-slot-time">{formatTime(slot.examTime)}</span>
-                        <span className="exam-slot-venue">{slot.venue}</span>
                         <span className="exam-slot-seats">
                           {slot.isFull ? "Full" : slot.seatsLeft == null ? "Open" : `${slot.seatsLeft} seat${slot.seatsLeft === 1 ? "" : "s"} left`}
                         </span>

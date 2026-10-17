@@ -21,7 +21,6 @@ export default function ExamSlip({ permit, released = true }) {
     ["Level applying for", level],
     ["Date", formatCalendarDate(permit.examDate)],
     ["Time", formatTime(permit.examTime)],
-    ["Venue", permit.venue],
     ["Exam fee", permit.examFee ? formatPeso(permit.examFee) : released ? "" : "Set at release"],
     ["Invoice (SI) no.", permit.invoiceNumber || (released ? "" : "Entered at release")],
   ];

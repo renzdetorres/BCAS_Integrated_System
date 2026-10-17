@@ -56,7 +56,7 @@ public class DeadlineReminderService : IDeadlineReminderService
                 }
 
                 await _notificationDispatchService.NotifyExamReminderAsync(
-                    exam.UserId, exam.Email, exam.FirstName, exam.ExamDate, exam.ExamTime, exam.Venue, cancellationToken);
+                    exam.UserId, exam.Email, exam.FirstName, exam.ExamDate, exam.ExamTime, cancellationToken);
                 await _repository.RecordSentAsync(DeadlineReminderConstants.ExamReminderType, key, cancellationToken);
                 sentCount++;
             }
@@ -193,7 +193,7 @@ public class DeadlineReminderService : IDeadlineReminderService
     }
 
     private static string BuildExamReminderKey(
-        (Guid UserId, string FirstName, string Email, int ExamScheduleId, DateOnly ExamDate, TimeOnly ExamTime, string Venue) exam) =>
+        (Guid UserId, string FirstName, string Email, int ExamScheduleId, DateOnly ExamDate, TimeOnly ExamTime) exam) =>
         $"{exam.UserId}:{exam.ExamScheduleId}";
 
     private static string BuildMissingDocumentKey((Guid UserId, string FirstName, string Email, string DocumentType) item) =>

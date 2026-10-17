@@ -13,7 +13,6 @@ public static class ExamPermitMappingExtensions
         DayType = selection.DayType,
         ExamDate = selection.ExamDate,
         ExamTime = selection.ExamTime,
-        Venue = selection.Venue,
         // Guaranteed non-null - the caller only reaches this once the permit is released.
         IssuedAt = selection.PermitReleasedAt!.Value,
         ApplicantName = selection.ApplicantName,

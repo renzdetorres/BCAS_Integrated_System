@@ -15,7 +15,7 @@ import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import DataTable, { PersonCell, RowAction } from "../components/ui/DataTable.jsx";
 import Modal from "../components/ui/Modal.jsx";
-import StatusBadge from "../components/ui/StatusBadge.jsx";
+import StatusBadge, { statusLabel } from "../components/ui/StatusBadge.jsx";
 import "./StaffPaymentsPage.css";
 import "./ScholarshipPipelinePage.css";
 
@@ -272,6 +272,9 @@ export default function ScholarshipPipelinePage() {
   const [summary, setSummary] = useState(null);
   const [rows, setRows] = useState([]);
   const [filter, setFilter] = useState("all");
+  const [levelFilter, setLevelFilter] = useState("");
+  const [programFilter, setProgramFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
   const [active, setActive] = useState(null);
@@ -301,7 +304,17 @@ export default function ScholarshipPipelinePage() {
     qualified: (r) => r.qualifiedForInterview,
     grantees: (r) => r.status === "Approved",
   };
-  const shown = rows.filter(filters[filter]);
+  const shown = rows.filter(
+    (r) =>
+      filters[filter](r) &&
+      (!levelFilter || r.level === levelFilter) &&
+      (!programFilter || r.department === programFilter) &&
+      (!statusFilter || r.status === statusFilter),
+  );
+  const distinct = (pick) => [...new Set(rows.map(pick).filter(Boolean))].sort();
+  const levelOptions = [...new Set([...SCHOLARSHIP_LEVELS, ...distinct((r) => r.level)])].map((value) => ({ value, label: value }));
+  const programOptions = distinct((r) => r.department).map((value) => ({ value, label: value }));
+  const statusOptions = distinct((r) => r.status).map((value) => ({ value, label: statusLabel(value) }));
   // Only the cards that name a list filter it; the rest are plain figures.
   const card = (label, value, key) => ({ label, value: value ?? 0, ...(key ? { onClick: () => setFilter(key), active: filter === key } : {}) });
 
@@ -322,7 +335,7 @@ export default function ScholarshipPipelinePage() {
     { key: "status", header: "Status", accessor: (row) => row.status, sortable: true, render: (row) => <StatusBadge status={row.status} adminContext /> },
     {
       key: "exam",
-      header: "Exam",
+      header: "Result",
       accessor: (row) => row.examStatus,
       sortable: true,
       render: (row) => <StatusBadge status={EXAM_TONE[row.examStatus] ?? "Pending"} label={row.examStatus} />,
@@ -339,7 +352,6 @@ export default function ScholarshipPipelinePage() {
     {
       key: "action",
       header: "Action",
-      align: "right",
       searchable: false,
       render: (row) => {
         if (!canRecord) return null;
@@ -375,16 +387,20 @@ export default function ScholarshipPipelinePage() {
         errorMessage={errorMessage}
         emptyMessage="No scholarship applicants match this filter."
         searchPlaceholder="Search by applicant or scholarship"
+        filters={[
+          { key: "level", label: "All levels", value: levelFilter, onChange: setLevelFilter, options: levelOptions },
+          { key: "program", label: "All programs", value: programFilter, onChange: setProgramFilter, options: programOptions },
+          { key: "status", label: "All statuses", value: statusFilter, onChange: setStatusFilter, options: statusOptions },
+        ]}
         summary={[
           card("Total applicants", summary?.totalApplicants, "all"),
-          card("Applications", summary?.applied),
           card("Took the exam", summary?.tookExam),
           card("Passed", summary?.passed),
           card("Pending", summary?.pending, "pending"),
           card("Qualified for interview / essay", summary?.qualifiedForInterview, "qualified"),
           card("Grantees", summary?.grantees, "grantees"),
         ]}
-        summaryNote={filter === "all" ? "Select Pending, Qualified or Grantees to filter the list." : "Showing a filtered list. Select Total applicants to see everyone."}
+        summaryNote={filter === "all" ? "Select Pending, Qualified or Grantees to filter the list." : "Select Total applicants to see everyone."}
       />
 
       <Grantees />

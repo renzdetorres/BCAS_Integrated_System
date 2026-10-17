@@ -191,6 +191,7 @@ function DetailModal({ row, onClose }) {
 export default function InterviewsPage() {
   const [rows, setRows] = useState([]);
   const [filter, setFilter] = useState("NeedsSchedule");
+  const [appliedFilter, setAppliedFilter] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
   const [active, setActive] = useState(null);
@@ -217,7 +218,8 @@ export default function InterviewsPage() {
     load();
   }, [load]);
 
-  const shown = rows.filter((row) => !filter || row.stage === filter);
+  const shown = rows.filter((row) => (!filter || row.stage === filter) && (!appliedFilter || row.courseAppliedFor === appliedFilter));
+  const appliedOptions = [...new Set(rows.map((row) => row.courseAppliedFor).filter(Boolean))].sort().map((value) => ({ value, label: value }));
   const count = (stage) => rows.filter((row) => row.stage === stage).length;
 
   const columns = [
@@ -280,6 +282,21 @@ export default function InterviewsPage() {
         errorMessage={errorMessage}
         emptyMessage="No applicants in this stage."
         searchPlaceholder="Search by applicant or course"
+        filters={[
+          {
+            key: "result",
+            label: "All results",
+            value: filter,
+            onChange: setFilter,
+            options: [
+              { value: "NeedsSchedule", label: STAGE_LABEL.NeedsSchedule },
+              { value: "Scheduled", label: STAGE_LABEL.Scheduled },
+              { value: "Passed", label: STAGE_LABEL.Passed },
+              { value: "Failed", label: STAGE_LABEL.Failed },
+            ],
+          },
+          { key: "appliedFor", label: "All applied for", value: appliedFilter, onChange: setAppliedFilter, options: appliedOptions },
+        ]}
         summary={[
           { label: "Needs schedule", value: count("NeedsSchedule"), tone: "amber", onClick: () => setFilter("NeedsSchedule"), active: filter === "NeedsSchedule" },
           { label: "Scheduled", value: count("Scheduled"), tone: "amber", onClick: () => setFilter("Scheduled"), active: filter === "Scheduled" },

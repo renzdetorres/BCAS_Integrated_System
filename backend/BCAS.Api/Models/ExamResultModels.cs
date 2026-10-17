@@ -41,17 +41,28 @@ public class ExamResultQueueItem
     public DateTime? RecordedAt { get; set; }
 }
 
+/// <summary>
+/// The raw score staff enter. The result is worked out from it (see ExamScoring),
+/// never chosen by hand, so Admin and Support Staff always apply the same rule.
+/// </summary>
 public class RecordExamResultRequest
 {
-    /// <summary>Passed, Failed or Retake.</summary>
     [Required]
-    public string? Result { get; set; }
-
-    [Range(0, 100)]
+    [Range(0, 999)]
     public decimal? Score { get; set; }
 
     [StringLength(500)]
     public string? Remarks { get; set; }
+}
+
+/// <summary>The scoring rules the Admin has set, so staff see what a score will mean before saving it.</summary>
+public class ExamScoringRulesResponse
+{
+    public int TotalItems { get; set; }
+    public decimal PassingScore { get; set; }
+
+    /// <summary>Retakes allowed after the first attempt; a miss beyond them is Failed.</summary>
+    public int MaxRetakes { get; set; }
 }
 
 /// <summary>What the applicant's Exam Result page shows.</summary>

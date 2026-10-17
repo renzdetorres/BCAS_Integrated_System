@@ -20,8 +20,8 @@ public class ExamSchedulesController : ControllerBase
     }
 
     /// <summary>
-    /// Selectable entrance-exam schedules: Saturday slots are always
-    /// included, Weekday slots only when currently offered.
+    /// Selectable entrance-exam time slots: the ones the Admin has offered that
+    /// have not started yet (Philippine time).
     /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<ExamScheduleResponse>), StatusCodes.Status200OK)]
@@ -43,7 +43,7 @@ public class ExamSchedulesController : ControllerBase
 
     /// <summary>
     /// Selects (or changes) the signed-in applicant's entrance-exam
-    /// schedule. Weekday slots that aren't currently offered are rejected.
+    /// schedule. A slot that is not offered, has started, or is full is rejected.
     /// </summary>
     [HttpPut("selection")]
     [ProducesResponseType(typeof(ExamScheduleSelectionResponse), StatusCodes.Status200OK)]

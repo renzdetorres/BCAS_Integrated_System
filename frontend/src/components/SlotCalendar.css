@@ -129,3 +129,53 @@
   background: var(--color-status-gray-bg);
   border: 1px solid var(--color-status-gray-text);
 }
+
+/* Month and arrows share one row, like a booking widget. */
+.slot-calendar-nav-group {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.slot-calendar-zone {
+  margin: var(--space-2) 0 0;
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.slot-calendar-legend {
+  flex-wrap: wrap;
+  row-gap: var(--space-1);
+}
+
+/* Today: a ring, so it reads alongside any offered/full/closed fill. */
+.slot-calendar-day-today {
+  border-color: var(--color-text-tertiary);
+}
+
+/* Admin days nobody offered: hatched grey, still pickable to turn on. */
+.slot-calendar-day-closed {
+  background: repeating-linear-gradient(135deg, var(--color-surface-subtle) 0 5px, var(--color-status-gray-bg) 5px 10px);
+  color: var(--color-text-secondary);
+  opacity: 1;
+}
+
+.slot-calendar-day-past:not(.slot-calendar-day-selected) {
+  opacity: 0.5;
+}
+
+.slot-calendar-key-closed {
+  margin-left: var(--space-3);
+  background: var(--color-status-gray-bg);
+  border: 1px dashed var(--color-text-tertiary);
+}
+
+.slot-calendar-day-selected.slot-calendar-day-today {
+  border-color: var(--color-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slot-calendar-day,
+  .slot-calendar-nav {
+    transition: none;
+  }
+}

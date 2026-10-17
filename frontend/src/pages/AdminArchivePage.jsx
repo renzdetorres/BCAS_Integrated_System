@@ -139,7 +139,7 @@ export default function AdminArchivePage() {
         ]}
       />
 
-      <ApplicationDetailModal application={viewing} onClose={() => setViewing(null)} />
+      <ApplicationDetailModal application={viewing} onClose={() => setViewing(null)} tracker />
     </AppLayout>
   );
 }

@@ -48,7 +48,7 @@
   display: grid;
   grid-template-columns: var(--edit-w) var(--status-w);
   gap: 8px;
-  justify-content: end;
+  justify-content: center;
 }
 
 .account-actions-3 {

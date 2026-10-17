@@ -49,3 +49,28 @@ export function formatFileSize(bytes) {
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
+
+/** "October 20, 2026" - from a date-only "yyyy-mm-dd" string, read as a calendar date (no timezone shift). */
+export function formatLongDate(isoDate) {
+  if (!isoDate) return "";
+  return new Date(`${isoDate}T00:00:00`).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+/** "Wednesday, October 21" - the heading of a picked calendar day. */
+export function formatDayHeading(isoDate) {
+  if (!isoDate) return "";
+  return new Date(`${isoDate}T00:00:00`).toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+/** Today's date as "yyyy-mm-dd" in Philippine time, whatever the browser's own zone. */
+export function manilaToday() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila" }).format(new Date());
+}

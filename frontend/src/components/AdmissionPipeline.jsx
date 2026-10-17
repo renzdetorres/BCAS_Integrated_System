@@ -10,11 +10,12 @@ import "./AdmissionPipeline.css";
 
 const FIGURES = [
   { key: "totalApplicants", label: "Total applicants" },
+  { key: "tookExam", label: "Took the exam" },
+  { key: "passed", label: "Passed the exam" },
   { key: "pending", label: "Pending", note: "Submitted, not yet reviewed" },
   { key: "underReview", label: "Under review" },
   { key: "forExam", label: "For entrance exam" },
   { key: "forInterview", label: "For interview" },
-  { key: "passed", label: "Exam passed" },
   { key: "failed", label: "Exam failed" },
   { key: "retake", label: "Retake" },
   { key: "enrolled", label: "Enrolled" },
@@ -88,7 +89,7 @@ export default function AdmissionPipeline({ academicYear = "" }) {
         <span className="pipeline-year-note">{academicYear ? `Academic year ${academicYear}` : "All academic years"}</span>
       </div>
 
-      <dl className="pipeline-figures">
+      <dl className="pipeline-figures" style={{ "--figure-count": FIGURES.length }}>
         {FIGURES.map((figure) => (
           <div key={figure.key}>
             <dt>{figure.label}</dt>

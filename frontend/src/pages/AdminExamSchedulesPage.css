@@ -1,26 +1,3 @@
-.exam-daytype {
-  display: inline-flex;
-  padding: 2px 9px;
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.exam-daytype-saturday {
-  background: var(--color-primary-tint-strong);
-  color: var(--color-primary);
-}
-
-.exam-daytype-weekday {
-  background: var(--color-status-gray-bg);
-  color: var(--color-status-gray-text);
-}
-
-.exam-always {
-  font-size: 13px;
-  color: var(--color-text-tertiary);
-}
-
 /* Offered is a switch, not a button that says its own state: the state and
    the control read as one thing. */
 .exam-switch {
@@ -144,4 +121,191 @@
 
 .exam-applicant-list .exam-applicant-status {
   width: 100%;
+}
+
+/* ---- Calendar + the picked day's time slots (the same split applicants see) ---- */
+.exam-admin-card {
+  margin-bottom: var(--space-6);
+}
+
+.exam-admin-booking {
+  display: grid;
+  grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+  gap: var(--space-8);
+  align-items: start;
+}
+
+.exam-admin-day-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.exam-admin-day-title {
+  margin: 0;
+  font: var(--text-h2);
+}
+
+.exam-admin-day-sub {
+  margin: 2px 0 0;
+  font: var(--text-dense);
+  color: var(--color-text-secondary);
+}
+
+.exam-admin-note,
+.exam-admin-empty {
+  margin: var(--space-3) 0 0;
+  font: var(--text-dense);
+  color: var(--color-text-secondary);
+}
+
+.exam-admin-slots {
+  list-style: none;
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+}
+
+.exam-admin-slot {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 10px 14px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  transition: background-color var(--motion-fast), border-color var(--motion-fast);
+}
+
+.exam-admin-slot-off {
+  background: var(--color-surface-subtle);
+  color: var(--color-text-secondary);
+}
+
+.exam-admin-slot-time {
+  font: var(--text-body);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.exam-admin-slot-off .exam-admin-slot-time {
+  color: inherit;
+}
+
+.exam-admin-slot-seats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font: var(--text-dense);
+  color: var(--color-text-secondary);
+}
+
+.exam-admin-slot-tag {
+  padding: 1px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-status-gray-bg);
+  color: var(--color-status-gray-text);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.exam-admin-slot-tag-full {
+  background: var(--color-status-amber-bg);
+  color: var(--color-status-amber-text);
+}
+
+.exam-admin-slot-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.exam-icon-button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background-color var(--motion-fast), color var(--motion-fast), transform 160ms var(--ease-out);
+}
+
+.exam-icon-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.exam-icon-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.exam-icon-button:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 1px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .exam-icon-button:hover:not(:disabled) {
+    background: var(--color-primary-tint);
+    color: var(--color-primary);
+  }
+
+  .exam-icon-button-danger:hover:not(:disabled) {
+    background: var(--color-status-red-bg);
+    color: var(--color-status-red-text);
+  }
+}
+
+.exam-admin-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.exam-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-status-amber-bg);
+  color: var(--color-status-amber-text);
+  font: var(--text-dense);
+}
+
+.exam-warning svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+@media (max-width: 860px) {
+  .exam-admin-booking {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+
+  .exam-admin-booking .slot-calendar {
+    max-width: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .exam-admin-slot {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .exam-admin-slot-seats {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
 }

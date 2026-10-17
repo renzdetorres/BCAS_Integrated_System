@@ -9,7 +9,9 @@ import Modal, { DetailList } from "./ui/Modal.jsx";
 import StatusBadge from "./ui/StatusBadge.jsx";
 import { academicDetails } from "../utils/academicDetails.js";
 import WorkflowStepper, { ADMISSION_STEP_LABELS, SCHOLARSHIP_STEP_LABELS } from "./WorkflowStepper.jsx";
+import TrackerStatus from "./TrackerStatus.jsx";
 import "./ApplicationDetailModal.css";
+import "../pages/ApplicationTrackingPage.css";
 
 
 function formatDateTime(isoDateTime) {
@@ -26,8 +28,11 @@ function formatDateTime(isoDateTime) {
  * The complete application, read in place over the Applications list.
  * Status changes, department changes and archiving stay on the full record
  * page (one "Manage application" click away) - this is for reading.
+ *
+ * With `tracker`, the workflow reads exactly as it does on the applicant's
+ * Application Tracking page: the numbered stages and where the application stands.
  */
-export default function ApplicationDetailModal({ application, onClose }) {
+export default function ApplicationDetailModal({ application, onClose, tracker = false }) {
   const { session } = useSession();
   const [history, setHistory] = useState([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
@@ -58,6 +63,7 @@ export default function ApplicationDetailModal({ application, onClose }) {
   if (!application) return null;
 
   const isAdmission = application.category === "Admission";
+  const stepLabels = isAdmission ? ADMISSION_STEP_LABELS : SCHOLARSHIP_STEP_LABELS;
   const details = isAdmission
     ? [
         { label: "Application type", value: APPLICATION_TYPE_LABELS[application.applicationType] ?? application.applicationType },
@@ -114,7 +120,24 @@ export default function ApplicationDetailModal({ application, onClose }) {
 
       <div className="ui-modal-section">
         <h3 className="ui-modal-section-title">Workflow</h3>
-        <WorkflowStepper steps={application.steps} labels={isAdmission ? ADMISSION_STEP_LABELS : SCHOLARSHIP_STEP_LABELS} />
+        {tracker ? (
+          <div className="tracking-application">
+            <div className="tracking-application-header">
+              <span className="tracking-application-title">
+                {application.category} &middot; {isAdmission ? application.courseAppliedFor : application.scholarshipName}
+              </span>
+              <span className="tracking-application-meta">Submitted {formatDateTime(application.submittedAt)}</span>
+            </div>
+            <WorkflowStepper steps={application.steps} labels={stepLabels} numbered />
+            <TrackerStatus
+              steps={application.steps}
+              labels={stepLabels}
+              closedMessage={application.isArchived ? "This application is archived. Its full record is kept for the school's 5-year retention." : undefined}
+            />
+          </div>
+        ) : (
+          <WorkflowStepper steps={application.steps} labels={stepLabels} />
+        )}
       </div>
 
       <div className="ui-modal-section">

@@ -6,7 +6,6 @@ public class ExamScheduleResponse
     public string DayType { get; set; } = string.Empty;
     public DateOnly ExamDate { get; set; }
     public TimeOnly ExamTime { get; set; }
-    public string Venue { get; set; } = string.Empty;
 
     /// <summary>Seats in the slot, or null for no limit.</summary>
     public int? Capacity { get; set; }

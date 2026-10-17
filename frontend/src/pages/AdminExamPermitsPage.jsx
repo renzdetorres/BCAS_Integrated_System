@@ -143,9 +143,9 @@ export default function AdminExamPermitsPage() {
     {
       key: "exam",
       header: "Exam",
-      accessor: (row) => `${row.examDate}T${row.examTime} ${row.venue}`,
+      accessor: (row) => `${row.examDate}T${row.examTime}`,
       sortable: true,
-      render: (row) => <PersonCell name={examLabel(row)} detail={row.venue} />,
+      render: (row) => examLabel(row),
     },
     {
       key: "documents",
@@ -160,20 +160,35 @@ export default function AdminExamPermitsPage() {
       ),
     },
     {
-      key: "permit",
-      header: "Permit",
-      accessor: (row) => (row.isReleased ? row.permitNumber : ""),
+      key: "permitStatus",
+      header: "Status",
+      accessor: (row) => (row.isReleased ? `Released ${row.permitNumber}` : "Not released"),
       sortable: true,
       render: (row) =>
         row.isReleased ? (
-          <PersonCell name={<span className="permit-number">{row.permitNumber}</span>} detail={`Released ${formatDateTime(row.releasedAt)}`} />
+          <PersonCell
+            name={<StatusBadge status="Approved" label="Released" />}
+            detail={
+              <>
+                <span className="permit-number">{row.permitNumber}</span> · {formatDateTime(row.releasedAt)}
+              </>
+            }
+          />
         ) : (
-          <span className="ui-cell-muted">Not released</span>
+          <StatusBadge status="Pending" label="Not released" />
         ),
     },
     {
+      key: "permitCount",
+      header: "Number of Permits",
+      accessor: (row) => (row.isReleased ? 1 : 0),
+      sortable: true,
+      searchable: false,
+      render: (row) => (row.isReleased ? 1 : 0),
+    },
+    {
       key: "action",
-      header: "Action",
+      header: "Permit",
       align: "center",
       searchable: false,
       render: (row) => (

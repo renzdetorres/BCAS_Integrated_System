@@ -94,7 +94,8 @@ export default function DataTable({
         enableGlobalFilter: column.searchable !== false,
         sortUndefined: "last",
         meta: {
-          align: column.align,
+          // Every table centres its Action column, whatever a page asks for.
+          align: column.key === "action" ? "center" : column.align,
           label: typeof column.header === "string" ? column.header : column.label ?? column.key.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase()),
           width: column.width,
           // Dates, statuses and actions read as one unit - never split them.

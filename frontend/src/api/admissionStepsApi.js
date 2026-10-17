@@ -35,11 +35,16 @@ export async function listExamResultQueue() {
   return read(await fetch(`${API_BASE_URL}/api/staff/exam-results`, get), "Failed to load exam results.");
 }
 
-export async function recordExamResult(applicationId, { result, score, remarks }) {
+export async function getExamScoringRules() {
+  return read(await fetch(`${API_BASE_URL}/api/staff/exam-results/rules`, get), "Failed to load the scoring rules.");
+}
+
+/** Sends the raw score; the server works out Passed, Retake or Failed from it. */
+export async function recordExamResult(applicationId, { score, remarks }) {
   return read(
     await fetch(
       `${API_BASE_URL}/api/staff/exam-results/${applicationId}`,
-      json("POST", { result, score: score === "" || score == null ? null : Number(score), remarks: remarks || null })
+      json("POST", { score: Number(score), remarks: remarks || null })
     ),
     "Failed to record the result."
   );

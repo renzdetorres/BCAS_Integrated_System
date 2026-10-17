@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { EXAM_RESULTS, listExamResultQueue, recordExamResult } from "../api/admissionStepsApi.js";
+import { getExamScoringRules, listExamResultQueue, recordExamResult } from "../api/admissionStepsApi.js";
 import { ApiError } from "../api/apiClient.js";
 import { useSession } from "../context/SessionContext.jsx";
 import { useToast } from "../context/ToastContext.jsx";
@@ -14,7 +14,7 @@ const RESULT_TONE = { Passed: "Approved", Failed: "Rejected", Retake: "Pending" 
 
 const CONSEQUENCE = {
   Passed: "The applicant moves on to the interview.",
-  Failed: "The application is closed.",
+  Failed: "The applicant has used every retake, so the application is closed.",
   Retake: "The applicant goes back to choose a new exam schedule and their current booking is removed.",
 };
 
@@ -22,21 +22,35 @@ function stateOf(row) {
   return row.applicationStatus === "ExamDone" ? "Awaiting" : row.result;
 }
 
-function RecordModal({ row, onClose, onSaved }) {
+/** The same rule the server applies (ExamScoring.Decide), shown before the score is saved. */
+function decide(score, attemptNumber, rules) {
+  if (score >= rules.passingScore) return "Passed";
+  return attemptNumber - 1 < rules.maxRetakes ? "Retake" : "Failed";
+}
+
+function RecordModal({ row, rules, onClose, onSaved }) {
   const { showToast } = useToast();
-  const [result, setResult] = useState("Passed");
   const [score, setScore] = useState("");
   const [remarks, setRemarks] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
 
+  const attemptNumber = row.attempts + 1;
+  const entered = score === "" ? null : Number(score);
+  const valid = entered !== null && Number.isFinite(entered) && entered >= 0 && entered <= rules.totalItems;
+  const outcome = valid ? decide(entered, attemptNumber, rules) : null;
+
   async function handleSave() {
+    if (!valid) {
+      setErrorMessage(`Enter a raw score from 0 to ${rules.totalItems}.`);
+      return;
+    }
     setIsSaving(true);
     setErrorMessage(null);
     try {
-      await recordExamResult(row.applicationId, { result, score, remarks: remarks.trim() });
-      showToast(`Result recorded: ${result}.`);
-      await onSaved(result);
+      const saved = await recordExamResult(row.applicationId, { score, remarks: remarks.trim() });
+      showToast(`Score recorded. Result: ${saved.result}.`);
+      await onSaved(saved.result);
       onClose();
     } catch (error) {
       setErrorMessage(error instanceof ApiError ? error.message : "Something went wrong. Please try again.");
@@ -57,8 +71,8 @@ function RecordModal({ row, onClose, onSaved }) {
           <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isSaving}>
             Cancel
           </button>
-          <button type="button" className="btn btn-primary" onClick={handleSave} disabled={isSaving}>
-            {isSaving ? "Saving..." : "Record result"}
+          <button type="button" className="btn btn-primary" onClick={handleSave} disabled={isSaving || !valid}>
+            {isSaving ? "Saving..." : "Save score"}
           </button>
         </>
       }
@@ -68,27 +82,27 @@ function RecordModal({ row, onClose, onSaved }) {
           {errorMessage}
         </p>
       )}
-      <fieldset className="choice-group">
-        <legend className="form-section-title" style={{ marginTop: 0 }}>
-          Result
-        </legend>
-        <div className="choice-grid choice-grid-3">
-          {EXAM_RESULTS.map((value) => (
-            <label key={value} className={`choice-tile${result === value ? " choice-tile-checked" : ""}`}>
-              <input type="radio" name="result" value={value} checked={result === value} onChange={() => setResult(value)} />
-              <span className="choice-tile-title">{value}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
-      <p className="form-note">{CONSEQUENCE[result]}</p>
-
       <div className="form-grid">
         <div className="form-row">
-          <label htmlFor="score">Score (optional)</label>
-          <input id="score" type="number" min="0" max="100" step="0.01" value={score} onChange={(e) => setScore(e.target.value)} />
+          <label htmlFor="score">Raw score (out of {rules.totalItems})</label>
+          <input
+            id="score"
+            type="number"
+            min="0"
+            max={rules.totalItems}
+            step="0.01"
+            inputMode="decimal"
+            value={score}
+            onChange={(e) => setScore(e.target.value)}
+            data-autofocus
+          />
         </div>
       </div>
+      <p className="form-note" role="status">
+        {outcome
+          ? `${outcome}${outcome === "Retake" ? ` (retake ${attemptNumber} of ${rules.maxRetakes})` : ""}. ${CONSEQUENCE[outcome]}`
+          : `Passing score is ${rules.passingScore}. Below it the applicant retakes, up to ${rules.maxRetakes} time${rules.maxRetakes === 1 ? "" : "s"}, then fails.`}
+      </p>
       <div className="form-row">
         <label htmlFor="remarks">Remarks (optional, the applicant can see these)</label>
         <textarea id="remarks" rows={3} maxLength={500} value={remarks} onChange={(e) => setRemarks(e.target.value)} />
@@ -103,7 +117,7 @@ function DetailModal({ row, onClose }) {
       <DetailList
         items={[
           { label: "Result", value: row.result },
-          { label: "Score", value: row.score },
+          { label: "Raw score", value: row.score },
           { label: "Attempts", value: row.attempts },
           { label: "Exam date", value: row.examDate ? formatCalendarDate(row.examDate) : null },
           { label: "Recorded", value: row.recordedAt ? formatDateTime(row.recordedAt) : null },
@@ -116,8 +130,10 @@ function DetailModal({ row, onClose }) {
 
 export default function ExamResultsPage() {
   const { session } = useSession();
-  const canRecord = session.role === "Admin" || session.role === "Evaluator";
+  const canRecord = ["Admin", "Evaluator", "SupportStaff"].includes(session.role);
   const [rows, setRows] = useState([]);
+  const [rules, setRules] = useState(null);
+  const [appliedFilter, setAppliedFilter] = useState("");
   const [filter, setFilter] = useState("Awaiting");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -132,7 +148,9 @@ export default function ExamResultsPage() {
   const load = useCallback(async () => {
     setIsLoading(true);
     try {
-      setRows(await listExamResultQueue());
+      const [queue, scoring] = await Promise.all([listExamResultQueue(), getExamScoringRules()]);
+      setRows(queue);
+      setRules(scoring);
       setErrorMessage(null);
     } catch (error) {
       setErrorMessage(error instanceof ApiError ? error.message : "Failed to load exam results.");
@@ -145,7 +163,8 @@ export default function ExamResultsPage() {
     load();
   }, [load]);
 
-  const shown = rows.filter((row) => !filter || stateOf(row) === filter);
+  const shown = rows.filter((row) => (!filter || stateOf(row) === filter) && (!appliedFilter || row.courseAppliedFor === appliedFilter));
+  const appliedOptions = [...new Set(rows.map((row) => row.courseAppliedFor).filter(Boolean))].sort().map((value) => ({ value, label: value }));
   const count = (state) => rows.filter((row) => stateOf(row) === state).length;
 
   const columns = [
@@ -170,6 +189,15 @@ export default function ExamResultsPage() {
       render: (row) => (row.examDate ? formatCalendarDate(row.examDate) : <span className="ui-cell-muted">-</span>),
     },
     {
+      key: "score",
+      header: "Raw score",
+      accessor: (row) => row.score ?? -1,
+      sortable: true,
+      searchable: false,
+      render: (row) =>
+        row.score == null ? <span className="ui-cell-muted">-</span> : rules ? `${row.score} / ${rules.totalItems}` : row.score,
+    },
+    {
       key: "state",
       header: "Result",
       accessor: (row) => stateOf(row),
@@ -185,12 +213,11 @@ export default function ExamResultsPage() {
     {
       key: "action",
       header: "Action",
-      align: "right",
       searchable: false,
       render: (row) =>
         stateOf(row) === "Awaiting" ? (
-          canRecord ? (
-            <RowAction label="Record result" icon="pencil" onClick={() => setActive({ mode: "record", row })} ariaLabel={`Record ${row.applicantName}'s result`} />
+          canRecord && rules ? (
+            <RowAction label="Enter score" icon="pencil" onClick={() => setActive({ mode: "record", row })} ariaLabel={`Enter ${row.applicantName}'s raw score`} />
           ) : null
         ) : (
           <RowAction label="View" icon="eye" onClick={() => setActive({ mode: "view", row })} ariaLabel={`View ${row.applicantName}'s result`} />
@@ -204,8 +231,8 @@ export default function ExamResultsPage() {
         title="Exam Results"
         subtitle={
           canRecord
-            ? "Applicants who took the entrance exam. Record Passed, Failed or Retake; a pass moves them to the interview, a retake sends them back to choose a new schedule."
-            : "Monitor entrance exam results. Evaluators and admins record them."
+            ? "Applicants who took the entrance exam. Enter each raw score and the result follows: a pass moves them to the interview, a retake sends them back to choose a new schedule."
+            : "Monitor entrance exam results."
         }
         columns={columns}
         rows={shown}
@@ -214,6 +241,21 @@ export default function ExamResultsPage() {
         errorMessage={errorMessage}
         emptyMessage={filter === "Awaiting" ? "No applicants are waiting for a result." : "No applicants match this filter."}
         searchPlaceholder="Search by applicant or course"
+        filters={[
+          {
+            key: "result",
+            label: "All results",
+            value: filter,
+            onChange: setFilter,
+            options: [
+              { value: "Awaiting", label: "Awaiting result" },
+              { value: "Passed", label: "Passed" },
+              { value: "Retake", label: "Retake" },
+              { value: "Failed", label: "Failed" },
+            ],
+          },
+          { key: "appliedFor", label: "All applied for", value: appliedFilter, onChange: setAppliedFilter, options: appliedOptions },
+        ]}
         summary={[
           { label: "Awaiting result", value: count("Awaiting"), tone: "amber", onClick: () => setFilter("Awaiting"), active: filter === "Awaiting" },
           { label: "Passed", value: count("Passed"), tone: "green", onClick: () => setFilter("Passed"), active: filter === "Passed" },
@@ -223,7 +265,7 @@ export default function ExamResultsPage() {
         summaryNote="Select a count to filter the list."
       />
 
-      {active?.mode === "record" && <RecordModal row={active.row} onClose={() => setActive(null)} onSaved={loadAndShow} />}
+      {active?.mode === "record" && rules && <RecordModal row={active.row} rules={rules} onClose={() => setActive(null)} onSaved={loadAndShow} />}
       {active?.mode === "view" && <DetailModal row={active.row} onClose={() => setActive(null)} />}
     </AppLayout>
   );

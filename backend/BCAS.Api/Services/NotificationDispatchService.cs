@@ -52,14 +52,14 @@ public class NotificationDispatchService : INotificationDispatchService
             cancellationToken);
 
     public Task NotifyExamScheduleAsync(
-        Guid userId, string email, string firstName, DateOnly examDate, TimeOnly examTime, string venue, string examType = "Entrance Exam", CancellationToken cancellationToken = default) =>
+        Guid userId, string email, string firstName, DateOnly examDate, TimeOnly examTime, string examType = "Entrance Exam", CancellationToken cancellationToken = default) =>
         DispatchAsync(
             userId,
             email,
             NotificationEventTypes.ExamSchedule,
             $"Your {examType} Schedule Is Confirmed",
             $"Hi {firstName},\n\n" +
-            $"Your {examType.ToLowerInvariant()} is scheduled for {examDate:MMMM d, yyyy} at {examTime:h:mm tt}, at {venue}.\n\n" +
+            $"Your {examType.ToLowerInvariant()} is scheduled for {examDate:MMMM d, yyyy} at {examTime:h:mm tt} (Philippine time).\n\n" +
             "Please arrive at least 30 minutes early.",
             cancellationToken);
 
@@ -175,14 +175,14 @@ public class NotificationDispatchService : INotificationDispatchService
     }
 
     public Task NotifyExamReminderAsync(
-        Guid userId, string email, string firstName, DateOnly examDate, TimeOnly examTime, string venue, CancellationToken cancellationToken = default) =>
+        Guid userId, string email, string firstName, DateOnly examDate, TimeOnly examTime, CancellationToken cancellationToken = default) =>
         DispatchAsync(
             userId,
             email,
             NotificationEventTypes.ExamReminder,
             "Your Entrance Exam Is Coming Up",
             $"Hi {firstName},\n\n" +
-            $"This is a reminder that your entrance exam is coming up on {examDate:MMMM d, yyyy} at {examTime:h:mm tt}, at {venue}.\n\n" +
+            $"This is a reminder that your entrance exam is coming up on {examDate:MMMM d, yyyy} at {examTime:h:mm tt} (Philippine time).\n\n" +
             "Please arrive at least 30 minutes early and bring your exam permit.",
             cancellationToken);
 

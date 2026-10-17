@@ -15,6 +15,9 @@ public class AdmissionSummaryResponse
     public IReadOnlyList<string> AcademicYears { get; set; } = Array.Empty<string>();
 
     public int TotalApplicants { get; set; }
+
+    /// <summary>Applicants who sat the entrance exam: a result is recorded, or the exam is marked done and the result is awaited.</summary>
+    public int TookExam { get; set; }
     public int Pending { get; set; }
     public int UnderReview { get; set; }
     public int ForExam { get; set; }
@@ -104,6 +107,7 @@ WITH app AS (
         // ---- Counts
         var countsSql = AppCte + @"
 SELECT COUNT(DISTINCT UserId) AS TotalApplicants,
+       SUM(CASE WHEN LastResult IS NOT NULL OR Status = N'ExamDone' THEN 1 ELSE 0 END) AS TookExam,
        SUM(CASE WHEN Status = N'Submitted' THEN 1 ELSE 0 END) AS Pending,
        SUM(CASE WHEN Status IN (N'UnderReview', N'PendingDocuments', N'DocumentsCompleted') THEN 1 ELSE 0 END) AS UnderReview,
        SUM(CASE WHEN Status IN (N'DocumentsCleared', N'ExamScheduled', N'ExamDone', N'DidNotTakeExam') THEN 1 ELSE 0 END) AS ForExam,
@@ -122,6 +126,7 @@ WHERE @AcademicYear IS NULL OR AY = @AcademicYear;";
             {
                 int Number(string column) => reader.IsDBNull(reader.GetOrdinal(column)) ? 0 : reader.GetInt32(reader.GetOrdinal(column));
                 response.TotalApplicants = Number("TotalApplicants");
+                response.TookExam = Number("TookExam");
                 response.Pending = Number("Pending");
                 response.UnderReview = Number("UnderReview");
                 response.ForExam = Number("ForExam");

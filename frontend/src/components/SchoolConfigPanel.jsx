@@ -82,7 +82,7 @@ export default function SchoolConfigPanel() {
     <Card>
       <h2 className="school-config-title">Admission settings</h2>
       <p className="school-config-subtitle">
-        The academic year applicants apply for, the age rule for Pre-Kinder and Kindergarten, and the entrance exam payment details.
+        The academic year applicants apply for, the age rule for Pre-Kinder and Kindergarten, how the entrance exam is scored, and the payment details.
       </p>
 
       {errorMessage && (
@@ -135,6 +135,28 @@ export default function SchoolConfigPanel() {
                     </option>
                   ))}
                 </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="school-config-group">
+            <h3>Entrance exam scoring</h3>
+            <p className="form-note">
+              Staff enter each applicant's raw score and the result follows from it: at or above the passing score is Passed; below it is
+              Retake until the retakes allowed are used up, then Failed.
+            </p>
+            <div className="form-grid school-config-grid-3">
+              <div className="form-row">
+                <label htmlFor="Exam.TotalItems">Items on the exam</label>
+                <input id="Exam.TotalItems" name="Exam.TotalItems" type="number" min="1" max="999" value={values["Exam.TotalItems"]} onChange={handleChange} />
+              </div>
+              <div className="form-row">
+                <label htmlFor="Exam.PassingScore">Passing raw score</label>
+                <input id="Exam.PassingScore" name="Exam.PassingScore" type="number" min="0" max="999" step="0.01" value={values["Exam.PassingScore"]} onChange={handleChange} />
+              </div>
+              <div className="form-row">
+                <label htmlFor="Exam.MaxRetakes">Retakes allowed</label>
+                <input id="Exam.MaxRetakes" name="Exam.MaxRetakes" type="number" min="0" max="10" value={values["Exam.MaxRetakes"]} onChange={handleChange} />
               </div>
             </div>
           </div>

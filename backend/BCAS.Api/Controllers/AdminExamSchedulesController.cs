@@ -31,14 +31,26 @@ public class AdminExamSchedulesController : ControllerBase
         return Ok(schedules);
     }
 
-    /// <summary>
-    /// Admin-only: creates a new Saturday schedule, or a Weekday schedule
-    /// (IsOffered reflects whether a teacher is currently available to
-    /// assist with it).
-    /// </summary>
+    private ObjectResult Conflict(ExamScheduleConflictException ex) =>
+        StatusCode(StatusCodes.Status409Conflict, new ProblemDetails
+        {
+            Title = "Exam schedule not changed",
+            Detail = ex.Message,
+            Status = StatusCodes.Status409Conflict,
+        });
+
+    private ObjectResult NotFound(ExamScheduleNotFoundException ex) =>
+        StatusCode(StatusCodes.Status404NotFound, new ProblemDetails
+        {
+            Title = "Exam schedule not found",
+            Detail = ex.Message,
+            Status = StatusCodes.Status404NotFound,
+        });
+
+    /// <summary>Admin-only: adds a time slot to a date. Philippine time; the day type follows the date.</summary>
     [HttpPost]
     [ProducesResponseType(typeof(ExamScheduleResponse), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ExamScheduleResponse>> Create(
         [FromBody] CreateExamScheduleRequest request,
         CancellationToken cancellationToken)
@@ -47,17 +59,84 @@ public class AdminExamSchedulesController : ControllerBase
         {
             var schedule = await _examScheduleService.CreateAsync(request, cancellationToken);
             await _auditLogService.LogAsync(
-                User, "ExamScheduleCreated", $"{schedule.DayType} {schedule.ExamDate} {schedule.ExamTime} ({schedule.Venue})", cancellationToken);
+                User, "ExamScheduleCreated", $"{schedule.ExamDate} {schedule.ExamTime}", cancellationToken);
             return CreatedAtAction(nameof(GetAll), new { id = schedule.ExamScheduleId }, schedule);
         }
-        catch (InvalidDayTypeException ex)
+        catch (ExamScheduleConflictException ex)
         {
-            return BadRequest(new ProblemDetails
-            {
-                Title = "Invalid day type",
-                Detail = ex.Message,
-                Status = StatusCodes.Status400BadRequest,
-            });
+            return Conflict(ex);
+        }
+    }
+
+    /// <summary>Admin-only: changes a slot's time and seats. Applicants booked on a moved slot are emailed the new time.</summary>
+    [HttpPut("{examScheduleId:int}")]
+    [ProducesResponseType(typeof(ExamScheduleResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ExamScheduleResponse>> Update(
+        int examScheduleId,
+        [FromBody] UpdateExamScheduleRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var schedule = await _examScheduleService.UpdateAsync(examScheduleId, request, cancellationToken);
+            await _auditLogService.LogAsync(
+                User, "ExamScheduleUpdated", $"{schedule.ExamDate} {schedule.ExamTime}: {(schedule.Capacity?.ToString() ?? "no limit")} seats", cancellationToken);
+            return Ok(schedule);
+        }
+        catch (ExamScheduleNotFoundException ex)
+        {
+            return NotFound(ex);
+        }
+        catch (ExamScheduleConflictException ex)
+        {
+            return Conflict(ex);
+        }
+    }
+
+    /// <summary>Admin-only: removes a slot nobody has booked.</summary>
+    [HttpDelete("{examScheduleId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Delete(int examScheduleId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _examScheduleService.DeleteAsync(examScheduleId, cancellationToken);
+            await _auditLogService.LogAsync(User, "ExamScheduleDeleted", $"Slot {examScheduleId}", cancellationToken);
+            return NoContent();
+        }
+        catch (ExamScheduleNotFoundException ex)
+        {
+            return NotFound(ex);
+        }
+        catch (ExamScheduleConflictException ex)
+        {
+            return Conflict(ex);
+        }
+    }
+
+    /// <summary>Admin-only: offers or withdraws every slot on a date at once. Applicants already booked keep their slot.</summary>
+    [HttpPatch("dates/{examDate}/offered")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> SetDateOffered(
+        DateOnly examDate,
+        [FromBody] SetExamDateOfferedRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _examScheduleService.SetDateOfferedAsync(examDate, request.IsOffered!.Value, cancellationToken);
+            await _auditLogService.LogAsync(
+                User, request.IsOffered.Value ? "ExamScheduleOffered" : "ExamScheduleUnoffered", $"{examDate:yyyy-MM-dd}", cancellationToken);
+            return NoContent();
+        }
+        catch (ExamScheduleConflictException ex)
+        {
+            return Conflict(ex);
         }
     }
 
@@ -119,9 +198,8 @@ public class AdminExamSchedulesController : ControllerBase
     }
 
     /// <summary>
-    /// Admin-only: turns a Weekday schedule's availability on or off based
-    /// on whether a teacher can currently assist with it. Has no effect on
-    /// Saturday schedules, which are always selectable.
+    /// Admin-only: offers or withdraws one time slot. A withdrawn slot can no
+    /// longer be booked; applicants who already booked it keep it.
     /// </summary>
     [HttpPatch("{examScheduleId:int}/offered")]
     [ProducesResponseType(typeof(ExamScheduleResponse), StatusCodes.Status200OK)]

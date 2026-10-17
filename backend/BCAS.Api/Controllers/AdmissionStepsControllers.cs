@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BCAS.Api.Controllers;
 
-/// <summary>Staff side of exam results. Support Staff monitor; Evaluators and Admins record.</summary>
+/// <summary>Staff side of exam results. Admins, Evaluators and Support Staff enter raw scores; the result follows from the score.</summary>
 [Authorize(Roles = "Admin,Evaluator,SupportStaff")]
 [ApiController]
 [Route("api/staff/exam-results")]
@@ -25,8 +25,13 @@ public class StaffExamResultsController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<ExamResultQueueItem>>> GetQueue(CancellationToken cancellationToken) =>
         Ok(await _service.GetQueueAsync(cancellationToken));
 
-    /// <summary>Records Passed, Failed or Retake for an applicant who has taken the exam, and moves the application on.</summary>
-    [Authorize(Roles = "Admin,Evaluator")]
+    /// <summary>The passing score and retake limit a raw score is measured against.</summary>
+    [HttpGet("rules")]
+    [ProducesResponseType(typeof(ExamScoringRulesResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ExamScoringRulesResponse>> GetRules(CancellationToken cancellationToken) =>
+        Ok(await _service.GetRulesAsync(cancellationToken));
+
+    /// <summary>Records the raw score of an applicant who has taken the exam, works out Passed, Retake or Failed, and moves the application on.</summary>
     [HttpPost("{applicationId:guid}")]
     [ProducesResponseType(typeof(ExamResultQueueItem), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

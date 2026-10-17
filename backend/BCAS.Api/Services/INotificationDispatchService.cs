@@ -19,7 +19,7 @@ public interface INotificationDispatchService
         Guid userId, string email, string firstName, string documentType, string status, string reason, CancellationToken cancellationToken = default);
 
     Task NotifyExamScheduleAsync(
-        Guid userId, string email, string firstName, DateOnly examDate, TimeOnly examTime, string venue, string examType = "Entrance Exam", CancellationToken cancellationToken = default);
+        Guid userId, string email, string firstName, DateOnly examDate, TimeOnly examTime, string examType = "Entrance Exam", CancellationToken cancellationToken = default);
 
     Task NotifyExamPermitAvailableAsync(Guid userId, string email, string firstName, CancellationToken cancellationToken = default);
 
@@ -50,7 +50,7 @@ public interface INotificationDispatchService
 
     /// <summary>A confirmed exam is exactly DeadlineReminderConstants.ExamReminderDaysBefore days away. Sent by DeadlineReminderService, not a triggering action.</summary>
     Task NotifyExamReminderAsync(
-        Guid userId, string email, string firstName, DateOnly examDate, TimeOnly examTime, string venue, CancellationToken cancellationToken = default);
+        Guid userId, string email, string firstName, DateOnly examDate, TimeOnly examTime, CancellationToken cancellationToken = default);
 
     /// <summary>A required document is still missing DeadlineReminderConstants.MissingDocumentReminderMinDaysSinceSubmission+ days after applying. Sent by DeadlineReminderService, not a triggering action.</summary>
     Task NotifyMissingDocumentReminderAsync(

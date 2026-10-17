@@ -26,6 +26,15 @@ public static class SchoolConfigKeys
     /// <summary>The school's QR payment code, stored as an image data URL.</summary>
     public const string PaymentQrImage = "Payment.QrImage";
 
+    /// <summary>How many items the entrance exam has: the highest raw score an applicant can get.</summary>
+    public const string ExamTotalItems = "Exam.TotalItems";
+
+    /// <summary>The lowest raw score that passes the entrance exam.</summary>
+    public const string ExamPassingScore = "Exam.PassingScore";
+
+    /// <summary>How many times an applicant who falls short may retake the exam before the result is Failed.</summary>
+    public const string ExamMaxRetakes = "Exam.MaxRetakes";
+
     // The academic lists, each stored as JSON (see AcademicCatalog).
     public const string AcademicStrands = "Academic.Strands";
     public const string AcademicTerms = "Academic.Terms";
@@ -43,5 +52,8 @@ public static class SchoolConfigKeys
         [PaymentAccountName] = "",
         [PaymentInstructions] = "Scan the QR code with your banking or e-wallet app, pay the exact exam fee, then upload a screenshot or photo of your receipt.",
         [PaymentQrImage] = "",
+        [ExamTotalItems] = "100",
+        [ExamPassingScore] = "75",
+        [ExamMaxRetakes] = "2",
     };
 }

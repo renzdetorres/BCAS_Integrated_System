@@ -152,6 +152,27 @@ public class SchoolConfigService : ISchoolConfigService
                 }
 
                 break;
+            case SchoolConfigKeys.ExamTotalItems:
+                if (!int.TryParse(value, out var items) || items < 1 || items > 999)
+                {
+                    throw new InvalidSchoolConfigException("The number of exam items must be a whole number from 1 to 999.");
+                }
+
+                break;
+            case SchoolConfigKeys.ExamPassingScore:
+                if (!decimal.TryParse(value, out var passing) || passing < 0 || passing > 999)
+                {
+                    throw new InvalidSchoolConfigException("The passing score must be a number of 0 or more.");
+                }
+
+                break;
+            case SchoolConfigKeys.ExamMaxRetakes:
+                if (!int.TryParse(value, out var retakes) || retakes < 0 || retakes > 10)
+                {
+                    throw new InvalidSchoolConfigException("Retakes allowed must be a whole number from 0 to 10.");
+                }
+
+                break;
             case SchoolConfigKeys.PaymentAccountName:
                 if (value.Length > 200) throw new InvalidSchoolConfigException("The account name is too long.");
                 break;

@@ -1,3 +1,4 @@
+using BCAS.Api.Constants;
 using BCAS.Api.Data;
 using BCAS.Api.Exceptions;
 using BCAS.Api.Models;
@@ -17,10 +18,12 @@ public interface IExamResultService
 {
     Task<IReadOnlyList<ExamResultQueueItem>> GetQueueAsync(CancellationToken cancellationToken = default);
 
+    Task<ExamScoringRulesResponse> GetRulesAsync(CancellationToken cancellationToken = default);
+
     /// <summary>
-    /// Records the result of the applicant's entrance exam and moves the
-    /// application on: Passed to the interview, Failed to a closed application,
-    /// Retake back to choosing a new exam schedule.
+    /// Records the applicant's raw entrance exam score, works out the result from it
+    /// (see ExamScoring) and moves the application on: Passed to the interview, Failed to a
+    /// closed application, Retake back to choosing a new exam schedule.
     /// </summary>
     Task<ExamResultQueueItem> RecordAsync(Guid applicationId, RecordExamResultRequest request, Guid recordedByUserId, CancellationToken cancellationToken = default);
 
@@ -29,14 +32,13 @@ public interface IExamResultService
 
 public class ExamResultService : IExamResultService
 {
-    private static readonly IReadOnlySet<string> Results = new HashSet<string>(StringComparer.Ordinal) { "Passed", "Failed", "Retake" };
-
     private readonly IExamResultRepository _repository;
     private readonly IAdminApplicationsService _applicationsService;
     private readonly IAdmissionApplicationRepository _applicationRepository;
     private readonly IExamScheduleRepository _examScheduleRepository;
     private readonly IUserRepository _userRepository;
     private readonly INotificationDispatchService _notifications;
+    private readonly ISchoolConfigService _schoolConfig;
     private readonly ILogger<ExamResultService> _logger;
 
     public ExamResultService(
@@ -46,8 +48,10 @@ public class ExamResultService : IExamResultService
         IExamScheduleRepository examScheduleRepository,
         IUserRepository userRepository,
         INotificationDispatchService notifications,
+        ISchoolConfigService schoolConfig,
         ILogger<ExamResultService> logger)
     {
+        _schoolConfig = schoolConfig;
         _repository = repository;
         _applicationsService = applicationsService;
         _applicationRepository = applicationRepository;
@@ -60,13 +64,25 @@ public class ExamResultService : IExamResultService
     public Task<IReadOnlyList<ExamResultQueueItem>> GetQueueAsync(CancellationToken cancellationToken = default) =>
         _repository.GetQueueAsync(cancellationToken);
 
+    public async Task<ExamScoringRulesResponse> GetRulesAsync(CancellationToken cancellationToken = default)
+    {
+        var all = await _schoolConfig.GetAllAsync(cancellationToken);
+        return new ExamScoringRulesResponse
+        {
+            TotalItems = int.Parse(all[SchoolConfigKeys.ExamTotalItems]),
+            PassingScore = decimal.Parse(all[SchoolConfigKeys.ExamPassingScore]),
+            MaxRetakes = int.Parse(all[SchoolConfigKeys.ExamMaxRetakes]),
+        };
+    }
+
     public async Task<ExamResultQueueItem> RecordAsync(
         Guid applicationId, RecordExamResultRequest request, Guid recordedByUserId, CancellationToken cancellationToken = default)
     {
-        var result = request.Result?.Trim() ?? string.Empty;
-        if (!Results.Contains(result))
+        var rules = await GetRulesAsync(cancellationToken);
+        var score = request.Score ?? throw new AdmissionStepException("Enter the applicant's raw score.");
+        if (score < 0 || score > rules.TotalItems)
         {
-            throw new AdmissionStepException("The result must be Passed, Failed or Retake.");
+            throw new AdmissionStepException($"The raw score must be between 0 and {rules.TotalItems}, the number of items on the exam.");
         }
 
         var item = await _repository.GetQueueItemAsync(applicationId, cancellationToken)
@@ -78,9 +94,12 @@ public class ExamResultService : IExamResultService
                 "A result can only be recorded for an applicant who has taken the exam. Mark their exam as done first.");
         }
 
+        var attemptNumber = (await _repository.GetByUserIdAsync(item.UserId, cancellationToken)).Count + 1;
+        var result = ExamScoring.Decide(score, attemptNumber, rules);
+
         var remarks = string.IsNullOrWhiteSpace(request.Remarks) ? null : request.Remarks.Trim();
         var examDate = await _repository.GetBookedExamDateAsync(item.UserId, cancellationToken);
-        await _repository.InsertAsync(applicationId, item.UserId, result, request.Score, remarks, examDate, recordedByUserId, cancellationToken);
+        await _repository.InsertAsync(applicationId, item.UserId, result, score, remarks, examDate, recordedByUserId, cancellationToken);
 
         // Move the application along. The more specific notification below replaces the generic one.
         var nextStatus = result switch

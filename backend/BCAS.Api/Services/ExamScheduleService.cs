@@ -79,7 +79,7 @@ public class ExamScheduleService : IExamScheduleService
         if (applicant is not null)
         {
             await _notificationDispatchService.NotifyExamScheduleAsync(
-                userId, applicant.Email, applicant.FirstName, selection.ExamDate, selection.ExamTime, selection.Venue, examType, cancellationToken);
+                userId, applicant.Email, applicant.FirstName, selection.ExamDate, selection.ExamTime, examType, cancellationToken);
         }
 
         return selection.ToResponse();

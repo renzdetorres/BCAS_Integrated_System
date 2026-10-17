@@ -1,54 +1,51 @@
 import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 
-export const DAY_TYPES = ["Saturday", "Weekday"];
+const BASE = `${API_BASE_URL}/api/admin/exam-schedules`;
 
-export async function listExamSchedules() {
-  const response = await fetch(`${API_BASE_URL}/api/admin/exam-schedules`, {
-    method: "GET",
+async function send(path, method, body, fallback) {
+  const response = await fetch(`${BASE}${path}`, {
+    method,
+    headers: body === undefined ? undefined : { "Content-Type": "application/json" },
     credentials: "include",
-  });
-
-  if (!response.ok) {
-    throw new ApiError(resolveErrorMessage(response, null, "Failed to load exam schedules."), response.status);
-  }
-
-  return response.json();
-}
-
-export async function createExamSchedule({ dayType, examDate, examTime, venue, isOffered, capacity }) {
-  const response = await fetch(`${API_BASE_URL}/api/admin/exam-schedules`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ dayType, examDate, examTime, venue, isOffered, capacity: capacity === "" || capacity == null ? null : Number(capacity) }),
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
 
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message = resolveErrorMessage(response, data, "Failed to create the exam schedule. Please try again.");
-    throw new ApiError(message, response.status);
+    throw new ApiError(resolveErrorMessage(response, data, fallback), response.status);
   }
 
   return data;
 }
 
-export async function setExamScheduleOffered(examScheduleId, isOffered) {
-  const response = await fetch(`${API_BASE_URL}/api/admin/exam-schedules/${examScheduleId}/offered`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ isOffered }),
-  });
+const seatsOrNull = (capacity) => (capacity === "" || capacity == null ? null : Number(capacity));
 
-  const data = await response.json().catch(() => null);
+export function listExamSchedules() {
+  return send("", "GET", undefined, "Failed to load exam schedules.");
+}
 
-  if (!response.ok) {
-    const message = resolveErrorMessage(response, data, "Failed to update the exam schedule. Please try again.");
-    throw new ApiError(message, response.status);
-  }
+/** Adds a time slot to a date. Times are Philippine time. */
+export function createExamSchedule({ examDate, examTime, isOffered = true, capacity }) {
+  return send("", "POST", { examDate, examTime, isOffered, capacity: seatsOrNull(capacity) }, "Failed to add the time slot. Please try again.");
+}
 
-  return data;
+/** Changes a slot's time and seats. */
+export function updateExamSchedule(examScheduleId, { examTime, capacity }) {
+  return send(`/${examScheduleId}`, "PUT", { examTime, capacity: seatsOrNull(capacity) }, "Failed to update the time slot. Please try again.");
+}
+
+export function deleteExamSchedule(examScheduleId) {
+  return send(`/${examScheduleId}`, "DELETE", undefined, "Failed to remove the time slot. Please try again.");
+}
+
+export function setExamScheduleOffered(examScheduleId, isOffered) {
+  return send(`/${examScheduleId}/offered`, "PATCH", { isOffered }, "Failed to update the exam schedule. Please try again.");
+}
+
+/** Offers or withdraws every slot on a date ("yyyy-mm-dd"). */
+export function setExamDateOffered(examDate, isOffered) {
+  return send(`/dates/${examDate}/offered`, "PATCH", { isOffered }, "Failed to update the exam date. Please try again.");
 }
 
 export const EXAM_STATUSES = [
@@ -59,15 +56,5 @@ export const EXAM_STATUSES = [
 ];
 
 export async function setApplicantExamStatus(userId, status) {
-  const response = await fetch(`${API_BASE_URL}/api/admin/exam-schedules/applicants/${userId}/status`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ status }),
-  });
-
-  if (!response.ok) {
-    const data = await response.json().catch(() => null);
-    throw new ApiError(resolveErrorMessage(response, data, "Failed to update the exam status."), response.status);
-  }
+  await send(`/applicants/${userId}/status`, "PATCH", { status }, "Failed to update the exam status.");
 }

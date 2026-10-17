@@ -14,7 +14,6 @@ public static class AdminExamPermitMappingExtensions
         DayType = candidate.DayType,
         ExamDate = candidate.ExamDate,
         ExamTime = candidate.ExamTime,
-        Venue = candidate.Venue,
         DocumentsVerified = documentsVerified,
         IsReleased = candidate.IsPermitReleased,
         ReleasedAt = candidate.PermitReleasedAt,
