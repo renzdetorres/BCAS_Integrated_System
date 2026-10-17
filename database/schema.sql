@@ -645,19 +645,26 @@ GO
 -- evaluated" on the Evaluator Dashboard (BISAASS-41) now orders by instead
 -- of approximating with SubmittedAt.
 -- -----------------------------------------------------------------------------
-IF EXISTS (
+-- Skipped when the final rule (which includes Waitlisted, added further down) is already in place: this
+-- interim list has no Waitlisted, so re-running the script on a database that already holds a waitlisted
+-- application would otherwise fail here.
+IF NOT EXISTS (
     SELECT 1 FROM sys.check_constraints
     WHERE name = N'CK_ScholarshipApplications_Status' AND parent_object_id = OBJECT_ID(N'dbo.ScholarshipApplications')
+      AND definition LIKE N'%Waitlisted%'
 )
 BEGIN
-    ALTER TABLE dbo.ScholarshipApplications DROP CONSTRAINT CK_ScholarshipApplications_Status;
-END
-GO
+    IF EXISTS (
+        SELECT 1 FROM sys.check_constraints
+        WHERE name = N'CK_ScholarshipApplications_Status' AND parent_object_id = OBJECT_ID(N'dbo.ScholarshipApplications')
+    )
+        ALTER TABLE dbo.ScholarshipApplications DROP CONSTRAINT CK_ScholarshipApplications_Status;
 
-ALTER TABLE dbo.ScholarshipApplications
-    ADD CONSTRAINT CK_ScholarshipApplications_Status CHECK (Status IN (
-        N'Submitted', N'DocumentsVerified', N'EligibilityScreening', N'Evaluation', N'Result', N'Approved', N'Rejected'
-    ));
+    ALTER TABLE dbo.ScholarshipApplications
+        ADD CONSTRAINT CK_ScholarshipApplications_Status CHECK (Status IN (
+            N'Submitted', N'DocumentsVerified', N'EligibilityScreening', N'Evaluation', N'Result', N'Approved', N'Rejected'
+        ));
+END
 GO
 
 IF NOT EXISTS (
