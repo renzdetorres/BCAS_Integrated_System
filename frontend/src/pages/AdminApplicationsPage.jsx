@@ -147,6 +147,14 @@ export default function AdminApplicationsPage() {
   const allArchivableSelected =
     archivableApplications.length > 0 && archivableApplications.every((row) => selectedIds.has(row.applicationId));
 
+  // Archiving is limited to Admins and to finished applications, so a greyed-out box says which rule applies.
+  function whyNotSelectable(row) {
+    if (session.role !== "Admin") return "Only an Admin can archive applications.";
+    if (row?.isArchived) return "This application is already archived.";
+    if (row) return `Only Approved, Rejected or Retracted applications can be archived. This one is "${row.status.replace(/([a-z])([A-Z])/g, "$1 $2")}".`;
+    return "Nothing here can be archived yet: only Approved, Rejected or Retracted applications can be selected.";
+  }
+
   function toggleSelect(applicationId, event) {
     event.stopPropagation();
     setSelectedIds((prev) => {
@@ -205,11 +213,12 @@ export default function AdminApplicationsPage() {
           onChange={toggleSelectAll}
           onClick={(event) => event.stopPropagation()}
           disabled={archivableApplications.length === 0}
+          title={archivableApplications.length === 0 ? whyNotSelectable() : "Select every application that can be archived"}
           aria-label="Select all archivable applications"
         />
       ),
       render: (row) =>
-        !row.isArchived && ARCHIVABLE_STATUS_SET.has(row.status) ? (
+        !row.isArchived && ARCHIVABLE_STATUS_SET.has(row.status) && session.role === "Admin" ? (
           <input
             type="checkbox"
             checked={selectedIds.has(row.applicationId)}
@@ -217,7 +226,18 @@ export default function AdminApplicationsPage() {
             onClick={(event) => event.stopPropagation()}
             aria-label={`Select ${row.applicantName}'s application`}
           />
-        ) : null,
+        ) : (
+          // Say why this row can't be ticked instead of leaving a silent gap.
+          <input
+            type="checkbox"
+            disabled
+            checked={false}
+            readOnly
+            onClick={(event) => event.stopPropagation()}
+            title={whyNotSelectable(row)}
+            aria-label={`${row.applicantName}'s application can't be selected. ${whyNotSelectable(row)}`}
+          />
+        ),
     },
     {
       key: "applicant",
