@@ -1,10 +1,12 @@
 import { PHONE_ERROR, PHONE_HINT, PHONE_MAX_LENGTH, PHONE_PATTERN, PHONE_PLACEHOLDER, cleanPhoneInput, isValidPhone } from "../utils/phone.js";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getMyProfile, saveMyProfile } from "../api/profileApi.js";
 import { ApiError } from "../api/apiClient.js";
 import { useSession } from "../context/SessionContext.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
+import ConfirmDialog from "../components/ui/ConfirmDialog.jsx";
+import { useToast } from "../context/ToastContext.jsx";
 import "./ApplicantProfilePage.css";
 
 function emptyForm(session) {
@@ -35,8 +37,41 @@ function toForm(profile) {
   };
 }
 
+// Every field must have data before the profile can be saved.
+const REQUIRED_MESSAGES = {
+  firstName: "Enter your first name.",
+  lastName: "Enter your last name.",
+  birthDate: "Pick your birth date.",
+  contactNumber: "Enter your contact number.",
+  addressLine: "Enter your street and barangay.",
+  city: "Enter your city.",
+  province: "Enter your province.",
+  postalCode: "Enter your postal code.",
+};
+const FIELD_ORDER = Object.keys(REQUIRED_MESSAGES);
+
+function validateProfile(form) {
+  const errors = {};
+  for (const field of FIELD_ORDER) {
+    if (!String(form[field] ?? "").trim()) errors[field] = REQUIRED_MESSAGES[field];
+  }
+  if (!errors.birthDate) {
+    const born = new Date(`${form.birthDate}T00:00:00`);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (Number.isNaN(born.getTime()) || born.getFullYear() < 1900) errors.birthDate = "Enter a valid birth date.";
+    else if (born >= today) errors.birthDate = "Your birth date must be in the past.";
+  }
+  if (!errors.contactNumber && !isValidPhone(form.contactNumber)) errors.contactNumber = PHONE_ERROR;
+  return errors;
+}
+
 export default function ApplicantProfilePage() {
   const { session } = useSession();
+  const { showToast } = useToast();
+  const formRef = useRef(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [confirming, setConfirming] = useState(false);
   const [form, setForm] = useState(() => emptyForm(session));
   const [hasExistingProfile, setHasExistingProfile] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,19 +104,51 @@ export default function ApplicantProfilePage() {
     };
   }, []);
 
-  function handleChange(event) {
-    const { name, value } = event.target;
+  function changeField(name, value) {
     setForm((prev) => ({ ...prev, [name]: value }));
+    setFieldErrors((prev) => {
+      if (!prev[name]) return prev;
+      const { [name]: _cleared, ...rest } = prev;
+      return rest;
+    });
   }
 
-  async function handleSubmit(event) {
+  function handleChange(event) {
+    changeField(event.target.name, event.target.value);
+  }
+
+  // Props that tie a field to its inline error: red border, announced message, focus target.
+  function errorProps(name, extraDescribedBy) {
+    const describedBy = [fieldErrors[name] ? `${name}-error` : null, extraDescribedBy].filter(Boolean).join(" ");
+    return { "aria-invalid": fieldErrors[name] ? "true" : undefined, "aria-describedby": describedBy || undefined };
+  }
+
+  function fieldError(name) {
+    return fieldErrors[name] ? (
+      <p className="profile-field-error" id={`${name}-error`} role="alert">
+        {fieldErrors[name]}
+      </p>
+    ) : null;
+  }
+
+  // Step 1: check every field, then ask before anything is saved.
+  function handleSubmit(event) {
     event.preventDefault();
     setErrorMessage(null);
     setSavedMessage(null);
-    if (!isValidPhone(form.contactNumber)) {
-      setErrorMessage(PHONE_ERROR);
+    const errors = validateProfile(form);
+    setFieldErrors(errors);
+    const firstInvalid = FIELD_ORDER.find((field) => errors[field]);
+    if (firstInvalid) {
+      setErrorMessage("Please complete the highlighted fields before saving.");
+      formRef.current?.querySelector(`#${firstInvalid}`)?.focus();
       return;
     }
+    setConfirming(true);
+  }
+
+  // Step 2: the applicant confirmed.
+  async function saveProfile() {
     setIsSubmitting(true);
 
     try {
@@ -98,11 +165,14 @@ export default function ApplicantProfilePage() {
       });
       setForm(toForm(saved));
       setHasExistingProfile(true);
-      setSavedMessage("Profile saved.");
+      setSavedMessage("Your profile was saved successfully.");
+      showToast("Your profile was saved successfully.");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
       setErrorMessage(error instanceof ApiError ? error.message : "Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
+      setConfirming(false);
     }
   }
 
@@ -137,15 +207,17 @@ export default function ApplicantProfilePage() {
             </p>
           )}
 
-          <form onSubmit={handleSubmit} noValidate>
+          <form ref={formRef} onSubmit={handleSubmit} noValidate>
             <div className="form-row-group">
               <div className="form-row">
                 <label htmlFor="firstName">First name</label>
-                <input placeholder="e.g. Juan" id="firstName" name="firstName" type="text" required value={form.firstName} onChange={handleChange} />
+                <input placeholder="e.g. Juan" id="firstName" name="firstName" type="text" required value={form.firstName} onChange={handleChange} {...errorProps("firstName")} />
+                {fieldError("firstName")}
               </div>
               <div className="form-row">
                 <label htmlFor="lastName">Last name</label>
-                <input placeholder="e.g. Dela Cruz" id="lastName" name="lastName" type="text" required value={form.lastName} onChange={handleChange} />
+                <input placeholder="e.g. Dela Cruz" id="lastName" name="lastName" type="text" required value={form.lastName} onChange={handleChange} {...errorProps("lastName")} />
+                {fieldError("lastName")}
               </div>
             </div>
 
@@ -156,9 +228,12 @@ export default function ApplicantProfilePage() {
                 name="birthDate"
                 type="date"
                 required
+                max={new Date().toISOString().slice(0, 10)}
                 value={form.birthDate}
                 onChange={handleChange}
+                {...errorProps("birthDate")}
               />
+              {fieldError("birthDate")}
             </div>
 
             <div className="form-row">
@@ -172,11 +247,12 @@ export default function ApplicantProfilePage() {
                 maxLength={PHONE_MAX_LENGTH}
                 pattern={PHONE_PATTERN}
                 title={PHONE_HINT}
-                aria-describedby="contactNumber-hint"
                 required
                 value={form.contactNumber}
-                onChange={(event) => setForm((prev) => ({ ...prev, contactNumber: cleanPhoneInput(event.target.value) }))}
+                onChange={(event) => changeField("contactNumber", cleanPhoneInput(event.target.value))}
+                {...errorProps("contactNumber", "contactNumber-hint")}
               />
+              {fieldError("contactNumber")}
               <p className="form-note" id="contactNumber-hint">
                 {PHONE_HINT}.
               </p>
@@ -192,17 +268,21 @@ export default function ApplicantProfilePage() {
                 required
                 value={form.addressLine}
                 onChange={handleChange}
+                {...errorProps("addressLine")}
               />
+              {fieldError("addressLine")}
             </div>
 
             <div className="form-row-group">
               <div className="form-row">
                 <label htmlFor="city">City</label>
-                <input placeholder="e.g. Quezon City" id="city" name="city" type="text" required value={form.city} onChange={handleChange} />
+                <input placeholder="e.g. Quezon City" id="city" name="city" type="text" required value={form.city} onChange={handleChange} {...errorProps("city")} />
+                {fieldError("city")}
               </div>
               <div className="form-row">
                 <label htmlFor="province">Province</label>
-                <input placeholder="e.g. Metro Manila" id="province" name="province" type="text" required value={form.province} onChange={handleChange} />
+                <input placeholder="e.g. Metro Manila" id="province" name="province" type="text" required value={form.province} onChange={handleChange} {...errorProps("province")} />
+                {fieldError("province")}
               </div>
               <div className="form-row">
                 <label htmlFor="postalCode">Postal code</label>
@@ -213,7 +293,9 @@ export default function ApplicantProfilePage() {
                   required
                   value={form.postalCode}
                   onChange={handleChange}
+                  {...errorProps("postalCode")}
                 />
+                {fieldError("postalCode")}
               </div>
             </div>
 
@@ -232,6 +314,21 @@ export default function ApplicantProfilePage() {
       </Card>
       </div>
       </div>
+
+      <ConfirmDialog
+        open={confirming}
+        title={hasExistingProfile ? "Save your changes?" : "Save your profile?"}
+        message={
+          hasExistingProfile
+            ? "Your profile will be updated with these details. Applications you file from now on will use them."
+            : "Please check that your name, birth date, contact number and address are correct. You can update them later."
+        }
+        confirmLabel="Yes, save profile"
+        cancelLabel="Go back"
+        isSubmitting={isSubmitting}
+        onConfirm={saveProfile}
+        onCancel={() => setConfirming(false)}
+      />
     </AppLayout>
   );
 }

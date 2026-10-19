@@ -22,6 +22,11 @@ const FIGURES = [
   { key: "enrolled", label: "Enrolled" },
 ];
 
+// The first four are the headline figures, laid out exactly like the Scholarship summary
+// (numbers plus a vertical bar graph); the rest are the stages applicants pass through.
+const HEADLINE = FIGURES.slice(0, 4);
+const STAGES = FIGURES.slice(4);
+
 const SERIES = [
   { key: "applicants", label: "Applicants", color: "var(--color-primary-light)" },
   { key: "enrolled", label: "Enrolled", color: "var(--color-accent)" },
@@ -90,8 +95,8 @@ export default function AdmissionPipeline({ academicYear = "" }) {
         <span className="pipeline-year-note">{academicYear ? `Academic year ${academicYear}` : "All academic years"}</span>
       </div>
 
-      <dl className="pipeline-figures" style={{ "--figure-count": FIGURES.length }}>
-        {FIGURES.map((figure) => (
+      <dl className="pipeline-figures" style={{ "--figure-count": HEADLINE.length }}>
+        {HEADLINE.map((figure) => (
           <div key={figure.key}>
             <dt>{figure.label}</dt>
             <dd>{summary[figure.key].toLocaleString()}</dd>
@@ -100,8 +105,18 @@ export default function AdmissionPipeline({ academicYear = "" }) {
       </dl>
 
       <div className="pipeline-bars">
-        <FigureBars label="Admission applicants as a bar graph" figures={FIGURES.map((figure) => ({ label: figure.label, value: summary[figure.key] }))} />
+        <FigureBars label="Admission applicants as a bar graph" figures={HEADLINE.map((figure) => ({ label: figure.label, value: summary[figure.key] }))} />
       </div>
+
+      <h3 className="pipeline-subtitle">Where applicants are now</h3>
+      <dl className="pipeline-figures pipeline-stages" style={{ "--figure-count": STAGES.length }}>
+        {STAGES.map((figure) => (
+          <div key={figure.key}>
+            <dt>{figure.label}</dt>
+            <dd>{summary[figure.key].toLocaleString()}</dd>
+          </div>
+        ))}
+      </dl>
 
       <div className="pipeline-charts">
         <div>

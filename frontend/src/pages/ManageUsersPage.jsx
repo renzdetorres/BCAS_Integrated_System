@@ -279,7 +279,7 @@ export default function ManageUsersPage() {
               {fullName(row)}
               {row.userId === session.userId ? <span className="account-you">You</span> : null}
             </span>
-            <span className="account-email">{row.email}</span>
+            <span className="account-email" title={row.email}>{row.email}</span>
           </span>
         </span>
       ),

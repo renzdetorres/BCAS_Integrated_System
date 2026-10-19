@@ -37,26 +37,79 @@
   gap: 8px;
 }
 
+/* Row actions share the Manage Accounts look: Edit is the light one (soft green), the
+   status change is solid (amber Deactivate, green Activate) with white text. Hover eases
+   to a darker shade on pointer devices only; pressing scales to 0.97. */
+.scholarship-actions .ui-datatable-row-action,
 .scholarship-status-button {
   min-height: 32px;
-  padding: 5px 10px;
-  border: none;
+  padding: 5px 12px;
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--color-text-secondary);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  transition:
+    background-color 160ms var(--ease-out),
+    border-color 160ms var(--ease-out),
+    box-shadow 160ms var(--ease-out),
+    transform 160ms var(--ease-out);
 }
 
-.scholarship-status-button:hover:not(:disabled) {
-  background: var(--color-surface-subtle);
-  color: var(--color-text-primary);
+.scholarship-actions .ui-datatable-row-action,
+.scholarship-actions .ui-datatable-row-action:disabled:hover {
+  background: var(--color-status-green-bg);
+  color: var(--color-primary);
+  border-color: rgba(27, 67, 50, 0.22);
+}
+
+.scholarship-actions .ui-datatable-row-action svg {
+  color: currentColor;
+}
+
+.scholarship-status-button {
+  --status-bg: var(--color-status-amber-text);
+  background: var(--status-bg);
+  color: var(--color-white);
+  box-shadow: 0 1px 2px rgba(18, 48, 31, 0.18);
+}
+
+.scholarship-status-activate {
+  --status-bg: var(--color-status-green-text);
+}
+
+@media (hover: hover) {
+  .scholarship-actions .ui-datatable-row-action:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-status-green-bg), var(--color-primary) 14%);
+    border-color: rgba(27, 67, 50, 0.35);
+  }
+
+  .scholarship-status-button:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--status-bg), #000 16%);
+    box-shadow: 0 2px 6px rgba(18, 48, 31, 0.24);
+  }
+}
+
+.scholarship-status-button:active:not(:disabled) {
+  transform: scale(0.97);
+  box-shadow: none;
+}
+
+.scholarship-status-button:focus-visible {
+  outline: 3px solid var(--color-primary-focus-ring);
+  outline-offset: 2px;
 }
 
 .scholarship-status-button:disabled {
   opacity: 0.45;
+  box-shadow: none;
   cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scholarship-status-button:active:not(:disabled) {
+    transform: none;
+  }
 }
 
 .scholarship-override {

@@ -109,3 +109,8 @@
   font: var(--text-dense);
   color: var(--color-text-secondary);
 }
+
+/* The stage counts are secondary to the headline figures above them. */
+.pipeline-stages dd {
+  font-size: 20px;
+}

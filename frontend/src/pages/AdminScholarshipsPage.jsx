@@ -324,7 +324,7 @@ export default function AdminScholarshipsPage() {
           {row.isActive ? (
             <button
               type="button"
-              className="scholarship-status-button"
+              className="scholarship-status-button scholarship-status-deactivate"
               disabled={editBlocked}
               title={editBlocked ? `${lockedTitle}. Only an Admin with full controls can deactivate now.` : undefined}
               onClick={(event) => {
@@ -337,7 +337,7 @@ export default function AdminScholarshipsPage() {
           ) : (
             <button
               type="button"
-              className="scholarship-status-button"
+              className="scholarship-status-button scholarship-status-activate"
               onClick={(event) => {
                 event.stopPropagation();
                 changeStatus(row, true);

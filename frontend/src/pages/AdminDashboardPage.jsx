@@ -351,7 +351,6 @@ export default function AdminDashboardPage() {
 
   const countByDepartment = new Map((view?.byDepartment ?? []).map((d) => [d.department, d.count]));
   const departments = DEPARTMENT_OPTIONS.map((department) => ({ department, count: countByDepartment.get(department) ?? 0 }));
-  const largestDepartment = Math.max(1, ...departments.map((d) => d.count));
 
 
   const attention = view
@@ -456,29 +455,15 @@ export default function AdminDashboardPage() {
               </h2>
               <span className="dash-panel-aside">% of {view.totalApplications.toLocaleString()}</span>
             </div>
-            <ol className="dash-dept-list">
-              {departments.map((d, index) => {
-                const share = view.totalApplications > 0 ? Math.round((d.count / view.totalApplications) * 100) : 0;
-                return (
-                  <li key={d.department}>
-                    <Link
-                      to={applicationsLink({ category: view.category, department: d.department })}
-                      className="dash-dept"
-                    >
-                      <span className="dash-dept-name">{d.department}</span>
-                      <span className="dash-dept-track" aria-hidden="true">
-                        <span
-                          className="dash-dept-bar"
-                          style={{ "--bar-scale": d.count / largestDepartment, "--bar-index": index }}
-                        />
-                      </span>
-                      <span className="dash-dept-count">{d.count.toLocaleString()}</span>
-                      <span className="dash-dept-share">{share}%</span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ol>
+            <FigureBars
+              label="Applications by department as a bar graph"
+              figures={departments.map((d) => ({
+                label: d.department,
+                value: d.count,
+                note: `${view.totalApplications > 0 ? Math.round((d.count / view.totalApplications) * 100) : 0}%`,
+                to: applicationsLink({ category: view.category, department: d.department }),
+              }))}
+            />
           </section>
 
           <section className="dash-panel dash-recent" aria-labelledby="dash-recent-title">

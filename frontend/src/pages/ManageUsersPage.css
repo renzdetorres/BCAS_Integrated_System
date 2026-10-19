@@ -141,12 +141,14 @@
   font-size: 12.5px;
   font-weight: 400;
   color: var(--color-text-secondary);
-  overflow-wrap: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (min-width: 721px) {
   .account-cell-text {
-    min-width: 210px;
+    max-width: 230px;
   }
 }
 
@@ -173,15 +175,81 @@
   }
 }
 
-/* Edit gets the brand tint, so all three actions carry a colour fill:
-   green-tinted Edit, amber Deactivate / green Activate, red Delete. */
+/* Account actions: solid fills, one colour per meaning (green Edit, amber Deactivate,
+   green Activate, red Delete). White text is 6:1 or better on each.
+   Motion follows the app's button rules: the fill eases to a darker shade on hover
+   (pointer devices only, so a tap never leaves a stuck hover), pressing scales to 0.97
+   (shared .btn:active), and only colour/shadow/transform are transitioned. */
+.account-actions .btn {
+  --action-bg: var(--color-primary);
+  --action-bg-hover: color-mix(in srgb, var(--action-bg), #000 16%);
+  min-height: 34px;
+  padding-block: 6px;
+  gap: 6px;
+  font-size: 13px;
+  letter-spacing: 0;
+  color: var(--color-white);
+  background: var(--action-bg);
+  border-color: transparent;
+  box-shadow: 0 1px 2px rgba(18, 48, 31, 0.18);
+  transition:
+    background-color 160ms var(--ease-out),
+    box-shadow 160ms var(--ease-out),
+    transform 160ms var(--ease-out);
+}
+
+/* Edit is the routine action, so it is the light one: a soft green fill with dark green
+   text, leaving the solid colours to the actions that change an account's state. */
 .account-actions .btn-secondary {
-  background: var(--color-primary-tint-strong);
+  --action-bg: var(--color-status-green-bg);
+  --action-bg-hover: color-mix(in srgb, var(--color-status-green-bg), var(--color-primary) 14%);
   color: var(--color-primary);
   border-color: rgba(27, 67, 50, 0.22);
+  box-shadow: none;
 }
 
 .account-actions .btn-secondary:hover:not(:disabled) {
-  background: rgba(27, 67, 50, 0.16);
-  border-color: rgba(27, 67, 50, 0.4);
+  border-color: rgba(27, 67, 50, 0.35);
+  box-shadow: none;
+}
+
+.account-actions .btn-warning {
+  --action-bg: var(--color-status-amber-text);
+}
+
+.account-actions .btn-success {
+  --action-bg: var(--color-status-green-text);
+}
+
+.account-actions .btn-danger {
+  --action-bg: var(--color-status-red-text);
+}
+
+@media (hover: hover) {
+  .account-actions .btn:hover:not(:disabled) {
+    background: var(--action-bg-hover);
+    border-color: transparent;
+    box-shadow: 0 2px 6px rgba(18, 48, 31, 0.24);
+  }
+}
+
+.account-actions .btn:active:not(:disabled) {
+  box-shadow: 0 0 0 rgba(18, 48, 31, 0);
+}
+
+/* Disabled (your own row): still the same colour family, clearly not pressable. */
+.account-actions .btn:disabled {
+  opacity: 0.45;
+  box-shadow: none;
+}
+
+.account-actions .btn:focus-visible {
+  outline: 3px solid var(--color-primary-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-actions .btn {
+    transition: background-color 160ms var(--ease-out);
+  }
 }

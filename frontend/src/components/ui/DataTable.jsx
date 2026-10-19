@@ -228,6 +228,7 @@ export default function DataTable({
                   value={filter.value}
                   onChange={(event) => filter.onChange(event.target.value)}
                   aria-label={filter.label}
+                  title={filter.options.find((option) => option.value === filter.value)?.label ?? filter.label}
                 >
                   <option value="">{filter.label}</option>
                   {filter.options.map((option) => (

@@ -193,7 +193,7 @@ table {
 
 /* ---- Tap targets, round two ----------------------------------------------
    A check of every page found controls smaller than these sizes. Standalone text links and buttons are at least
-   28px tall at every width (WCAG 2.2 asks for 24), table checkboxes are 24px, and on phones and touch screens the
+   28px tall at every width (WCAG 2.2 asks for 24), table checkboxes are 15px with a 4px margin, and on phones and touch screens the
    everyday controls reach 44px. They live here because this file loads after the component styles and so wins ties. */
 .ss-applicants-verify-link,
 .documents-view-link,
@@ -205,10 +205,16 @@ table {
   min-height: 28px;
 }
 
+/* 15px reads as a normal checkbox. WCAG 2.2's 24px target size is still met through its spacing
+   exception: nothing else clickable sits within 24px of the box's centre. The min-* values stop the
+   phone rule above from growing it back to 22px. */
 .ui-datatable input[type="checkbox"],
 .ss-documents-table input[type="checkbox"] {
-  width: 24px;
-  height: 24px;
+  width: 15px;
+  height: 15px;
+  min-width: 15px;
+  min-height: 15px;
+  margin: 4px;
   accent-color: var(--color-primary);
 }
 

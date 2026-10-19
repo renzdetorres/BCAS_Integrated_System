@@ -8,7 +8,12 @@
   color: var(--color-text-primary);
 }
 
+/* One line each, ending in "…" (the full text is the tooltip) rather than breaking mid-word. */
 .admin-applications-email {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--color-text-secondary);
   font-size: 12.5px;
 }
@@ -29,6 +34,41 @@
   color: var(--color-text-primary);
 }
 
+/* Same fills as the other row actions: Clear is the light one, Archive selected is solid red
+   with white text. Hover eases to a darker shade on pointer devices only; the shared
+   .btn:active scale-down still applies. */
+.admin-applications-bulk .btn {
+  --bulk-bg: var(--color-status-red-text);
+  background: var(--bulk-bg);
+  color: var(--color-white);
+  border-color: transparent;
+  box-shadow: 0 1px 2px rgba(18, 48, 31, 0.18);
+  transition:
+    background-color 160ms var(--ease-out),
+    border-color 160ms var(--ease-out),
+    box-shadow 160ms var(--ease-out),
+    transform 160ms var(--ease-out);
+}
+
+.admin-applications-bulk .btn-secondary {
+  --bulk-bg: var(--color-status-green-bg);
+  color: var(--color-primary);
+  border-color: rgba(27, 67, 50, 0.22);
+  box-shadow: none;
+}
+
+@media (hover: hover) {
+  .admin-applications-bulk .btn:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--bulk-bg), #000 16%);
+    border-color: transparent;
+  }
+
+  .admin-applications-bulk .btn-secondary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-status-green-bg), var(--color-primary) 14%);
+    border-color: rgba(27, 67, 50, 0.35);
+  }
+}
+
 /* Unassigned applicants are invisible to every Academic Head - worth a glance. */
 .applications-department-missing {
   color: var(--color-status-amber-text);
@@ -41,5 +81,6 @@
 }
 
 .admin-applications-cell {
-  min-width: 150px;
+  min-width: 0;
+  max-width: 210px;
 }

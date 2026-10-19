@@ -86,13 +86,32 @@ h2.ui-datatable-title {
   padding-right: 32px;
 }
 
-/* Many dropdowns do not fit in half a row: the filters take the full width and wrap, search sits below. */
+/* Many dropdowns do not fit in half a row: the filters take the full width, search sits below.
+   They stay on ONE row: each dropdown shrinks (long labels end in an ellipsis, the full text is
+   its tooltip) and, below ~120px each, the row scrolls sideways instead of wrapping. */
 .ui-datatable-toolbar-wide {
   grid-template-columns: minmax(0, 1fr);
 }
 
 .ui-datatable-toolbar-wide .ui-datatable-filters {
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(var(--filter-count, 1), minmax(120px, 1fr));
+  gap: 8px;
+  /* Room for the focus ring, which overflow would otherwise clip. */
+  margin: -4px;
+  padding: 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.ui-datatable-toolbar-wide .ui-datatable-filters .ui-select {
+  min-height: 42px;
+  padding-left: 12px;
+  padding-right: 28px;
+  font-size: 13px;
+  background-position: right 8px center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* With no dropdowns, search keeps the right half: the row's shape never
@@ -134,7 +153,7 @@ h2.ui-datatable-title {
 }
 
 @media (max-width: 520px) {
-  .ui-datatable-filters {
+  .ui-datatable-toolbar:not(.ui-datatable-toolbar-wide) .ui-datatable-filters {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -163,8 +182,18 @@ h2.ui-datatable-title {
   font-variant-numeric: tabular-nums;
 }
 
+/* Fit, don't scroll: the page-wide overflow-wrap:anywhere (responsive.css) lets any cell break
+   mid-word, so the browser squeezed wrapping columns to a few letters ("Scholar / ship") while the
+   no-wrap ones still overflowed. Cells now wrap at spaces only, so each column keeps at least its
+   longest word and the table shares the width out instead of scrolling. */
+.ui-datatable-table th,
+.ui-datatable-table td {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
 .ui-datatable-table th {
-  padding: 10px 16px;
+  padding: 10px 12px;
   background: var(--color-surface-subtle);
   border-bottom: 1px solid var(--color-border);
   text-align: left;
@@ -175,7 +204,7 @@ h2.ui-datatable-title {
 }
 
 .ui-datatable-table td {
-  padding: 12px 16px;
+  padding: 12px 12px;
   border-bottom: 1px solid var(--color-border);
   color: var(--color-text-primary);
   vertical-align: middle;
@@ -183,12 +212,12 @@ h2.ui-datatable-title {
 
 .ui-datatable-table th:first-child,
 .ui-datatable-table td:first-child {
-  padding-left: 24px;
+  padding-left: 20px;
 }
 
 .ui-datatable-table th:last-child,
 .ui-datatable-table td:last-child {
-  padding-right: 24px;
+  padding-right: 20px;
 }
 
 .ui-datatable-table tbody tr:last-child td {
@@ -481,11 +510,6 @@ h2.ui-datatable-title {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .ui-datatable-toolbar-wide .ui-datatable-filters .ui-select {
-    padding-left: 12px;
-    padding-right: 28px;
-    background-position: right 8px center;
-  }
 }
 
 @media (max-width: 520px) {
@@ -802,15 +826,14 @@ h2.ui-datatable-title {
   }
 }
 
-/* Phones: many filters sit two to a row instead of a tall column of full-width selects. */
+/* Phones: the single row keeps its shape and scrolls sideways, each dropdown a comfortable 150px. */
 @media (max-width: 860px) {
   .ui-datatable-toolbar-wide .ui-datatable-filters {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--filter-count, 1), minmax(150px, 1fr));
+    scroll-snap-type: x proximity;
   }
 
-  .ui-datatable-toolbar-wide .ui-datatable-filters .ui-select {
-    padding-left: 12px;
-    padding-right: 28px;
-    background-position: right 8px center;
+  .ui-datatable-toolbar-wide .ui-datatable-filters > * {
+    scroll-snap-align: start;
   }
 }

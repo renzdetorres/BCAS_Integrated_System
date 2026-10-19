@@ -227,7 +227,7 @@ export default function AdminApplicationsPage() {
       render: (row) => (
         <div className="admin-applications-cell">
           <span className="admin-applications-name">{row.applicantName}</span>
-          <span className="admin-applications-email">{row.applicantEmail}</span>
+          <span className="admin-applications-email" title={row.applicantEmail}>{row.applicantEmail}</span>
           {row.applicationNumber ? <span className="admin-applications-email">{row.applicationNumber}</span> : null}
         </div>
       ),
@@ -284,7 +284,7 @@ export default function AdminApplicationsPage() {
       searchable: false,
       render: (row) => (
         <RowAction
-          label="View Application"
+          label="View"
           onClick={() => setViewing(row)}
           ariaLabel={`View ${row.applicantName}'s ${row.category.toLowerCase()} application`}
         />
