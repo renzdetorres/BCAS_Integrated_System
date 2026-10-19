@@ -55,12 +55,25 @@ public class SupportStaffSettingsController : ControllerBase
                 Status = StatusCodes.Status409Conflict,
             });
         }
+        catch (IncorrectCurrentPasswordException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Incorrect current password",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (TooManyPasswordAttemptsException ex)
+        {
+            return this.TooManyAttempts(ex.RetryAfterSeconds);
+        }
     }
 
     /// <summary>
     /// Changes the signed-in Support Staff's own password. Requires the
-    /// current password. Does not affect the caller's current session - the
-    /// existing JWT remains valid until it naturally expires (same as
+    /// current password. Signs out every other session and refreshes this one's
+    /// cookie so the caller stays signed in (same as
     /// ApplicantController.ChangePassword).
     /// </summary>
     [HttpPut("password")]
@@ -72,7 +85,8 @@ public class SupportStaffSettingsController : ControllerBase
     {
         try
         {
-            await _settingsService.ChangeMyPasswordAsync(User.GetUserId(), request, cancellationToken);
+            var session = await _settingsService.ChangeMyPasswordAsync(User.GetUserId(), request, cancellationToken);
+            this.SetAuthCookie(session.Token, session.ExpiresAtUtc);
             return NoContent();
         }
         catch (IncorrectCurrentPasswordException ex)
@@ -83,6 +97,19 @@ public class SupportStaffSettingsController : ControllerBase
                 Detail = ex.Message,
                 Status = StatusCodes.Status400BadRequest,
             });
+        }
+        catch (NewPasswordSameAsCurrentException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Choose a different password",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (TooManyPasswordAttemptsException ex)
+        {
+            return this.TooManyAttempts(ex.RetryAfterSeconds);
         }
     }
 }

@@ -17,4 +17,8 @@ public class UpdateMyProfileRequest
     [EmailAddress]
     [StringLength(256)]
     public string Email { get; set; } = string.Empty;
+
+    /// <summary>Required only when the email is being changed: the current password proves it's the account's owner at the keyboard.</summary>
+    [StringLength(100)]
+    public string? CurrentPassword { get; set; }
 }

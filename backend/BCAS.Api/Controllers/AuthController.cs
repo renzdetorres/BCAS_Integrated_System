@@ -5,8 +5,11 @@ using BCAS.Api.Exceptions;
 using BCAS.Api.Extensions;
 using BCAS.Api.Models;
 using BCAS.Api.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
 namespace BCAS.Api.Controllers;
@@ -22,6 +25,8 @@ public class AuthController : ControllerBase
     private readonly AttemptLimiter _limiter;
     private readonly IHostEnvironment _environment;
     private readonly ISuperAdminGuard _superAdminGuard;
+    private readonly IMemoryCache _cache;
+    private readonly ILogger<AuthController> _logger;
 
     // Throttling. Sign-in failures are counted per (address + email), per email and per address, so one
     // person typing a wrong password is not locked out by someone else, and a guesser can't just rotate emails.
@@ -30,6 +35,11 @@ public class AuthController : ControllerBase
     private const int LoginFailuresPerEmailLimit = 30;
     private const int LoginFailuresPerIpLimit = 40;
 
+    // Past the per-email failure limit an account is not locked: its sign-in attempts are spaced this far apart
+    // instead, and a correct password still gets in. A guesser's budget stays the same (30 failures per window plus
+    // one try per spacing), but a stranger can no longer lock the real owner out for the whole window.
+    private static readonly TimeSpan EmailPacing = TimeSpan.FromSeconds(20);
+
     public AuthController(
         IAuthService authService,
         IOptions<AuthCookieOptions> cookieOptions,
@@ -37,7 +47,9 @@ public class AuthController : ControllerBase
         IAuditLogService auditLogService,
         AttemptLimiter limiter,
         IHostEnvironment environment,
-        ISuperAdminGuard superAdminGuard)
+        ISuperAdminGuard superAdminGuard,
+        IMemoryCache cache,
+        ILogger<AuthController> logger)
     {
         _authService = authService;
         _cookieOptions = cookieOptions.Value;
@@ -46,6 +58,8 @@ public class AuthController : ControllerBase
         _limiter = limiter;
         _environment = environment;
         _superAdminGuard = superAdminGuard;
+        _cache = cache;
+        _logger = logger;
     }
 
     private string ClientIp => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
@@ -69,11 +83,13 @@ public class AuthController : ControllerBase
     /// origin if set (needed in local dev, where Vite and the API are
     /// different origins), else this same request's own origin (correct in
     /// production, where the API serves the SPA itself - see FrontendOptions).
+    /// Null outside local development when no address is configured: the Host header is attacker-controlled, so a
+    /// reset link must never be built from it on the live site.
     /// </summary>
-    private string FrontendBaseUrl =>
+    private string? FrontendBaseUrl =>
         !string.IsNullOrWhiteSpace(_frontendOptions.BaseUrl)
             ? _frontendOptions.BaseUrl!
-            : $"{Request.Scheme}://{Request.Host}";
+            : _environment.IsDevelopment() ? $"{Request.Scheme}://{Request.Host}" : null;
 
     /// <summary>
     /// The two cookie attributes that must match between Login (Append) and
@@ -88,6 +104,7 @@ public class AuthController : ControllerBase
     /// Public self-service registration. Always creates an Applicant account;
     /// staff roles must be provisioned separately by an Admin.
     /// </summary>
+    [AllowAnonymous]
     [HttpPost("register")]
     [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -122,6 +139,7 @@ public class AuthController : ControllerBase
     /// Secure, SameSite cookie. Failures (unknown email, wrong password,
     /// inactive account) all return the same generic error.
     /// </summary>
+    [AllowAnonymous]
     [HttpPost("login")]
     [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -135,12 +153,11 @@ public class AuthController : ControllerBase
         var emailKey = $"login:email:{email}";
         var ipKey = $"login:ip:{ClientIp}";
 
-        // Over the failure limit: refuse before even checking the password. This applies the same way to
-        // an email that has no account, so it can't be used to tell which emails exist.
+        // Over the failure limit for this address (alone, or with this email): refuse before even checking the
+        // password. These only ever affect the person making the attempts, so they can't be used to lock out someone else.
         var locked = new[]
         {
             (Key: pairKey, Limit: LoginFailuresPerPairLimit),
-            (Key: emailKey, Limit: LoginFailuresPerEmailLimit),
             (Key: ipKey, Limit: LoginFailuresPerIpLimit),
         }.Where(k => _limiter.Count(k.Key, LoginWindow) >= k.Limit).ToList();
         if (locked.Count > 0)
@@ -148,20 +165,24 @@ public class AuthController : ControllerBase
             return TooManyAttempts(locked.Max(k => _limiter.SecondsUntilFree(k.Key, LoginWindow)));
         }
 
+        // Too many failures on this email from everywhere (a guesser rotating addresses): space the attempts out
+        // rather than refusing the account for the whole window. This applies the same way to an email that has no
+        // account, so it can't be used to tell which emails exist.
+        var emailPaceKey = $"login:email-pace:{email}";
+        if (_limiter.Count(emailKey, LoginWindow) >= LoginFailuresPerEmailLimit && !_limiter.TryRecord(emailPaceKey, 1, EmailPacing))
+        {
+            return TooManyAttempts(_limiter.SecondsUntilFree(emailPaceKey, EmailPacing));
+        }
+
         try
         {
             var result = await _authService.LoginAsync(request, cancellationToken);
             _limiter.Clear(pairKey);
+            // Knowing the password proves this is the owner, so earlier failures from others stop counting against them.
+            _limiter.Clear(emailKey);
+            _limiter.Clear(emailPaceKey);
 
-            var (secure, sameSite) = CookieSecurity;
-            Response.Cookies.Append(AuthConstants.AuthCookieName, result.Token, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = secure,
-                SameSite = sameSite,
-                Path = "/",
-                Expires = result.ExpiresAtUtc,
-            });
+            this.SetAuthCookie(result.Token, result.ExpiresAtUtc);
 
             // Staff accountability log, not applicant usage telemetry - an
             // Applicant logging in isn't an administrative action, and at
@@ -193,6 +214,7 @@ public class AuthController : ControllerBase
     /// account - an email is only actually sent when it does (no-enumeration,
     /// same reasoning as Login's generic failure message).
     /// </summary>
+    [AllowAnonymous]
     [HttpPost("forgot-password")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -212,11 +234,20 @@ public class AuthController : ControllerBase
             return NoContent();
         }
 
-        await _authService.ForgotPasswordAsync(request.Email, FrontendBaseUrl, cancellationToken);
+        var baseUrl = FrontendBaseUrl;
+        if (baseUrl is null)
+        {
+            // Same answer as any other request, so this can't be used to probe accounts; the log says what to fix.
+            _logger.LogError("A password reset was requested but Frontend__BaseUrl is not set, so no reset email was sent (a link built from the request's Host header could be forged). Set Frontend__BaseUrl to this site's address.");
+            return NoContent();
+        }
+
+        await _authService.ForgotPasswordAsync(request.Email, baseUrl, cancellationToken);
         return NoContent();
     }
 
     /// <summary>Sets a new password from a valid reset-email link/token.</summary>
+    [AllowAnonymous]
     [HttpPost("reset-password")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -242,16 +273,38 @@ public class AuthController : ControllerBase
                 Status = StatusCodes.Status400BadRequest,
             });
         }
+        catch (NewPasswordSameAsCurrentException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Choose a different password",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
     }
 
     /// <summary>
-    /// Clears the auth cookie server-side, invalidating the client's session.
+    /// Signs the session out: the login's token id is marked as revoked until the moment it would have expired
+    /// (so a copy of the cookie stops working too) and the cookie is cleared. The mark lives in memory, so an
+    /// app restart forgets it; the token's own 60-minute lifetime is the backstop.
     /// Idempotent - safe to call even when no cookie is present.
     /// </summary>
+    [AllowAnonymous]
     [HttpPost("logout")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout()
     {
+        var current = await HttpContext.AuthenticateAsync(JwtBearerDefaults.AuthenticationScheme);
+        if (current.Succeeded)
+        {
+            var tokenId = current.Principal.FindFirstValue(JwtRegisteredClaimNames.Jti);
+            if (tokenId is not null && long.TryParse(current.Principal.FindFirstValue(JwtRegisteredClaimNames.Exp), out var expiresAtUnix))
+            {
+                _cache.Set(AuthConstants.RevokedTokenKey(tokenId), true, DateTimeOffset.FromUnixTimeSeconds(expiresAtUnix));
+            }
+        }
+
         var (secure, sameSite) = CookieSecurity;
         Response.Cookies.Delete(AuthConstants.AuthCookieName, new CookieOptions
         {

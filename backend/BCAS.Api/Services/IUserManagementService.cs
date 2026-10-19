@@ -6,7 +6,7 @@ public interface IUserManagementService
 {
     Task<IReadOnlyList<UserProfileResponse>> ListUsersAsync(CancellationToken cancellationToken = default);
 
-    Task<UserProfileResponse> SetActiveStatusAsync(Guid userId, bool isActive, CancellationToken cancellationToken = default);
+    Task<UserProfileResponse> SetActiveStatusAsync(Guid callerUserId, Guid userId, bool isActive, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Edits an existing account's name, email, and role. Works across all
@@ -14,7 +14,7 @@ public interface IUserManagementService
     /// accounts. Throws InvalidRoleException, UserNotFoundException, or
     /// DuplicateEmailException.
     /// </summary>
-    Task<UserProfileResponse> UpdateUserAsync(Guid userId, UpdateUserRequest request, CancellationToken cancellationToken = default);
+    Task<UserUpdateResult> UpdateUserAsync(Guid callerUserId, Guid userId, UpdateUserRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Grants or revokes Super Admin on an active Admin account. Caller must

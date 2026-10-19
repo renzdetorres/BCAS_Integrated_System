@@ -7,6 +7,8 @@ import {
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
+import SettingsSearch from "../components/ui/SettingsSearch.jsx";
+import { ACADEMIC_HEAD_DEPARTMENT_ENTRY, STAFF_ACCOUNT_ENTRIES } from "../config/settingsSearchEntries.js";
 import "./AcademicHeadSettingsPage.css";
 
 const initialPasswordForm = { currentPassword: "", newPassword: "", confirmNewPassword: "" };
@@ -16,11 +18,14 @@ function toForm(profile) {
     firstName: profile.firstName,
     lastName: profile.lastName,
     email: profile.email,
+    // The address on file: changing the email asks for the current password (see handleSubmit).
+    savedEmail: profile.email,
   };
 }
 
 export default function AcademicHeadSettingsPage() {
-  const [form, setForm] = useState({ firstName: "", lastName: "", email: "" });
+  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", savedEmail: "" });
+  const [emailPassword, setEmailPassword] = useState("");
   const [department, setDepartment] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,6 +66,8 @@ export default function AcademicHeadSettingsPage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
+  const emailChanged = form.email.trim().toLowerCase() !== form.savedEmail.trim().toLowerCase();
+
   async function handleSubmit(event) {
     event.preventDefault();
     setErrorMessage(null);
@@ -72,7 +79,9 @@ export default function AcademicHeadSettingsPage() {
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
         email: form.email.trim(),
+        currentPassword: emailChanged ? emailPassword : undefined,
       });
+      setEmailPassword("");
       setForm(toForm(saved));
       setSavedMessage("Profile saved.");
     } catch (error) {
@@ -126,10 +135,12 @@ export default function AcademicHeadSettingsPage() {
 
   return (
     <AppLayout title="Settings">
-        <Card className="ah-settings-card">
+        <SettingsSearch entries={[...STAFF_ACCOUNT_ENTRIES, ACADEMIC_HEAD_DEPARTMENT_ENTRY]} />
+
+        <Card id="settings-profile" className="ah-settings-card">
           <h2>Profile</h2>
           <p className="ah-settings-subtitle">You can update your name and email at any time.</p>
-          <p className="ah-settings-department">
+          <p id="settings-department" className="ah-settings-department">
             Assigned department: <strong>{department ?? "Not assigned yet"}</strong>
             <span>Only an Admin-Registrar can change this, in Manage Accounts.</span>
           </p>
@@ -176,13 +187,29 @@ export default function AcademicHeadSettingsPage() {
               <input placeholder="e.g. juan.delacruz@email.com" id="email" name="email" type="email" required value={form.email} onChange={handleChange} />
             </div>
 
+            {emailChanged && (
+              <div className="form-row">
+                <label htmlFor="emailCurrentPassword">Current password (needed to change your email)</label>
+                <input
+                  placeholder="Enter your current password"
+                  id="emailCurrentPassword"
+                  name="emailCurrentPassword"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={emailPassword}
+                  onChange={(event) => setEmailPassword(event.target.value)}
+                />
+              </div>
+            )}
+
             <button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Saving..." : "Save Profile"}
             </button>
           </form>
         </Card>
 
-        <Card className="ah-settings-card">
+        <Card id="settings-password" className="ah-settings-card">
           <h2>Change Password</h2>
           <p className="ah-settings-subtitle">Enter your current password and choose a new one.</p>
 

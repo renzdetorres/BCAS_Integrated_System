@@ -28,6 +28,8 @@ public class TokenService : ITokenService
             new Claim(ClaimTypes.Surname, user.LastName),
             new Claim(ClaimTypes.Role, user.RoleName),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            // Ties the login to the password it was issued under; see PasswordFingerprint.
+            new Claim(PasswordFingerprint.ClaimType, PasswordFingerprint.Of(user.PasswordHash)),
         };
 
         var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.SigningKey));

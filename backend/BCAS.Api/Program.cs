@@ -6,6 +6,7 @@ using BCAS.Api.Data;
 using BCAS.Api.Models;
 using BCAS.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 
@@ -175,22 +176,45 @@ builder.Services
                 }
 
                 var services = context.HttpContext.RequestServices;
-                var state = await services.GetRequiredService<IMemoryCache>().GetOrCreateAsync($"session:{userId}", async entry =>
+
+                // Signed out (see AuthController.Logout): the token still verifies, but the session is over.
+                var tokenId = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
+                if (tokenId is not null && services.GetRequiredService<IMemoryCache>().TryGetValue(AuthConstants.RevokedTokenKey(tokenId), out _))
+                {
+                    context.Fail("This login was signed out.");
+                    return;
+                }
+
+                var state = await services.GetRequiredService<IMemoryCache>().GetOrCreateAsync(AuthConstants.SessionCacheKey(userId), async entry =>
                 {
                     entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30);
                     var user = await services.GetRequiredService<IUserRepository>().GetByIdAsync(userId, context.HttpContext.RequestAborted);
-                    return user is null ? null : new SessionState(user.IsActive, user.RoleName);
+                    return user is null ? null : new SessionState(user.IsActive, user.RoleName, PasswordFingerprint.Of(user.PasswordHash));
                 });
 
                 var roleInToken = context.Principal?.FindFirstValue(ClaimTypes.Role);
                 if (state is null || !state.IsActive || !string.Equals(state.Role, roleInToken, StringComparison.Ordinal))
                 {
                     context.Fail("The account was deactivated or its role changed.");
+                    return;
+                }
+
+                // A login issued before the password was last changed or reset is no longer good (this also signs
+                // out logins issued before this check existed, once, when it first ships).
+                var fingerprintInToken = context.Principal?.FindFirstValue(PasswordFingerprint.ClaimType);
+                if (!string.Equals(state.PasswordFingerprint, fingerprintInToken, StringComparison.Ordinal))
+                {
+                    context.Fail("The password was changed after this login was issued.");
                 }
             },
         };
     });
-builder.Services.AddAuthorization();
+// Deny by default: an endpoint with no [Authorize] still needs a signed-in user, so a controller added later can't be
+// public by accident. The public endpoints (sign-in, registration, the academic catalog) carry [AllowAnonymous].
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
+});
 
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
 builder.Services.AddCors(options =>
@@ -228,13 +252,11 @@ if (smtpProblems.Count > 0)
     app.Logger.LogWarning("Email is not set up, so password reset and notification emails will not be sent. {Problems}", string.Join(" ", smtpProblems));
 }
 
-// A site with no explicit address and any host allowed builds password reset links from whatever Host header
-// a request carries, so a forged header could point a reset email at someone else's site.
-if (!app.Environment.IsDevelopment()
-    && string.IsNullOrWhiteSpace(app.Configuration["Frontend:BaseUrl"])
-    && (app.Configuration["AllowedHosts"] ?? "*") == "*")
+// A site with no explicit address would have to build password reset links from whatever Host header a request
+// carries, which a forged header could point at someone else's site, so it sends no reset emails at all.
+if (!app.Environment.IsDevelopment() && string.IsNullOrWhiteSpace(app.Configuration["Frontend:BaseUrl"]))
 {
-    app.Logger.LogWarning("Frontend__BaseUrl is not set and AllowedHosts is '*', so password reset links are built from the request's Host header. Set Frontend__BaseUrl (or AllowedHosts) to this site's address.");
+    app.Logger.LogWarning("Frontend__BaseUrl is not set, so password reset emails are NOT sent (a link built from the request's Host header could be forged). Set Frontend__BaseUrl to this site's address, and AllowedHosts to its host name.");
 }
 
 if (app.Environment.IsDevelopment())
@@ -314,7 +336,7 @@ app.MapControllers();
 // client-side route like /portal, direct links, etc.).
 app.UseDefaultFiles();
 app.UseStaticFiles();
-app.MapFallbackToFile("index.html");
+app.MapFallbackToFile("index.html").AllowAnonymous();
 
 // Say which database this API is using, and what it is missing if it is the
 // wrong or an outdated one (see DatabaseStartupCheck).
@@ -323,4 +345,4 @@ await DatabaseStartupCheck.RunAsync(app.Configuration, app.Environment, app.Logg
 app.Run();
 
 /// <summary>What the login check remembers about an account for 30 seconds.</summary>
-internal sealed record SessionState(bool IsActive, string Role);
+internal sealed record SessionState(bool IsActive, string Role, string PasswordFingerprint);

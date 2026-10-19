@@ -6,4 +6,9 @@ public class IncorrectCurrentPasswordException : Exception
         : base("Current password is incorrect.")
     {
     }
+
+    public IncorrectCurrentPasswordException(string message)
+        : base(message)
+    {
+    }
 }

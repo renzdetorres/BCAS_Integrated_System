@@ -66,9 +66,9 @@ public class ApplicantController : ControllerBase
     /// <summary>
     /// Changes the signed-in applicant's own password. Requires the current
     /// password; the new one is re-hashed with BCrypt before being stored.
-    /// Does not affect the caller's current session - the existing JWT
-    /// remains valid until it naturally expires (same tradeoff as logout,
-    /// see BISAASS-10).
+    /// Signs out every other session (their tokens no longer match the new
+    /// password) and gives this one a fresh cookie so the caller stays signed
+    /// in. Too many wrong current passwords in a row answers 429.
     /// </summary>
     [HttpPut("password")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -79,7 +79,8 @@ public class ApplicantController : ControllerBase
     {
         try
         {
-            await _authService.ChangePasswordAsync(User.GetUserId(), request, cancellationToken);
+            var session = await _authService.ChangePasswordAsync(User.GetUserId(), request, cancellationToken);
+            this.SetAuthCookie(session.Token, session.ExpiresAtUtc);
             return NoContent();
         }
         catch (IncorrectCurrentPasswordException ex)
@@ -90,6 +91,19 @@ public class ApplicantController : ControllerBase
                 Detail = ex.Message,
                 Status = StatusCodes.Status400BadRequest,
             });
+        }
+        catch (NewPasswordSameAsCurrentException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Choose a different password",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (TooManyPasswordAttemptsException ex)
+        {
+            return this.TooManyAttempts(ex.RetryAfterSeconds);
         }
     }
 }

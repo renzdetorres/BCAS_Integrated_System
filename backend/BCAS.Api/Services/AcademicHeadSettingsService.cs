@@ -33,6 +33,9 @@ public class AcademicHeadSettingsService : IAcademicHeadSettingsService
     {
         var normalizedEmail = request.Email.Trim().ToLowerInvariant();
 
+        // A changed email needs the current password (and tells the old address), so a stolen session can't hijack the account.
+        var oldEmail = await _authService.AuthorizeEmailChangeAsync(userId, normalizedEmail, request.CurrentPassword, cancellationToken);
+
         var user = await _userRepository.UpdateProfileAsync(
             userId,
             request.FirstName.Trim(),
@@ -42,9 +45,14 @@ public class AcademicHeadSettingsService : IAcademicHeadSettingsService
 
         _logger.LogInformation("Account {UserId} updated its own profile: Email={Email}", userId, user.Email);
 
+        if (oldEmail is not null)
+        {
+            _authService.NotifyEmailChanged(oldEmail, user.FirstName, user.Email);
+        }
+
         return user.ToProfileResponse();
     }
 
-    public Task ChangeMyPasswordAsync(Guid userId, ChangePasswordRequest request, CancellationToken cancellationToken = default) =>
+    public Task<LoginResult> ChangeMyPasswordAsync(Guid userId, ChangePasswordRequest request, CancellationToken cancellationToken = default) =>
         _authService.ChangePasswordAsync(userId, request, cancellationToken);
 }

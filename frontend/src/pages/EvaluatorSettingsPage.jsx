@@ -7,6 +7,8 @@ import {
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
+import SettingsSearch from "../components/ui/SettingsSearch.jsx";
+import { STAFF_ACCOUNT_ENTRIES } from "../config/settingsSearchEntries.js";
 import "./EvaluatorSettingsPage.css";
 
 const initialPasswordForm = { currentPassword: "", newPassword: "", confirmNewPassword: "" };
@@ -16,11 +18,14 @@ function toForm(profile) {
     firstName: profile.firstName,
     lastName: profile.lastName,
     email: profile.email,
+    // The address on file: changing the email asks for the current password (see handleSubmit).
+    savedEmail: profile.email,
   };
 }
 
 export default function EvaluatorSettingsPage() {
-  const [form, setForm] = useState({ firstName: "", lastName: "", email: "" });
+  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", savedEmail: "" });
+  const [emailPassword, setEmailPassword] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -57,6 +62,8 @@ export default function EvaluatorSettingsPage() {
     setForm((prev) => ({ ...prev, [name]: value }));
   }
 
+  const emailChanged = form.email.trim().toLowerCase() !== form.savedEmail.trim().toLowerCase();
+
   async function handleSubmit(event) {
     event.preventDefault();
     setErrorMessage(null);
@@ -68,7 +75,9 @@ export default function EvaluatorSettingsPage() {
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
         email: form.email.trim(),
+        currentPassword: emailChanged ? emailPassword : undefined,
       });
+      setEmailPassword("");
       setForm(toForm(saved));
       setSavedMessage("Profile saved.");
     } catch (error) {
@@ -122,7 +131,9 @@ export default function EvaluatorSettingsPage() {
 
   return (
     <AppLayout title="Settings">
-        <Card className="evaluator-settings-card">
+        <SettingsSearch entries={STAFF_ACCOUNT_ENTRIES} />
+
+        <Card id="settings-profile" className="evaluator-settings-card">
           <h2>Profile</h2>
           <p className="evaluator-settings-subtitle">You can update your name and email at any time.</p>
 
@@ -168,13 +179,29 @@ export default function EvaluatorSettingsPage() {
               <input placeholder="e.g. juan.delacruz@email.com" id="email" name="email" type="email" required value={form.email} onChange={handleChange} />
             </div>
 
+            {emailChanged && (
+              <div className="form-row">
+                <label htmlFor="emailCurrentPassword">Current password (needed to change your email)</label>
+                <input
+                  placeholder="Enter your current password"
+                  id="emailCurrentPassword"
+                  name="emailCurrentPassword"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={emailPassword}
+                  onChange={(event) => setEmailPassword(event.target.value)}
+                />
+              </div>
+            )}
+
             <button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Saving..." : "Save Profile"}
             </button>
           </form>
         </Card>
 
-        <Card className="evaluator-settings-card">
+        <Card id="settings-password" className="evaluator-settings-card">
           <h2>Change Password</h2>
           <p className="evaluator-settings-subtitle">Enter your current password and choose a new one.</p>
 

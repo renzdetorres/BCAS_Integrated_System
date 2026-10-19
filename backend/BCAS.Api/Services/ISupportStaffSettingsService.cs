@@ -17,5 +17,5 @@ public interface ISupportStaffSettingsService
         CancellationToken cancellationToken = default);
 
     /// <summary>Delegates to IAuthService.ChangePasswordAsync - see there for thrown exceptions.</summary>
-    Task ChangeMyPasswordAsync(Guid userId, ChangePasswordRequest request, CancellationToken cancellationToken = default);
+    Task<LoginResult> ChangeMyPasswordAsync(Guid userId, ChangePasswordRequest request, CancellationToken cancellationToken = default);
 }

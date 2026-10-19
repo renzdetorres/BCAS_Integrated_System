@@ -10,12 +10,14 @@ public class UserManagementService : IUserManagementService
 {
     private readonly IUserRepository _userRepository;
     private readonly ISuperAdminGuard _superAdminGuard;
+    private readonly IAuthService _authService;
     private readonly ILogger<UserManagementService> _logger;
 
-    public UserManagementService(IUserRepository userRepository, ISuperAdminGuard superAdminGuard, ILogger<UserManagementService> logger)
+    public UserManagementService(IUserRepository userRepository, ISuperAdminGuard superAdminGuard, IAuthService authService, ILogger<UserManagementService> logger)
     {
         _userRepository = userRepository;
         _superAdminGuard = superAdminGuard;
+        _authService = authService;
         _logger = logger;
     }
 
@@ -26,8 +28,15 @@ public class UserManagementService : IUserManagementService
         return users.Select(u => u.ToProfileResponse()).ToList();
     }
 
-    public async Task<UserProfileResponse> SetActiveStatusAsync(Guid userId, bool isActive, CancellationToken cancellationToken = default)
+    public async Task<UserProfileResponse> SetActiveStatusAsync(Guid callerUserId, Guid userId, bool isActive, CancellationToken cancellationToken = default)
     {
+        // Switching another Admin's account on or off is as powerful as editing it, so it takes full Admin controls.
+        var current = await _userRepository.GetByIdAsync(userId, cancellationToken) ?? throw new UserNotFoundException(userId);
+        if (current.RoleName == "Admin" && callerUserId != userId)
+        {
+            await _superAdminGuard.EnsureAsync(callerUserId, "activate or deactivate another Admin account", cancellationToken);
+        }
+
         if (!isActive)
         {
             await EnsureNotLastSuperAdminAsync(userId, "deactivate", cancellationToken);
@@ -41,19 +50,34 @@ public class UserManagementService : IUserManagementService
         return user.ToProfileResponse();
     }
 
-    public async Task<UserProfileResponse> UpdateUserAsync(Guid userId, UpdateUserRequest request, CancellationToken cancellationToken = default)
+    public async Task<UserUpdateResult> UpdateUserAsync(Guid callerUserId, Guid userId, UpdateUserRequest request, CancellationToken cancellationToken = default)
     {
         if (!AuthConstants.AllRoles.Contains(request.Role))
         {
             throw new InvalidRoleException(request.Role, AuthConstants.AllRoles);
         }
 
+        var target = await _userRepository.GetByIdAsync(userId, cancellationToken) ?? throw new UserNotFoundException(userId);
+        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
+
+        // Changing an Admin's email would let the editor take the account over through "Forgot password", and making
+        // someone an Admin hands out Admin access, so both take full Admin controls. An Admin may still fix their own
+        // name or department without them (their email and role stay as they are).
+        if (target.RoleName == "Admin" || request.Role == "Admin")
+        {
+            var onlyOwnHarmlessEdit = callerUserId == userId
+                && string.Equals(target.Email, normalizedEmail, StringComparison.OrdinalIgnoreCase)
+                && request.Role == target.RoleName;
+            if (!onlyOwnHarmlessEdit)
+            {
+                await _superAdminGuard.EnsureAsync(callerUserId, "change an Admin account's email or role, or make someone an Admin", cancellationToken);
+            }
+        }
+
         if (request.Role != "Admin")
         {
             await EnsureNotLastSuperAdminAsync(userId, "move to another role", cancellationToken);
         }
-
-        var normalizedEmail = request.Email.Trim().ToLowerInvariant();
 
         var user = await _userRepository.UpdateAsync(
             userId,
@@ -64,9 +88,17 @@ public class UserManagementService : IUserManagementService
             DepartmentRules.ForRole(request.Role, request.Department),
             cancellationToken) ?? throw new UserNotFoundException(userId);
 
-        _logger.LogInformation("Account {UserId} updated: Email={Email}, Role={Role}", user.UserId, user.Email, user.RoleName);
+        _logger.LogInformation(
+            "Account {UserId} updated by {CallerUserId}: Email {OldEmail} -> {Email}, Role {OldRole} -> {Role}",
+            user.UserId, callerUserId, target.Email, user.Email, target.RoleName, user.RoleName);
 
-        return user.ToProfileResponse();
+        // The old address hears about it, since "Forgot password" goes to the new one from now on.
+        if (!string.Equals(target.Email, user.Email, StringComparison.OrdinalIgnoreCase))
+        {
+            _authService.NotifyEmailChanged(target.Email, target.FirstName, user.Email);
+        }
+
+        return new UserUpdateResult(user.ToProfileResponse(), target.Email, target.RoleName);
     }
 
     public async Task<UserProfileResponse> SetSuperAdminAsync(

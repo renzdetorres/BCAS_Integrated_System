@@ -1160,6 +1160,34 @@ address as both the username and the sender.
 mail server's real answer (for example "Username and Password not accepted"). The API also logs a warning at start-up while
 email isn't set up.
 
+### Password changes
+
+- A new password can't be the current one, on the reset link or the change-password form.
+- Changing or resetting a password signs out every other session: each login carries a fingerprint of the password
+  it was issued under and stops working once that changes. The person changing it gets a fresh cookie and stays
+  signed in. (The first deploy of this signs everyone out once, because older logins have no fingerprint.)
+- The owner gets an email ("Your BCAS password was changed") after every change or reset, so one they didn't make is noticed.
+- Five wrong current passwords in 15 minutes lock the change-password form for that account for the rest of the window (429).
+
+### Protecting accounts from being taken over
+
+- **Admin accounts:** only an Admin with full controls (Super Admin) can change an Admin account's email or role, make
+  someone an Admin, create an Admin account, or switch another Admin on or off. An Admin can still fix their own name.
+  The audit log entry names the account by id and records what the email and role were before.
+- **Email changes:** a staff member changing their own email must type their current password (it shares the five-try
+  limit above), and the old address is emailed. An Admin changing someone's email also emails the old address.
+- **Reset links:** the link is built from `Frontend__BaseUrl`. Outside local development, with it unset, no reset email is
+  sent (a link built from the Host header could be forged) and the log says so. **Set `Frontend__BaseUrl` on the host to
+  the site's address before deploying this.**
+- **Sign out:** logging out marks the login as revoked until it would have expired, so a copied cookie stops working
+  too. The mark is held in memory, so an app restart forgets it; the 60-minute login lifetime is the backstop.
+- **Deny by default:** an endpoint with no `[Authorize]` still needs a signed-in user. The public ones (register, login,
+  forgot/reset password, logout, the academic catalog) carry `[AllowAnonymous]`.
+- **Sign-in throttling:** one address is stopped after 5 wrong tries on an email (10 minutes). Past 30 failures on an
+  email from everywhere, that account's attempts are spaced 20 seconds apart instead of refused, so a stranger can't lock
+  the owner out, and a correct sign-in clears the count.
+- Staff accounts created by an Admin must meet the same password rules (no very common passwords).
+
 ### Admin academic year filter and applicant search
 
 The Admin top bar has an **academic year** filter (all years, or the school's current year and the four before it, taken

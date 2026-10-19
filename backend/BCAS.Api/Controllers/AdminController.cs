@@ -43,9 +43,18 @@ public class AdminController : ControllerBase
     {
         try
         {
-            var response = await _staffProvisioningService.CreateStaffAsync(request, cancellationToken);
+            var response = await _staffProvisioningService.CreateStaffAsync(User.GetUserId(), request, cancellationToken);
             await _auditLogService.LogAsync(User, "StaffCreated", $"Created {response.Role} account {response.Email}{DepartmentSuffix(response)}", cancellationToken);
             return CreatedAtAction(nameof(CreateStaff), new { id = response.UserId }, response);
+        }
+        catch (SuperAdminRequiredException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Full Admin controls required",
+                Detail = ex.Message,
+                Status = StatusCodes.Status403Forbidden,
+            });
         }
         catch (InvalidRoleException ex)
         {
@@ -101,13 +110,22 @@ public class AdminController : ControllerBase
     {
         try
         {
-            var response = await _userManagementService.SetActiveStatusAsync(userId, request.IsActive!.Value, cancellationToken);
+            var response = await _userManagementService.SetActiveStatusAsync(User.GetUserId(), userId, request.IsActive!.Value, cancellationToken);
             await _auditLogService.LogAsync(
                 User,
                 response.IsActive ? "UserActivated" : "UserDeactivated",
                 $"{response.Email} ({response.Role})",
                 cancellationToken);
             return Ok(response);
+        }
+        catch (SuperAdminRequiredException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Full Admin controls required",
+                Detail = ex.Message,
+                Status = StatusCodes.Status403Forbidden,
+            });
         }
         catch (InvalidSuperAdminChangeException ex)
         {
@@ -148,9 +166,24 @@ public class AdminController : ControllerBase
     {
         try
         {
-            var response = await _userManagementService.UpdateUserAsync(userId, request, cancellationToken);
-            await _auditLogService.LogAsync(User, "UserUpdated", $"Updated {response.Email} ({response.Role}){DepartmentSuffix(response)}", cancellationToken);
+            var result = await _userManagementService.UpdateUserAsync(User.GetUserId(), userId, request, cancellationToken);
+            var response = result.User;
+            // Names the account by id and records what it was before, so a swapped email or role can be traced.
+            await _auditLogService.LogAsync(
+                User,
+                "UserUpdated",
+                $"Updated {response.Email} ({response.Role}){DepartmentSuffix(response)} [account {userId}; was {result.PreviousEmail} ({result.PreviousRole})]",
+                cancellationToken);
             return Ok(response);
+        }
+        catch (SuperAdminRequiredException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new ProblemDetails
+            {
+                Title = "Full Admin controls required",
+                Detail = ex.Message,
+                Status = StatusCodes.Status403Forbidden,
+            });
         }
         catch (InvalidRoleException ex)
         {

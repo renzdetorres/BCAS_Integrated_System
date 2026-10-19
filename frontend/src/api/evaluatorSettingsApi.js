@@ -16,12 +16,12 @@ export async function getMyEvaluatorProfile() {
   return data;
 }
 
-export async function updateMyEvaluatorProfile({ firstName, lastName, email }) {
+export async function updateMyEvaluatorProfile({ firstName, lastName, email, currentPassword }) {
   const response = await fetch(`${API_BASE_URL}/api/evaluator/settings/profile`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ firstName, lastName, email }),
+    body: JSON.stringify({ firstName, lastName, email, currentPassword }),
   });
 
   const data = await response.json().catch(() => null);
