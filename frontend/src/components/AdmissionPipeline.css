@@ -53,6 +53,10 @@
   color: var(--color-text-primary);
 }
 
+.pipeline-bars {
+  margin-bottom: var(--space-8);
+}
+
 .pipeline-charts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

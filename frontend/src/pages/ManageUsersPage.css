@@ -172,3 +172,16 @@
     justify-content: stretch;
   }
 }
+
+/* Edit gets the brand tint, so all three actions carry a colour fill:
+   green-tinted Edit, amber Deactivate / green Activate, red Delete. */
+.account-actions .btn-secondary {
+  background: var(--color-primary-tint-strong);
+  color: var(--color-primary);
+  border-color: rgba(27, 67, 50, 0.22);
+}
+
+.account-actions .btn-secondary:hover:not(:disabled) {
+  background: rgba(27, 67, 50, 0.16);
+  border-color: rgba(27, 67, 50, 0.4);
+}

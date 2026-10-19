@@ -8,6 +8,7 @@ import AppLayout from "../components/layout/AppLayout.jsx";
 import Icon from "../components/ui/Icon.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import AdmissionPipeline from "../components/AdmissionPipeline.jsx";
+import FigureBars from "../components/ui/FigureBars.jsx";
 import { DEPARTMENT_OPTIONS } from "../config/departments.js";
 import { useAcademicYear } from "../context/AcademicYearContext.jsx";
 import "../components/AdmissionPipeline.css";
@@ -283,6 +284,10 @@ function ScholarshipSummary({ academicYear }) {
           </div>
         ))}
       </dl>
+      <FigureBars
+        label="Scholarship applicants as a bar graph"
+        figures={SCHOLARSHIP_FIGURES.map((figure) => ({ label: figure.label, value: summary[figure.key] }))}
+      />
     </section>
   );
 }

@@ -132,7 +132,7 @@ export default function AdminApplicationsPage() {
         ? []
         : [...(programsFor("College") ?? []).map((p) => p.code), ...SENIOR_HIGH_STRANDS];
   const programOptions = programChoices.map((value) => ({ value, label: value }));
-  const programLabel = filters.department === "College" ? "All programs" : category?.hasStrand ? "All strands" : "All programs and strands";
+  const programLabel = filters.department === "College" ? "Programs" : category?.hasStrand ? "Strands" : "Programs and strands";
   const yearOptions = Array.from({ length: 5 }, (_, i) => {
     const start = (new Date().getMonth() >= 5 ? new Date().getFullYear() : new Date().getFullYear() - 1) - i;
     return { value: `${start}-${start + 1}`, label: `${start}-${start + 1}` };
@@ -388,21 +388,21 @@ export default function AdminApplicationsPage() {
             : []),
           {
             key: "yearLevel",
-            label: "All levels",
+            label: "Levels",
             value: filters.yearLevel,
             onChange: (value) => setFilter("yearLevel", value),
             options: levelOptions,
           },
           {
             key: "academicTerm",
-            label: "All terms",
+            label: "Terms",
             value: filters.academicTerm,
             onChange: (value) => setFilter("academicTerm", value),
             options: termOptions,
           },
           {
             key: "academicYear",
-            label: "All years",
+            label: "Years",
             value: filters.academicYear,
             onChange: (value) => setFilter("academicYear", value),
             options: yearOptions,

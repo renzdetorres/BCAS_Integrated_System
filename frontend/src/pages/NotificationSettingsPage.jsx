@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { listNotificationTriggers, setNotificationTriggerEnabled } from "../api/notificationSettingsApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
+import SettingsSearch from "../components/ui/SettingsSearch.jsx";
 import "./NotificationSettingsPage.css";
 
 function formatDateTime(isoDateTime) {
@@ -38,6 +39,17 @@ export default function NotificationSettingsPage() {
     loadTriggers();
   }, [loadTriggers]);
 
+  const searchEntries = useMemo(
+    () =>
+      triggers.map((trigger) => ({
+        id: `trigger-${trigger.triggerKey}`,
+        label: trigger.displayName,
+        hint: trigger.description,
+        keywords: "email notification on off turn",
+      })),
+    [triggers],
+  );
+
   async function handleToggle(trigger) {
     setPendingTriggerKey(trigger.triggerKey);
     setErrorMessage(null);
@@ -53,6 +65,8 @@ export default function NotificationSettingsPage() {
 
   return (
     <AppLayout title="Notification Settings">
+      <SettingsSearch entries={searchEntries} placeholder="Search notifications" />
+
       <Card>
         <p className="notification-settings-subtitle">
           Turn system-triggered email notifications on or off. A change here applies starting with the
@@ -70,7 +84,7 @@ export default function NotificationSettingsPage() {
         ) : (
           <ul className="notification-trigger-list">
             {triggers.map((trigger) => (
-              <li key={trigger.triggerKey} className="notification-trigger-row">
+              <li key={trigger.triggerKey} id={`trigger-${trigger.triggerKey}`} className="notification-trigger-row">
                 <div className="notification-trigger-info">
                   <span className="notification-trigger-name">{trigger.displayName}</span>
                   <p className="notification-trigger-description">{trigger.description}</p>

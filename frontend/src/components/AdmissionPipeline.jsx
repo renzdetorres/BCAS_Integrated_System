@@ -4,6 +4,7 @@ import { getAdmissionSummary } from "../api/admissionSummaryApi.js";
 import { ApiError } from "../api/apiClient.js";
 import { APPLICATION_TYPE_LABELS } from "../api/admissionApi.js";
 import { formatDate } from "../utils/format.js";
+import FigureBars from "./ui/FigureBars.jsx";
 import StatusBadge from "./ui/StatusBadge.jsx";
 import TrendChart from "./ui/TrendChart.jsx";
 import "./AdmissionPipeline.css";
@@ -97,6 +98,10 @@ export default function AdmissionPipeline({ academicYear = "" }) {
           </div>
         ))}
       </dl>
+
+      <div className="pipeline-bars">
+        <FigureBars label="Admission applicants as a bar graph" figures={FIGURES.map((figure) => ({ label: figure.label, value: summary[figure.key] }))} />
+      </div>
 
       <div className="pipeline-charts">
         <div>

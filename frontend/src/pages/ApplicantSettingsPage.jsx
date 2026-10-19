@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { changeMyPassword } from "../api/profileApi.js";
 import { getMyNotificationPreferences, setMyNotificationPreference } from "../api/notificationPreferencesApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
+import SettingsSearch from "../components/ui/SettingsSearch.jsx";
+import { APPLICANT_SETTINGS_ENTRIES } from "../config/settingsSearchEntries.js";
 import "./ApplicantProfilePage.css";
 
 const SETTINGS_TABS = [
@@ -52,6 +54,20 @@ export default function ApplicantSettingsPage() {
       cancelled = true;
     };
   }, []);
+
+  const searchEntries = useMemo(
+    () => [
+      ...APPLICANT_SETTINGS_ENTRIES,
+      ...preferences.map((preference) => ({
+        id: `preference-${preference.notificationType}`,
+        tab: "notifications",
+        label: preference.displayName,
+        group: "Notification preferences",
+        keywords: "email turn on off",
+      })),
+    ],
+    [preferences],
+  );
 
   async function handlePreferenceToggle(preference) {
     setPendingPreferenceType(preference.notificationType);
@@ -102,6 +118,7 @@ export default function ApplicantSettingsPage() {
 
   return (
     <AppLayout title="Settings">
+      <SettingsSearch entries={searchEntries} onSelect={(entry) => entry.tab && setActiveTab(entry.tab)} />
       <div className="settings-layout">
       <nav className="settings-nav" aria-label="Settings sections">
         {SETTINGS_TABS.map((group) => (
@@ -124,7 +141,7 @@ export default function ApplicantSettingsPage() {
 
       <div className="settings-content">
       {activeTab === "password" && (
-      <Card className="profile-card">
+      <Card id="settings-password" className="profile-card">
           <h2>Change Password</h2>
           <p className="profile-subtitle">Enter your current password and choose a new one.</p>
 
@@ -189,7 +206,7 @@ export default function ApplicantSettingsPage() {
       )}
 
       {activeTab === "notifications" && (
-      <Card className="profile-card">
+      <Card id="settings-notifications" className="profile-card">
           <h2>Notification Preferences</h2>
           <p className="profile-subtitle">
             Choose which updates you'd like emailed to you. Turning one off stops just that type of email - you can
@@ -207,7 +224,7 @@ export default function ApplicantSettingsPage() {
           ) : (
             <ul className="notification-preference-list">
               {preferences.map((preference) => (
-                <li key={preference.notificationType} className="notification-preference-row">
+                <li key={preference.notificationType} id={`preference-${preference.notificationType}`} className="notification-preference-row">
                   <span className="notification-preference-name">{preference.displayName}</span>
                   <button
                     type="button"

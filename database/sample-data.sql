@@ -68,12 +68,12 @@ INSERT INTO dbo.Users (UserId, FirstName, LastName, Email, PasswordHash, RoleId,
     (@U6, N'Carlo', N'Ramos',   N'carlo.ramos@sample.bcas.test',   @Hash, @ApplicantRole, DATEADD(DAY, -38, @Now),  DATEADD(DAY, -38, @Now));
 
 INSERT INTO dbo.ApplicantProfiles (UserId, BirthDate, ContactNumber, AddressLine, City, Province, PostalCode, IsBcasian) VALUES
-    (@U1, '2007-03-14', N'09171234501', N'12 Rizal Street',        N'Baliuag',   N'Bulacan', N'3006', 1),
-    (@U2, '2009-08-02', N'09171234502', N'48 Mabini Avenue',       N'Bustos',    N'Bulacan', N'3007', 0),
-    (@U3, '2011-11-21', N'09171234503', N'5 Bonifacio Road',       N'Pulilan',   N'Bulacan', N'3005', 0),
-    (@U4, '2007-01-09', N'09171234504', N'77 Luna Street',         N'Baliuag',   N'Bulacan', N'3006', 1),
-    (@U5, '2008-05-30', N'09171234505', N'20 Aguinaldo Highway',   N'San Rafael', N'Bulacan', N'3008', 0),
-    (@U6, '2012-12-12', N'09171234506', N'3 Del Pilar Street',     N'Baliuag',   N'Bulacan', N'3006', 1);
+    (@U1, '2007-03-14', N'+639171234501', N'12 Rizal Street',        N'Baliuag',   N'Bulacan', N'3006', 1),
+    (@U2, '2009-08-02', N'+639171234502', N'48 Mabini Avenue',       N'Bustos',    N'Bulacan', N'3007', 0),
+    (@U3, '2011-11-21', N'+639171234503', N'5 Bonifacio Road',       N'Pulilan',   N'Bulacan', N'3005', 0),
+    (@U4, '2007-01-09', N'+639171234504', N'77 Luna Street',         N'Baliuag',   N'Bulacan', N'3006', 1),
+    (@U5, '2008-05-30', N'+639171234505', N'20 Aguinaldo Highway',   N'San Rafael', N'Bulacan', N'3008', 0),
+    (@U6, '2012-12-12', N'+639171234506', N'3 Del Pilar Street',     N'Baliuag',   N'Bulacan', N'3006', 1);
 
 -- ---- Admission applications -------------------------------------------------
 INSERT INTO dbo.AdmissionApplications
@@ -83,16 +83,16 @@ INSERT INTO dbo.AdmissionApplications
      StudentSignature, GuardianSignature, MotherMaidenName, YearLevel, AcademicTerm, AcademicYear)
 VALUES
     (@A1, @U1, N'NewStudent', N'BSIT', N'Baliuag Senior High School', N'Approved', DATEADD(DAY, -45, @Now), DATEADD(DAY, -5, @Now), N'Admitted. Welcome to BCAS.',
-     N'College', N'Female', N'Baliuag, Bulacan', N'Baliuag, Bulacan', N'Drawing, web design', N'Roberto Santos', N'Driver', N'09171230001',
-     N'Elena Santos', N'Teacher', N'09171230002', N'Roberto Santos', N'Driver', N'09171230001', N'[]',
+     N'College', N'Female', N'Baliuag, Bulacan', N'Baliuag, Bulacan', N'Drawing, web design', N'Roberto Santos', N'Driver', N'+639171230001',
+     N'Elena Santos', N'Teacher', N'+639171230002', N'Roberto Santos', N'Driver', N'+639171230001', N'[]',
      N'Maria Santos', N'Roberto Santos', N'Cruz', N'1st Year', N'1st Semester', N'2026-2027'),
     (@A2, @U2, N'NewStudent', N'STEM', N'Bustos National High School', N'Registration', DATEADD(DAY, -30, @Now), DATEADD(DAY, -3, @Now), NULL,
-     N'Senior High School', N'Male', N'Bustos, Bulacan', N'Bustos, Bulacan', N'Basketball', N'Jose Dela Cruz', N'Farmer', N'09171230003',
-     N'Linda Dela Cruz', N'Vendor', N'09171230004', N'Jose Dela Cruz', N'Farmer', N'09171230003', N'[]',
+     N'Senior High School', N'Male', N'Bustos, Bulacan', N'Bustos, Bulacan', N'Basketball', N'Jose Dela Cruz', N'Farmer', N'+639171230003',
+     N'Linda Dela Cruz', N'Vendor', N'+639171230004', N'Jose Dela Cruz', N'Farmer', N'+639171230003', N'[]',
      N'Juan Dela Cruz', N'Jose Dela Cruz', N'Bautista', N'Grade 11', N'1st Semester', N'2026-2027'),
     (@A3, @U3, N'NewStudent', N'Grade 9', N'Pulilan Elementary School', N'Rejected', DATEADD(DAY, -28, @Now), DATEADD(DAY, -5, @Now), N'Did not meet the interview requirements.',
-     N'High School', N'Female', N'Pulilan, Bulacan', N'Pulilan, Bulacan', N'Singing', N'Mario Reyes', N'Mechanic', N'09171230005',
-     N'Grace Reyes', N'Nurse', N'09171230006', N'Grace Reyes', N'Nurse', N'09171230006', N'[]',
+     N'High School', N'Female', N'Pulilan, Bulacan', N'Pulilan, Bulacan', N'Singing', N'Mario Reyes', N'Mechanic', N'+639171230005',
+     N'Grace Reyes', N'Nurse', N'+639171230006', N'Grace Reyes', N'Nurse', N'+639171230006', N'[]',
      N'Ana Reyes', N'Grace Reyes', N'Flores', N'Grade 9', N'1st Term', N'2026-2027');
 
 -- ---- Scholarship applications ----------------------------------------------
@@ -101,17 +101,17 @@ INSERT INTO dbo.ScholarshipApplications
      LevelApplied, ApplicantFullName, SchoolLastAttended, GuardianRole, GuardianName, GuardianContact, GuardianEmail,
      ConsentTerms, ConsentParticipation, ConsentCertification, ConsentedAt)
 SELECT @S1, @U4, s.ScholarshipId, s.ScholarshipType, 95.50, N'Approved', DATEADD(DAY, -44, @Now), DATEADD(DAY, -10, @Now), N'Awarded.',
-       N'First Year College', N'Pedro Garcia', N'Baliuag Senior High School', N'Parent', N'Luisa Garcia', N'09171230011', N'luisa.garcia@sample.bcas.test',
+       N'First Year College', N'Pedro Garcia', N'Baliuag Senior High School', N'Parent', N'Luisa Garcia', N'+639171230011', N'luisa.garcia@sample.bcas.test',
        1, 1, 1, DATEADD(DAY, -44, @Now)
 FROM dbo.Scholarships s WHERE s.ScholarshipId = @Sc1
 UNION ALL
 SELECT @S2, @U5, s.ScholarshipId, s.ScholarshipType, 88.25, N'Waitlisted', DATEADD(DAY, -41, @Now), DATEADD(DAY, -9, @Now), N'On the waiting list.',
-       N'Grade 11', N'Liza Mendoza', N'San Rafael National High School', N'Official guardian', N'Rosa Mendoza', N'09171230012', N'rosa.mendoza@sample.bcas.test',
+       N'Grade 11', N'Liza Mendoza', N'San Rafael National High School', N'Official guardian', N'Rosa Mendoza', N'+639171230012', N'rosa.mendoza@sample.bcas.test',
        1, 1, 1, DATEADD(DAY, -41, @Now)
 FROM dbo.Scholarships s WHERE s.ScholarshipId = @Sc2
 UNION ALL
 SELECT @S3, @U6, s.ScholarshipId, s.ScholarshipType, 82.00, N'Rejected', DATEADD(DAY, -37, @Now), DATEADD(DAY, -8, @Now), N'Did not pass the scholarship exam.',
-       N'Grade 7', N'Carlo Ramos', N'Baliuag Elementary School', N'Parent', N'Tomas Ramos', N'09171230013', N'tomas.ramos@sample.bcas.test',
+       N'Grade 7', N'Carlo Ramos', N'Baliuag Elementary School', N'Parent', N'Tomas Ramos', N'+639171230013', N'tomas.ramos@sample.bcas.test',
        1, 1, 1, DATEADD(DAY, -37, @Now)
 FROM dbo.Scholarships s WHERE s.ScholarshipId = @Sc3;
 

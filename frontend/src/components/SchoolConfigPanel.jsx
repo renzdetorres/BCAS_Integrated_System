@@ -179,7 +179,7 @@ export default function SchoolConfigPanel() {
             </div>
             <div className="form-row">
               <label htmlFor="qr-upload">QR payment code</label>
-              <div className="school-config-qr">
+              <div id="settings-qr" className="school-config-qr">
                 {values["Payment.QrImage"] ? (
                   <img src={values["Payment.QrImage"]} alt="Current QR payment code" />
                 ) : (

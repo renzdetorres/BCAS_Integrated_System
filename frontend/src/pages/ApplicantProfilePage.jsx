@@ -1,4 +1,4 @@
-import { PHONE_ERROR, PHONE_HINT, PHONE_PATTERN, cleanPhoneInput, isValidPhone } from "../utils/phone.js";
+import { PHONE_ERROR, PHONE_HINT, PHONE_MAX_LENGTH, PHONE_PATTERN, PHONE_PLACEHOLDER, cleanPhoneInput, isValidPhone } from "../utils/phone.js";
 import { useEffect, useState } from "react";
 import { getMyProfile, saveMyProfile } from "../api/profileApi.js";
 import { ApiError } from "../api/apiClient.js";
@@ -26,7 +26,7 @@ function toForm(profile) {
     firstName: profile.firstName,
     lastName: profile.lastName,
     birthDate: profile.birthDate,
-    contactNumber: profile.contactNumber,
+    contactNumber: cleanPhoneInput(profile.contactNumber),
     addressLine: profile.addressLine,
     city: profile.city,
     province: profile.province,
@@ -163,13 +163,13 @@ export default function ApplicantProfilePage() {
 
             <div className="form-row">
               <label htmlFor="contactNumber">Contact number</label>
-              <input placeholder="09171234567"
+              <input placeholder={PHONE_PLACEHOLDER}
                 id="contactNumber"
                 name="contactNumber"
                 type="tel"
-                inputMode="numeric"
+                inputMode="tel"
                 autoComplete="tel"
-                maxLength={11}
+                maxLength={PHONE_MAX_LENGTH}
                 pattern={PHONE_PATTERN}
                 title={PHONE_HINT}
                 aria-describedby="contactNumber-hint"

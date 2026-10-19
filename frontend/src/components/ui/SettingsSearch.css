@@ -1,0 +1,165 @@
+.settings-search {
+  position: relative;
+  max-width: 560px;
+  margin-bottom: var(--space-4);
+}
+
+.settings-search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.settings-search-field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 44px 10px 42px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  font: inherit;
+  font-size: 15px;
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-xs);
+  transition: border-color var(--motion-fast), box-shadow var(--motion-fast);
+}
+
+.settings-search-field input:focus {
+  outline: none;
+  border-color: var(--color-primary-light);
+  box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
+}
+
+.settings-search-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--color-text-tertiary);
+  pointer-events: none;
+}
+
+.settings-search-clear {
+  position: absolute;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: background-color var(--motion-fast), color var(--motion-fast);
+}
+
+.settings-search-clear:hover {
+  background: var(--color-primary-tint-strong);
+  color: var(--color-text-primary);
+}
+
+/* Opens from the field, so it scales from its top edge. */
+.settings-search-list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-raised);
+  transform-origin: top center;
+  animation: settings-search-open 140ms var(--ease-out);
+}
+
+.settings-search-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--space-3);
+  row-gap: 2px;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.settings-search-option.is-active {
+  background: var(--color-primary-tint-strong);
+}
+
+.settings-search-label {
+  font-weight: 600;
+  font-size: 14.5px;
+  color: var(--color-text-primary);
+}
+
+.settings-search-group {
+  align-self: center;
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+.settings-search-hint {
+  grid-column: 1 / -1;
+  font: var(--text-dense);
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-search-match {
+  background: var(--color-status-amber-bg);
+  color: inherit;
+  border-radius: 2px;
+}
+
+.settings-search-empty {
+  padding: 12px;
+  font: var(--text-dense);
+  color: var(--color-text-secondary);
+}
+
+/* Where the jump lands: a brief tint, so the eye finds it after the scroll. */
+.settings-search-flash {
+  animation: settings-search-flash 1.8s var(--ease-out);
+}
+
+/* Targets sit clear of the sticky top bar when scrolled into view. */
+[id] {
+  scroll-margin-top: 88px;
+}
+
+@keyframes settings-search-open {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes settings-search-flash {
+  0%,
+  35% {
+    background-color: var(--color-status-amber-bg);
+    box-shadow: 0 0 0 6px var(--color-status-amber-bg);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The flash is a colour change, which reduced motion keeps; only the movement goes. */
+  .settings-search-list {
+    animation: none;
+  }
+}

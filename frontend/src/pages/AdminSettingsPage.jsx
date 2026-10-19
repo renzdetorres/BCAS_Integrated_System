@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { listSystemSettings, setSystemSettingEnabled } from "../api/systemSettingsApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
@@ -7,6 +7,8 @@ import SchoolConfigPanel from "../components/SchoolConfigPanel.jsx";
 import AcademicCatalogPanel from "../components/AcademicCatalogPanel.jsx";
 import EmailSettingsPanel from "../components/EmailSettingsPanel.jsx";
 import Card from "../components/ui/Card.jsx";
+import SettingsSearch from "../components/ui/SettingsSearch.jsx";
+import { ADMIN_SETTINGS_ENTRIES } from "../config/settingsSearchEntries.js";
 import "./AdminSettingsPage.css";
 
 function formatDateTime(isoDateTime) {
@@ -42,6 +44,20 @@ export default function AdminSettingsPage() {
     loadSettings();
   }, [loadSettings]);
 
+  const searchEntries = useMemo(
+    () => [
+      ...ADMIN_SETTINGS_ENTRIES,
+      ...settings.map((setting) => ({
+        id: `setting-${setting.settingKey}`,
+        label: setting.displayName,
+        group: "System settings",
+        hint: setting.description,
+        keywords: "on off toggle enable disable",
+      })),
+    ],
+    [settings],
+  );
+
   async function handleToggle(setting) {
     setPendingSettingKey(setting.settingKey);
     setErrorMessage(null);
@@ -57,7 +73,9 @@ export default function AdminSettingsPage() {
 
   return (
     <AppLayout title="System Settings">
-      <Card>
+      <SettingsSearch entries={searchEntries} />
+
+      <Card id="settings-system">
         <p className="admin-settings-subtitle">
           System-level settings for admissions and scholarships. Admin-Registrar only.
         </p>
@@ -73,7 +91,7 @@ export default function AdminSettingsPage() {
         ) : (
           <ul className="admin-settings-list">
             {settings.map((setting) => (
-              <li key={setting.settingKey} className="admin-settings-row">
+              <li key={setting.settingKey} id={`setting-${setting.settingKey}`} className="admin-settings-row">
                 <div className="admin-settings-info">
                   <span className="admin-settings-name">{setting.displayName}</span>
                   <p className="admin-settings-description">{setting.description}</p>
@@ -95,13 +113,21 @@ export default function AdminSettingsPage() {
         )}
       </Card>
 
-      <SchoolConfigPanel />
+      <div id="settings-admission">
+        <SchoolConfigPanel />
+      </div>
 
-      <AcademicCatalogPanel />
+      <div id="settings-catalog">
+        <AcademicCatalogPanel />
+      </div>
 
-      <EmailSettingsPanel />
+      <div id="settings-email">
+        <EmailSettingsPanel />
+      </div>
 
-      <SemestersPanel />
+      <div id="settings-semesters">
+        <SemestersPanel />
+      </div>
     </AppLayout>
   );
 }

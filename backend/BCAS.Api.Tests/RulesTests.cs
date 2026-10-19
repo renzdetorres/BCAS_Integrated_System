@@ -7,25 +7,26 @@ namespace BCAS.Api.Tests;
 public class PhilippinePhoneTests
 {
     [Theory]
-    [InlineData("09171234567")]
-    [InlineData("09981234567")]
-    public void Accepts_eleven_digits_starting_with_09(string number) => Assert.True(PhilippinePhone.IsValid(number));
+    [InlineData("+639171234567")]
+    [InlineData("+639981234567")]
+    public void Accepts_plus63_followed_by_a_mobile_number(string number) => Assert.True(PhilippinePhone.IsValid(number));
 
     [Theory]
-    [InlineData("0971234567")]    // too short
-    [InlineData("0917123456")]    // too short
-    [InlineData("091712345678")]  // too long
-    [InlineData("+639171234567")] // international form is converted for SMS, never stored
-    [InlineData("0917 123 4567")]
-    [InlineData("08171234567")]
+    [InlineData("+63917123456")]   // too short
+    [InlineData("+6391712345678")] // too long
+    [InlineData("09171234567")]    // local 09 form is no longer accepted
+    [InlineData("639171234567")]   // missing the +
+    [InlineData("+63 917 123 4567")]
+    [InlineData("+638171234567")]  // not a mobile prefix
+    [InlineData("+14155552671")]   // not a Philippine number
     [InlineData("")]
     [InlineData(null)]
     public void Rejects_everything_else(string? number) => Assert.False(PhilippinePhone.IsValid(number));
 
     [Fact]
-    public void Converts_to_the_international_form_for_sms()
+    public void Returns_the_number_unchanged_for_sms_when_valid()
     {
-        Assert.Equal("+639171234567", PhilippinePhone.ToInternational("09171234567"));
+        Assert.Equal("+639171234567", PhilippinePhone.ToInternational("+639171234567"));
         Assert.Null(PhilippinePhone.ToInternational("0917"));
     }
 }

@@ -305,7 +305,7 @@ Request body:
   "firstName": "Jane",
   "lastName": "Doe",
   "birthDate": "2005-03-12",
-  "contactNumber": "09171234567",
+  "contactNumber": "+639171234567",
   "addressLine": "123 Sampaguita St., Brgy. San Roque",
   "city": "Balanga",
   "province": "Bataan",

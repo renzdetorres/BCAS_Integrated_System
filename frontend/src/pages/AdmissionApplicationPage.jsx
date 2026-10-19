@@ -12,7 +12,7 @@ import { ApiError } from "../api/apiClient.js";
 import { ACADEMIC_CATEGORIES, SENIOR_HIGH_STRANDS, ageProblem, categoryFor } from "../config/academicStructure.js";
 import { programOptionLabel, programsFor } from "../config/departments.js";
 import { REQUIRED_NOTE, acceptFor, fileProblem, formatsLabel, requiredDocumentsFor } from "../config/requiredDocuments.js";
-import { PHONE_HINT, PHONE_PATTERN, cleanPhoneInput, isValidPhone } from "../utils/phone.js";
+import { PHONE_HINT, PHONE_MAX_LENGTH, PHONE_PATTERN, PHONE_PLACEHOLDER, cleanPhoneInput, isValidPhone } from "../utils/phone.js";
 import { formatDate, formatFileSize } from "../utils/format.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
@@ -88,7 +88,7 @@ function clearDraft() {
 /** A submitted application, flattened back into the shape the form edits. */
 function formFromApplication(application) {
   const f = application.form ?? {};
-  const member = (m) => ({ name: m?.name ?? "", occupation: m?.occupation ?? "", phone: m?.phone ?? "" });
+  const member = (m) => ({ name: m?.name ?? "", occupation: m?.occupation ?? "", phone: cleanPhoneInput(m?.phone) });
   return {
     applicationType: application.applicationType,
     department: application.department ?? "",
@@ -480,10 +480,10 @@ export default function AdmissionApplicationPage() {
                           <input
                             id={`${key}-phone`}
                             type="tel"
-                            inputMode="numeric"
-                            maxLength={11}
+                            inputMode="tel"
+                            maxLength={PHONE_MAX_LENGTH}
                             pattern={PHONE_PATTERN}
-                            placeholder="09171234567"
+                            placeholder={PHONE_PLACEHOLDER}
                             value={form[key].phone}
                             onChange={(e) => handleMemberChange(key, "phone", e.target.value)}
                           />

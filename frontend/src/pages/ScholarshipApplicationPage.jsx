@@ -28,7 +28,7 @@ import {
   SCHOOL_NAME,
   SCREENING_STEPS,
 } from "../config/scholarshipForm.js";
-import { PHONE_ERROR, PHONE_HINT, PHONE_PATTERN, cleanPhoneInput, isValidPhone } from "../utils/phone.js";
+import { PHONE_ERROR, PHONE_HINT, PHONE_MAX_LENGTH, PHONE_PATTERN, PHONE_PLACEHOLDER, cleanPhoneInput, isValidPhone } from "../utils/phone.js";
 import "./ScholarshipApplicationPage.css";
 
 const initialForm = {
@@ -286,7 +286,7 @@ export default function ScholarshipApplicationPage() {
 
             <div className="form-row">
               <label htmlFor="guardianContact">Contact number of your parent/guardian</label>
-              <input placeholder="09171234567" id="guardianContact" name="guardianContact" type="tel" inputMode="numeric" maxLength={11} pattern={PHONE_PATTERN} title={PHONE_HINT} required value={form.guardianContact} onChange={handleChange} />
+              <input placeholder={PHONE_PLACEHOLDER} id="guardianContact" name="guardianContact" type="tel" inputMode="tel" maxLength={PHONE_MAX_LENGTH} pattern={PHONE_PATTERN} title={PHONE_HINT} required value={form.guardianContact} onChange={handleChange} />
             </div>
 
             <div className="form-row">
