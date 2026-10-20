@@ -321,6 +321,14 @@ app.Use(async (context, next) =>
     }
 });
 
+// The built React app's files (frontend/dist, copied into wwwroot before publish - see
+// .github/workflows/deploy.yml) are public: they have to load before anyone can sign in. They are
+// served here, ahead of authentication and the deny-by-default policy below, which would otherwise
+// answer 401 to /assets/*.js and leave the page blank. Only files that exist in wwwroot are served;
+// every API route is still protected.
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseAuthentication();
 // After authentication (needs the caller's role), before authorization: a page
 // the Super Admin switched off for a role is refused here.
@@ -333,9 +341,8 @@ app.MapControllers();
 // API and the SPA from the same origin - no separate frontend host, no CORS
 // needed between them. MapControllers() above still wins for any /api/...
 // route; this only catches requests nothing else matched (page reloads on a
-// client-side route like /portal, direct links, etc.).
-app.UseDefaultFiles();
-app.UseStaticFiles();
+// client-side route like /portal, direct links, etc.). The files themselves
+// are served above, before authentication.
 app.MapFallbackToFile("index.html").AllowAnonymous();
 
 // Say which database this API is using, and what it is missing if it is the
