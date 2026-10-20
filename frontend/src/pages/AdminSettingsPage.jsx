@@ -10,6 +10,7 @@ import Card from "../components/ui/Card.jsx";
 import SettingsSearch from "../components/ui/SettingsSearch.jsx";
 import { ADMIN_SETTINGS_ENTRIES } from "../config/settingsSearchEntries.js";
 import "./AdminSettingsPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 function formatDateTime(isoDateTime) {
   return new Date(isoDateTime).toLocaleString(undefined, {
@@ -87,7 +88,7 @@ export default function AdminSettingsPage() {
         )}
 
         {isLoading ? (
-          <p>Loading...</p>
+          <Skeleton variant="table" />
         ) : (
           <ul className="admin-settings-list">
             {settings.map((setting) => (

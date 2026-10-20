@@ -1,13 +1,21 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getMyApplicationTracking } from "../api/applicationTrackingApi.js";
 import { DOCUMENT_TYPE_LABELS } from "../api/documentApi.js";
 import { ApiError } from "../api/apiClient.js";
-import WorkflowStepper, { ADMISSION_STEP_LABELS, SCHOLARSHIP_STEP_LABELS } from "../components/WorkflowStepper.jsx";
+import WorkflowStepper, {
+  ADMISSION_STEP_HINTS,
+  ADMISSION_STEP_LABELS,
+  SCHOLARSHIP_STEP_HINTS,
+  SCHOLARSHIP_STEP_LABELS,
+} from "../components/WorkflowStepper.jsx";
+import { useToast } from "../context/ToastContext.jsx";
+import { usePolling } from "../hooks/usePolling.js";
 import TrackerStatus from "../components/TrackerStatus.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./ApplicationTrackingPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 function formatDate(isoDate) {
   return new Date(isoDate).toLocaleDateString(undefined, {
@@ -17,17 +25,58 @@ function formatDate(isoDate) {
   });
 }
 
+// How often the page checks for a new status while it is open (and again whenever the tab is revisited).
+const REFRESH_MS = 30000;
+
+/** The stage each application is on, keyed by its id, so a change can be named. */
+function currentStages(tracking) {
+  const stages = new Map();
+  const add = (application, labels) => {
+    const current = application.steps.find((step) => step.isCurrent);
+    stages.set(application.applicationId, current ? (labels[current.step] ?? current.step) : null);
+  };
+  tracking.admissionApplications.forEach((application) => add(application, ADMISSION_STEP_LABELS));
+  tracking.scholarshipApplications.forEach((application) => add(application, SCHOLARSHIP_STEP_LABELS));
+  return stages;
+}
+
 export default function ApplicationTrackingPage() {
+  const { showToast } = useToast();
+  const seenStages = useRef(null);
   const [tracking, setTracking] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
+
+  // A quiet refresh: no skeleton, no reload. The page keeps what it has and only the parts that
+  // changed move (the new stage lights up), with a toast to say so.
+  const refresh = useCallback(() => {
+    getMyApplicationTracking()
+      .then((data) => {
+        const next = currentStages(data);
+        const before = seenStages.current;
+        if (before) {
+          for (const [id, stage] of next) {
+            if (before.has(id) && before.get(id) !== stage && stage) showToast(`Your application moved to ${stage}.`);
+          }
+        }
+        seenStages.current = next;
+        setTracking(data);
+      })
+      .catch(() => {
+        // A failed background check changes nothing on screen; the next one tries again.
+      });
+  }, [showToast]);
+
+  usePolling(refresh, REFRESH_MS, !errorMessage);
 
   useEffect(() => {
     let cancelled = false;
 
     getMyApplicationTracking()
       .then((data) => {
-        if (!cancelled) setTracking(data);
+        if (cancelled) return;
+        seenStages.current = currentStages(data);
+        setTracking(data);
       })
       .catch((error) => {
         if (!cancelled) {
@@ -46,7 +95,7 @@ export default function ApplicationTrackingPage() {
   return (
     <AppLayout title="Application Tracking">
       <Card>
-        {isLoading && <p>Loading...</p>}
+        {isLoading && <Skeleton />}
 
         {errorMessage && (
           <p className="form-error" role="alert">
@@ -70,7 +119,7 @@ export default function ApplicationTrackingPage() {
                     Submitted {formatDate(application.submittedAt)}
                   </span>
                 </div>
-                <WorkflowStepper steps={application.steps} labels={ADMISSION_STEP_LABELS} numbered />
+                <WorkflowStepper steps={application.steps} labels={ADMISSION_STEP_LABELS} hints={ADMISSION_STEP_HINTS} numbered />
                 <TrackerStatus steps={application.steps} subProcess={application.subProcess} nextAction={application.nextAction} nextActionPath={application.nextActionPath} />
               </div>
             ))}
@@ -85,7 +134,7 @@ export default function ApplicationTrackingPage() {
                     Submitted {formatDate(application.submittedAt)}
                   </span>
                 </div>
-                <WorkflowStepper steps={application.steps} labels={SCHOLARSHIP_STEP_LABELS} numbered />
+                <WorkflowStepper steps={application.steps} labels={SCHOLARSHIP_STEP_LABELS} hints={SCHOLARSHIP_STEP_HINTS} numbered />
                 <TrackerStatus
                   steps={application.steps}
                   labels={SCHOLARSHIP_STEP_LABELS}

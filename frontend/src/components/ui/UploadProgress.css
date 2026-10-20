@@ -1,0 +1,36 @@
+.upload-progress {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0;
+  max-width: 420px;
+}
+
+.upload-progress-text {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+.upload-progress-percent {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-primary);
+}
+
+.upload-progress-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+}
+
+/* Grown with transform, not width: it stays on the compositor while the upload hammers the main thread. */
+.upload-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-primary-light);
+  transform-origin: left;
+  transition: transform 180ms linear;
+}

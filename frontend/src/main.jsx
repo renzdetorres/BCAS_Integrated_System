@@ -8,6 +8,7 @@ import "@fontsource/poppins/700.css";
 import App from "./App.jsx";
 import "./styles/base.css";
 import "./styles/responsive.css";
+import "./styles/motion.css";
 import { loadAcademicCatalog } from "./config/academicCatalog.js";
 
 

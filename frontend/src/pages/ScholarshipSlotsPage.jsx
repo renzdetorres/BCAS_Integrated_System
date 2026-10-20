@@ -5,6 +5,7 @@ import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./ScholarshipSlotsPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 export default function ScholarshipSlotsPage() {
   const [slots, setSlots] = useState([]);
@@ -44,7 +45,7 @@ export default function ScholarshipSlotsPage() {
         )}
 
         {isLoading ? (
-          <p>Loading...</p>
+          <Skeleton variant="table" />
         ) : (
           <table className="scholarship-slots-table">
             <thead>

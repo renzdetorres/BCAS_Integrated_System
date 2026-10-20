@@ -12,6 +12,7 @@ import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import ConfirmDialog from "../components/ui/ConfirmDialog.jsx";
 import "./AcademicHeadScholarshipsPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 const initialCreateForm = { name: "", scholarshipType: "", totalSlots: "", minimumGradeAverage: "" };
 const emptyEditForm = initialCreateForm;
@@ -235,7 +236,7 @@ export default function AcademicHeadScholarshipsPage() {
               )}
 
               {isLoading ? (
-                <p>Loading...</p>
+                <Skeleton variant="table" />
               ) : scholarships.length === 0 ? (
                 <p>No scholarships yet.</p>
               ) : (

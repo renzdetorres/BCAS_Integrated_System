@@ -3,6 +3,7 @@ import { getSchoolConfig, saveSchoolConfig } from "../api/schoolConfigApi.js";
 import { ApiError } from "../api/apiClient.js";
 import Card from "./ui/Card.jsx";
 import "./SchoolConfigPanel.css";
+import Skeleton from "./ui/Skeleton.jsx";
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const MAX_QR_BYTES = 1024 * 1024;
@@ -91,7 +92,7 @@ export default function SchoolConfigPanel() {
         </p>
       )}
 
-      {!values && !errorMessage && <p>Loading...</p>}
+      {!values && !errorMessage && <Skeleton variant="form" />}
 
       {values && (
         <form onSubmit={handleSubmit} className="school-config-form">

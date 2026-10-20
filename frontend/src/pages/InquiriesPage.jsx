@@ -6,6 +6,7 @@ import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./InquiriesPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 function formatDateTime(isoDateTime) {
   return new Date(isoDateTime).toLocaleString(undefined, {
@@ -78,7 +79,7 @@ export default function InquiriesPage() {
         )}
 
         {isLoading ? (
-          <p>Loading...</p>
+          <Skeleton variant="table" />
         ) : threads.length === 0 ? (
           <p>No inquiries yet. Use the form below to send one.</p>
         ) : (

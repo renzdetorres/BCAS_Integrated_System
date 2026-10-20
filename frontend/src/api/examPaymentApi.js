@@ -1,4 +1,5 @@
 import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
+import { uploadWithProgress } from "./uploadWithProgress.js";
 
 async function read(response, fallback) {
   const data = await response.json().catch(() => null);
@@ -25,16 +26,18 @@ export async function getMyExamPayment() {
   );
 }
 
-/** Uploads (or replaces) the proof of payment. */
-export async function submitPaymentProof(file, referenceNumber) {
+/** Uploads (or replaces) the proof of payment. `onProgress(percent)` is optional. */
+export async function submitPaymentProof(file, referenceNumber, onProgress) {
   const formData = new FormData();
   formData.append("file", file);
   if (referenceNumber) formData.append("referenceNumber", referenceNumber);
 
-  return read(
-    await fetch(`${API_BASE_URL}/api/exam-payment/proof`, { method: "PUT", credentials: "include", body: formData }),
-    "Failed to upload your proof of payment. Please try again."
-  );
+  return uploadWithProgress("/api/exam-payment/proof", {
+    method: "PUT",
+    body: formData,
+    onProgress,
+    fallback: "Failed to upload your proof of payment. Please try again.",
+  });
 }
 
 export async function getMyPaymentProofFile() {

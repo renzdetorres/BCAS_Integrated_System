@@ -6,6 +6,7 @@ import Card from "../components/ui/Card.jsx";
 import Modal from "../components/ui/Modal.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import "./AnnouncementsPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 function formatDate(isoDate) {
   return new Date(isoDate).toLocaleDateString(undefined, {
@@ -45,7 +46,7 @@ export default function AnnouncementsPage() {
   return (
     <AppLayout title="Announcements">
       <Card>
-        {isLoading && <p>Loading...</p>}
+        {isLoading && <Skeleton variant="table" />}
 
         {errorMessage && (
           <p className="form-error" role="alert">

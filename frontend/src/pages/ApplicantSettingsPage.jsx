@@ -7,6 +7,7 @@ import Card from "../components/ui/Card.jsx";
 import SettingsSearch from "../components/ui/SettingsSearch.jsx";
 import { APPLICANT_SETTINGS_ENTRIES } from "../config/settingsSearchEntries.js";
 import "./ApplicantProfilePage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 const SETTINGS_TABS = [
   {
@@ -220,7 +221,7 @@ export default function ApplicantSettingsPage() {
           )}
 
           {isLoadingPreferences ? (
-            <p>Loading...</p>
+            <Skeleton variant="form" />
           ) : (
             <ul className="notification-preference-list">
               {preferences.map((preference) => (

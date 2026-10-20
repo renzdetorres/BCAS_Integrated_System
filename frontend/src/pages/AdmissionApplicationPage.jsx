@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { cloneElement, createContext, isValidElement, useContext, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   APPLICATION_TYPES,
@@ -17,11 +17,15 @@ import { formatDate, formatFileSize } from "../utils/format.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
+import UploadProgress from "../components/ui/UploadProgress.jsx";
+import FilePreviewModal from "../components/FilePreviewModal.jsx";
+import { useToast } from "../context/ToastContext.jsx";
 import ConfirmSubmissionModal from "../components/ConfirmSubmissionModal.jsx";
 import AdmissionStepper from "../components/admission/AdmissionStepper.jsx";
 import ApplicationSummary from "../components/admission/ApplicationSummary.jsx";
 import SubmittedDocuments from "../components/admission/SubmittedDocuments.jsx";
 import "./AdmissionApplicationPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 const STEPS = [
   { id: "personal", label: "Personal Information" },
@@ -72,10 +76,14 @@ function readDraft() {
 function saveDraft(form) {
   try {
     sessionStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+    return true;
   } catch {
     // Private mode or blocked storage: the draft just isn't kept.
+    return false;
   }
 }
+
+const BLANK_FORM = JSON.stringify(initialForm);
 
 function clearDraft() {
   try {
@@ -109,11 +117,35 @@ function formFromApplication(application) {
   };
 }
 
-function Field({ id, label, hint, children }) {
+// The one thing wrong with the stage the applicant just tried to leave: { message, field }.
+// Field reads it so the matching input gets a red border and its message right underneath.
+const FormIssue = createContext(null);
+
+function Field({ id, label, hint, required = false, children }) {
+  const issue = useContext(FormIssue);
+  const error = issue?.field === id ? issue.message : null;
+  const control =
+    error && isValidElement(children) && typeof children.type === "string"
+      ? cloneElement(children, { "aria-invalid": "true", "aria-describedby": `${id}-error` })
+      : children;
+
   return (
     <div className="form-row">
-      <label htmlFor={id}>{label}</label>
-      {children}
+      <label htmlFor={id}>
+        {label}
+        {required ? (
+          <span className="required-mark" title="Required" aria-label="required">
+            {" "}
+            *
+          </span>
+        ) : null}
+      </label>
+      {control}
+      {error ? (
+        <p className="form-field-error" id={`${id}-error`} role="alert">
+          {error}
+        </p>
+      ) : null}
       {hint ? <p className="form-note">{hint}</p> : null}
     </div>
   );
@@ -145,6 +177,11 @@ export default function AdmissionApplicationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [progress, setProgress] = useState(null);
   const [confirming, setConfirming] = useState(false);
+  const { showToast } = useToast();
+  const [issue, setIssue] = useState(null);
+  const [draftSavedAt, setDraftSavedAt] = useState(null);
+  const [restored, setRestored] = useState(() => JSON.stringify(readDraft()) !== BLANK_FORM);
+  const [previewDoc, setPreviewDoc] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -170,8 +207,13 @@ export default function AdmissionApplicationPage() {
     };
   }, []);
 
+  // Saved as you type (after a short pause), and the applicant is told: "Draft saved".
   useEffect(() => {
-    saveDraft(form);
+    if (JSON.stringify(form) === BLANK_FORM) return undefined;
+    const timer = setTimeout(() => {
+      if (saveDraft(form)) setDraftSavedAt(new Date());
+    }, 600);
+    return () => clearTimeout(timer);
   }, [form]);
 
   // Moving to another stage lands on its heading, so keyboard and screen reader users start at the top of it.
@@ -180,7 +222,21 @@ export default function AdmissionApplicationPage() {
   }, [step]);
 
   function set(name, value) {
+    setIssue(null);
     setForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  function startOver() {
+    clearDraft();
+    setForm(initialForm);
+    setFiles({});
+    setFileErrors({});
+    setStep(0);
+    setIssue(null);
+    setErrorMessage(null);
+    setRestored(false);
+    setDraftSavedAt(null);
+    showToast("Draft cleared. You can start again.");
   }
 
   function handleChange(event) {
@@ -189,6 +245,7 @@ export default function AdmissionApplicationPage() {
 
   function handleCategory(event) {
     // Every level choice depends on the category, so changing it clears them.
+    setIssue(null);
     setForm((prev) => ({
       ...prev,
       department: event.target.value,
@@ -200,6 +257,7 @@ export default function AdmissionApplicationPage() {
 
   function handleMemberChange(memberKey, field, value) {
     const next = field === "phone" ? cleanPhoneInput(value) : value;
+    setIssue(null);
     setForm((prev) => ({ ...prev, [memberKey]: { ...prev[memberKey], [field]: next } }));
   }
 
@@ -210,7 +268,10 @@ export default function AdmissionApplicationPage() {
 
     const problem = fileProblem(file, doc.formats);
     setFileErrors((prev) => ({ ...prev, [doc.type]: problem }));
-    if (!problem) setFiles((prev) => ({ ...prev, [doc.type]: file }));
+    if (problem) return;
+    setIssue(null);
+    setFiles((prev) => ({ ...prev, [doc.type]: file }));
+    showToast(`${doc.label} attached.`);
   }
 
   function removeFile(docType) {
@@ -227,49 +288,53 @@ export default function AdmissionApplicationPage() {
   const birthDate = profile?.birthDate ?? null;
   const tooYoung = ageProblem(form.yearLevel, birthDate, config);
 
-  /** The first thing wrong with a stage, in plain words, or null. */
+  /** The first thing wrong with a stage: { message, field } (field is the input's id), or null. */
   function problemWithStep(index) {
+    const bad = (message, field = null, extra = {}) => ({ message, field, ...extra });
+
     if (index === 0) {
-      if (!profile) return "Complete your profile first. Your name, birth date, address and mobile number come from it.";
-      if (!form.sex) return "Choose the student's sex.";
-      if (!form.placeOfBirth.trim()) return "Enter the student's place of birth.";
+      if (!profile) return bad("Complete your profile first. Your name, birth date, address and mobile number come from it.");
+      if (!form.sex) return bad("Choose the student's sex.", "sex");
+      if (!form.placeOfBirth.trim()) return bad("Enter the student's place of birth.", "placeOfBirth");
       for (const { key, label } of PEOPLE) {
-        if (form[key].phone && !isValidPhone(form[key].phone)) return `${label.replace(" (if applicable)", "")}'s mobile number must be ${PHONE_HINT}.`;
+        if (form[key].phone && !isValidPhone(form[key].phone)) return bad(`${label.replace(" (if applicable)", "")}'s mobile number must be ${PHONE_HINT}.`, `${key}-phone`);
       }
-      if (form.mother.name.trim() && !form.motherMaidenName.trim()) return "Enter the mother's maiden name.";
+      if (form.mother.name.trim() && !form.motherMaidenName.trim()) return bad("Enter the mother's maiden name.", "motherMaidenName");
       const reachable = PEOPLE.some(({ key }) => form[key].name.trim() && form[key].phone.trim());
-      if (!reachable) return "Give the name and mobile number of at least one parent or guardian.";
+      if (!reachable) return bad("Give the name and mobile number of at least one parent or guardian.", "father-name");
     }
 
     if (index === 1) {
-      if (!form.department) return "Choose an academic category.";
-      if (category.hasStrand && !form.courseAppliedFor) return "Choose a strand.";
-      if (form.department === "College" && !form.courseAppliedFor) return "Choose a program.";
-      if (!form.yearLevel) return `Choose a ${category.yearLevelLabel.toLowerCase()}.`;
-      if (tooYoung) return tooYoung;
-      if (category.terms && !form.academicTerm) return `Choose a ${category.termLabel.toLowerCase()}.`;
-      if (!form.previousSchool.trim()) return "Enter the school last attended.";
-      if (!form.previousSchoolAddress.trim()) return "Enter the address of the school last attended.";
+      if (!form.department) return bad("Choose an academic category.");
+      if (category.hasStrand && !form.courseAppliedFor) return bad("Choose a strand.", "courseAppliedFor");
+      if (form.department === "College" && !form.courseAppliedFor) return bad("Choose a program.", "courseAppliedFor");
+      if (!form.yearLevel) return bad(`Choose a ${category.yearLevelLabel.toLowerCase()}.`, "yearLevel");
+      if (tooYoung) return bad(tooYoung, "yearLevel");
+      if (category.terms && !form.academicTerm) return bad(`Choose a ${category.termLabel.toLowerCase()}.`, "academicTerm");
+      if (!form.previousSchool.trim()) return bad("Enter the school last attended.", "previousSchool");
+      if (!form.previousSchoolAddress.trim()) return bad("Enter the address of the school last attended.", "previousSchoolAddress");
     }
 
     if (index === 2) {
-      if (!form.applicationType) return "Choose your application type.";
+      if (!form.applicationType) return bad("Choose your application type.");
     }
 
     if (index === 3) {
       const missing = requiredDocuments.filter((doc) => doc.required && !files[doc.type]);
-      if (missing.length > 0) return `Attach your ${missing.map((d) => d.label).join(", ")} before continuing.`;
+      if (missing.length > 0) return bad(`Attach your ${missing.map((d) => d.label).join(", ")} before continuing.`, "docs", { missing: missing.map((d) => d.type) });
     }
 
     if (index === 4) {
-      if (!form.studentSignature.trim()) return "Type the student's name as the student's signature.";
-      if (!form.guardianSignature.trim()) return "Type a parent's or guardian's name as their signature.";
+      if (!form.studentSignature.trim()) return bad("Type the student's name as the student's signature.", "studentSignature");
+      if (!form.guardianSignature.trim()) return bad("Type a parent's or guardian's name as their signature.", "guardianSignature");
     }
 
     return null;
   }
 
   function goTo(index) {
+    setIssue(null);
+    setRestored(false);
     setErrorMessage(null);
     setProfileIncomplete(false);
     setStep(index);
@@ -281,10 +346,15 @@ export default function AdmissionApplicationPage() {
 
     const problem = problemWithStep(step);
     if (problem) {
-      setErrorMessage(problem);
+      setErrorMessage(problem.message);
+      setIssue(problem);
+      // Take the applicant to the field that needs them, not just to a message at the top.
+      if (problem.field && problem.field !== "docs") requestAnimationFrame(() => document.getElementById(problem.field)?.focus());
       return;
     }
 
+    setIssue(null);
+    setRestored(false);
     setErrorMessage(null);
     if (step < STEPS.length - 1) {
       setStep(step + 1);
@@ -304,17 +374,19 @@ export default function AdmissionApplicationPage() {
       const failed = [];
       const toUpload = requiredDocuments.filter((doc) => files[doc.type]);
       for (const [index, doc] of toUpload.entries()) {
-        setProgress(`Uploading ${doc.label} (${index + 1} of ${toUpload.length})...`);
+        setProgress({ label: `Uploading ${doc.label} (${index + 1} of ${toUpload.length})`, percent: 0 });
         try {
-          await uploadDocument(doc.type, files[doc.type]);
+          await uploadDocument(doc.type, files[doc.type], (percent) => setProgress((prev) => (prev ? { ...prev, percent } : prev)));
         } catch {
           failed.push(doc.label);
         }
       }
 
       if (failed.length > 0) {
+        showToast("Application submitted. Some documents did not upload; add them on the Documents page.", "error");
         navigate("/documents", { state: { uploadFailures: failed } });
       } else {
+        showToast("Application submitted successfully.");
         navigate(`/applications/receipt/${created.applicationId}`);
       }
     } catch (error) {
@@ -324,6 +396,7 @@ export default function AdmissionApplicationPage() {
       } else {
         setErrorMessage("Something went wrong. Please try again.");
       }
+      showToast("Your application was not submitted. See the message on the form.", "error");
       setConfirming(false);
     } finally {
       setIsSubmitting(false);
@@ -382,15 +455,35 @@ export default function AdmissionApplicationPage() {
         <h2>Admission Application</h2>
 
         {isLoading ? (
-          <p>Loading...</p>
+          <Skeleton variant="form" />
         ) : (
           <>
             <AdmissionStepper steps={STEPS} current={step} onSelect={goTo} />
 
+            <FormIssue.Provider value={issue}>
             <form onSubmit={handleNext} noValidate className="admission-form">
               <h3 className="admission-step-heading" tabIndex={-1} ref={headingRef}>
                 {STEPS[step].label}
               </h3>
+
+              {restored && step === 0 && (
+                <p className="draft-restored" role="status">
+                  We kept the draft you were working on.{" "}
+                  <button type="button" className="documents-view-link" onClick={startOver}>
+                    Start over
+                  </button>
+                </p>
+              )}
+
+              {[0, 1, 4].includes(step) && (
+                <p className="form-note admission-required-note">
+                  Fields marked{" "}
+                  <span className="required-mark" aria-hidden="true">
+                    *
+                  </span>{" "}
+                  are required.
+                </p>
+              )}
 
               {errorMessage && (
                 <p className="form-error" role="alert">
@@ -443,7 +536,7 @@ export default function AdmissionApplicationPage() {
                   </p>
 
                   <div className="form-grid">
-                    <Field id="sex" label="Sex">
+                    <Field id="sex" label="Sex" required>
                       <select id="sex" name="sex" required value={form.sex} onChange={handleChange}>
                         <option value="" disabled>
                           Select
@@ -452,7 +545,7 @@ export default function AdmissionApplicationPage() {
                         <option value="Female">Female</option>
                       </select>
                     </Field>
-                    <Field id="placeOfBirth" label="Place of birth">
+                    <Field id="placeOfBirth" label="Place of birth" required>
                       <input id="placeOfBirth" name="placeOfBirth" type="text" maxLength={200} placeholder="e.g. Quezon City" value={form.placeOfBirth} onChange={handleChange} />
                     </Field>
                   </div>
@@ -469,7 +562,7 @@ export default function AdmissionApplicationPage() {
                           <input id={`${key}-name`} type="text" maxLength={200} value={form[key].name} onChange={(e) => handleMemberChange(key, "name", e.target.value)} />
                         </Field>
                         {key === "mother" && (
-                          <Field id="motherMaidenName" label="Maiden name">
+                          <Field id="motherMaidenName" label="Maiden name" required={Boolean(form.mother.name.trim())}>
                             <input id="motherMaidenName" name="motherMaidenName" type="text" maxLength={200} value={form.motherMaidenName} onChange={handleChange} />
                           </Field>
                         )}
@@ -519,7 +612,7 @@ export default function AdmissionApplicationPage() {
                       <h4 className="form-section-title">{category.label} details</h4>
                       <div className="form-grid">
                         {form.department === "College" && (
-                          <Field id="courseAppliedFor" label="Program">
+                          <Field id="courseAppliedFor" label="Program" required>
                             <select id="courseAppliedFor" name="courseAppliedFor" value={form.courseAppliedFor} onChange={handleChange}>
                               <option value="" disabled>
                                 Select a program
@@ -533,7 +626,7 @@ export default function AdmissionApplicationPage() {
                           </Field>
                         )}
                         {category.hasStrand && (
-                          <Field id="courseAppliedFor" label="Strand">
+                          <Field id="courseAppliedFor" label="Strand" required>
                             <select id="courseAppliedFor" name="courseAppliedFor" value={form.courseAppliedFor} onChange={handleChange}>
                               <option value="" disabled>
                                 Select a strand
@@ -546,7 +639,7 @@ export default function AdmissionApplicationPage() {
                             </select>
                           </Field>
                         )}
-                        <Field id="yearLevel" label={category.yearLevelLabel}>
+                        <Field id="yearLevel" label={category.yearLevelLabel} required>
                           <select id="yearLevel" name="yearLevel" value={form.yearLevel} onChange={handleChange}>
                             <option value="" disabled>
                               Select
@@ -559,7 +652,7 @@ export default function AdmissionApplicationPage() {
                           </select>
                         </Field>
                         {category.terms && (
-                          <Field id="academicTerm" label={category.termLabel}>
+                          <Field id="academicTerm" label={category.termLabel} required>
                             <select id="academicTerm" name="academicTerm" value={form.academicTerm} onChange={handleChange}>
                               <option value="" disabled>
                                 Select
@@ -583,10 +676,10 @@ export default function AdmissionApplicationPage() {
                   )}
 
                   <h4 className="form-section-title">School last attended</h4>
-                  <Field id="previousSchool" label="School name">
+                  <Field id="previousSchool" label="School name" required>
                     <input id="previousSchool" name="previousSchool" type="text" maxLength={200} placeholder="e.g. San Isidro Elementary School" value={form.previousSchool} onChange={handleChange} />
                   </Field>
-                  <Field id="previousSchoolAddress" label="School address">
+                  <Field id="previousSchoolAddress" label="School address" required>
                     <input id="previousSchoolAddress" name="previousSchoolAddress" type="text" maxLength={300} placeholder="e.g. 123 Rizal St., Brgy. San Isidro, Quezon City" value={form.previousSchoolAddress} onChange={handleChange} />
                   </Field>
                 </div>
@@ -659,6 +752,11 @@ export default function AdmissionApplicationPage() {
                               {fileErrors[doc.type]}
                             </p>
                           )}
+                          {issue?.field === "docs" && issue.missing.includes(doc.type) && (
+                            <p className="form-field-error" role="alert">
+                              Attach your {doc.label}.
+                            </p>
+                          )}
 
                           {doc.required && (
                             <div className="admission-doc-actions">
@@ -672,6 +770,11 @@ export default function AdmissionApplicationPage() {
                                 accept={acceptFor(doc.formats)}
                                 onChange={(e) => handleFile(doc, e)}
                               />
+                              {file && (
+                                <button type="button" className="admission-doc-remove" onClick={() => setPreviewDoc({ label: doc.label, file })}>
+                                  Preview
+                                </button>
+                              )}
                               {file && (
                                 <button type="button" className="admission-doc-remove" onClick={() => removeFile(doc.type)}>
                                   Remove
@@ -693,10 +796,10 @@ export default function AdmissionApplicationPage() {
 
                   <h4 className="form-section-title">Declaration</h4>
                   <div className="form-grid">
-                    <Field id="studentSignature" label="Student's signature over printed name">
+                    <Field id="studentSignature" label="Student's signature over printed name" required>
                       <input id="studentSignature" name="studentSignature" type="text" maxLength={200} className="signature-input" placeholder="e.g. Juan Dela Cruz" value={form.studentSignature} onChange={handleChange} />
                     </Field>
-                    <Field id="guardianSignature" label="Parent's / guardian's signature over printed name">
+                    <Field id="guardianSignature" label="Parent's / guardian's signature over printed name" required>
                       <input id="guardianSignature" name="guardianSignature" type="text" maxLength={200} className="signature-input" placeholder="e.g. Maria Dela Cruz" value={form.guardianSignature} onChange={handleChange} />
                     </Field>
                   </div>
@@ -712,16 +815,22 @@ export default function AdmissionApplicationPage() {
                 ) : (
                   <span />
                 )}
+                {draftSavedAt ? (
+                  <span className="draft-status" role="status" key={draftSavedAt.getTime()}>
+                    <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="m3.5 8.5 3 3 6-7" />
+                    </svg>
+                    Draft saved
+                  </span>
+                ) : (
+                  <span />
+                )}
                 <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
                   {isLastStep ? "Submit Application" : "Continue"}
                 </button>
               </div>
-              {progress && (
-                <p className="form-note" role="status">
-                  {progress}
-                </p>
-              )}
             </form>
+            </FormIssue.Provider>
           </>
         )}
       </Card>
@@ -731,7 +840,18 @@ export default function AdmissionApplicationPage() {
         onCancel={() => setConfirming(false)}
         onConfirm={sendApplication}
         isSubmitting={isSubmitting}
+        progress={progress}
       />
+
+      {previewDoc && (
+        <FilePreviewModal
+          title={previewDoc.label}
+          subtitle="This is the file you attached. It uploads when you submit."
+          fileName={previewDoc.file.name}
+          loadFile={() => Promise.resolve(previewDoc.file)}
+          onClose={() => setPreviewDoc(null)}
+        />
+      )}
     </AppLayout>
   );
 }

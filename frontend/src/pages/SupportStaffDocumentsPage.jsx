@@ -16,6 +16,7 @@ import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./SupportStaffDocumentsPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 function formatDateTime(isoDateTime) {
   return new Date(isoDateTime).toLocaleString(undefined, {
@@ -243,7 +244,7 @@ export default function SupportStaffDocumentsPage() {
           )}
 
           {isLoading ? (
-            <p>Loading...</p>
+            <Skeleton variant="table" />
           ) : documents.length === 0 ? (
             <p>
               {applicantId

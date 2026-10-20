@@ -9,6 +9,7 @@ import DataTable from "../components/ui/DataTable.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import { useAcademicHeadDepartment } from "../hooks/useAcademicHeadDepartment.js";
 import "./AcademicHeadDashboardPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 function formatDate(isoDateTime) {
   return new Date(isoDateTime).toLocaleDateString(undefined, {
@@ -104,7 +105,7 @@ export default function AcademicHeadDashboardPage() {
 
       {!noDepartment && isLoading && (
         <Card>
-          <p>Loading...</p>
+          <Skeleton variant="dashboard" />
         </Card>
       )}
 

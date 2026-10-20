@@ -9,6 +9,7 @@ import Card from "../components/ui/Card.jsx";
 import Icon from "../components/ui/Icon.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./MyApplicationHistoryPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 function formatDate(isoDate) {
   return new Date(isoDate).toLocaleDateString(undefined, {
@@ -96,7 +97,7 @@ export default function MyApplicationHistoryPage() {
         </p>
       )}
 
-      {isLoading && <p>Loading...</p>}
+      {isLoading && <Skeleton variant="table" />}
 
       {!isLoading && !errorMessage && applications.length === 0 && (
         <Card>

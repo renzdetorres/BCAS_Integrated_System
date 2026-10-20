@@ -1,0 +1,99 @@
+/* Loading placeholders. The bars shimmer slowly (1.4s) so the page reads as alive and waiting,
+   not frozen; with reduced motion the global rule in base.css holds them still. */
+
+.ui-skeleton {
+  width: 100%;
+}
+
+.ui-skeleton-body {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.ui-skeleton-bar {
+  display: block;
+  height: 12px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--color-border) 0%, var(--color-surface-subtle) 50%, var(--color-border) 100%);
+  background-size: 200% 100%;
+  animation: ui-skeleton-shimmer 1.4s linear infinite;
+}
+
+.ui-skeleton-bar-lg {
+  height: 20px;
+}
+
+.ui-skeleton-lines {
+  display: grid;
+  gap: 12px;
+}
+
+.ui-skeleton-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.ui-skeleton-tile {
+  display: grid;
+  gap: 14px;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.ui-skeleton-table {
+  display: grid;
+}
+
+.ui-skeleton-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-5);
+  align-items: center;
+  min-height: 44px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ui-skeleton-row-head {
+  min-height: 36px;
+}
+
+.ui-skeleton-form {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.ui-skeleton-field {
+  display: grid;
+  gap: 10px;
+}
+
+.ui-skeleton-input {
+  height: 42px;
+  border-radius: var(--radius-md);
+}
+
+@keyframes ui-skeleton-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .ui-skeleton-tiles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ui-skeleton-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ui-skeleton-row > :nth-child(n + 3) {
+    display: none;
+  }
+}

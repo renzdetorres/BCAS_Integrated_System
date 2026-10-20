@@ -14,8 +14,11 @@ import Card from "../components/ui/Card.jsx";
 import FilePreviewModal from "../components/FilePreviewModal.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import ProgressBar from "../components/ui/ProgressBar.jsx";
+import UploadProgress from "../components/ui/UploadProgress.jsx";
+import { useToast } from "../context/ToastContext.jsx";
 import { REQUIRED_NOTE, acceptFor, fileProblem, formatsFor, formatsLabel, isRequiredDocument } from "../config/requiredDocuments.js";
 import "./DocumentsPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 function formatDate(isoDate) {
   return new Date(isoDate).toLocaleDateString(undefined, {
@@ -27,7 +30,9 @@ function formatDate(isoDate) {
 
 /** One checklist: progress bar plus an upload row per requirement. */
 function DocumentChecklist({ requirements, onUploaded }) {
+  const { showToast } = useToast();
   const [uploadingType, setUploadingType] = useState(null);
+  const [percent, setPercent] = useState(0);
   const [itemErrors, setItemErrors] = useState({});
   const [previewing, setPreviewing] = useState(null);
   const verified = requirements.filter((r) => r.status === "Verified").length;
@@ -44,15 +49,19 @@ function DocumentChecklist({ requirements, onUploaded }) {
       return;
     }
 
+    const label = DOCUMENT_TYPE_LABELS[documentType] ?? documentType;
     setUploadingType(documentType);
+    setPercent(0);
     setItemErrors((prev) => ({ ...prev, [documentType]: null }));
 
     try {
-      const updated = await uploadDocument(documentType, file);
+      const updated = await uploadDocument(documentType, file, setPercent);
       onUploaded(updated);
+      showToast(`${label} uploaded successfully.`);
     } catch (error) {
       const message = error instanceof ApiError ? error.message : "Failed to upload document. Please try again.";
       setItemErrors((prev) => ({ ...prev, [documentType]: message }));
+      showToast(`${label} could not be uploaded. ${message}`, "error");
     } finally {
       setUploadingType(null);
     }
@@ -102,6 +111,8 @@ function DocumentChecklist({ requirements, onUploaded }) {
                   {requirement.flaggedReason || "Upload a corrected file."}
                 </p>
               )}
+
+              {isUploading && <UploadProgress percent={percent} label={`Uploading ${DOCUMENT_TYPE_LABELS[requirement.documentType] ?? "document"}`} />}
 
               {itemErrors[requirement.documentType] && (
                 <p className="form-error" role="alert">
@@ -198,7 +209,7 @@ export default function DocumentsPage() {
       )}
       {(isLoading || needsApplication || errorMessage || showAdmission) && (
         <Card>
-          {isLoading && <p>Loading...</p>}
+          {isLoading && <Skeleton />}
 
           {!isLoading && needsApplication && (
             <p className="form-error" role="alert">

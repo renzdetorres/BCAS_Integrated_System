@@ -222,3 +222,101 @@
     animation: none;
   }
 }
+
+/* ---- Status changes you can see ------------------------------------------------------------------
+   When a stage finishes, its check draws itself and the rule leading to it fills left to right; the
+   stage that becomes current pops in with its ring. Each runs once, when the class lands, so a
+   page that refreshes its own status animates only what actually changed. */
+
+.tracking-stepper-numbered .tracking-step:not(:first-child)::before {
+  background: linear-gradient(var(--color-status-green-text), var(--color-status-green-text)) no-repeat left / 0% 100% var(--color-border);
+  transition: background-size 520ms var(--ease-out);
+}
+
+.tracking-stepper-numbered .tracking-step-complete:not(:first-child)::before,
+.tracking-stepper-numbered .tracking-step-current:not(:first-child)::before {
+  background-size: 100% 100%;
+}
+
+.tracking-step-complete .tracking-step-circle svg path {
+  stroke-dasharray: 16;
+  animation: tracking-check-draw 420ms var(--ease-out) 140ms backwards;
+}
+
+.tracking-stepper-numbered .tracking-step-current:not(.tracking-step-complete) .tracking-step-circle {
+  animation:
+    tracking-current-in 460ms var(--ease-out),
+    tracking-current-ring 2.6s ease-in-out 460ms infinite;
+}
+
+.tracking-step-circle {
+  transition:
+    background-color 300ms var(--ease-out),
+    border-color 300ms var(--ease-out),
+    color 300ms var(--ease-out),
+    box-shadow 300ms var(--ease-out);
+}
+
+.tracking-step-hint {
+  max-width: 24ch;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+  animation: tracking-hint-in 360ms var(--ease-out) 160ms backwards;
+}
+
+@keyframes tracking-check-draw {
+  from {
+    stroke-dashoffset: 16;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes tracking-current-in {
+  from {
+    transform: scale(0.8);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes tracking-current-ring {
+  0%,
+  100% {
+    box-shadow: 0 0 0 4px rgba(217, 164, 65, 0.22);
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(217, 164, 65, 0);
+  }
+}
+
+@keyframes tracking-hint-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Stacked on phones the rule runs top to bottom, so it fills that way. */
+@media (max-width: 720px) {
+  .tracking-stepper-numbered .tracking-step:not(:first-child)::before {
+    background: linear-gradient(var(--color-status-green-text), var(--color-status-green-text)) no-repeat top / 100% 0% var(--color-border);
+  }
+
+  .tracking-stepper-numbered .tracking-step-complete:not(:first-child)::before,
+  .tracking-stepper-numbered .tracking-step-current:not(:first-child)::before {
+    background-size: 100% 100%;
+  }
+
+  .tracking-step-hint {
+    max-width: none;
+  }
+}

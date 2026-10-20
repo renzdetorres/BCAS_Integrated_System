@@ -1217,3 +1217,32 @@ Both are for the Admin role only.
   working within that time instead of when its login expires.
 - **Headers**: `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`, a
   `Content-Security-Policy` (own scripts and styles only; blob previews allowed) and HSTS are sent outside development.
+
+
+## UI/UX Smoothness Requirements
+
+- The system shall provide smooth page and component transitions.
+- The system shall provide loading indicators or skeleton screens when retrieving data.
+- The system shall provide immediate visual feedback after user actions.
+- The system shall provide clear and specific validation/error messages.
+- The system shall prevent accidental duplicate submissions.
+- The system shall maintain responsive layouts across desktop, tablet, and mobile devices.
+- The system shall use consistent buttons, forms, colors, typography, spacing, and animations.
+- The application tracking status shall update smoothly without unnecessary page reloads.
+- File uploads shall display progress and upload status.
+- Forms shall preserve user-entered information whenever possible.
+- Important actions such as submission, payment, deletion, and status changes shall provide confirmation or success feedback.
+
+### How the frontend meets them
+
+| Requirement | Where |
+| --- | --- |
+| Page and component transitions | `frontend/src/styles/motion.css` (page entrance, press feedback); modals, dropdowns and the sidebar drawer in their own component CSS |
+| Skeleton screens | `components/ui/Skeleton.jsx` (`lines`, `table`, `dashboard`, `form`), used by every page that loads data |
+| Immediate feedback | Toasts (`context/ToastContext.jsx`) for saved, uploaded, submitted and failed actions |
+| Specific validation | Inline errors under each field (`Field` in the admission form, the My Profile form), plus the file checks in `config/requiredDocuments.js` |
+| No duplicate submissions | Submit buttons are disabled while a request is running; confirmation dialogs lock while submitting |
+| Tracking without reloads | `hooks/usePolling.js` refreshes Application Tracking and Payment every 30 seconds while the tab is visible |
+| Upload progress | `api/uploadWithProgress.js` and `components/ui/UploadProgress.jsx` for documents and proof of payment |
+| Preserved input | The admission application draft is saved as you type ("Draft saved") for the length of the browser tab |
+| Reduced motion | `base.css` collapses every animation and transition for people who ask their device for less motion |

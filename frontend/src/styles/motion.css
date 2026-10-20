@@ -1,0 +1,220 @@
+/* Motion layer - the one place the app's movement and smoothness is tuned.
+
+   This is an operating tool people use all day, so motion here is quiet and has a job:
+   - a page's content settles in once, top to bottom, so a new screen reads as one arrival;
+   - controls answer a press (a 3% squeeze) and ease between states instead of snapping;
+   - a field that fails validation nudges once, so the eye goes to it.
+   Everything uses transform and opacity only, one strong ease-out (tokens.css), and stays
+   under 400ms. It loads last (main.jsx), so it wins ties against the component files, and
+   base.css already collapses every animation and transition for prefers-reduced-motion. */
+
+/* ---- Smooth scrolling and touch response ---------------------------------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* No 300ms tap delay and no grey flash on touch screens. */
+a,
+button,
+select,
+label,
+summary,
+[role="button"],
+[role="tab"],
+[role="switch"],
+input[type="checkbox"],
+input[type="radio"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---- Page entrance --------------------------------------------------------
+   A screen's blocks (title, summary cards, table, panels) rise 8px and fade in, 40ms apart,
+   capped so even a long page is done in about half a second. fill-mode "backwards" holds the
+   start state only during the delay, so nothing keeps a transform afterwards (no stray
+   stacking contexts under dropdowns). Zero-specificity selectors: an element with its own
+   animation (a skeleton shimmer, a dialog) keeps it. Data arriving later (a skeleton swapped
+   for its panel) mounts as a new child and rises the same way. */
+
+@keyframes motion-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+:where(.app-layout-content > *, .dash-layout > *) {
+  animation: motion-rise 360ms var(--ease-out) var(--rise-delay, 0ms) backwards;
+}
+
+:where(.app-layout-content > :nth-child(2), .dash-layout > :nth-child(2)) {
+  --rise-delay: 40ms;
+}
+
+:where(.app-layout-content > :nth-child(3), .dash-layout > :nth-child(3)) {
+  --rise-delay: 80ms;
+}
+
+:where(.app-layout-content > :nth-child(4), .dash-layout > :nth-child(4)) {
+  --rise-delay: 120ms;
+}
+
+:where(.app-layout-content > :nth-child(5), .dash-layout > :nth-child(5)) {
+  --rise-delay: 160ms;
+}
+
+:where(.app-layout-content > :nth-child(n + 6), .dash-layout > :nth-child(n + 6)) {
+  --rise-delay: 200ms;
+}
+
+/* ---- Press and state feedback ---------------------------------------------
+   Controls that already change colour on hover also ease their press, so a click feels
+   physical and a state change (selected tab, toggle flip) glides instead of snapping. */
+
+.report-tab,
+.report-category,
+.ui-datatable-page-button,
+.ui-datatable-sort,
+.ui-datatable-row-action,
+.setting-toggle-on,
+.setting-toggle-off,
+.trigger-toggle-on,
+.trigger-toggle-off,
+.exam-switch,
+.scholarship-status-button,
+.next-action-button,
+.ui-datatable-summary-action {
+  transition:
+    background-color 160ms var(--ease-out),
+    border-color 160ms var(--ease-out),
+    color 160ms var(--ease-out),
+    box-shadow 160ms var(--ease-out),
+    opacity 160ms var(--ease-out),
+    transform 160ms var(--ease-out);
+}
+
+.report-tab:not(:disabled):active,
+.report-category:not(:disabled):active,
+.ui-datatable-page-button:not(:disabled):active,
+.setting-toggle-on:not(:disabled):active,
+.setting-toggle-off:not(:disabled):active,
+.trigger-toggle-on:not(:disabled):active,
+.trigger-toggle-off:not(:disabled):active,
+.exam-switch:not(:disabled):active,
+.next-action-button:not(:disabled):active,
+.ui-datatable-summary-action:active {
+  transform: scale(0.97);
+}
+
+/* A card you can click to filter lifts a hair on hover (pointer devices only, so a tap
+   never leaves it stuck up). */
+@media (hover: hover) and (pointer: fine) {
+  .ui-datatable-summary-action:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-card);
+  }
+
+  .ui-datatable-summary-action:active {
+    transform: scale(0.98);
+  }
+}
+
+/* Links ease their colour instead of flipping. */
+a {
+  transition: color 140ms var(--ease-out), background-color 140ms var(--ease-out);
+}
+
+/* ---- Validation nudge ------------------------------------------------------
+   A field marked invalid shakes once (4px, 260ms) when the error appears. Feedback, not
+   decoration: it points at the field the message under it is about. */
+
+@keyframes motion-nudge {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  55% {
+    transform: translateX(3px);
+  }
+  80% {
+    transform: translateX(-2px);
+  }
+}
+
+input[aria-invalid="true"],
+select[aria-invalid="true"],
+textarea[aria-invalid="true"] {
+  animation: motion-nudge 260ms var(--ease-out);
+}
+
+.profile-field-error,
+.form-error,
+.form-success {
+  animation: ui-fade-in 200ms var(--ease-out);
+}
+
+/* ---- Forms: required marks, inline errors, saved state ---------------------------------------- */
+
+/* A required field's asterisk reads the same on every page (the form pages each had their own). */
+.required-mark {
+  color: var(--color-status-red-text);
+  font-weight: 700;
+}
+
+/* The message under a field that is empty or wrong. It takes its height from the text, so a
+   field below it moves by one line when it appears and nothing else on the page does. */
+.form-field-error {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--color-status-red-text);
+  animation: ui-fade-in 200ms var(--ease-out);
+}
+
+/* "Draft saved": a check and two words, fading in each time the draft is written. */
+.draft-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--color-status-green-text);
+  animation: ui-fade-in 240ms var(--ease-out);
+}
+
+.draft-restored {
+  margin: 0 0 var(--space-4);
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+  font: var(--text-dense);
+  color: var(--color-text-secondary);
+}
+
+.admission-required-note {
+  margin-top: 0;
+}
+
+/* ---- No layout shift ---------------------------------------------------------------------------
+   Reserve the scrollbar's width so opening a dialog (which locks page scroll) does not nudge the
+   page sideways, and give images their space before they load. */
+html {
+  scrollbar-gutter: stable;
+}
+
+img {
+  height: auto;
+}

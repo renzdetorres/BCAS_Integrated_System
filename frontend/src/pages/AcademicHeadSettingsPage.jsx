@@ -10,6 +10,7 @@ import Card from "../components/ui/Card.jsx";
 import SettingsSearch from "../components/ui/SettingsSearch.jsx";
 import { ACADEMIC_HEAD_DEPARTMENT_ENTRY, STAFF_ACCOUNT_ENTRIES } from "../config/settingsSearchEntries.js";
 import "./AcademicHeadSettingsPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 const initialPasswordForm = { currentPassword: "", newPassword: "", confirmNewPassword: "" };
 
@@ -128,7 +129,7 @@ export default function AcademicHeadSettingsPage() {
   if (isLoading) {
     return (
       <AppLayout title="Settings">
-        <Card>Loading...</Card>
+        <Card><Skeleton variant="form" /></Card>
       </AppLayout>
     );
   }

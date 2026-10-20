@@ -15,6 +15,7 @@ import NextActionBanner from "../components/ui/NextActionBanner.jsx";
 import WorkflowStepper, { ADMISSION_STEP_LABELS, SCHOLARSHIP_STEP_LABELS } from "../components/WorkflowStepper.jsx";
 import TrackerStatus from "../components/TrackerStatus.jsx";
 import "./ApplicantDashboardPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 const DEADLINE_TYPE_LABELS = {
   ScholarshipDeadline: "Scholarship Deadline",
@@ -73,7 +74,7 @@ export default function ApplicantDashboardPage() {
     return (
       <AppLayout title={`${session.firstName}'s Application`}>
         <Card>
-          <p>Loading...</p>
+          <Skeleton variant="dashboard" />
         </Card>
       </AppLayout>
     );

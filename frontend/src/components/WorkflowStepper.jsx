@@ -28,6 +28,26 @@ export const SCHOLARSHIP_STEP_LABELS = {
   Result: "Result",
 };
 
+// One plain sentence under the stage an applicant is on now, so the tracker says what is
+// happening and not only where they are.
+export const ADMISSION_STEP_HINTS = {
+  Submitted: "We received your application.",
+  UnderReview: "Staff are checking your details and documents.",
+  ExamPayment: "Pay the exam fee, then upload your proof of payment.",
+  ExamPermit: "Choose your exam schedule to get your permit.",
+  ExamResult: "Your exam is being scored. The result will appear here.",
+  InterviewSchedule: "Your interview is being arranged.",
+  Enrollment: "Complete your enrollment with the registrar.",
+};
+
+export const SCHOLARSHIP_STEP_HINTS = {
+  Application: "We received your scholarship application.",
+  ScholarshipExam: "Take the scholarship exam on your schedule.",
+  ExamResult: "Your exam result will appear here.",
+  InterviewEssay: "Prepare for your interview and essay.",
+  ScholarshipResult: "The committee is deciding. You will be notified.",
+};
+
 // What each stage reads as relative to where the applicant is: finished,
 // the one they are on, the very next one, or one that cannot start yet.
 function stageCaption(step, index, currentIndex) {
@@ -42,7 +62,7 @@ function stageCaption(step, index, currentIndex) {
 // AdminApplicationDetailPage (any application, BISAASS-31) so they never
 // drift apart. `numbered` draws the circular 1-7 tracker used for
 // admission; without it, the compact diamond rail used for scholarships.
-export default function WorkflowStepper({ steps, labels, numbered = false }) {
+export default function WorkflowStepper({ steps, labels, hints = null, numbered = false }) {
   const currentIndex = steps.findIndex((step) => step.isCurrent);
 
   return (
@@ -76,6 +96,9 @@ export default function WorkflowStepper({ steps, labels, numbered = false }) {
             <span className="tracking-step-text">
               <span className="tracking-step-label">{labels[step.step] ?? step.step}</span>
               {caption && <span className="tracking-step-caption">{caption}</span>}
+              {numbered && hints && step.isCurrent && !step.isComplete && hints[step.step] ? (
+                <span className="tracking-step-hint">{hints[step.step]}</span>
+              ) : null}
             </span>
           </li>
         );

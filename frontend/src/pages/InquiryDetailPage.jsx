@@ -5,6 +5,7 @@ import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./InquiryDetailPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 function formatDateTime(isoDateTime) {
   return new Date(isoDateTime).toLocaleString(undefined, {
@@ -80,7 +81,7 @@ export default function InquiryDetailPage() {
     >
       {isLoading && (
         <div className="inquiry-detail-card">
-          <p>Loading...</p>
+          <Skeleton />
         </div>
       )}
       {errorMessage && (

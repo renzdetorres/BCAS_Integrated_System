@@ -7,6 +7,7 @@ import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import Notice from "../components/ui/Notice.jsx";
 import "./ResultPages.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 const TONE = { NotYet: "info", Scheduled: "info", Passed: "success", Failed: "danger" };
 const HEADLINE = {
@@ -49,7 +50,7 @@ export default function InterviewPage() {
     <AppLayout title="Interview & Admission Result">
       {isLoading && (
         <Card>
-          <p>Loading...</p>
+          <Skeleton />
         </Card>
       )}
 

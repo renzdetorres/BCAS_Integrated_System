@@ -8,6 +8,7 @@ import Card from "../components/ui/Card.jsx";
 import Notice from "../components/ui/Notice.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./ResultPages.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 const TONE = { Passed: "success", Failed: "danger", Retake: "warning", Waiting: "info" };
 const HEADLINE = {
@@ -43,7 +44,7 @@ export default function ExamResultPage() {
     <AppLayout title="Exam Result">
       {isLoading && (
         <Card>
-          <p>Loading...</p>
+          <Skeleton />
         </Card>
       )}
 

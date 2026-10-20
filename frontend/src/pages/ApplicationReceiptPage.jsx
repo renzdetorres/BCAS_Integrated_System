@@ -10,6 +10,7 @@ import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import BcasSeal from "../components/ui/BcasSeal.jsx";
 import "./ApplicationReceiptPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 function formatTimestamp(isoDateTime) {
   return new Date(isoDateTime).toLocaleString(undefined, {
@@ -103,7 +104,7 @@ export default function ApplicationReceiptPage() {
     <AppLayout title="Application Receipt">
       {isLoading && (
         <Card>
-          <p>Loading...</p>
+          <Skeleton />
         </Card>
       )}
 

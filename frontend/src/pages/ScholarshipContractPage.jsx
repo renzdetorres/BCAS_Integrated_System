@@ -4,6 +4,7 @@ import { getScholarshipContract } from "../api/adminReportsApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import "./ScholarshipContractPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 function formatDate(isoDateTime) {
   return new Date(isoDateTime).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
@@ -48,7 +49,7 @@ export default function ScholarshipContractPage() {
       }
     >
 
-      {isLoading && <p className="no-print">Loading...</p>}
+      {isLoading && <Skeleton className="no-print" />}
       {errorMessage && (
         <p className="form-error no-print" role="alert">
           {errorMessage}

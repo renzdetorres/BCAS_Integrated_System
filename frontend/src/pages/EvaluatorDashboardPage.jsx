@@ -8,6 +8,7 @@ import DataTable from "../components/ui/DataTable.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import NextActionBanner from "../components/ui/NextActionBanner.jsx";
 import "./EvaluatorDashboardPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 function formatDate(isoDateTime) {
   return new Date(isoDateTime).toLocaleDateString(undefined, {
@@ -84,7 +85,7 @@ export default function EvaluatorDashboardPage() {
     <AppLayout title="Screening Queue">
       {isLoading && (
         <Card>
-          <p>Loading...</p>
+          <Skeleton variant="dashboard" />
         </Card>
       )}
 

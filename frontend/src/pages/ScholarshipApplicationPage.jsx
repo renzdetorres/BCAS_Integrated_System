@@ -30,6 +30,7 @@ import {
 } from "../config/scholarshipForm.js";
 import { PHONE_ERROR, PHONE_HINT, PHONE_MAX_LENGTH, PHONE_PATTERN, PHONE_PLACEHOLDER, cleanPhoneInput, isValidPhone } from "../utils/phone.js";
 import "./ScholarshipApplicationPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 const initialForm = {
   scholarshipId: "",
@@ -162,7 +163,7 @@ export default function ScholarshipApplicationPage() {
     <AppLayout title="Scholarship Application">
       <Card className="scholarship-card">
         <h2>My Scholarship Applications</h2>
-        {isLoading && <p>Loading...</p>}
+        {isLoading && <Skeleton variant="form" />}
         {!isLoading && applications.length === 0 && (
           <p>No applications submitted yet. Use the form below to apply.</p>
         )}

@@ -6,6 +6,7 @@ import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import NextActionBanner from "../components/ui/NextActionBanner.jsx";
 import "./SupportStaffDashboardPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 export default function SupportStaffDashboardPage() {
   const [dashboard, setDashboard] = useState(null);
@@ -37,7 +38,7 @@ export default function SupportStaffDashboardPage() {
     <AppLayout title="Support Staff Dashboard">
       {isLoading && (
         <Card>
-          <p>Loading...</p>
+          <Skeleton variant="dashboard" />
         </Card>
       )}
 

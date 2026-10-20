@@ -10,6 +10,7 @@ import Card from "../components/ui/Card.jsx";
 import SettingsSearch from "../components/ui/SettingsSearch.jsx";
 import { STAFF_ACCOUNT_ENTRIES } from "../config/settingsSearchEntries.js";
 import "./EvaluatorSettingsPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 const initialPasswordForm = { currentPassword: "", newPassword: "", confirmNewPassword: "" };
 
@@ -124,7 +125,7 @@ export default function EvaluatorSettingsPage() {
   if (isLoading) {
     return (
       <AppLayout title="Settings">
-        <Card>Loading...</Card>
+        <Card><Skeleton variant="form" /></Card>
       </AppLayout>
     );
   }

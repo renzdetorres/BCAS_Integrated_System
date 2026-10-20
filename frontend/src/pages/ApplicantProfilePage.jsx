@@ -8,6 +8,7 @@ import Card from "../components/ui/Card.jsx";
 import ConfirmDialog from "../components/ui/ConfirmDialog.jsx";
 import { useToast } from "../context/ToastContext.jsx";
 import "./ApplicantProfilePage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 function emptyForm(session) {
   return {
@@ -179,7 +180,7 @@ export default function ApplicantProfilePage() {
   if (isLoading) {
     return (
       <AppLayout title="My Profile">
-        <Card>Loading...</Card>
+        <Card><Skeleton variant="form" /></Card>
       </AppLayout>
     );
   }

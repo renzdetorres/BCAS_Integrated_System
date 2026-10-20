@@ -26,6 +26,7 @@ import ScholarshipPipelineReport from "../components/ScholarshipPipelineReport.j
 import { AdmissionListReport, AdmissionPerLevelReport, AdmissionResultsReport } from "../components/AdmissionReports.jsx";
 import { ScholarshipGranteesReport, ScholarshipQualifiedReport } from "../components/ScholarshipReports.jsx";
 import "./AdminReportsPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 // Two report groups, four reports each.
 const CATEGORIES = ["Admission", "Scholarship"];
@@ -428,7 +429,7 @@ function EnrollmentSummaryReport() {
       <ReportError message={errorMessage} />
 
       {isLoading ? (
-        <p>Loading...</p>
+        <Skeleton variant="table" />
       ) : summary ? (
         <>
           <p className="report-total">
@@ -524,7 +525,7 @@ function SectionFilesReport() {
       <ReportError message={errorMessage} />
 
       {isLoading ? (
-        <p>Loading...</p>
+        <Skeleton variant="table" />
       ) : sections.length === 0 ? (
         <p>No enrolled applicants yet.</p>
       ) : (
@@ -614,7 +615,7 @@ function ApplicationTrendReport() {
       <ReportError message={errorMessage} />
 
       {isLoading ? (
-        <p>Loading...</p>
+        <Skeleton variant="table" />
       ) : (
         <>
           <p className="report-total">
@@ -654,7 +655,7 @@ function ApplicationFunnelReport({ kind }) {
       <ReportError message={errorMessage} />
 
       {isLoading ? (
-        <p>Loading...</p>
+        <Skeleton variant="table" />
       ) : funnel ? (
         <BarChart
           data={(kind === "scholarship" ? funnel.scholarshipFunnel : funnel.admissionFunnel).map((s) => ({
@@ -696,7 +697,7 @@ function StatusDistributionReport() {
       <ReportError message={errorMessage} />
 
       {isLoading ? (
-        <p>Loading...</p>
+        <Skeleton variant="table" />
       ) : counts ? (
         <>
           <p className="report-total">

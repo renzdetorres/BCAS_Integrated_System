@@ -6,6 +6,7 @@ import Card from "../components/ui/Card.jsx";
 import { ROLE_SHORT_LABELS } from "../config/navigation.js";
 import { useToast } from "../context/ToastContext.jsx";
 import "./AdminRoleAccessPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 function groupFeatures(features) {
   const groups = [];
@@ -85,7 +86,7 @@ export default function AdminRoleAccessPage() {
           <p className="role-access-note">Your Admin account can view these but not change them.</p>
         )}
 
-        {!overview && !errorMessage && <p>Loading...</p>}
+        {!overview && !errorMessage && <Skeleton variant="table" />}
 
         {overview && (
           <>

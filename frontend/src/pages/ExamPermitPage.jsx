@@ -8,6 +8,7 @@ import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import EmptyState from "../components/ui/EmptyState.jsx";
 import "./ExamPermitPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 export default function ExamPermitPage() {
   const [permit, setPermit] = useState(null);
@@ -70,7 +71,7 @@ export default function ExamPermitPage() {
     return (
       <AppLayout title="Exam Permit">
         <Card>
-          <p>Loading...</p>
+          <Skeleton />
         </Card>
       </AppLayout>
     );

@@ -116,3 +116,72 @@
 .payment-layout .ui-card > h2 {
   margin-bottom: var(--space-4);
 }
+
+/* The six-stage tracker above the two cards. */
+.payment-steps {
+  padding-block: var(--space-5);
+}
+
+.payment-qr button {
+  margin-top: var(--space-1);
+}
+
+/* The receipt picked but not yet sent: thumbnail, name, size, and the two things you can do with it. */
+.payment-chosen {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+  animation: ui-pop-in 200ms var(--ease-out);
+}
+
+.payment-chosen-thumb {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  border: 1px solid var(--color-border);
+  background: var(--color-white);
+}
+
+.payment-chosen-pdf {
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-status-red-text);
+}
+
+.payment-chosen-meta {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  font: var(--text-dense);
+  overflow-wrap: anywhere;
+}
+
+.payment-chosen-meta span {
+  color: var(--color-text-secondary);
+}
+
+.payment-chosen-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.payment-qr-large {
+  display: block;
+  width: min(100%, 420px);
+  margin: 0 auto;
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+}

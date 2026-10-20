@@ -20,6 +20,7 @@ import { useAcademicHeadDepartment } from "../hooks/useAcademicHeadDepartment.js
 import BarChart from "../components/ui/BarChart.jsx";
 import TrendChart from "../components/ui/TrendChart.jsx";
 import "./AcademicHeadReportsPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 const REPORTS = [
   { key: "enrollmentSummary", category: "Admission", label: "Summary of Enrollment" },
@@ -118,7 +119,7 @@ function EnrollmentSummaryReport() {
       <ReportError message={errorMessage} />
 
       {isLoading ? (
-        <p>Loading...</p>
+        <Skeleton variant="table" />
       ) : summary ? (
         <>
           <p className="report-total">
@@ -215,7 +216,7 @@ function SectionFilesReport() {
       <ReportError message={errorMessage} />
 
       {isLoading ? (
-        <p>Loading...</p>
+        <Skeleton variant="table" />
       ) : sections.length === 0 ? (
         <p>No enrolled applicants yet.</p>
       ) : (
@@ -301,7 +302,7 @@ function ScholarshipApplicantListReport() {
       <ReportError message={errorMessage} />
 
       {isLoading ? (
-        <p>Loading...</p>
+        <Skeleton variant="table" />
       ) : rows.length === 0 ? (
         <p>No scholarship applications match these filters.</p>
       ) : (
@@ -381,7 +382,7 @@ function ScholarshipQualificationReport() {
       <ReportError message={errorMessage} />
 
       {isLoading ? (
-        <p>Loading...</p>
+        <Skeleton variant="table" />
       ) : rows.length === 0 ? (
         <p>No eligibility screenings match this filter.</p>
       ) : (
@@ -461,7 +462,7 @@ function ScholarshipResultsReport() {
       <ReportError message={errorMessage} />
 
       {isLoading ? (
-        <p>Loading...</p>
+        <Skeleton variant="table" />
       ) : rows.length === 0 ? (
         <p>No decided scholarship applications match this filter.</p>
       ) : (
@@ -521,7 +522,7 @@ function ScholarshipSlotsReport() {
       <ReportError message={errorMessage} />
 
       {isLoading ? (
-        <p>Loading...</p>
+        <Skeleton variant="table" />
       ) : rows.length === 0 ? (
         <p>No scholarships yet.</p>
       ) : (
@@ -612,7 +613,7 @@ function ApplicationTrendReport() {
       <ReportError message={errorMessage} />
 
       {isLoading ? (
-        <p>Loading...</p>
+        <Skeleton variant="table" />
       ) : (
         <>
           <p className="report-total">
@@ -650,7 +651,7 @@ function ApplicationFunnelReport() {
       <ReportError message={errorMessage} />
 
       {isLoading ? (
-        <p>Loading...</p>
+        <Skeleton variant="table" />
       ) : funnel ? (
         <div className="report-summary-columns">
           <div>

@@ -25,6 +25,7 @@ import { DOCUMENT_TYPE_LABELS } from "../api/documentApi.js";
 import { statusDescription } from "../config/statusDescriptions.js";
 import { academicDetails } from "../utils/academicDetails.js";
 import "./AdminApplicationDetailPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 function formatDateTime(isoDateTime) {
   return new Date(isoDateTime).toLocaleString(undefined, {
@@ -278,7 +279,7 @@ export default function AdminApplicationDetailPage() {
     >
         {isLoading && (
           <div className="admin-app-detail-card">
-            <p>Loading...</p>
+            <Skeleton />
           </div>
         )}
         {errorMessage && (
@@ -462,7 +463,7 @@ export default function AdminApplicationDetailPage() {
               <div className="admin-app-dossier-section">
                 <h2>Documents</h2>
                 {documents === null ? (
-                  <p>Loading...</p>
+                  <Skeleton />
                 ) : documents.length === 0 ? (
                   <p className="admin-app-detail-subtitle">No documents uploaded yet.</p>
                 ) : (
@@ -487,7 +488,7 @@ export default function AdminApplicationDetailPage() {
                   events.
                 </p>
 
-                {isLoadingLogs && <p>Loading...</p>}
+                {isLoadingLogs && <Skeleton />}
                 {logsError && (
                   <p className="form-error" role="alert">
                     {logsError}

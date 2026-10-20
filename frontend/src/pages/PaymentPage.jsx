@@ -1,32 +1,72 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getMyExamPayment, getMyPaymentProofFile, submitPaymentProof } from "../api/examPaymentApi.js";
 import { ApiError } from "../api/apiClient.js";
 import { fileProblem } from "../config/requiredDocuments.js";
 import { formatDateTime, formatFileSize } from "../utils/format.js";
+import { useToast } from "../context/ToastContext.jsx";
+import { usePolling } from "../hooks/usePolling.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import FilePreviewModal from "../components/FilePreviewModal.jsx";
+import WorkflowStepper from "../components/WorkflowStepper.jsx";
 import Card from "../components/ui/Card.jsx";
+import Modal from "../components/ui/Modal.jsx";
 import Notice from "../components/ui/Notice.jsx";
+import Skeleton from "../components/ui/Skeleton.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
+import UploadProgress from "../components/ui/UploadProgress.jsx";
 import "./PaymentPage.css";
 
 const PROOF_FORMATS = ["PDF", "JPG", "PNG"];
+
+// The road from "you owe the fee" to "you can sit the exam", drawn with the same tracker the
+// application uses so the two read as one system.
+const PAYMENT_STEPS = ["Required", "Pay", "Upload", "Verifying", "Confirmed", "Permit"];
+const PAYMENT_STEP_LABELS = {
+  Required: "Payment required",
+  Pay: "Scan QR and pay",
+  Upload: "Upload proof",
+  Verifying: "Under verification",
+  Confirmed: "Payment confirmed",
+  Permit: "Exam permit available",
+};
+const PAYMENT_STEP_HINTS = {
+  Pay: "Scan the school's QR code with your banking or e-wallet app.",
+  Upload: "Attach a clear photo or screenshot of your receipt.",
+  Verifying: "Staff are checking your receipt. You'll be notified.",
+  Permit: "Choose your exam schedule to get your permit.",
+};
+
+// How often a payment that is waiting on staff is re-checked while this page is open.
+const REFRESH_MS = 30000;
 
 function peso(amount) {
   return new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" }).format(amount);
 }
 
+/** Which of the six stages the applicant is on right now. */
+function currentStage(payment, hasFile) {
+  if (payment.status === "Verified") return 5;
+  if (payment.status === "Pending") return 3;
+  if (payment.status === "Rejected") return 2;
+  return hasFile ? 2 : 1;
+}
+
 export default function PaymentPage() {
+  const { showToast } = useToast();
   const [payment, setPayment] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
   const [needsApplication, setNeedsApplication] = useState(false);
   const [file, setFile] = useState(null);
   const [fileError, setFileError] = useState(null);
+  const [imageUrl, setImageUrl] = useState(null);
   const [reference, setReference] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [percent, setPercent] = useState(0);
   const [previewing, setPreviewing] = useState(false);
+  const [previewingChosen, setPreviewingChosen] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,6 +87,36 @@ export default function PaymentPage() {
     };
   }, []);
 
+  // A thumbnail of the chosen receipt, so the applicant can see it is the right one before sending.
+  useEffect(() => {
+    if (!file || !file.type.startsWith("image/")) {
+      setImageUrl(null);
+      return undefined;
+    }
+    const url = URL.createObjectURL(file);
+    setImageUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  // While staff are verifying, the page checks for the answer itself: the status, the stepper and a
+  // toast change in place, with no reload.
+  const checkStatus = useCallback(() => {
+    getMyExamPayment()
+      .then((next) => {
+        setPayment((current) => {
+          if (!current || current.status === next.status) return current;
+          if (next.status === "Verified") showToast("Your payment was confirmed. You can now choose your exam schedule.");
+          if (next.status === "Rejected") showToast("Your proof of payment was rejected. See the reason below.", "error");
+          return next;
+        });
+      })
+      .catch(() => {
+        // A failed background check changes nothing; the next one tries again.
+      });
+  }, [showToast]);
+
+  usePolling(checkStatus, REFRESH_MS, payment?.status === "Pending");
+
   function handleFile(event) {
     const chosen = event.target.files?.[0];
     event.target.value = "";
@@ -58,29 +128,37 @@ export default function PaymentPage() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (isUploading) return;
     if (!file) {
       setFileError("Attach a screenshot or photo of your receipt.");
       return;
     }
 
     setIsUploading(true);
+    setPercent(0);
     setErrorMessage(null);
     try {
-      setPayment(await submitPaymentProof(file, reference.trim()));
+      setPayment(await submitPaymentProof(file, reference.trim(), setPercent));
       setFile(null);
       setReference("");
+      showToast("Payment proof submitted for verification.");
     } catch (error) {
-      setErrorMessage(error instanceof ApiError ? error.message : "Failed to upload your proof of payment.");
+      const message = error instanceof ApiError ? error.message : "Failed to upload your proof of payment.";
+      setErrorMessage(message);
+      showToast(message, "error");
     } finally {
       setIsUploading(false);
     }
   }
 
+  const stage = payment ? currentStage(payment, Boolean(file)) : 0;
+  const steps = PAYMENT_STEPS.map((key, index) => ({ step: key, isComplete: index < stage, isCurrent: index === stage }));
+
   return (
     <AppLayout title="Entrance Exam Payment">
       {isLoading && (
         <Card>
-          <p>Loading...</p>
+          <Skeleton />
         </Card>
       )}
 
@@ -97,6 +175,12 @@ export default function PaymentPage() {
           <p className="form-error" role="alert">
             {errorMessage}
           </p>
+        </Card>
+      )}
+
+      {payment && payment.required && (
+        <Card className="payment-steps">
+          <WorkflowStepper steps={steps} labels={PAYMENT_STEP_LABELS} hints={PAYMENT_STEP_HINTS} numbered />
         </Card>
       )}
 
@@ -134,8 +218,11 @@ export default function PaymentPage() {
 
             {payment.qrImage ? (
               <figure className="payment-qr">
-                <img src={payment.qrImage} alt="The school's QR payment code" />
+                <img src={payment.qrImage} alt="The school's QR payment code" width="220" height="220" />
                 <figcaption>Scan with your banking or e-wallet app</figcaption>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setQrOpen(true)}>
+                  View larger
+                </button>
               </figure>
             ) : (
               <p className="payment-qr-missing">The school hasn&apos;t published its QR code yet. Check back soon or contact the admissions office.</p>
@@ -160,7 +247,8 @@ export default function PaymentPage() {
 
             {payment.status === "Pending" && (
               <Notice tone="info" title="Waiting for verification">
-                We received your proof on {formatDateTime(payment.proofUploadedAt)}. Staff will verify it and you&apos;ll be notified.
+                We received your proof on {formatDateTime(payment.proofUploadedAt)}. Staff will verify it and you&apos;ll be notified. This
+                page updates by itself when they do.
               </Notice>
             )}
 
@@ -181,8 +269,7 @@ export default function PaymentPage() {
             {payment.proofFileName && (
               <p className="payment-uploaded">
                 {payment.proofFileName}
-                {payment.referenceNumber ? <span> &middot; Ref. {payment.referenceNumber}</span> : null}
-                {" "}
+                {payment.referenceNumber ? <span> &middot; Ref. {payment.referenceNumber}</span> : null}{" "}
                 <button type="button" className="documents-view-link" onClick={() => setPreviewing(true)}>
                   View
                 </button>
@@ -196,29 +283,77 @@ export default function PaymentPage() {
             )}
 
             {payment.canPay && (
-              <form onSubmit={handleSubmit} className="payment-form" noValidate>
+              <form onSubmit={handleSubmit} className="payment-form" noValidate aria-busy={isUploading}>
                 <div className="form-row">
                   <label htmlFor="reference">Reference number (optional)</label>
-                  <input id="reference" type="text" maxLength={60} value={reference} onChange={(e) => setReference(e.target.value)} placeholder="From your payment receipt" />
+                  <input
+                    id="reference"
+                    type="text"
+                    maxLength={60}
+                    value={reference}
+                    onChange={(e) => setReference(e.target.value)}
+                    placeholder="From your payment receipt"
+                    disabled={isUploading}
+                  />
                 </div>
 
                 <div className="form-row">
-                  <label htmlFor="proof">Screenshot or photo of your receipt (PDF, JPG or PNG)</label>
-                  <input id="proof" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" onChange={handleFile} />
+                  <label htmlFor="proof">
+                    Screenshot or photo of your receipt (PDF, JPG or PNG)
+                    <span className="required-mark" title="Required" aria-label="required">
+                      {" "}
+                      *
+                    </span>
+                  </label>
+                  <input
+                    id="proof"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                    onChange={handleFile}
+                    disabled={isUploading}
+                    aria-invalid={fileError ? "true" : undefined}
+                    aria-describedby={fileError ? "proof-error" : undefined}
+                  />
                   {file && (
-                    <p className="form-note">
-                      {file.name} &middot; {formatFileSize(file.size)}
-                    </p>
+                    <div className="payment-chosen">
+                      {imageUrl ? (
+                        <img className="payment-chosen-thumb" src={imageUrl} alt="" width="64" height="64" />
+                      ) : (
+                        <span className="payment-chosen-thumb payment-chosen-pdf" aria-hidden="true">
+                          PDF
+                        </span>
+                      )}
+                      <p className="payment-chosen-meta">
+                        <strong>{file.name}</strong>
+                        <span>{formatFileSize(file.size)}</span>
+                      </p>
+                      <div className="payment-chosen-actions">
+                        <button type="button" className="documents-view-link" onClick={() => setPreviewingChosen(true)}>
+                          Preview
+                        </button>
+                        <button type="button" className="documents-view-link" onClick={() => setFile(null)} disabled={isUploading}>
+                          Remove
+                        </button>
+                      </div>
+                    </div>
                   )}
                   {fileError && (
-                    <p className="form-error" role="alert">
+                    <p className="form-error" id="proof-error" role="alert">
                       {fileError}
                     </p>
                   )}
                 </div>
 
+                {isUploading && <UploadProgress percent={percent} label="Uploading your proof of payment" />}
+
                 <button type="submit" className="btn btn-primary" disabled={isUploading}>
-                  {isUploading ? "Uploading..." : payment.status === "Rejected" ? "Upload new proof" : payment.status === "Pending" ? "Replace proof" : "Submit proof of payment"}
+                  {isUploading
+                    ? `Uploading... ${percent}%`
+                    : payment.status === "Rejected"
+                      ? "Upload new proof"
+                      : payment.status === "Pending"
+                        ? "Replace proof"
+                        : "Submit proof of payment"}
                 </button>
               </form>
             )}
@@ -233,6 +368,37 @@ export default function PaymentPage() {
           loadFile={getMyPaymentProofFile}
           onClose={() => setPreviewing(false)}
         />
+      )}
+
+      {previewingChosen && file && (
+        <FilePreviewModal
+          title="Your receipt"
+          subtitle="Check that it is clear and shows the amount."
+          fileName={file.name}
+          loadFile={() => Promise.resolve(file)}
+          onClose={() => setPreviewingChosen(false)}
+        />
+      )}
+
+      {qrOpen && payment?.qrImage && (
+        <Modal
+          open
+          onClose={() => setQrOpen(false)}
+          title="School QR code"
+          subtitle={payment.accountName ? `Pay to ${payment.accountName}` : undefined}
+          footer={
+            <>
+              <button type="button" className="btn btn-secondary" onClick={() => setQrOpen(false)}>
+                Close
+              </button>
+              <a className="btn btn-primary" href={payment.qrImage} download="bcas-payment-qr.png">
+                Download QR
+              </a>
+            </>
+          }
+        >
+          <img className="payment-qr-large" src={payment.qrImage} alt="The school's QR payment code, enlarged" />
+        </Modal>
       )}
     </AppLayout>
   );

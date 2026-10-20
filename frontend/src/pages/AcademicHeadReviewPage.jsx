@@ -12,6 +12,7 @@ import StatusBadge from "../components/ui/StatusBadge.jsx";
 import ScholarshipFormSummary from "../components/ui/ScholarshipFormSummary.jsx";
 import WorkflowStepper, { SCHOLARSHIP_STEP_LABELS } from "../components/WorkflowStepper.jsx";
 import "./AcademicHeadReviewPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 function formatDateTime(isoDateTime) {
   return new Date(isoDateTime).toLocaleString(undefined, {
@@ -76,7 +77,7 @@ export default function AcademicHeadReviewPage() {
 
   return (
     <AppLayout title="Scholarship Records Review">
-        {isLoading && <p>Loading...</p>}
+        {isLoading && <Skeleton />}
         {loadError && (
           <p className="form-error" role="alert">
             {loadError}

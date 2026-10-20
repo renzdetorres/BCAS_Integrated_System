@@ -4,6 +4,7 @@ import { ApiError } from "../api/apiClient.js";
 import { loadAcademicCatalog } from "../config/academicCatalog.js";
 import Card from "./ui/Card.jsx";
 import "./AcademicCatalogPanel.css";
+import Skeleton from "./ui/Skeleton.jsx";
 
 const KEYS = {
   strands: "Academic.Strands",
@@ -170,7 +171,7 @@ export default function AcademicCatalogPanel() {
           {message}
         </p>
       )}
-      {!catalog && !errorMessage && <p>Loading...</p>}
+      {!catalog && !errorMessage && <Skeleton variant="form" />}
 
       {catalog && (
         <form onSubmit={handleSubmit} className="catalog-form">

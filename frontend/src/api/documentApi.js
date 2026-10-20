@@ -1,4 +1,5 @@
 import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
+import { uploadWithProgress } from "./uploadWithProgress.js";
 
 export const DOCUMENT_TYPE_LABELS = {
   ReportCard: "Report Card",
@@ -41,24 +42,17 @@ export async function getMyScholarshipDocumentChecklist() {
   return data;
 }
 
-export async function uploadDocument(documentType, file) {
+/** Uploads (or replaces) one document. `onProgress(percent)` is optional and reports 0-100 as the file goes up. */
+export async function uploadDocument(documentType, file, onProgress) {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(`${API_BASE_URL}/api/documents/${documentType}`, {
+  return uploadWithProgress(`/api/documents/${documentType}`, {
     method: "PUT",
-    credentials: "include",
     body: formData,
+    onProgress,
+    fallback: "Failed to upload document. Please try again.",
   });
-
-  const data = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    const message = resolveErrorMessage(response, data, "Failed to upload document. Please try again.");
-    throw new ApiError(message, response.status);
-  }
-
-  return data;
 }
 
 /** The signed-in applicant's own uploaded file as a Blob, for the in-page preview (fetched with the auth cookie, never linked directly). */

@@ -5,6 +5,7 @@ import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import SettingsSearch from "../components/ui/SettingsSearch.jsx";
 import "./NotificationSettingsPage.css";
+import Skeleton from "../components/ui/Skeleton.jsx";
 
 function formatDateTime(isoDateTime) {
   return new Date(isoDateTime).toLocaleString(undefined, {
@@ -80,7 +81,7 @@ export default function NotificationSettingsPage() {
         )}
 
         {isLoading ? (
-          <p>Loading...</p>
+          <Skeleton variant="table" />
         ) : (
           <ul className="notification-trigger-list">
             {triggers.map((trigger) => (
