@@ -99,7 +99,6 @@ export const NAV_ITEMS_BY_ROLE = {
       section: "Administration",
       items: [
         { to: "/admin/users", label: "Account Management", icon: "users" },
-        { to: "/admin/staff", label: "Provision Staff", icon: "user-plus" },
         { to: "/admin/audit-logs", label: "Activity Log", icon: "history" },
         { to: "/admin/access", label: "Role Access", icon: "lock", superAdminOnly: true },
       ],

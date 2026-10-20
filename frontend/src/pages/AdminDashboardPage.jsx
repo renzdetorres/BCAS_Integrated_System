@@ -22,7 +22,7 @@ const WORKSPACES = [
 const SHORTCUTS = [
   { to: "/admin/announcements", label: "Post an announcement", icon: "megaphone" },
   { to: "/admin/exam-schedules", label: "Exam schedules", icon: "calendar" },
-  { to: "/admin/staff", label: "Add a staff account", icon: "user-plus" },
+  { to: "/admin/users?new=1", label: "Add a staff account", icon: "user-plus" },
   { to: "/admin/reports", label: "Reports", icon: "chart" },
 ];
 

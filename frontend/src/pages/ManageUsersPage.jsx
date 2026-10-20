@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   ALL_ROLES,
   DEPARTMENT_OPTIONS,
+  STAFF_ROLES,
   deleteUser,
   listUsers,
+  provisionStaff,
   setUserActiveStatus,
   setUserSuperAdmin,
   updateUser,
@@ -30,6 +33,138 @@ function fullName(user) {
 
 function initials(user) {
   return `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase();
+}
+
+const ROLE_HINTS = {
+  Evaluator: "Screens scholarship applications and records verdicts.",
+  SupportStaff: "Verifies applicants' documents and answers inquiries.",
+  AcademicHead: "Makes final scholarship decisions for one department.",
+  Admin: "Full access, including accounts and settings.",
+};
+
+const EMPTY_STAFF_FORM = { firstName: "", lastName: "", email: "", password: "", role: STAFF_ROLES[0], department: "" };
+
+/** Staff accounts are created here; applicants never are - they self-register. */
+function AddStaffModal({ onClose, onCreated }) {
+  const [form, setForm] = useState(EMPTY_STAFF_FORM);
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
+
+  function setField(name, value) {
+    setForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setErrorMessage(null);
+    if (!form.firstName.trim() || !form.lastName.trim() || !form.email.trim()) {
+      setErrorMessage("Name and email are required.");
+      return;
+    }
+    if (form.password.length < 8) {
+      setErrorMessage("Password must be at least 8 characters long.");
+      return;
+    }
+    if (form.role === "AcademicHead" && !form.department) {
+      setErrorMessage("Assign the Academic Head to a department.");
+      return;
+    }
+    setIsSaving(true);
+    try {
+      onCreated(await provisionStaff(form));
+    } catch (error) {
+      setErrorMessage(error instanceof ApiError ? error.message : "Something went wrong. Please try again.");
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      busy={isSaving}
+      title="Add a staff account"
+      subtitle="Applicants are never added here - they register themselves."
+      footer={
+        <>
+          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isSaving}>
+            Cancel
+          </button>
+          <button type="submit" form="add-staff-form" className="btn btn-primary" disabled={isSaving}>
+            {isSaving ? "Creating account..." : "Create account"}
+          </button>
+        </>
+      }
+    >
+      <form id="add-staff-form" onSubmit={handleSubmit} noValidate autoComplete="off">
+        {errorMessage ? (
+          <p className="form-error" role="alert">
+            {errorMessage}
+          </p>
+        ) : null}
+        <div className="ui-field-row">
+          <div className="ui-field">
+            <label className="ui-label" htmlFor="add-first-name">
+              First name
+            </label>
+            <input placeholder="e.g. Juan" id="add-first-name" className="ui-input" data-autofocus value={form.firstName} onChange={(e) => setField("firstName", e.target.value)} />
+          </div>
+          <div className="ui-field">
+            <label className="ui-label" htmlFor="add-last-name">
+              Last name
+            </label>
+            <input placeholder="e.g. Dela Cruz" id="add-last-name" className="ui-input" value={form.lastName} onChange={(e) => setField("lastName", e.target.value)} />
+          </div>
+        </div>
+        <div className="ui-field">
+          <label className="ui-label" htmlFor="add-email">
+            Email
+          </label>
+          <input placeholder="e.g. juan.delacruz@email.com" id="add-email" type="email" autoComplete="off" className="ui-input" value={form.email} onChange={(e) => setField("email", e.target.value)} />
+        </div>
+        <div className="ui-field">
+          <label className="ui-label" htmlFor="add-password">
+            Temporary password
+          </label>
+          <input placeholder="At least 8 characters" id="add-password" type="password" autoComplete="new-password" className="ui-input" value={form.password} onChange={(e) => setField("password", e.target.value)} />
+          <p className="ui-hint">They can sign in with it right away.</p>
+        </div>
+        <div className="ui-field-row">
+          <div className="ui-field">
+            <label className="ui-label" htmlFor="add-role">
+              Role
+            </label>
+            <select id="add-role" className="ui-select" value={form.role} onChange={(e) => setField("role", e.target.value)}>
+              {STAFF_ROLES.map((role) => (
+                <option key={role} value={role}>
+                  {roleLabel(role)}
+                </option>
+              ))}
+            </select>
+            <p className="ui-hint">{ROLE_HINTS[form.role]}</p>
+          </div>
+          {form.role === "AcademicHead" ? (
+            <div className="ui-field">
+              <label className="ui-label" htmlFor="add-department">
+                Assigned department
+              </label>
+              <select id="add-department" className="ui-select" value={form.department} onChange={(e) => setField("department", e.target.value)}>
+                <option value="" disabled>
+                  Select a department
+                </option>
+                {DEPARTMENT_OPTIONS.map((department) => (
+                  <option key={department} value={department}>
+                    {department}
+                  </option>
+                ))}
+              </select>
+              <p className="ui-hint">They only see applicants in this department.</p>
+            </div>
+          ) : null}
+        </div>
+      </form>
+    </Modal>
+  );
 }
 
 function EditAccountModal({ user, isSelf, callerIsSuperAdmin, onClose, onSaved }) {
@@ -198,6 +333,9 @@ export default function ManageUsersPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  // The dashboard shortcut links here with ?new=1 to open the form straight away.
+  const [adding, setAdding] = useState(searchParams.get("new") === "1");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
@@ -217,6 +355,10 @@ export default function ManageUsersPage() {
   useEffect(() => {
     loadUsers();
   }, [loadUsers]);
+
+  useEffect(() => {
+    if (searchParams.has("new")) setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const callerIsSuperAdmin = users.find((u) => u.userId === session.userId)?.isSuperAdmin ?? false;
 
@@ -378,7 +520,13 @@ export default function ManageUsersPage() {
     <AppLayout>
       <DataTable
         title="Account Management"
-        subtitle="Every account in the system. Edit a name, email or role, or deactivate an account to block sign-in without deleting it or its records."
+        subtitle="Every account in the system. Add a staff account, edit a name, email or role, or deactivate an account to block sign-in without deleting it or its records."
+        actions={
+          <button type="button" className="btn btn-primary" onClick={() => setAdding(true)}>
+            <Icon name="user-plus" size={16} />
+            Add staff account
+          </button>
+        }
         summary={[
           { label: "Accounts", value: users.length.toLocaleString(), active: !roleFilter && !statusFilter, onClick: () => { setRoleFilter(""); setStatusFilter(""); } },
           { label: "Active", value: activeCount.toLocaleString(), tone: "green", active: statusFilter === "active", onClick: () => setStatusFilter(statusFilter === "active" ? "" : "active") },
@@ -412,6 +560,17 @@ export default function ManageUsersPage() {
         ]}
         searchPlaceholder="Search by name or email"
       />
+
+      {adding ? (
+        <AddStaffModal
+          onClose={() => setAdding(false)}
+          onCreated={(created) => {
+            setUsers((prev) => [created, ...prev]);
+            setAdding(false);
+            showToast(`${fullName(created)}'s ${roleLabel(created.role)} account was created. They can sign in now.`);
+          }}
+        />
+      ) : null}
 
       {editing ? (
         <EditAccountModal

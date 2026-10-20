@@ -17,7 +17,6 @@ import InterviewPage from "./pages/InterviewPage.jsx";
 import ExamResultsPage from "./pages/ExamResultsPage.jsx";
 import InterviewsPage from "./pages/InterviewsPage.jsx";
 import ScholarshipPipelinePage from "./pages/ScholarshipPipelinePage.jsx";
-import ProvisionStaffPage from "./pages/ProvisionStaffPage.jsx";
 import ManageUsersPage from "./pages/ManageUsersPage.jsx";
 import NotificationSettingsPage from "./pages/NotificationSettingsPage.jsx";
 import AdminSettingsPage from "./pages/AdminSettingsPage.jsx";
@@ -77,7 +76,7 @@ export default function App() {
               <Route path="/portal" element={<PortalRouter />} />
               <Route path="/announcements" element={<AnnouncementsRouter />} />
               <Route element={<RequireRole allowedRoles={["Admin"]} />}>
-                <Route path="/admin/staff" element={<ProvisionStaffPage />} />
+                <Route path="/admin/staff" element={<Navigate to="/admin/users?new=1" replace />} />
                 <Route path="/admin/users" element={<ManageUsersPage />} />
                 <Route path="/admin/notification-settings" element={<NotificationSettingsPage />} />
                 <Route path="/admin/settings" element={<AdminSettingsPage />} />
