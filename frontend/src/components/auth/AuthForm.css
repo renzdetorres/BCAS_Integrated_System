@@ -61,6 +61,24 @@
   margin-bottom: 18px;
 }
 
+.input-group-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.input-group-aside-link {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.input-group-aside-link:hover {
+  text-decoration: underline;
+}
+
 .input-group label {
   font-size: 0.85rem;
   font-weight: 600;

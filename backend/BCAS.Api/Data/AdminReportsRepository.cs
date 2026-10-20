@@ -220,5 +220,98 @@ SELECT
         };
     }
 
+    public async Task<IReadOnlyList<(DateOnly WeekStart, string Category, int Count)>> GetWeeklyApplicationCountsAsync(
+        DateOnly sinceWeekStart, string? program, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+WITH Combined AS (
+    SELECT a.SubmittedAt, N'Admission' AS Category, a.CourseAppliedFor AS Program
+    FROM dbo.AdmissionApplications a
+    WHERE a.IsArchived = 0
+
+    UNION ALL
+
+    SELECT sa.SubmittedAt, N'Scholarship' AS Category, CAST(NULL AS NVARCHAR(200)) AS Program
+    FROM dbo.ScholarshipApplications sa
+    WHERE sa.IsArchived = 0
+)
+SELECT
+    DATEADD(WEEK, DATEDIFF(WEEK, 0, SubmittedAt), 0) AS WeekStart,
+    Category,
+    COUNT(*) AS Cnt
+FROM Combined
+WHERE SubmittedAt >= @Since
+  AND (@Program IS NULL OR Category = N'Scholarship' OR Program LIKE '%' + @Program + '%')
+GROUP BY DATEADD(WEEK, DATEDIFF(WEEK, 0, SubmittedAt), 0), Category
+ORDER BY WeekStart ASC;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@Since", SqlDbType.Date) { Value = sinceWeekStart.ToDateTime(TimeOnly.MinValue) });
+        command.Parameters.Add(new SqlParameter("@Program", SqlDbType.NVarChar, 200) { Value = (object?)NullIfEmpty(program) ?? DBNull.Value });
+
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        var results = new List<(DateOnly, string, int)>();
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            results.Add((
+                DateOnly.FromDateTime(reader.GetDateTime(reader.GetOrdinal("WeekStart"))),
+                reader.GetString(reader.GetOrdinal("Category")),
+                reader.GetInt32(reader.GetOrdinal("Cnt"))));
+        }
+
+        return results;
+    }
+
+    public async Task<IReadOnlyList<(string Status, int Count)>> GetAdmissionFunnelCountsAsync(
+        string? program, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+SELECT h.ToStatus, COUNT(DISTINCT h.ApplicationId) AS Cnt
+FROM dbo.ApplicationStatusHistory h
+JOIN dbo.AdmissionApplications a ON a.ApplicationId = h.ApplicationId
+WHERE h.Category = N'Admission' AND a.IsArchived = 0
+  AND (@Program IS NULL OR a.CourseAppliedFor LIKE '%' + @Program + '%')
+GROUP BY h.ToStatus;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@Program", SqlDbType.NVarChar, 200) { Value = (object?)NullIfEmpty(program) ?? DBNull.Value });
+
+        return await ReadFunnelCountsAsync(command, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<(string Status, int Count)>> GetScholarshipFunnelCountsAsync(CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+SELECT h.ToStatus, COUNT(DISTINCT h.ApplicationId) AS Cnt
+FROM dbo.ApplicationStatusHistory h
+JOIN dbo.ScholarshipApplications sa ON sa.ApplicationId = h.ApplicationId
+WHERE h.Category = N'Scholarship' AND sa.IsArchived = 0
+GROUP BY h.ToStatus;";
+
+        await using var command = new SqlCommand(sql, connection);
+        return await ReadFunnelCountsAsync(command, cancellationToken);
+    }
+
+    private static async Task<IReadOnlyList<(string Status, int Count)>> ReadFunnelCountsAsync(
+        SqlCommand command, CancellationToken cancellationToken)
+    {
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        var results = new List<(string, int)>();
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            results.Add((reader.GetString(reader.GetOrdinal("ToStatus")), reader.GetInt32(reader.GetOrdinal("Cnt"))));
+        }
+
+        return results;
+    }
+
     private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

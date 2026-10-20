@@ -4,6 +4,13 @@
   font-size: 0.9rem;
 }
 
+.admin-reservations-search {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  margin-bottom: 20px;
+}
+
 .form-error {
   color: var(--color-status-red-text);
   background: var(--color-status-red-bg);

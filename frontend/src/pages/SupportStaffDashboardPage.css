@@ -12,17 +12,16 @@
   gap: 16px;
 }
 
-/* Same stat-tile shape as StatCard, but the top rule is gold instead of
-   green - this one is a live queue you're meant to act on, not a static
-   count, and the gold-for-action-needed convention is used the same way
-   in the sidebar's active link and the next-action banner. */
+/* Same flat bordered tile as StatCard - this one is a live queue you're
+   meant to act on, not a static count, so it's a real link (cursor,
+   hover fill) rather than needing a colored accent bar to signal that. */
 .ss-action-tile {
   display: flex;
   flex-direction: column;
   gap: 6px;
   min-width: 0;
   box-shadow: none;
-  border-top: 3px solid var(--color-accent);
+  border: 1px solid var(--color-border);
   padding: 16px 20px;
   text-decoration: none;
   transition: background var(--motion-standard);

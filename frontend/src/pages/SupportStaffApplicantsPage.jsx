@@ -90,7 +90,7 @@ export default function SupportStaffApplicantsPage() {
 
   return (
     <AppLayout title="Applicant Records">
-      <Card>
+      <Card tier="data">
         <p className="ss-applicants-subtitle">
           Search applicants by name or email, view their admission application info, and jump directly into
           Document Verification for one.

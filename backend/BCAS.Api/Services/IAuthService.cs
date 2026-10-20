@@ -15,4 +15,19 @@ public interface IAuthService
     /// IncorrectCurrentPasswordException if CurrentPassword doesn't match.
     /// </summary>
     Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Always completes successfully regardless of whether the email matches
+    /// an account - only sends a reset email when it does (no-enumeration,
+    /// same as LoginAsync). frontendBaseUrl is where the reset link should
+    /// point (the controller resolves it - FrontendOptions.BaseUrl, or the
+    /// request's own origin when that's unset).
+    /// </summary>
+    Task ForgotPasswordAsync(string email, string frontendBaseUrl, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Throws InvalidOrExpiredResetTokenException if the token doesn't match
+    /// an unused, unexpired one.
+    /// </summary>
+    Task ResetPasswordAsync(string token, string newPassword, CancellationToken cancellationToken = default);
 }

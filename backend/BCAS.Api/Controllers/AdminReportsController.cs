@@ -141,4 +141,24 @@ public class AdminReportsController : ControllerBase
             });
         }
     }
+
+    /// <summary>Trend Report: applications submitted per week over the last `weeks` weeks (default 12), split into Admission/Scholarship series.</summary>
+    [HttpGet("trend/applications")]
+    [ProducesResponseType(typeof(ApplicationTrendResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApplicationTrendResponse>> GetApplicationTrend(
+        [FromQuery] string? program, [FromQuery] int weeks, CancellationToken cancellationToken)
+    {
+        var trend = await _reportsService.GetApplicationTrendAsync(program, weeks, cancellationToken);
+        return Ok(trend);
+    }
+
+    /// <summary>Trend Report: how many applications ever reached each stage of the Admission and Scholarship workflows, in stage order.</summary>
+    [HttpGet("trend/funnel")]
+    [ProducesResponseType(typeof(ApplicationFunnelResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ApplicationFunnelResponse>> GetApplicationFunnel(
+        [FromQuery] string? program, CancellationToken cancellationToken)
+    {
+        var funnel = await _reportsService.GetApplicationFunnelAsync(program, cancellationToken);
+        return Ok(funnel);
+    }
 }

@@ -19,8 +19,8 @@ public class ScholarshipRepository : IScholarshipRepository
 
         const string sql = SelectColumns + @"
 FROM dbo.Scholarships
-WHERE IsActive = 1 AND RemainingSlots > 0
-ORDER BY Name ASC;";
+WHERE IsActive = 1
+ORDER BY CASE WHEN RemainingSlots > 0 THEN 0 ELSE 1 END, Name ASC;";
 
         await using var command = new SqlCommand(sql, connection);
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);

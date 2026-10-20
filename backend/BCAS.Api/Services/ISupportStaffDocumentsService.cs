@@ -38,4 +38,20 @@ public interface ISupportStaffDocumentsService
     /// <summary>Document Archive browse screen (BISAASS-54) - every archived document, most recently updated first, optionally narrowed by search and/or documentType.</summary>
     Task<IReadOnlyList<AdminDocumentListItemResponse>> SearchArchivedAsync(
         string? search, string? documentType, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Applies the same review (Status + Reason) to every document in the
+    /// list, for triaging a whole filtered page of the verification queue
+    /// at once instead of one row at a time. Status/Reason are validated
+    /// once up front the same way ReviewDocumentAsync does (throwing
+    /// InvalidDocumentReviewStatusException / DocumentReviewReasonRequiredException
+    /// for the whole request, since those are request-shape problems, not
+    /// per-document ones) - each document then succeeds or fails on its own
+    /// (DocumentNotFoundException / DocumentAlreadyReviewedException don't
+    /// abort the rest of the batch).
+    /// </summary>
+    Task<BulkOperationResultResponse> BulkReviewDocumentsAsync(
+        BulkReviewDocumentsRequest request,
+        Guid reviewedByUserId,
+        CancellationToken cancellationToken = default);
 }

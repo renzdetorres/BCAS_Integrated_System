@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { getEvaluatorDashboard } from "../api/evaluatorDashboardApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
-import Card from "../components/ui/Card.jsx";
+import Card, { StatCard } from "../components/ui/Card.jsx";
 import DataTable from "../components/ui/DataTable.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
+import NextActionBanner from "../components/ui/NextActionBanner.jsx";
 import "./EvaluatorDashboardPage.css";
 
 function formatDate(isoDateTime) {
@@ -14,6 +15,11 @@ function formatDate(isoDateTime) {
     month: "short",
     day: "numeric",
   });
+}
+
+function daysSince(isoDateTime) {
+  const ms = Date.now() - new Date(isoDateTime).getTime();
+  return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
 }
 
 export default function EvaluatorDashboardPage() {
@@ -92,6 +98,27 @@ export default function EvaluatorDashboardPage() {
 
       {!isLoading && !errorMessage && dashboard && (
         <>
+          {dashboard.queue.length > 0 && (
+            <NextActionBanner
+              text={`${dashboard.pendingEvaluationsCount} application${
+                dashboard.pendingEvaluationsCount === 1 ? "" : "s"
+              } waiting on you. Oldest: ${dashboard.queue[0].applicantName}, waiting ${daysSince(
+                dashboard.queue[0].submittedAt
+              )} day${daysSince(dashboard.queue[0].submittedAt) === 1 ? "" : "s"}.`}
+              to={`/evaluator/scholarship-applications/${dashboard.queue[0].applicationId}`}
+              cta="Review Now"
+            />
+          )}
+
+          <section className="evaluator-stat-grid">
+            <StatCard label="Awaiting Screening" value={dashboard.pendingEvaluationsCount} />
+            <StatCard
+              label="Oldest Waiting"
+              value={dashboard.queue.length > 0 ? `${daysSince(dashboard.queue[0].submittedAt)}d` : "—"}
+            />
+            <StatCard label="Recently Evaluated" value={dashboard.recentlyEvaluated.length} />
+          </section>
+
           <Card>
             <div className="evaluator-queue-header">
               <div>

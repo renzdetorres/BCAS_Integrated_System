@@ -64,4 +64,32 @@ public interface IAdminApplicationsService
         ArchiveApplicationRequest request,
         Guid archivedByUserId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Admin-only: promotes a Waitlisted scholarship application - atomically
+    /// reserves a slot on its scholarship and moves it to Submitted, then
+    /// records the change in the status-history audit trail and emails the
+    /// applicant. Throws ApplicationNotFoundException if no application with
+    /// that id exists or it isn't a Scholarship application,
+    /// ScholarshipApplicationNotWaitlistedException if its current status
+    /// isn't "Waitlisted", or ScholarshipNotAvailableException if its
+    /// scholarship still has no free slot.
+    /// </summary>
+    Task<AdminApplicationListItemResponse> PromoteFromWaitlistAsync(
+        Guid applicationId,
+        Guid promotedByUserId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Admin-only: archives every application in the list independently -
+    /// one already-archived or not-yet-archivable row fails on its own
+    /// without aborting the rest of the batch, same rules as the
+    /// single-application ArchiveAsync (each item shares this call's
+    /// Reason). For a registrar clearing out a whole filtered page of
+    /// completed records at once instead of archiving them one at a time.
+    /// </summary>
+    Task<BulkOperationResultResponse> BulkArchiveAsync(
+        BulkArchiveRequest request,
+        Guid archivedByUserId,
+        CancellationToken cancellationToken = default);
 }

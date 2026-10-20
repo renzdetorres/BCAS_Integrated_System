@@ -1,0 +1,115 @@
+.inquiry-detail-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 28px;
+  margin-bottom: 20px;
+}
+
+.inquiry-detail-back-link {
+  display: inline-block;
+  color: var(--color-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.inquiry-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.inquiry-detail-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--color-text-primary);
+}
+
+.form-error {
+  color: var(--color-status-red-text);
+  background: var(--color-status-red-bg);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  margin-bottom: 16px;
+}
+
+.inquiry-thread {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.inquiry-message {
+  display: flex;
+  flex-direction: column;
+  max-width: 70%;
+}
+
+.inquiry-message-applicant {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.inquiry-message-staff {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.inquiry-message-bubble {
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+}
+
+.inquiry-message-applicant .inquiry-message-bubble {
+  background: var(--color-primary);
+  color: var(--color-surface);
+  border-bottom-right-radius: 2px;
+}
+
+.inquiry-message-staff .inquiry-message-bubble {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-bottom-left-radius: 2px;
+}
+
+.inquiry-message-body {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.9rem;
+}
+
+.inquiry-message-meta {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+}
+
+.inquiry-reply-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 16px;
+}
+
+.inquiry-reply-form textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.inquiry-reply-form button {
+  align-self: flex-end;
+}

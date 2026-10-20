@@ -68,6 +68,19 @@ public class AcademicHeadReportsService : IAcademicHeadReportsService
     public Task<IReadOnlyList<AdminScholarshipResponse>> GetScholarshipSlotReportAsync(CancellationToken cancellationToken = default) =>
         _reportsService.GetScholarshipSlotReportAsync(cancellationToken);
 
+    public async Task<ApplicationTrendResponse> GetApplicationTrendAsync(
+        Guid academicHeadUserId, int weeks, CancellationToken cancellationToken = default)
+    {
+        var department = await ResolveDepartmentAsync(academicHeadUserId, cancellationToken);
+        return await _reportsService.GetApplicationTrendAsync(department, weeks, cancellationToken);
+    }
+
+    public async Task<ApplicationFunnelResponse> GetApplicationFunnelAsync(Guid academicHeadUserId, CancellationToken cancellationToken = default)
+    {
+        var department = await ResolveDepartmentAsync(academicHeadUserId, cancellationToken);
+        return await _reportsService.GetApplicationFunnelAsync(department, cancellationToken);
+    }
+
     private async Task<string> ResolveDepartmentAsync(Guid academicHeadUserId, CancellationToken cancellationToken)
     {
         var user = await _userRepository.GetByIdAsync(academicHeadUserId, cancellationToken)

@@ -19,15 +19,21 @@ public static class ScholarshipWorkflowConstants
 
     /// <summary>
     /// The full range ScholarshipApplications.Status can hold - Stages plus
-    /// the final Approved/Rejected decision (BISAASS-47) - matching
-    /// CK_ScholarshipApplications_Status. Used by BISAASS-31's
-    /// Admin-Registrar status override, which only checks that the target
-    /// status is one of these at all - IsForwardTransition (BISAASS-56/57)
-    /// is the further check that reaching it from the current status makes
-    /// sense.
+    /// the final Approved/Rejected decision (BISAASS-47) and the waitlist
+    /// holding state - matching CK_ScholarshipApplications_Status. Used by
+    /// BISAASS-31's Admin-Registrar status override, which only checks
+    /// that the target status is one of these at all - IsForwardTransition
+    /// (BISAASS-56/57) is the further check that reaching it from the
+    /// current status makes sense. Waitlisted is intentionally absent from
+    /// StageRank below (not just "rank -1"), so the generic override can
+    /// never transition an application into or out of it - promotion is a
+    /// dedicated, atomic slot-reserve-plus-status-flip operation
+    /// (ScholarshipApplicationRepository.PromoteFromWaitlistAsync), not a
+    /// bare status write.
     /// </summary>
     public static readonly IReadOnlySet<string> AllowedStatuses = new HashSet<string>(StringComparer.Ordinal)
     {
+        "Waitlisted",
         "Submitted",
         "DocumentsVerified",
         "EligibilityScreening",

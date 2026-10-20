@@ -57,6 +57,8 @@ export default function ScholarshipApplicationPage() {
     };
   }, []);
 
+  const selectedScholarship = scholarships.find((s) => String(s.scholarshipId) === form.scholarshipId);
+
   function handleChange(event) {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -88,6 +90,30 @@ export default function ScholarshipApplicationPage() {
 
   return (
     <AppLayout title="Scholarship Application">
+      <Card className="scholarship-card">
+        <h2>My Scholarship Applications</h2>
+        {isLoading && <p>Loading...</p>}
+        {!isLoading && applications.length === 0 && (
+          <p>No applications submitted yet. Use the form below to apply.</p>
+        )}
+        {!isLoading && applications.length > 0 && (
+          <ul className="scholarship-list">
+            {applications.map((application) => (
+              <li key={application.applicationId}>
+                <div className="scholarship-list-header">
+                  <span className="scholarship-name">{application.scholarshipName}</span>
+                  <StatusBadge status={application.status} />
+                </div>
+                <p className="scholarship-meta">
+                  {application.scholarshipType} &middot; Grade average {application.gradeAverage} &middot;
+                  Submitted {formatDate(application.submittedAt)}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
       <Card className="scholarship-card">
         <h2>Submit Scholarship Application</h2>
 
@@ -121,11 +147,19 @@ export default function ScholarshipApplicationPage() {
               >
                 {scholarships.map((s) => (
                   <option key={s.scholarshipId} value={s.scholarshipId}>
-                    {s.name} ({s.scholarshipType}) - {s.remainingSlots} slot
-                    {s.remainingSlots === 1 ? "" : "s"} left
+                    {s.name} ({s.scholarshipType}) -{" "}
+                    {s.remainingSlots > 0
+                      ? `${s.remainingSlots} slot${s.remainingSlots === 1 ? "" : "s"} left`
+                      : "full, join waitlist"}
                   </option>
                 ))}
               </select>
+              {selectedScholarship && selectedScholarship.remainingSlots === 0 && (
+                <p className="form-hint">
+                  This scholarship is currently full. Applying will place you on its waitlist - if a slot opens up
+                  later, your application moves automatically into the regular screening workflow.
+                </p>
+              )}
             </div>
 
             <div className="form-row">
@@ -147,28 +181,6 @@ export default function ScholarshipApplicationPage() {
               {isSubmitting ? "Submitting..." : "Submit Application"}
             </button>
           </form>
-        )}
-      </Card>
-
-      <Card className="scholarship-card">
-        <h2>My Scholarship Applications</h2>
-        {isLoading && <p>Loading...</p>}
-        {!isLoading && applications.length === 0 && <p>No applications submitted yet.</p>}
-        {!isLoading && applications.length > 0 && (
-          <ul className="scholarship-list">
-            {applications.map((application) => (
-              <li key={application.applicationId}>
-                <div className="scholarship-list-header">
-                  <span className="scholarship-name">{application.scholarshipName}</span>
-                  <StatusBadge status={application.status} />
-                </div>
-                <p className="scholarship-meta">
-                  {application.scholarshipType} &middot; Grade average {application.gradeAverage} &middot;
-                  Submitted {formatDate(application.submittedAt)}
-                </p>
-              </li>
-            ))}
-          </ul>
         )}
       </Card>
     </AppLayout>

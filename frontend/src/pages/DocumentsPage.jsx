@@ -5,6 +5,7 @@ import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
+import ProgressBar from "../components/ui/ProgressBar.jsx";
 import "./DocumentsPage.css";
 
 function formatDate(isoDate) {
@@ -94,13 +95,25 @@ export default function DocumentsPage() {
               Only PDF files are accepted.
             </p>
 
+            <div className="documents-progress">
+              <ProgressBar
+                value={requirements.filter((r) => r.status === "Verified").length}
+                max={requirements.length}
+                label={`Verified (${requirements.filter((r) => r.status === "Verified").length}/${requirements.length})`}
+              />
+            </div>
+
             <ul className="documents-list">
               {requirements.map((requirement) => {
                 const canUpload = requirement.status === "NotSubmitted" || requirement.status === "Rejected" || requirement.status === "Flagged";
                 const isUploading = uploadingType === requirement.documentType;
+                const needsAttention = requirement.status === "Flagged" || requirement.status === "Rejected";
 
                 return (
-                  <li key={requirement.documentType}>
+                  <li
+                    key={requirement.documentType}
+                    className={needsAttention ? "documents-item-flagged" : undefined}
+                  >
                     <div className="documents-list-header">
                       <span className="documents-type">
                         {DOCUMENT_TYPE_LABELS[requirement.documentType] ?? requirement.documentType}
@@ -115,7 +128,9 @@ export default function DocumentsPage() {
                     )}
 
                     {requirement.status === "Flagged" && requirement.flaggedReason && (
-                      <p className="documents-flag-reason">Reason: {requirement.flaggedReason}</p>
+                      <p className="documents-flag-reason">
+                        <strong>Needs your attention:</strong> {requirement.flaggedReason}
+                      </p>
                     )}
 
                     {itemErrors[requirement.documentType] && (

@@ -85,7 +85,7 @@ export default function AdminArchivePage() {
 
   return (
     <AppLayout title="Records Archive">
-      <Card>
+      <Card tier="data">
         <p className="admin-archive-subtitle">
           Completed/inactive admission and scholarship applications archived to support the school's document
           disposal process. Nothing here is deleted - every record (and, for an Admission application, its
@@ -100,7 +100,7 @@ export default function AdminArchivePage() {
 
         <div className="admin-archive-extra-filter">
           <input
-            className="ui-datatable-search"
+            className="ui-input ui-datatable-search"
             type="text"
             placeholder="Filter by program / scholarship"
             value={filters.program}

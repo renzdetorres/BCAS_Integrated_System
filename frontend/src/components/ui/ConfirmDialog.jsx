@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import Button from "./Button.jsx";
 import "./ConfirmDialog.css";
 
 /**
@@ -39,12 +40,12 @@ export default function ConfirmDialog({
         <h2 id="confirm-dialog-title">{title}</h2>
         <p>{message}</p>
         <div className="confirm-dialog-actions">
-          <button type="button" className="confirm-dialog-cancel" onClick={onCancel} disabled={isSubmitting}>
+          <Button type="button" tone="secondary" onClick={onCancel} disabled={isSubmitting}>
             {cancelLabel}
-          </button>
-          <button type="button" className="confirm-dialog-confirm" onClick={onConfirm} disabled={isSubmitting}>
+          </Button>
+          <Button type="button" tone="danger" onClick={onConfirm} disabled={isSubmitting}>
             {isSubmitting ? "Please wait..." : confirmLabel}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

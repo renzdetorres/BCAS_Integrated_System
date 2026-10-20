@@ -60,10 +60,10 @@ export default function MyApplicationHistoryPage() {
       title="Application History"
       actions={
         <>
-          <Link className="history-action-link" to="/applications">
+          <Link className="btn btn-secondary btn-sm" to="/applications">
             Submit Admission Application
           </Link>
-          <Link className="history-action-link" to="/scholarships">
+          <Link className="btn btn-secondary btn-sm" to="/scholarships">
             Submit Scholarship Application
           </Link>
         </>
@@ -98,7 +98,7 @@ export default function MyApplicationHistoryPage() {
                     onClick={() => setSelectedId(application.applicationId)}
                   >
                     <div className="history-list-header">
-                      <span className={`history-category history-category-${application.category.toLowerCase()}`}>
+                      <span className={`history-category category-${application.category.toLowerCase()}`}>
                         {application.category}
                       </span>
                       <StatusBadge status={application.status} />
@@ -117,7 +117,7 @@ export default function MyApplicationHistoryPage() {
             {selectedApplication && (
               <div className="history-detail">
                 <Link
-                  className="history-receipt-link"
+                  className="btn btn-primary btn-sm history-receipt-link"
                   to={`/applications/receipt/${selectedApplication.applicationId}`}
                 >
                   View / Print Receipt

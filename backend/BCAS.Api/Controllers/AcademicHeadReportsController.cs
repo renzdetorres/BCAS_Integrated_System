@@ -172,6 +172,40 @@ public class AcademicHeadReportsController : ControllerBase
         return Ok(slots);
     }
 
+    /// <summary>Trend Report: applications submitted per week - the Admission series scoped to the caller's department, the Scholarship series unscoped.</summary>
+    [HttpGet("trend/applications")]
+    [ProducesResponseType(typeof(ApplicationTrendResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApplicationTrendResponse>> GetApplicationTrend([FromQuery] int weeks, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var trend = await _reportsService.GetApplicationTrendAsync(User.GetUserId(), weeks, cancellationToken);
+            return Ok(trend);
+        }
+        catch (AcademicHeadDepartmentNotAssignedException ex)
+        {
+            return DepartmentNotAssigned(ex);
+        }
+    }
+
+    /// <summary>Trend Report: funnel stage counts - the Admission funnel scoped to the caller's department, the Scholarship funnel unscoped.</summary>
+    [HttpGet("trend/funnel")]
+    [ProducesResponseType(typeof(ApplicationFunnelResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApplicationFunnelResponse>> GetApplicationFunnel(CancellationToken cancellationToken)
+    {
+        try
+        {
+            var funnel = await _reportsService.GetApplicationFunnelAsync(User.GetUserId(), cancellationToken);
+            return Ok(funnel);
+        }
+        catch (AcademicHeadDepartmentNotAssignedException ex)
+        {
+            return DepartmentNotAssigned(ex);
+        }
+    }
+
     private ObjectResult DepartmentNotAssigned(AcademicHeadDepartmentNotAssignedException ex) =>
         StatusCode(StatusCodes.Status400BadRequest, new ProblemDetails
         {

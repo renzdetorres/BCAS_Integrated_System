@@ -94,6 +94,19 @@ public class NotificationDispatchService : INotificationDispatchService
             "Log in to your applicant portal for the full details.",
             cancellationToken);
 
+    public Task NotifyScholarshipWaitlistPromotedAsync(
+        Guid userId, string email, string firstName, string scholarshipName, CancellationToken cancellationToken = default) =>
+        DispatchAsync(
+            userId,
+            email,
+            NotificationEventTypes.ScholarshipResult,
+            $"A Slot Opened Up for {scholarshipName}",
+            $"Hi {firstName},\n\n" +
+            $"Good news - a slot opened up for {scholarshipName} and your waitlisted application has moved forward. " +
+            "It's now in the regular screening workflow.\n\n" +
+            "Log in to your applicant portal to track its progress.",
+            cancellationToken);
+
     /// <summary>
     /// Bypasses DispatchAsync's per-recipient checks (they'd be an N+1
     /// query against NotificationPreferences for a large recipient list)
@@ -157,6 +170,42 @@ public class NotificationDispatchService : INotificationDispatchService
             _logger.LogError(ex, "Failed to broadcast {NotificationType} email to {RecipientCount} recipients", NotificationEventTypes.Announcement, recipients.Count);
         }
     }
+
+    public Task NotifyExamReminderAsync(
+        Guid userId, string email, string firstName, DateOnly examDate, TimeOnly examTime, string venue, CancellationToken cancellationToken = default) =>
+        DispatchAsync(
+            userId,
+            email,
+            NotificationEventTypes.ExamReminder,
+            "Your Entrance Exam Is Coming Up",
+            $"Hi {firstName},\n\n" +
+            $"This is a reminder that your entrance exam is coming up on {examDate:MMMM d, yyyy} at {examTime:h:mm tt}, at {venue}.\n\n" +
+            "Please arrive at least 30 minutes early and bring your exam permit.",
+            cancellationToken);
+
+    public Task NotifyMissingDocumentReminderAsync(
+        Guid userId, string email, string firstName, string documentType, CancellationToken cancellationToken = default) =>
+        DispatchAsync(
+            userId,
+            email,
+            NotificationEventTypes.MissingDocumentReminder,
+            "A Required Document Is Still Missing",
+            $"Hi {firstName},\n\n" +
+            $"Your application is still missing a required document: {documentType}. " +
+            "Please log in to your applicant portal and upload it so we can continue reviewing your application.",
+            cancellationToken);
+
+    public Task NotifyInquiryReplyAsync(
+        Guid userId, string email, string firstName, string threadSubject, CancellationToken cancellationToken = default) =>
+        DispatchAsync(
+            userId,
+            email,
+            NotificationEventTypes.InquiryReply,
+            $"New Reply: {threadSubject}",
+            $"Hi {firstName},\n\n" +
+            $"You have a new reply on your inquiry \"{threadSubject}\".\n\n" +
+            "Log in to your applicant portal to read it and respond.",
+            cancellationToken);
 
     /// <summary>
     /// Checks the applicant's own preference and, where this event type has

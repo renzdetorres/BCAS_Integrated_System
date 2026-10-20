@@ -85,4 +85,41 @@ public class SupportStaffDocumentsService : ISupportStaffDocumentsService
         var items = await _documentsRepository.SearchArchivedAsync(search, documentType, cancellationToken);
         return items.Select(item => item.ToResponse()).ToList();
     }
+
+    public async Task<BulkOperationResultResponse> BulkReviewDocumentsAsync(
+        BulkReviewDocumentsRequest request,
+        Guid reviewedByUserId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!DocumentReviewConstants.AllowedStatuses.Contains(request.Status))
+        {
+            throw new InvalidDocumentReviewStatusException(request.Status);
+        }
+
+        var reason = string.IsNullOrWhiteSpace(request.Reason) ? null : request.Reason.Trim();
+
+        if (DocumentReviewConstants.ReasonRequiredStatuses.Contains(request.Status) && reason is null)
+        {
+            throw new DocumentReviewReasonRequiredException(request.Status);
+        }
+
+        var perDocumentRequest = new ReviewDocumentRequest { Status = request.Status, Reason = reason };
+        var failures = new List<BulkOperationFailure>();
+        var succeededCount = 0;
+
+        foreach (var documentId in request.DocumentIds)
+        {
+            try
+            {
+                await ReviewDocumentAsync(documentId, reviewedByUserId, perDocumentRequest, cancellationToken);
+                succeededCount++;
+            }
+            catch (Exception ex) when (ex is DocumentNotFoundException or DocumentAlreadyReviewedException)
+            {
+                failures.Add(new BulkOperationFailure { Id = documentId, Reason = ex.Message });
+            }
+        }
+
+        return new BulkOperationResultResponse { SucceededCount = succeededCount, Failures = failures };
+    }
 }

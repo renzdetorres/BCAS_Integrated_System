@@ -12,6 +12,13 @@
   margin: 4px 0 0;
 }
 
+.evaluator-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
 .evaluator-queue-header {
   margin-bottom: 18px;
 }

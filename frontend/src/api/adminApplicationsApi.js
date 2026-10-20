@@ -3,6 +3,7 @@ import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
 export const ADMISSION_STATUSES = ["Submitted", "UnderReview", "Approved", "Rejected"];
 
 export const SCHOLARSHIP_STATUSES = [
+  "Waitlisted",
   "Submitted",
   "DocumentsVerified",
   "EligibilityScreening",
@@ -45,8 +46,15 @@ const SCHOLARSHIP_STAGE_RANK = {
 
 // Every Scholarship status that's a valid forward move from currentStatus -
 // empty once a decision (Approved/Rejected) has been recorded, since the
-// workflow never changes after that.
+// workflow never changes after that. "Waitlisted" is deliberately absent
+// from SCHOLARSHIP_STAGE_RANK (mirroring the backend's
+// ScholarshipWorkflowConstants), so it needs its own guard here too -
+// without it the `?? 0` fallback below would offer every forward status as
+// a "valid" generic transition, when the only real way out of Waitlisted
+// is the dedicated promote-from-waitlist action (reserves a slot; this
+// generic status endpoint doesn't).
 export function getValidNextScholarshipStatuses(currentStatus) {
+  if (currentStatus === "Waitlisted") return [];
   const currentRank = SCHOLARSHIP_STAGE_RANK[currentStatus] ?? 0;
   if (currentRank >= 5) return [];
   return SCHOLARSHIP_STATUSES.filter((status) => SCHOLARSHIP_STAGE_RANK[status] > currentRank);
@@ -103,6 +111,40 @@ export async function getApplicationStatusHistory(applicationId, category) {
   }
 
   return response.json();
+}
+
+export async function promoteFromWaitlist(applicationId) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/applications/${applicationId}/promote-from-waitlist`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const message = resolveErrorMessage(response, data, "Failed to promote this application from the waitlist. Please try again.");
+    throw new ApiError(message, response.status);
+  }
+
+  return data;
+}
+
+export async function bulkArchiveApplications(items, reason) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/applications/bulk-archive`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ items, reason: reason || null }),
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const message = resolveErrorMessage(response, data, "Failed to archive the selected applications. Please try again.");
+    throw new ApiError(message, response.status);
+  }
+
+  return data;
 }
 
 export async function archiveApplication(applicationId, { category, reason }) {

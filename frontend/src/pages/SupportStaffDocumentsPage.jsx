@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
+  bulkReviewDocuments,
   listDocumentsForApplicant,
   listPendingAndFlaggedDocuments,
   reviewDocument,
 } from "../api/supportStaffDocumentsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import { useToast } from "../context/ToastContext.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
@@ -26,6 +28,7 @@ const REVIEWABLE_STATUSES = new Set(["Pending", "Flagged"]);
 export default function SupportStaffDocumentsPage() {
   const [searchParams] = useSearchParams();
   const applicantId = searchParams.get("applicantId");
+  const { showToast } = useToast();
 
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,6 +39,12 @@ export default function SupportStaffDocumentsPage() {
   const [reasonAction, setReasonAction] = useState(null);
   const [reasonText, setReasonText] = useState("");
   const [reasonError, setReasonError] = useState(null);
+
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkAction, setBulkAction] = useState(null);
+  const [bulkReasonText, setBulkReasonText] = useState("");
+  const [bulkReasonError, setBulkReasonError] = useState(null);
+  const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
 
   const loadDocuments = useCallback(async () => {
     setIsLoading(true);
@@ -55,6 +64,88 @@ export default function SupportStaffDocumentsPage() {
   useEffect(() => {
     loadDocuments();
   }, [loadDocuments]);
+
+  const reviewableDocuments = documents.filter((d) => REVIEWABLE_STATUSES.has(d.status));
+  const allReviewableSelected =
+    reviewableDocuments.length > 0 && reviewableDocuments.every((d) => selectedIds.has(d.documentId));
+
+  function toggleSelect(documentId) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(documentId)) {
+        next.delete(documentId);
+      } else {
+        next.add(documentId);
+      }
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    setSelectedIds(allReviewableSelected ? new Set() : new Set(reviewableDocuments.map((d) => d.documentId)));
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set());
+    setBulkAction(null);
+    setBulkReasonText("");
+    setBulkReasonError(null);
+  }
+
+  function reportBulkOutcome(result, verb) {
+    const failedCount = result.failures.length;
+    if (failedCount === 0) {
+      showToast(`${result.succeededCount} document${result.succeededCount === 1 ? "" : "s"} ${verb}.`);
+    } else {
+      showToast(
+        `${result.succeededCount} ${verb}, ${failedCount} couldn't be reviewed (already handled or removed).`,
+      );
+    }
+  }
+
+  async function handleBulkApprove() {
+    setIsBulkSubmitting(true);
+    setErrorMessage(null);
+    try {
+      const result = await bulkReviewDocuments(Array.from(selectedIds), { status: "Verified" });
+      clearSelection();
+      await loadDocuments();
+      reportBulkOutcome(result, "approved");
+    } catch (error) {
+      setErrorMessage(error instanceof ApiError ? error.message : "Failed to approve the selected documents.");
+    } finally {
+      setIsBulkSubmitting(false);
+    }
+  }
+
+  function startBulkReasonPrompt(action) {
+    setBulkAction(action);
+    setBulkReasonText("");
+    setBulkReasonError(null);
+  }
+
+  async function handleBulkReasonSubmit() {
+    if (bulkReasonText.trim().length === 0) {
+      setBulkReasonError("A reason is required.");
+      return;
+    }
+
+    setIsBulkSubmitting(true);
+    setBulkReasonError(null);
+    try {
+      const result = await bulkReviewDocuments(Array.from(selectedIds), {
+        status: bulkAction,
+        reason: bulkReasonText.trim(),
+      });
+      clearSelection();
+      await loadDocuments();
+      reportBulkOutcome(result, bulkAction === "Rejected" ? "rejected" : "flagged");
+    } catch (error) {
+      setBulkReasonError(error instanceof ApiError ? error.message : "Failed to submit the review.");
+    } finally {
+      setIsBulkSubmitting(false);
+    }
+  }
 
   function startReasonPrompt(documentId, action) {
     setReasonPromptId(documentId);
@@ -147,23 +238,108 @@ export default function SupportStaffDocumentsPage() {
                 : "No documents are awaiting review or flagged right now."}
             </p>
           ) : (
-            <table className="ss-documents-table">
-              <thead>
-                <tr>
-                  <th>Applicant</th>
-                  <th>Document Type</th>
-                  <th>Status</th>
-                  <th>Uploaded</th>
-                  <th aria-hidden="true"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {documents.map((document) => (
-                  <tr key={document.documentId}>
-                    <td>
-                      <span className="ss-documents-name">{document.applicantName}</span>
-                      <span className="ss-documents-email">{document.applicantEmail}</span>
-                    </td>
+            <>
+              {selectedIds.size > 0 && (
+                <div className="ss-documents-bulk-bar">
+                  {bulkAction ? (
+                    <div className="ss-documents-reason-form ss-documents-bulk-reason-form">
+                      <textarea
+                        rows={2}
+                        placeholder={`Reason for ${bulkAction === "Rejected" ? "rejecting" : "flagging"} ${selectedIds.size} document${selectedIds.size === 1 ? "" : "s"}`}
+                        value={bulkReasonText}
+                        onChange={(event) => setBulkReasonText(event.target.value)}
+                      />
+                      {bulkReasonError && (
+                        <p className="form-error ss-documents-reason-error" role="alert">
+                          {bulkReasonError}
+                        </p>
+                      )}
+                      <div className="row-actions">
+                        <button type="button" className="reason-submit" onClick={handleBulkReasonSubmit} disabled={isBulkSubmitting}>
+                          {isBulkSubmitting ? "Submitting..." : `Confirm ${bulkAction}`}
+                        </button>
+                        <button
+                          type="button"
+                          className="reason-cancel"
+                          onClick={() => {
+                            setBulkAction(null);
+                            setBulkReasonText("");
+                            setBulkReasonError(null);
+                          }}
+                          disabled={isBulkSubmitting}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="ss-documents-bulk-count">{selectedIds.size} selected</span>
+                      <div className="row-actions">
+                        <button type="button" className="action-approve" onClick={handleBulkApprove} disabled={isBulkSubmitting}>
+                          {isBulkSubmitting ? "Saving..." : "Approve"}
+                        </button>
+                        <button
+                          type="button"
+                          className="action-reject"
+                          onClick={() => startBulkReasonPrompt("Rejected")}
+                          disabled={isBulkSubmitting}
+                        >
+                          Reject
+                        </button>
+                        <button
+                          type="button"
+                          className="action-flag"
+                          onClick={() => startBulkReasonPrompt("Flagged")}
+                          disabled={isBulkSubmitting}
+                        >
+                          Flag
+                        </button>
+                        <button type="button" className="reason-cancel" onClick={clearSelection} disabled={isBulkSubmitting}>
+                          Clear
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              <table className="ss-documents-table">
+                <thead>
+                  <tr>
+                    <th>
+                      <input
+                        type="checkbox"
+                        checked={allReviewableSelected}
+                        onChange={toggleSelectAll}
+                        disabled={reviewableDocuments.length === 0}
+                        aria-label="Select all reviewable documents"
+                      />
+                    </th>
+                    <th>Applicant</th>
+                    <th>Document Type</th>
+                    <th>Status</th>
+                    <th>Uploaded</th>
+                    <th aria-hidden="true"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {documents.map((document) => (
+                    <tr key={document.documentId}>
+                      <td>
+                        {REVIEWABLE_STATUSES.has(document.status) && (
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(document.documentId)}
+                            onChange={() => toggleSelect(document.documentId)}
+                            aria-label={`Select ${document.applicantName}'s ${document.documentType}`}
+                          />
+                        )}
+                      </td>
+                      <td>
+                        <span className="ss-documents-name">{document.applicantName}</span>
+                        <span className="ss-documents-email">{document.applicantEmail}</span>
+                      </td>
                     <td>{document.documentType}</td>
                     <td>
                       <StatusBadge status={document.status} />
@@ -241,8 +417,9 @@ export default function SupportStaffDocumentsPage() {
                     </td>
                   </tr>
                 ))}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </>
           )}
         </Card>
     </AppLayout>

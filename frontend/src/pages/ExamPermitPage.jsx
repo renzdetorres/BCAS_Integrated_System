@@ -5,6 +5,7 @@ import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
+import EmptyState from "../components/ui/EmptyState.jsx";
 import "./ExamPermitPage.css";
 
 function formatDate(isoDate) {
@@ -95,10 +96,16 @@ export default function ExamPermitPage() {
     return (
       <AppLayout title="Exam Permit">
         <Card>
-          <p>
-            You haven&apos;t selected an entrance exam schedule yet.{" "}
-            <Link to="/exam-schedule">Choose a schedule</Link> to have your permit issued.
-          </p>
+          <EmptyState
+            icon="ticket"
+            title="No exam schedule selected yet"
+            message="Choose an entrance exam schedule to have your permit issued."
+            action={
+              <Link className="btn btn-primary btn-sm" to="/exam-schedule">
+                Choose a schedule
+              </Link>
+            }
+          />
         </Card>
       </AppLayout>
     );
@@ -108,10 +115,16 @@ export default function ExamPermitPage() {
     return (
       <AppLayout title="Exam Permit">
         <Card>
-          <p>
-            Your exam permit hasn&apos;t been released yet. The registrar releases it once all of your required
-            documents have been verified - check your <Link to="/documents">Documents</Link> checklist for status.
-          </p>
+          <EmptyState
+            icon="lock"
+            title="Your permit hasn't been released yet"
+            message="The registrar releases it once all of your required documents have been verified."
+            action={
+              <Link className="btn btn-secondary btn-sm" to="/documents">
+                Check your Documents checklist
+              </Link>
+            }
+          />
         </Card>
       </AppLayout>
     );

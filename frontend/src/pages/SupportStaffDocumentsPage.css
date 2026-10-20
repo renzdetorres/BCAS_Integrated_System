@@ -125,6 +125,38 @@
   min-width: 220px;
 }
 
+.ss-documents-bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  flex-wrap: wrap;
+}
+
+.ss-documents-bulk-count {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.ss-documents-bulk-reason-form {
+  width: 100%;
+  min-width: 0;
+}
+
+.ss-documents-bulk-reason-form textarea {
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-family: inherit;
+  resize: vertical;
+  width: 100%;
+}
+
 .ss-documents-reason-form textarea {
   padding: 8px 10px;
   border: 1px solid var(--color-border);

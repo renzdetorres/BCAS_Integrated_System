@@ -6,6 +6,7 @@ import {
   getApplicationStatusHistory,
   getValidNextAdmissionStatuses,
   getValidNextScholarshipStatuses,
+  promoteFromWaitlist,
   searchApplications,
   updateApplicationStatus,
 } from "../api/adminApplicationsApi.js";
@@ -39,6 +40,9 @@ export default function AdminApplicationDetailPage() {
   const [archiveReason, setArchiveReason] = useState("");
   const [isArchiving, setIsArchiving] = useState(false);
   const [archiveError, setArchiveError] = useState(null);
+
+  const [isPromoting, setIsPromoting] = useState(false);
+  const [promoteError, setPromoteError] = useState(null);
 
   const [statusHistory, setStatusHistory] = useState([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(true);
@@ -127,6 +131,22 @@ export default function AdminApplicationDetailPage() {
     }
   }
 
+  async function handlePromoteFromWaitlist() {
+    setPromoteError(null);
+    setIsPromoting(true);
+
+    try {
+      const promoted = await promoteFromWaitlist(applicationId);
+      setApplication(promoted);
+      setStatusForm({ status: promoted.status, remarks: promoted.remarks ?? "" });
+      loadStatusHistory();
+    } catch (error) {
+      setPromoteError(error instanceof ApiError ? error.message : "Failed to promote this application from the waitlist.");
+    } finally {
+      setIsPromoting(false);
+    }
+  }
+
   async function handleArchiveSubmit(event) {
     event.preventDefault();
     setArchiveError(null);
@@ -159,6 +179,7 @@ export default function AdminApplicationDetailPage() {
     : [];
   const stepLabels = application?.category === "Admission" ? ADMISSION_STEP_LABELS : SCHOLARSHIP_STEP_LABELS;
   const canArchive = application && !application.isArchived && ARCHIVABLE_STATUSES.includes(application.status);
+  const isWaitlisted = application?.category === "Scholarship" && application.status === "Waitlisted";
 
   return (
     <AppLayout
@@ -189,77 +210,139 @@ export default function AdminApplicationDetailPage() {
 
         {!isLoading && !errorMessage && application && (
           <>
-            <div className="admin-app-detail-card">
-              <div className="admin-app-detail-header">
-                <span className={`category-badge category-${application.category.toLowerCase()}`}>
-                  {application.category}
-                </span>
-                <StatusBadge status={application.status} adminContext />
-                {application.isArchived && <StatusBadge status="Inactive" label="Archived" />}
-              </div>
-              <h1>{application.applicantName}</h1>
-              <p className="admin-app-detail-email">{application.applicantEmail}</p>
+            {/* One record overview, not three separate cards for identity,
+                workflow state, and history - a registrar reads all three
+                together to understand "where this record stands" before
+                touching either action below. Sections divided by a rule,
+                same dossier pattern used on the scholarship review pages. */}
+            <div className="admin-app-detail-card admin-app-dossier">
+              <div className="admin-app-dossier-section">
+                <div className="admin-app-detail-header">
+                  <span className={`category-badge category-${application.category.toLowerCase()}`}>
+                    {application.category}
+                  </span>
+                  <StatusBadge status={application.status} adminContext />
+                  {application.isArchived && <StatusBadge status="Inactive" label="Archived" />}
+                </div>
+                <p className="admin-app-detail-name">{application.applicantName}</p>
+                <p className="admin-app-detail-email">{application.applicantEmail}</p>
 
-              <dl className="admin-app-detail-list">
-                {application.category === "Admission" ? (
-                  <>
-                    <div>
-                      <dt>Application Type</dt>
-                      <dd>{application.applicationType}</dd>
-                    </div>
-                    <div>
-                      <dt>Course Applied For</dt>
-                      <dd>{application.courseAppliedFor}</dd>
-                    </div>
-                    {application.previousSchool && (
+                <dl className="admin-app-detail-list">
+                  {application.category === "Admission" ? (
+                    <>
                       <div>
-                        <dt>Previous School</dt>
-                        <dd>{application.previousSchool}</dd>
+                        <dt>Application Type</dt>
+                        <dd>{application.applicationType}</dd>
                       </div>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <dt>Scholarship</dt>
-                      <dd>{application.scholarshipName}</dd>
-                    </div>
-                    <div>
-                      <dt>Scholarship Type</dt>
-                      <dd>{application.scholarshipType}</dd>
-                    </div>
-                    <div>
-                      <dt>Grade Average</dt>
-                      <dd>{application.gradeAverage}</dd>
-                    </div>
-                  </>
+                      <div>
+                        <dt>Course Applied For</dt>
+                        <dd>{application.courseAppliedFor}</dd>
+                      </div>
+                      {application.previousSchool && (
+                        <div>
+                          <dt>Previous School</dt>
+                          <dd>{application.previousSchool}</dd>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <dt>Scholarship</dt>
+                        <dd>{application.scholarshipName}</dd>
+                      </div>
+                      <div>
+                        <dt>Scholarship Type</dt>
+                        <dd>{application.scholarshipType}</dd>
+                      </div>
+                      <div>
+                        <dt>Grade Average</dt>
+                        <dd>{application.gradeAverage}</dd>
+                      </div>
+                    </>
+                  )}
+                  <div>
+                    <dt>Submitted</dt>
+                    <dd>{formatDateTime(application.submittedAt)}</dd>
+                  </div>
+                  <div>
+                    <dt>Last Updated</dt>
+                    <dd>{formatDateTime(application.updatedAt)}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div className="admin-app-dossier-section">
+                <h2>Workflow Status</h2>
+                <WorkflowStepper steps={application.steps} labels={stepLabels} />
+                {application.remarks && (
+                  <p className="admin-app-detail-remarks">
+                    <strong>Remarks:</strong> {application.remarks}
+                  </p>
                 )}
-                <div>
-                  <dt>Submitted</dt>
-                  <dd>{formatDateTime(application.submittedAt)}</dd>
-                </div>
-                <div>
-                  <dt>Last Updated</dt>
-                  <dd>{formatDateTime(application.updatedAt)}</dd>
-                </div>
-              </dl>
+              </div>
+
+              <div className="admin-app-dossier-section">
+                <h2>Status History</h2>
+                <p className="admin-app-detail-subtitle">
+                  Every status change recorded for this application, oldest first.
+                </p>
+
+                {isLoadingHistory && <p>Loading...</p>}
+                {historyError && (
+                  <p className="form-error" role="alert">
+                    {historyError}
+                  </p>
+                )}
+                {!isLoadingHistory && !historyError && statusHistory.length === 0 && <p>No status changes recorded yet.</p>}
+
+                {!isLoadingHistory && !historyError && statusHistory.length > 0 && (
+                  <ul className="admin-app-status-history">
+                    {statusHistory.map((entry) => (
+                      <li key={entry.historyId}>
+                        <div className="admin-app-status-history-line">
+                          <strong>{entry.fromStatus ? `${entry.fromStatus} → ${entry.toStatus}` : `${entry.toStatus} (submitted)`}</strong>
+                          <span>{formatDateTime(entry.changedAt)}</span>
+                        </div>
+                        <div className="admin-app-status-history-meta">
+                          by {entry.changedByName ?? "the applicant"}
+                          {entry.remarks && <> &mdash; {entry.remarks}</>}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
 
-            <div className="admin-app-detail-card">
-              <h2>Workflow Status</h2>
-              <WorkflowStepper steps={application.steps} labels={stepLabels} />
-              {application.remarks && (
-                <p className="admin-app-detail-remarks">
-                  <strong>Remarks:</strong> {application.remarks}
+            {isWaitlisted && (
+              <div className="admin-app-detail-card">
+                <h2>Waitlist</h2>
+                <p className="admin-app-detail-subtitle">
+                  This scholarship was full when the applicant applied, so the application is holding a place on
+                  the waitlist instead of a reserved slot. Promoting it only succeeds if a slot has actually opened
+                  up since (another applicant was rejected or archived) - it then reserves that slot and moves the
+                  application into the regular screening workflow, starting at Submitted.
                 </p>
-              )}
-            </div>
+
+                {promoteError && (
+                  <p className="form-error" role="alert">
+                    {promoteError}
+                  </p>
+                )}
+
+                <button type="button" onClick={handlePromoteFromWaitlist} disabled={isPromoting}>
+                  {isPromoting ? "Promoting..." : "Promote from Waitlist"}
+                </button>
+              </div>
+            )}
 
             <div className="admin-app-detail-card">
               <h2>Update Status</h2>
               <p className="admin-app-detail-subtitle">
-                Authorized staff can set this application to any status in its workflow and attach an optional
-                remark.
+                {isWaitlisted
+                  ? "Waitlisted applications can only move forward through the dedicated Promote from Waitlist action above, which reserves a slot atomically - this generic control is disabled while waitlisted."
+                  : "Authorized staff can set this application to any status in its workflow and attach an optional remark."}
               </p>
 
               {savedMessage && (
@@ -280,6 +363,7 @@ export default function AdminApplicationDetailPage() {
                     id="status"
                     name="status"
                     value={statusForm.status}
+                    disabled={isWaitlisted}
                     onChange={(event) => setStatusForm((prev) => ({ ...prev, status: event.target.value }))}
                   >
                     {statusOptions.map((option) => (
@@ -302,42 +386,10 @@ export default function AdminApplicationDetailPage() {
                   />
                 </div>
 
-                <button type="submit" disabled={isSaving}>
+                <button type="submit" disabled={isSaving || isWaitlisted}>
                   {isSaving ? "Saving..." : "Update Status"}
                 </button>
               </form>
-            </div>
-
-            <div className="admin-app-detail-card">
-              <h2>Status History</h2>
-              <p className="admin-app-detail-subtitle">
-                Every status change recorded for this application, oldest first.
-              </p>
-
-              {isLoadingHistory && <p>Loading...</p>}
-              {historyError && (
-                <p className="form-error" role="alert">
-                  {historyError}
-                </p>
-              )}
-              {!isLoadingHistory && !historyError && statusHistory.length === 0 && <p>No status changes recorded yet.</p>}
-
-              {!isLoadingHistory && !historyError && statusHistory.length > 0 && (
-                <ul className="admin-app-status-history">
-                  {statusHistory.map((entry) => (
-                    <li key={entry.historyId}>
-                      <div className="admin-app-status-history-line">
-                        <strong>{entry.fromStatus ? `${entry.fromStatus} → ${entry.toStatus}` : `${entry.toStatus} (submitted)`}</strong>
-                        <span>{formatDateTime(entry.changedAt)}</span>
-                      </div>
-                      <div className="admin-app-status-history-meta">
-                        by {entry.changedByName ?? "the applicant"}
-                        {entry.remarks && <> &mdash; {entry.remarks}</>}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
             </div>
 
             <div className="admin-app-detail-card">
@@ -380,7 +432,7 @@ export default function AdminApplicationDetailPage() {
                       />
                     </div>
 
-                    <button type="submit" disabled={isArchiving}>
+                    <button type="submit" className="archive-submit-button" disabled={isArchiving}>
                       {isArchiving ? "Archiving..." : "Archive Application"}
                     </button>
                   </form>

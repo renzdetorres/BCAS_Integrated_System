@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import Button from "./Button.jsx";
 import "./DataTable.css";
 
 /**
@@ -66,7 +67,7 @@ export default function DataTable({
             {search ? (
               <input
                 type="search"
-                className="ui-datatable-search"
+                className="ui-input ui-datatable-search"
                 placeholder={search.placeholder ?? "Search..."}
                 value={search.value}
                 onChange={(event) => search.onChange(event.target.value)}
@@ -75,7 +76,7 @@ export default function DataTable({
             {filters.map((filter) => (
               <select
                 key={filter.key}
-                className="ui-datatable-filter"
+                className="ui-select ui-datatable-filter"
                 value={filter.value}
                 onChange={(event) => filter.onChange(event.target.value)}
                 aria-label={filter.label}
@@ -91,9 +92,9 @@ export default function DataTable({
             {extraToolbar}
           </div>
           {onExport ? (
-            <button type="button" className="ui-datatable-export" onClick={onExport}>
+            <Button type="button" tone="secondary" size="sm" onClick={onExport}>
               Export
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}

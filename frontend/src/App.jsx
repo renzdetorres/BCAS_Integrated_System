@@ -5,6 +5,8 @@ import RequireAuth from "./components/RequireAuth.jsx";
 import RequireRole from "./components/RequireRole.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
+import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 import PortalRouter from "./pages/PortalRouter.jsx";
 import ProvisionStaffPage from "./pages/ProvisionStaffPage.jsx";
 import ManageUsersPage from "./pages/ManageUsersPage.jsx";
@@ -43,6 +45,12 @@ import AdminExamSchedulesPage from "./pages/AdminExamSchedulesPage.jsx";
 import AdminExamPermitsPage from "./pages/AdminExamPermitsPage.jsx";
 import AdminScholarshipsPage from "./pages/AdminScholarshipsPage.jsx";
 import AdminReservationsPage from "./pages/AdminReservationsPage.jsx";
+import AdminAuditLogsPage from "./pages/AdminAuditLogsPage.jsx";
+import AdminDuplicateApplicantsPage from "./pages/AdminDuplicateApplicantsPage.jsx";
+import InquiriesPage from "./pages/InquiriesPage.jsx";
+import InquiryDetailPage from "./pages/InquiryDetailPage.jsx";
+import StaffInquiriesPage from "./pages/StaffInquiriesPage.jsx";
+import StaffInquiryDetailPage from "./pages/StaffInquiryDetailPage.jsx";
 
 export default function App() {
   return (
@@ -52,12 +60,15 @@ export default function App() {
           <Routes>
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route element={<RequireAuth />}>
               <Route path="/portal" element={<PortalRouter />} />
               <Route path="/announcements" element={<AnnouncementsRouter />} />
               <Route element={<RequireRole allowedRoles={["Admin"]} />}>
                 <Route path="/admin/staff" element={<ProvisionStaffPage />} />
                 <Route path="/admin/users" element={<ManageUsersPage />} />
+                <Route path="/admin/duplicate-applicants" element={<AdminDuplicateApplicantsPage />} />
                 <Route path="/admin/notification-settings" element={<NotificationSettingsPage />} />
                 <Route path="/admin/settings" element={<AdminSettingsPage />} />
                 <Route path="/admin/applications" element={<AdminApplicationsPage />} />
@@ -71,6 +82,7 @@ export default function App() {
                 <Route path="/admin/exam-permits" element={<AdminExamPermitsPage />} />
                 <Route path="/admin/scholarships" element={<AdminScholarshipsPage />} />
                 <Route path="/admin/reservations" element={<AdminReservationsPage />} />
+                <Route path="/admin/audit-logs" element={<AdminAuditLogsPage />} />
               </Route>
               <Route element={<RequireRole allowedRoles={["Evaluator"]} />}>
                 <Route
@@ -106,6 +118,12 @@ export default function App() {
                 <Route path="/exam-schedule" element={<ExamSchedulePage />} />
                 <Route path="/exam-permit" element={<ExamPermitPage />} />
                 <Route path="/application-tracking" element={<ApplicationTrackingPage />} />
+                <Route path="/inquiries" element={<InquiriesPage />} />
+                <Route path="/inquiries/:threadId" element={<InquiryDetailPage />} />
+              </Route>
+              <Route element={<RequireRole allowedRoles={["SupportStaff", "Admin"]} />}>
+                <Route path="/staff/inquiries" element={<StaffInquiriesPage />} />
+                <Route path="/staff/inquiries/:threadId" element={<StaffInquiryDetailPage />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/login" replace />} />

@@ -70,3 +70,7 @@ export const getScholarshipQualificationList = (filters) =>
 export const getScholarshipResultList = (filters) => getJson("/api/academic-head/reports/scholarship/results", filters);
 
 export const getScholarshipSlotReport = () => getJson("/api/academic-head/reports/scholarship/slots");
+
+export const getApplicationTrend = (filters) => getJson("/api/academic-head/reports/trend/applications", filters);
+
+export const getApplicationFunnel = () => getJson("/api/academic-head/reports/trend/funnel");

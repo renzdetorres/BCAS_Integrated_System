@@ -13,19 +13,22 @@ public class AdminApplicationsService : IAdminApplicationsService
     private readonly IApplicantDocumentService _documentService;
     private readonly IApplicationStatusHistoryRepository _statusHistoryRepository;
     private readonly INotificationDispatchService _notificationDispatchService;
+    private readonly IScholarshipApplicationRepository _scholarshipApplicationRepository;
 
     public AdminApplicationsService(
         IAdminApplicationsRepository applicationsRepository,
         IExamScheduleRepository examScheduleRepository,
         IApplicantDocumentService documentService,
         IApplicationStatusHistoryRepository statusHistoryRepository,
-        INotificationDispatchService notificationDispatchService)
+        INotificationDispatchService notificationDispatchService,
+        IScholarshipApplicationRepository scholarshipApplicationRepository)
     {
         _applicationsRepository = applicationsRepository;
         _examScheduleRepository = examScheduleRepository;
         _documentService = documentService;
         _statusHistoryRepository = statusHistoryRepository;
         _notificationDispatchService = notificationDispatchService;
+        _scholarshipApplicationRepository = scholarshipApplicationRepository;
     }
 
     public async Task<IReadOnlyList<AdminApplicationListItemResponse>> SearchAsync(
@@ -120,6 +123,17 @@ public class AdminApplicationsService : IAdminApplicationsService
             }
         }
 
+        // Scholarship waitlist: release the slot this application had
+        // reserved back to the scholarship on rejection (a no-op if it was
+        // Waitlisted and never held one) - the Admin override is one of two
+        // paths a scholarship application can reach "Rejected" through, see
+        // EvaluatorScholarshipApplicationService.RecordFinalDecisionAsync
+        // for the other (Academic Head's dedicated decision flow).
+        if (category == "Scholarship" && status == "Rejected")
+        {
+            await _scholarshipApplicationRepository.ReleaseSlotByApplicationIdAsync(applicationId, cancellationToken);
+        }
+
         var steps = await BuildStepsAsync(
             updated, new Dictionary<Guid, DocumentChecklistResponse?>(), new Dictionary<Guid, bool>(), cancellationToken);
         return updated.ToResponse(steps);
@@ -179,6 +193,72 @@ public class AdminApplicationsService : IAdminApplicationsService
         var steps = await BuildStepsAsync(
             archived, new Dictionary<Guid, DocumentChecklistResponse?>(), new Dictionary<Guid, bool>(), cancellationToken);
         return archived.ToResponse(steps);
+    }
+
+    public async Task<AdminApplicationListItemResponse> PromoteFromWaitlistAsync(
+        Guid applicationId,
+        Guid promotedByUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var existing = await _applicationsRepository.GetByIdAsync(applicationId, cancellationToken);
+        if (existing is null || existing.Category != "Scholarship")
+        {
+            throw new ApplicationNotFoundException(applicationId);
+        }
+
+        // PromoteFromWaitlistAsync itself is the authority on whether the
+        // application is actually Waitlisted right now (it re-checks inside
+        // the same transaction as the slot reservation, so a stale read of
+        // `existing` above can't cause a wrong promotion) - a null result
+        // here means it wasn't, using the status this read still saw for
+        // the exception message.
+        var promoted = await _scholarshipApplicationRepository.PromoteFromWaitlistAsync(applicationId, cancellationToken)
+            ?? throw new ScholarshipApplicationNotWaitlistedException(applicationId, existing.Status);
+
+        await _statusHistoryRepository.InsertAsync(
+            applicationId, "Scholarship", "Waitlisted", "Submitted", remarks: null, promotedByUserId, cancellationToken);
+
+        var applicantFirstName = existing.ApplicantName.Split(' ', 2)[0];
+        await _notificationDispatchService.NotifyScholarshipWaitlistPromotedAsync(
+            existing.UserId, existing.ApplicantEmail, applicantFirstName, promoted.ScholarshipName, cancellationToken);
+
+        var updated = await _applicationsRepository.GetByIdAsync(applicationId, cancellationToken)
+            ?? throw new ApplicationNotFoundException(applicationId);
+        var steps = await BuildStepsAsync(
+            updated, new Dictionary<Guid, DocumentChecklistResponse?>(), new Dictionary<Guid, bool>(), cancellationToken);
+        return updated.ToResponse(steps);
+    }
+
+    public async Task<BulkOperationResultResponse> BulkArchiveAsync(
+        BulkArchiveRequest request,
+        Guid archivedByUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var failures = new List<BulkOperationFailure>();
+        var succeededCount = 0;
+
+        foreach (var item in request.Items)
+        {
+            try
+            {
+                await ArchiveAsync(
+                    item.ApplicationId,
+                    new ArchiveApplicationRequest { Category = item.Category, Reason = request.Reason },
+                    archivedByUserId,
+                    cancellationToken);
+                succeededCount++;
+            }
+            catch (Exception ex) when (
+                ex is InvalidApplicationCategoryException
+                or ApplicationNotFoundException
+                or ApplicationAlreadyArchivedException
+                or ApplicationNotArchivableException)
+            {
+                failures.Add(new BulkOperationFailure { Id = item.ApplicationId, Reason = ex.Message });
+            }
+        }
+
+        return new BulkOperationResultResponse { SucceededCount = succeededCount, Failures = failures };
     }
 
     /// <summary>

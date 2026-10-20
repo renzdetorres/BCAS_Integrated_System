@@ -87,7 +87,7 @@ export default function SupportStaffDocumentArchivePage() {
 
   return (
     <AppLayout title="Document Archive">
-      <Card>
+      <Card tier="data">
         <p className="ss-archive-subtitle">
           Archived documents, kept separate from the active verification queue. Browse or search here without
           cluttering the queue.

@@ -47,4 +47,22 @@ public interface IAdminReportsService
     /// exists or its Status isn't Approved.
     /// </summary>
     Task<ScholarshipContractResponse> GetScholarshipContractAsync(Guid applicationId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Applications submitted per week over the last `weeks` weeks (clamped
+    /// to [1, ReportTrendConstants.MaxTrendWeeks]), zero-filled for weeks
+    /// with no submissions so the series stays continuous. program narrows
+    /// the Admission series only (course, partial match - BISAASS-49 passes
+    /// an Academic Head's Department here); the Scholarship series is never
+    /// filtered by it.
+    /// </summary>
+    Task<ApplicationTrendResponse> GetApplicationTrendAsync(string? program, int weeks, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// How many distinct applications ever reached each stage of the
+    /// Admission and Scholarship workflows, in stage order - see
+    /// ReportTrendConstants for the stage lists. program narrows the
+    /// Admission funnel only, same as GetApplicationTrendAsync.
+    /// </summary>
+    Task<ApplicationFunnelResponse> GetApplicationFunnelAsync(string? program, CancellationToken cancellationToken = default);
 }

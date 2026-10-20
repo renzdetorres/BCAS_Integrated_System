@@ -17,6 +17,15 @@ public static class NotificationEventTypes
     public const string ScholarshipResult = "ScholarshipResult";
     public const string Announcement = "Announcement";
 
+    /// <summary>Proactive reminder, not tied to a status change - see DeadlineReminderService.</summary>
+    public const string ExamReminder = "ExamReminder";
+
+    /// <summary>Proactive reminder, not tied to a status change - see DeadlineReminderService.</summary>
+    public const string MissingDocumentReminder = "MissingDocumentReminder";
+
+    /// <summary>Support Staff/Admin replied to the applicant's own inquiry thread - see IStaffInquiryService.</summary>
+    public const string InquiryReply = "InquiryReply";
+
     public static readonly IReadOnlyDictionary<string, string> DisplayNames = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         [ApplicationReceived] = "Application Received",
@@ -26,6 +35,9 @@ public static class NotificationEventTypes
         [ApplicationResult] = "Application Result",
         [ScholarshipResult] = "Scholarship Result",
         [Announcement] = "Important Announcements",
+        [ExamReminder] = "Upcoming Exam Reminder",
+        [MissingDocumentReminder] = "Missing Document Reminder",
+        [InquiryReply] = "Inquiry Reply",
     };
 
     public static readonly IReadOnlySet<string> AllowedTypes = new HashSet<string>(DisplayNames.Keys, StringComparer.Ordinal);
@@ -45,5 +57,8 @@ public static class NotificationEventTypes
         [ApplicationResult] = "StatusChange",
         [ScholarshipResult] = "StatusChange",
         [Announcement] = null,
+        [ExamReminder] = "ExamReminder",
+        [MissingDocumentReminder] = "MissingDocumentReminder",
+        [InquiryReply] = "InquiryReply",
     };
 }

@@ -1,0 +1,76 @@
+/* Shared form control system. Existing bespoke page forms (auth, admin CRUD)
+   keep their own working markup for now - this establishes the canonical
+   classes for new/shared work rather than forcing a rewrite of every form. */
+
+.ui-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: var(--space-4);
+}
+
+.ui-field-row {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.ui-field-row .ui-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.ui-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.ui-input,
+.ui-select,
+.ui-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font: var(--text-body);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  box-sizing: border-box;
+}
+
+.ui-textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+.ui-input:focus,
+.ui-select:focus,
+.ui-textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
+}
+
+.ui-input:disabled,
+.ui-select:disabled,
+.ui-textarea:disabled {
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  cursor: not-allowed;
+}
+
+.ui-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.ui-field-error .ui-input,
+.ui-field-error .ui-select,
+.ui-field-error .ui-textarea {
+  border-color: var(--color-status-red-text);
+}
+
+.ui-field-error .ui-hint {
+  color: var(--color-status-red-text);
+}

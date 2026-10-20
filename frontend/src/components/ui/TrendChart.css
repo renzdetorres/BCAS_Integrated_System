@@ -1,0 +1,72 @@
+.ui-trendchart-empty {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.ui-trendchart-legend {
+  display: flex;
+  gap: 16px;
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.ui-trendchart-legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ui-trendchart-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.ui-trendchart-plot {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 160px;
+  padding-top: 8px;
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+}
+
+.ui-trendchart-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 34px;
+  flex: 1 0 auto;
+  height: 100%;
+}
+
+.ui-trendchart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 100%;
+  width: 100%;
+  justify-content: center;
+}
+
+.ui-trendchart-bar {
+  width: 10px;
+  min-height: 0;
+  border-radius: 2px 2px 0 0;
+  transition: height var(--motion-standard);
+}
+
+.ui-trendchart-label {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  transform: rotate(-40deg);
+  transform-origin: top right;
+  margin-top: 10px;
+}

@@ -22,6 +22,7 @@
   --color-status-green-text: #1e7e40;
   --color-status-red-bg: #fbe6e6;
   --color-status-red-text: #c53030;
+  --color-status-red-dark: #a32a2a;
   --color-status-amber-bg: #fdf1d6;
   --color-status-amber-text: #a3690f;
   --color-status-gray-bg: #eceef0;
@@ -76,6 +77,11 @@
   /* Focus ring tint - was hand-rolled as rgba(27,67,50,0.15) in 8 separate
      page CSS files. */
   --color-primary-focus-ring: rgba(27, 67, 50, 0.15);
+  /* Gold focus ring for non-input controls (buttons, links, nav) - inputs
+     keep their own green ring (you're editing this field); gold matches
+     the "actionable" meaning it already carries on the sidebar's active
+     link and other interactive affordances. */
+  --color-accent-focus-ring: rgba(217, 164, 65, 0.45);
 
   /* Layout */
   --sidebar-width: 248px;

@@ -75,3 +75,21 @@ export async function reviewDocument(documentId, { status, reason }) {
 
   return data;
 }
+
+export async function bulkReviewDocuments(documentIds, { status, reason }) {
+  const response = await fetch(`${API_BASE_URL}/api/support-staff/documents/bulk-review`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ documentIds, status, reason: reason || null }),
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const message = resolveErrorMessage(response, data, "Failed to review the selected documents. Please try again.");
+    throw new ApiError(message, response.status);
+  }
+
+  return data;
+}

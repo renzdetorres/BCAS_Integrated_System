@@ -15,8 +15,18 @@
   color: var(--color-primary);
 }
 
+.receipt-letterhead {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--color-primary);
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
 .receipt-application-id {
-  margin: 4px 0 20px;
+  margin: 4px 0 0;
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--color-text-primary);

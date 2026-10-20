@@ -43,6 +43,15 @@
   margin-bottom: 16px;
 }
 
+.form-hint {
+  color: var(--color-status-amber-text);
+  background: var(--color-status-amber-bg);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  margin-top: 8px;
+}
+
 .form-error a {
   color: var(--color-status-red-text);
   font-weight: 700;
