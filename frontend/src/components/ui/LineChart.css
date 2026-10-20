@@ -1,0 +1,59 @@
+.ui-linechart {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ui-linechart-svg {
+  width: 100%;
+  height: auto;
+}
+
+.ui-linechart-gridline {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.ui-linechart-axis-label {
+  font-size: 9.5px;
+  fill: var(--color-text-secondary);
+  font-family: var(--font-sans);
+}
+
+.ui-linechart-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.ui-linechart-legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ui-linechart-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.ui-linechart-legend-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.ui-linechart-legend-value {
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+}
+
+.ui-linechart-empty {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
