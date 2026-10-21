@@ -40,6 +40,13 @@ public interface ISupportStaffDocumentsService
         string? search, string? documentType, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Restores one archived document: it leaves the archive and returns to the verification queue with the
+    /// status and reviewer it had. Throws DocumentNotFoundException for an unknown id and
+    /// DocumentNotArchivedException when it is not in the archive.
+    /// </summary>
+    Task<AdminDocumentListItemResponse> RestoreArchivedAsync(Guid documentId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Applies the same review (Status + Reason) to every document in the
     /// list, for triaging a whole filtered page of the verification queue
     /// at once instead of one row at a time. Status/Reason are validated

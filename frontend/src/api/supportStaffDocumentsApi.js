@@ -37,6 +37,21 @@ export async function listDocumentsForApplicant(applicantUserId) {
   return data;
 }
 
+/** Takes one archived document out of the archive; it goes back to the verification queue. */
+export async function restoreArchivedDocument(documentId) {
+  const response = await fetch(`${API_BASE_URL}/api/support-staff/documents/${documentId}/restore`, {
+    method: "POST",
+    credentials: "include",
+  });
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new ApiError(resolveErrorMessage(response, data, "Failed to restore the document."), response.status);
+  }
+
+  return data;
+}
+
 export async function searchArchivedDocuments({ search, documentType } = {}) {
   const params = new URLSearchParams();
   if (search) params.set("search", search);

@@ -27,9 +27,10 @@ export async function getMyExamPayment() {
 }
 
 /** Uploads (or replaces) the proof of payment. `onProgress(percent)` is optional. */
-export async function submitPaymentProof(file, referenceNumber, onProgress) {
+export async function submitPaymentProof(file, referenceNumber, onProgress, paymentMethod) {
   const formData = new FormData();
   formData.append("file", file);
+  if (paymentMethod) formData.append("paymentMethod", paymentMethod);
   if (referenceNumber) formData.append("referenceNumber", referenceNumber);
 
   return uploadWithProgress("/api/exam-payment/proof", {

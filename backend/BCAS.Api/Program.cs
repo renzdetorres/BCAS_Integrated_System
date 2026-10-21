@@ -78,6 +78,7 @@ builder.Services.AddScoped<ISchoolConfigService, SchoolConfigService>();
 builder.Services.AddScoped<IExamPaymentRepository, ExamPaymentRepository>();
 builder.Services.AddScoped<IExamPaymentService, ExamPaymentService>();
 builder.Services.AddScoped<IAdmissionSummaryService, AdmissionSummaryService>();
+builder.Services.AddScoped<IAdmissionAnalyticsService, AdmissionAnalyticsService>();
 builder.Services.AddScoped<IAdmissionStatusReportService, AdmissionStatusReportService>();
 builder.Services.AddScoped<IScholarshipPipelineService, ScholarshipPipelineService>();
 builder.Services.AddScoped<IExamResultRepository, ExamResultRepository>();

@@ -54,13 +54,19 @@ public class ExamPaymentResponse
     /// <summary>NotPaid, Pending, Verified or Rejected.</summary>
     public string Status { get; set; } = "NotPaid";
 
+    /// <summary>The method the applicant paid with once they have uploaded proof; before that, the first method on offer.</summary>
     public string PaymentType { get; set; } = "QR Payment";
     public decimal Amount { get; set; }
+
+    /// <summary>The first method's account name, instructions and QR code, kept so older clients keep working.</summary>
     public string AccountName { get; set; } = string.Empty;
     public string Instructions { get; set; } = string.Empty;
 
     /// <summary>The school's QR code as an image data URL, or empty if none has been uploaded.</summary>
     public string QrImage { get; set; } = string.Empty;
+
+    /// <summary>Every way the school accepts the fee, each with its own account, instructions and QR code.</summary>
+    public IReadOnlyList<PaymentMethodResponse> Methods { get; set; } = Array.Empty<PaymentMethodResponse>();
 
     public string? ReferenceNumber { get; set; }
     public string? ProofFileName { get; set; }
@@ -74,6 +80,15 @@ public class ExamPaymentResponse
 
     /// <summary>Why they can't pay yet, when they can't.</summary>
     public string? Notice { get; set; }
+}
+
+public class PaymentMethodResponse
+{
+    public string Name { get; set; } = string.Empty;
+    public string AccountName { get; set; } = string.Empty;
+    public string AccountNumber { get; set; } = string.Empty;
+    public string Instructions { get; set; } = string.Empty;
+    public string QrImage { get; set; } = string.Empty;
 }
 
 public class ExamPaymentQueueItemResponse

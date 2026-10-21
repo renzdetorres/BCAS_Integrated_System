@@ -103,6 +103,7 @@ public class SchoolConfigService : ISchoolConfigService
             SchoolConfigKeys.AcademicSemesters => AcademicCatalog.ValidateList("semester", value),
             SchoolConfigKeys.AcademicYearLevels => AcademicCatalog.ValidateYearLevels(value),
             SchoolConfigKeys.AcademicPrograms => AcademicCatalog.ValidatePrograms(value),
+            SchoolConfigKeys.PaymentMethods => PaymentMethods.Normalize(value),
             _ => value,
         };
     }

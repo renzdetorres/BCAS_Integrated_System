@@ -48,4 +48,10 @@ public interface ISupportStaffDocumentsRepository
     /// </summary>
     Task<IReadOnlyList<AdminDocumentListItem>> SearchArchivedAsync(
         string? search, string? documentType, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Takes one document out of the archive (IsArchived back to 0) so it returns to the verification queue
+    /// with the status it had. False when there is no archived document with that id.
+    /// </summary>
+    Task<bool> RestoreArchivedAsync(Guid documentId, CancellationToken cancellationToken = default);
 }

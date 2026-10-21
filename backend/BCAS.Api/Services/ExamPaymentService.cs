@@ -11,7 +11,7 @@ public interface IExamPaymentService
     Task<ExamPaymentResponse> GetMyPaymentAsync(Guid userId, CancellationToken cancellationToken = default);
 
     Task<ExamPaymentResponse> SubmitProofAsync(
-        Guid userId, string? referenceNumber, string fileName, string contentType, byte[] fileBytes, CancellationToken cancellationToken = default);
+        Guid userId, string? paymentMethod, string? referenceNumber, string fileName, string contentType, byte[] fileBytes, CancellationToken cancellationToken = default);
 
     Task<DocumentFile?> GetMyProofFileAsync(Guid userId, CancellationToken cancellationToken = default);
 
@@ -82,7 +82,7 @@ public class ExamPaymentService : IExamPaymentService
     }
 
     public async Task<ExamPaymentResponse> SubmitProofAsync(
-        Guid userId, string? referenceNumber, string fileName, string contentType, byte[] fileBytes, CancellationToken cancellationToken = default)
+        Guid userId, string? paymentMethod, string? referenceNumber, string fileName, string contentType, byte[] fileBytes, CancellationToken cancellationToken = default)
     {
         var application = await GetApplicationAsync(userId, cancellationToken);
         var existing = await _repository.GetByApplicationAsync(application.ApplicationId, cancellationToken);
@@ -92,6 +92,13 @@ public class ExamPaymentService : IExamPaymentService
         {
             throw new ExamPaymentException(current.Notice ?? "You can't submit a payment right now.");
         }
+
+        // The applicant says how they paid; it has to be one of the methods the school offers.
+        var methods = PaymentMethods.Resolve(await _schoolConfig.GetAllAsync(cancellationToken));
+        var method = PaymentMethods.Choose(methods, paymentMethod)
+            ?? throw new ExamPaymentException(string.IsNullOrWhiteSpace(paymentMethod)
+                ? "Choose how you paid."
+                : $"'{paymentMethod.Trim()}' isn't a payment method the school accepts. Choose one from the list.");
 
         if (fileBytes.Length == 0)
         {
@@ -116,7 +123,7 @@ public class ExamPaymentService : IExamPaymentService
 
         // The amount is taken from the school's current fee, never from the request.
         var amount = existing?.Amount ?? decimal.Parse(await _schoolConfig.GetAsync(SchoolConfigKeys.ExamFee, cancellationToken));
-        var saved = await _repository.UpsertProofAsync(application.ApplicationId, userId, amount, reference, fileName, contentType, fileBytes, cancellationToken)
+        var saved = await _repository.UpsertProofAsync(application.ApplicationId, userId, amount, method.Name, reference, fileName, contentType, fileBytes, cancellationToken)
             ?? throw new ExamPaymentException("Your payment is already verified.");
 
         _logger.LogInformation("Exam payment proof uploaded for application {ApplicationId} by {UserId}", application.ApplicationId, userId);
@@ -266,15 +273,19 @@ public class ExamPaymentService : IExamPaymentService
             canPay = true;
         }
 
+        var methods = PaymentMethods.Resolve(config);
         return new ExamPaymentResponse
         {
             Required = required,
             Status = status,
-            PaymentType = payment?.PaymentType ?? "QR Payment",
+            PaymentType = payment?.PaymentType ?? methods[0].Name,
             Amount = payment?.Amount ?? decimal.Parse(config[SchoolConfigKeys.ExamFee]),
-            AccountName = config[SchoolConfigKeys.PaymentAccountName],
-            Instructions = config[SchoolConfigKeys.PaymentInstructions],
-            QrImage = config[SchoolConfigKeys.PaymentQrImage],
+            AccountName = methods[0].AccountName,
+            Instructions = methods[0].Instructions,
+            QrImage = methods[0].QrImage,
+            Methods = methods
+                .Select(m => new PaymentMethodResponse { Name = m.Name, AccountName = m.AccountName, AccountNumber = m.AccountNumber, Instructions = m.Instructions, QrImage = m.QrImage })
+                .ToList(),
             ReferenceNumber = payment?.ReferenceNumber,
             ProofFileName = payment?.ProofFileName,
             ProofUploadedAt = payment?.ProofUploadedAt,

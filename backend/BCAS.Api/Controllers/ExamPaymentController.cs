@@ -44,6 +44,7 @@ public class ExamPaymentController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ExamPaymentResponse>> SubmitProof(
         IFormFile? file,
+        [FromForm] string? paymentMethod,
         [FromForm] string? referenceNumber,
         CancellationToken cancellationToken)
     {
@@ -58,7 +59,7 @@ public class ExamPaymentController : ControllerBase
         try
         {
             var response = await _paymentService.SubmitProofAsync(
-                User.GetUserId(), referenceNumber, file.FileName, file.ContentType, stream.ToArray(), cancellationToken);
+                User.GetUserId(), paymentMethod, referenceNumber, file.FileName, file.ContentType, stream.ToArray(), cancellationToken);
             return Ok(response);
         }
         catch (ExamPaymentException ex)

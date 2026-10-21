@@ -1,0 +1,328 @@
+/* Reading order: a status line, then four short sections (overview, applicant flow, processing,
+   documents and scholarships). Space separates the sections generously and the panels inside one
+   section tightly, so the groups are visible without boxes around boxes. */
+
+.analytics-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+}
+
+.analytics-year-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  font: var(--text-dense);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.analytics-year-pick select {
+  width: auto;
+  min-width: 190px;
+  padding-right: 32px;
+  font-weight: 500;
+}
+
+.analytics-updated {
+  font: var(--text-dense);
+  color: var(--color-text-tertiary);
+}
+
+.analytics-spin svg {
+  animation: analytics-spin 700ms linear infinite;
+}
+
+@keyframes analytics-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.analytics-section {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.analytics-section-head h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+}
+
+.analytics-section-head p {
+  margin: 2px 0 0;
+  font: var(--text-dense);
+  color: var(--color-text-secondary);
+}
+
+/* ---- Headline figures ---- */
+
+.analytics-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.analytics-kpi {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  min-width: 0;
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.analytics-kpi-label {
+  font: var(--text-caption);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.analytics-kpi > b {
+  margin-top: 2px;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.analytics-kpi-detail {
+  margin-bottom: var(--space-2);
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+/* How the figure moved since the year before: colour plus an arrow plus words, never colour alone. */
+.analytics-delta {
+  width: fit-content;
+  padding: 2px 9px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.analytics-delta-good {
+  background: var(--color-status-green-bg);
+  color: var(--color-status-green-text);
+}
+
+.analytics-delta-bad {
+  background: var(--color-status-red-bg);
+  color: var(--color-status-red-text);
+}
+
+.analytics-delta-flat {
+  background: var(--color-surface-subtle);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+/* ---- Panels ---- */
+
+.analytics-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  align-items: stretch;
+}
+
+/* Panels in a pair share a height, and the plain-words takeaway sits at the bottom of each one,
+   so the two columns line up whatever the chart above them needs. */
+.analytics-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.analytics-panel-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.analytics-insight {
+  margin: var(--space-4) 0 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  max-width: 70ch;
+  font: var(--text-dense);
+  color: var(--color-text-secondary);
+}
+
+.analytics-insight b {
+  color: var(--color-text-primary);
+}
+
+.analytics-none {
+  margin: 0;
+  padding: var(--space-6) var(--space-4);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  text-align: center;
+  font: var(--text-dense);
+  color: var(--color-text-secondary);
+}
+
+.analytics-stack {
+  display: flex;
+  gap: 2px;
+  height: 14px;
+  margin: 6px 0 var(--space-4);
+  overflow: hidden;
+  border-radius: var(--radius-full);
+}
+
+.analytics-stack i {
+  display: block;
+  flex-basis: 0;
+  min-width: 0;
+  animation: ui-rowbars-grow 600ms var(--ease-out) backwards;
+  transform-origin: left;
+}
+
+.analytics-stack .is-good,
+.analytics-swatch.is-good {
+  background: var(--color-status-green-text);
+}
+
+.analytics-stack .is-wait,
+.analytics-swatch.is-wait {
+  background: var(--color-accent);
+}
+
+.analytics-stack .is-bad,
+.analytics-swatch.is-bad {
+  background: var(--color-status-red-text);
+}
+
+.analytics-legend {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.analytics-legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font: var(--text-dense);
+}
+
+.analytics-legend b {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.analytics-swatch {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+@media (max-width: 960px) {
+  .analytics-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 800px) {
+  .analytics-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .analytics-kpi {
+    padding: var(--space-4);
+  }
+
+  .analytics-kpi > b {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 420px) {
+  .analytics-kpis {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- Chart panels: title and view switch, the headline sparkline, grouped stacked bars ---- */
+
+.analytics-kpi-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.analytics-panel-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Chart or Table: two buttons that read as one switch. The pressed one is filled. */
+.analytics-view {
+  display: inline-flex;
+  flex: none;
+  padding: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+}
+
+.analytics-view button {
+  min-height: 28px;
+  padding: 3px 11px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: var(--text-caption);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 140ms var(--ease-out), color 140ms var(--ease-out);
+}
+
+.analytics-view button[aria-pressed="true"] {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-xs);
+}
+
+.analytics-view button:not([aria-pressed="true"]):hover {
+  color: var(--color-text-primary);
+}
+
+.analytics-stack-group {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.analytics-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* While the next year's figures load, the ones on screen stay (dimmed and untouchable) instead of
+   the page emptying out, so nothing jumps and the picker never moves. */
+.analytics-section {
+  transition: opacity 180ms var(--ease-out);
+}
+
+.analytics-section.is-stale {
+  opacity: 0.5;
+  pointer-events: none;
+}

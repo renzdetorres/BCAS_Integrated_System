@@ -138,7 +138,7 @@ public class DocumentRuleTests
 public class AdmissionStageTests
 {
     [Theory]
-    [InlineData("Submitted", 0)]
+    [InlineData("Submitted", 1)]
     [InlineData("UnderReview", 1)]
     [InlineData("PendingDocuments", 1)]
     [InlineData("DocumentsCompleted", 1)]
@@ -164,6 +164,17 @@ public class AdmissionStageTests
     {
         Assert.Equal(7, ApplicationTrackingConstants.AdmissionSteps.Count);
         Assert.Equal(7, ApplicationWorkflowSteps.BuildAdmissionSteps("ExamDone").Count);
+    }
+
+    [Fact]
+    public void A_submitted_application_has_finished_the_first_stage_and_waits_in_the_second()
+    {
+        var steps = ApplicationWorkflowSteps.BuildAdmissionSteps("Submitted");
+
+        Assert.Equal(1, steps.Count(s => s.IsComplete));
+        Assert.True(steps[0].IsComplete);
+        Assert.True(steps[1].IsCurrent);
+        Assert.Equal("Waiting for review", ApplicationWorkflowSteps.DescribeAdmission("Submitted")!.SubProcess);
     }
 
     [Fact]
@@ -235,8 +246,18 @@ public class ScholarshipTrackerTests
     [Fact]
     public void There_are_six_stages() => Assert.Equal(6, ScholarshipTracker.Build(Row("Submitted")).Steps.Count);
 
+    [Fact]
+    public void A_submitted_application_has_finished_the_first_stage_and_waits_in_the_second()
+    {
+        var steps = ScholarshipTracker.Build(Row("Submitted")).Steps;
+
+        Assert.Equal(1, steps.Count(s => s.IsComplete));
+        Assert.True(steps[0].IsComplete);
+        Assert.True(steps[1].IsCurrent);
+    }
+
     [Theory]
-    [InlineData("Submitted", 0)]
+    [InlineData("Submitted", 1)]
     [InlineData("Waitlisted", 0)]
     [InlineData("DocumentsVerified", 1)]
     [InlineData("EligibilityScreening", 1)]

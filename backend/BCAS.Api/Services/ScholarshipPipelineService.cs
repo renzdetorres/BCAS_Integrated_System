@@ -78,7 +78,8 @@ public static class ScholarshipTracker
             case "Waitlisted":
                 return (0, "On the waitlist", "The scholarship is full right now. Your application moves forward automatically if a slot opens.", null);
             case "Submitted":
-                return (0, "Application received", "Your application is received. Upload the scholarship documents so evaluation can begin.", "/documents");
+                // Submitting is the applicant's own step, so it is done: they wait in the evaluation stage (stage 2 of 6).
+                return (1, "Waiting for evaluation", "Your application is received. Upload the scholarship documents so evaluation can begin.", "/documents");
             case "DocumentsVerified":
                 return (1, "Documents verified", "Your documents are verified. The evaluator is checking your eligibility next.", null);
             case "EligibilityScreening":

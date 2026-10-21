@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   ALL_ROLES,
@@ -17,10 +17,9 @@ import { useSession } from "../context/SessionContext.jsx";
 import { useToast } from "../context/ToastContext.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import ConfirmDialog from "../components/ui/ConfirmDialog.jsx";
-import DataTable from "../components/ui/DataTable.jsx";
+import AccountsWorkspace from "../components/accounts/AccountsWorkspace.jsx";
 import Icon from "../components/ui/Icon.jsx";
 import Modal from "../components/ui/Modal.jsx";
-import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./ManageUsersPage.css";
 
 function roleLabel(role) {
@@ -29,10 +28,6 @@ function roleLabel(role) {
 
 function fullName(user) {
   return `${user.firstName} ${user.lastName}`;
-}
-
-function initials(user) {
-  return `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase();
 }
 
 const ROLE_HINTS = {
@@ -336,8 +331,8 @@ export default function ManageUsersPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   // The dashboard shortcut links here with ?new=1 to open the form straight away.
   const [adding, setAdding] = useState(searchParams.get("new") === "1");
-  const [roleFilter, setRoleFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const [bulk, setBulk] = useState(null); // { users, isActive } waiting for a confirmation or running
+  const [isBulkRunning, setIsBulkRunning] = useState(false);
 
   const loadUsers = useCallback(async () => {
     setIsLoading(true);
@@ -391,174 +386,53 @@ export default function ManageUsersPage() {
     }
   }
 
-  const rows = useMemo(
-    () =>
-      users.filter(
-        (u) =>
-          (!roleFilter || u.role === roleFilter) &&
-          (!statusFilter || (statusFilter === "active" ? u.isActive : !u.isActive)),
-      ),
-    [users, roleFilter, statusFilter],
-  );
-
-  const activeCount = users.filter((u) => u.isActive).length;
-  const deactivatedCount = users.length - activeCount;
-  const unassignedHeads = users.filter((u) => u.role === "AcademicHead" && !u.department).length;
-
-  const columns = [
-    {
-      key: "name",
-      header: "Account",
-      accessor: (row) => `${fullName(row)} ${row.email}`,
-      sortable: true,
-      render: (row) => (
-        <span className="account-cell">
-          <span className={`account-avatar${row.isActive ? "" : " account-avatar-off"}`} aria-hidden="true">
-            {initials(row)}
-          </span>
-          <span className="account-cell-text">
-            <span className="account-name">
-              {fullName(row)}
-              {row.userId === session.userId ? <span className="account-you">You</span> : null}
-            </span>
-            <span className="account-email" title={row.email}>{row.email}</span>
-          </span>
-        </span>
-      ),
-    },
-    {
-      key: "role",
-      header: "Role",
-      accessor: (row) => roleLabel(row.role),
-      sortable: true,
-      render: (row) => (
-        <span className="account-role">
-          <span className="account-role-chip">{roleLabel(row.role)}</span>
-          {row.isSuperAdmin ? <span className="account-super-tag">Full controls</span> : null}
-        </span>
-      ),
-    },
-    {
-      key: "department",
-      header: "Department",
-      accessor: (row) => row.department ?? "",
-      sortable: true,
-      render: (row) =>
-        row.role === "AcademicHead" && !row.department ? (
-          <span className="department-missing" title="This Academic Head sees no applicants until a department is assigned">
-            Not assigned
-          </span>
-        ) : (
-          row.department ?? <span className="ui-cell-muted">-</span>
-        ),
-    },
-    {
-      key: "status",
-      header: "Status",
-      accessor: (row) => (row.isActive ? "Active" : "Deactivated"),
-      sortable: true,
-      render: (row) => <StatusBadge status={row.isActive ? "Active" : "Inactive"} label={row.isActive ? "Active" : "Deactivated"} />,
-    },
-    {
-      key: "action",
-      header: "Actions",
-      align: "right",
-      searchable: false,
-      render: (row) => {
-        const isSelf = row.userId === session.userId;
-        const isPending = pendingUserId === row.userId;
-        return (
-          <span className={`account-actions${callerIsSuperAdmin ? " account-actions-3" : ""}`}>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setEditing(row)} aria-label={`Edit ${fullName(row)}`}>
-              <Icon name="settings" size={15} />
-              Edit
-            </button>
-            {row.isActive ? (
-              <button
-                type="button"
-                className="btn btn-warning btn-sm"
-                disabled={isSelf || isPending}
-                title={isSelf ? "You can't change your own account's status" : undefined}
-                aria-label={`Deactivate ${fullName(row)}`}
-                onClick={() => setDeactivateTarget(row)}
-              >
-                <Icon name="lock" size={15} />
-                {isPending ? "Saving..." : "Deactivate"}
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="btn btn-success btn-sm"
-                disabled={isPending}
-                aria-label={`Activate ${fullName(row)}`}
-                onClick={() => changeStatus(row, true)}
-              >
-                <Icon name="check" size={15} />
-                {isPending ? "Saving..." : "Activate"}
-              </button>
-            )}
-            {callerIsSuperAdmin ? (
-              <button
-                type="button"
-                className="btn btn-danger btn-sm"
-                disabled={isSelf || isDeleting}
-                title={isSelf ? "You can't delete your own account" : undefined}
-                onClick={() => setDeleteTarget(row)}
-                aria-label={`Delete ${fullName(row)}`}
-              >
-                <Icon name="trash" size={15} />
-                Delete
-              </button>
-            ) : null}
-          </span>
-        );
-      },
-    },
-  ];
+  /** Activates or deactivates several accounts one after another, then says how many worked. */
+  async function changeStatusMany(list, isActive) {
+    setIsBulkRunning(true);
+    let done = 0;
+    let firstProblem = null;
+    for (const user of list) {
+      try {
+        const updated = await setUserActiveStatus(user.userId, isActive);
+        setUsers((prev) => prev.map((u) => (u.userId === updated.userId ? updated : u)));
+        done += 1;
+      } catch (error) {
+        firstProblem ??= error instanceof ApiError ? error.message : "Something went wrong.";
+      }
+    }
+    setIsBulkRunning(false);
+    setBulk(null);
+    const verb = isActive ? "activated" : "deactivated";
+    if (firstProblem) showToast(`${done} of ${list.length} accounts were ${verb}. ${firstProblem}`, "error");
+    else showToast(`${done} ${done === 1 ? "account was" : "accounts were"} ${verb}.`);
+  }
 
   return (
-    <AppLayout>
-      <DataTable
-        title="Account Management"
-        subtitle="Every account in the system. Add a staff account, edit a name, email or role, or deactivate an account to block sign-in without deleting it or its records."
-        actions={
-          <button type="button" className="btn btn-primary" onClick={() => setAdding(true)}>
-            <Icon name="user-plus" size={16} />
-            Add staff account
-          </button>
-        }
-        summary={[
-          { label: "Accounts", value: users.length.toLocaleString(), active: !roleFilter && !statusFilter, onClick: () => { setRoleFilter(""); setStatusFilter(""); } },
-          { label: "Active", value: activeCount.toLocaleString(), tone: "green", active: statusFilter === "active", onClick: () => setStatusFilter(statusFilter === "active" ? "" : "active") },
-          { label: "Deactivated", value: deactivatedCount.toLocaleString(), tone: "amber", active: statusFilter === "inactive", onClick: () => setStatusFilter(statusFilter === "inactive" ? "" : "inactive") },
-          ...(unassignedHeads > 0 ? [{ label: "Academic Heads without a department", value: unassignedHeads.toLocaleString(), tone: "red" }] : []),
-        ]}
-        columns={columns}
-        rows={rows}
-        getRowKey={(row) => row.userId}
+    <AppLayout
+      title="Account Management"
+      actions={
+        <button type="button" className="btn btn-primary" onClick={() => setAdding(true)}>
+          <Icon name="user-plus" size={16} />
+          Add staff account
+        </button>
+      }
+    >
+      <p className="accounts-subtitle">
+        Every account in the system. Add a staff account, edit a name, email or role, or deactivate an account to block sign-in without deleting it or its records.
+      </p>
+
+      <AccountsWorkspace
+        users={users}
         isLoading={isLoading}
         errorMessage={errorMessage}
-        emptyMessage={users.length === 0 ? "No accounts yet." : "No accounts match these filters."}
-        filters={[
-          {
-            key: "role",
-            label: "All roles",
-            value: roleFilter,
-            onChange: setRoleFilter,
-            options: ALL_ROLES.map((role) => ({ value: role, label: roleLabel(role) })),
-          },
-          {
-            key: "status",
-            label: "Any status",
-            value: statusFilter,
-            onChange: setStatusFilter,
-            options: [
-              { value: "active", label: "Active" },
-              { value: "inactive", label: "Deactivated" },
-            ],
-          },
-        ]}
-        searchPlaceholder="Search by name or email"
+        currentUserId={session.userId}
+        canDelete={callerIsSuperAdmin}
+        pendingUserId={pendingUserId}
+        onEdit={setEditing}
+        onDeactivate={setDeactivateTarget}
+        onActivate={(user) => changeStatus(user, true)}
+        onDelete={setDeleteTarget}
+        onBulkStatus={(list, isActive) => (isActive ? changeStatusMany(list, true) : setBulk({ users: list, isActive: false }))}
       />
 
       {adding ? (
@@ -612,6 +486,16 @@ export default function ManageUsersPage() {
         isSubmitting={isDeleting}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <ConfirmDialog
+        open={Boolean(bulk)}
+        title={bulk ? `Deactivate ${bulk.users.length} ${bulk.users.length === 1 ? "account" : "accounts"}?` : ""}
+        message="None of them will be able to sign in. Their records stay, and you can reactivate them at any time."
+        confirmLabel="Deactivate"
+        isSubmitting={isBulkRunning}
+        onConfirm={() => changeStatusMany(bulk.users, false)}
+        onCancel={() => setBulk(null)}
       />
     </AppLayout>
   );

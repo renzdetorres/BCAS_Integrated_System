@@ -167,4 +167,38 @@ public class SupportStaffDocumentsController : ControllerBase
         var documents = await _documentsService.SearchArchivedAsync(search, documentType, cancellationToken);
         return Ok(documents);
     }
+
+    /// <summary>
+    /// Restores one archived document: it leaves the Document Archive and goes back to the verification
+    /// queue, with the status it had.
+    /// </summary>
+    [HttpPost("{documentId:guid}/restore")]
+    [ProducesResponseType(typeof(AdminDocumentListItemResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AdminDocumentListItemResponse>> RestoreArchived(Guid documentId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _documentsService.RestoreArchivedAsync(documentId, cancellationToken));
+        }
+        catch (DocumentNotArchivedException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Not archived",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
+        catch (DocumentNotFoundException ex)
+        {
+            return NotFound(new ProblemDetails
+            {
+                Title = "Document not found",
+                Detail = ex.Message,
+                Status = StatusCodes.Status404NotFound,
+            });
+        }
+    }
 }

@@ -31,7 +31,7 @@ const PAYMENT_STEP_LABELS = {
   Permit: "Exam permit available",
 };
 const PAYMENT_STEP_HINTS = {
-  Pay: "Scan the school's QR code with your banking or e-wallet app.",
+  Pay: "Pay with the method you chose, using the details shown.",
   Upload: "Attach a clear photo or screenshot of your receipt.",
   Verifying: "Staff are checking your receipt. You'll be notified.",
   Permit: "Choose your exam schedule to get your permit.",
@@ -67,6 +67,7 @@ export default function PaymentPage() {
   const [previewing, setPreviewing] = useState(false);
   const [previewingChosen, setPreviewingChosen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
+  const [chosenMethod, setChosenMethod] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -138,7 +139,7 @@ export default function PaymentPage() {
     setPercent(0);
     setErrorMessage(null);
     try {
-      setPayment(await submitPaymentProof(file, reference.trim(), setPercent));
+      setPayment(await submitPaymentProof(file, reference.trim(), setPercent, selected?.name));
       setFile(null);
       setReference("");
       showToast("Payment proof submitted for verification.");
@@ -148,6 +149,19 @@ export default function PaymentPage() {
       showToast(message, "error");
     } finally {
       setIsUploading(false);
+    }
+  }
+
+  // The method whose details are on screen: the one the applicant picked, else the one they paid with, else the first.
+  const methods = payment?.methods ?? [];
+  const selected = methods.find((method) => method.name === chosenMethod) ?? methods.find((method) => method.name === payment?.paymentType) ?? methods[0] ?? null;
+
+  async function copyNumber(number) {
+    try {
+      await navigator.clipboard.writeText(number);
+      showToast("Account number copied.");
+    } catch {
+      showToast("Couldn't copy it. Select the number and copy it by hand.", "error");
     }
   }
 
@@ -190,20 +204,45 @@ export default function PaymentPage() {
             <div className="payment-head">
               <div>
                 <h2>Pay the entrance exam fee</h2>
-                <p className="payment-sub">{payment.paymentType}</p>
+                <p className="payment-sub">{selected?.name ?? payment.paymentType}</p>
               </div>
               <StatusBadge status={payment.status} label={payment.status === "NotPaid" ? "Not paid yet" : undefined} />
             </div>
 
-            <dl className="payment-facts">
+            {methods.length > 1 ? (
+              <fieldset className="payment-methods" disabled={payment.status === "Verified"}>
+                <legend>Pay with</legend>
+                <div className="payment-method-grid">
+                  {methods.map((method) => (
+                    <label key={method.name} className={`payment-method${selected?.name === method.name ? " is-chosen" : ""}`}>
+                      <input type="radio" name="payment-method" value={method.name} checked={selected?.name === method.name} onChange={() => setChosenMethod(method.name)} />
+                      <span>{method.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            ) : null}
+
+            <dl className="payment-facts" key={selected?.name}>
               <div>
                 <dt>Amount to pay</dt>
                 <dd className="payment-amount">{peso(payment.amount)}</dd>
               </div>
-              {payment.accountName ? (
+              {selected?.accountName ? (
                 <div>
                   <dt>Pay to</dt>
-                  <dd>{payment.accountName}</dd>
+                  <dd>{selected.accountName}</dd>
+                </div>
+              ) : null}
+              {selected?.accountNumber ? (
+                <div>
+                  <dt>{selected.name} number</dt>
+                  <dd className="payment-number">
+                    <span>{selected.accountNumber}</span>
+                    <button type="button" className="documents-view-link" onClick={() => copyNumber(selected.accountNumber)}>
+                      Copy
+                    </button>
+                  </dd>
                 </div>
               ) : null}
               {payment.invoiceNumber ? (
@@ -214,19 +253,19 @@ export default function PaymentPage() {
               ) : null}
             </dl>
 
-            {payment.instructions ? <p className="payment-instructions">{payment.instructions}</p> : null}
+            {selected?.instructions ? <p className="payment-instructions">{selected.instructions}</p> : null}
 
-            {payment.qrImage ? (
-              <figure className="payment-qr">
-                <img src={payment.qrImage} alt="The school's QR payment code" width="220" height="220" />
+            {selected?.qrImage ? (
+              <figure className="payment-qr" key={selected.name}>
+                <img src={selected.qrImage} alt={`The school's QR payment code for ${selected.name}`} width="220" height="220" />
                 <figcaption>Scan with your banking or e-wallet app</figcaption>
                 <button type="button" className="btn btn-secondary btn-sm" onClick={() => setQrOpen(true)}>
                   View larger
                 </button>
               </figure>
-            ) : (
-              <p className="payment-qr-missing">The school hasn&apos;t published its QR code yet. Check back soon or contact the admissions office.</p>
-            )}
+            ) : !selected?.accountNumber && !selected?.instructions ? (
+              <p className="payment-qr-missing">The school hasn&apos;t published its payment details yet. Check back soon or contact the admissions office.</p>
+            ) : null}
           </Card>
 
           <Card>
@@ -269,6 +308,7 @@ export default function PaymentPage() {
             {payment.proofFileName && (
               <p className="payment-uploaded">
                 {payment.proofFileName}
+                <span> &middot; Paid with {payment.paymentType}</span>
                 {payment.referenceNumber ? <span> &middot; Ref. {payment.referenceNumber}</span> : null}{" "}
                 <button type="button" className="documents-view-link" onClick={() => setPreviewing(true)}>
                   View
@@ -284,6 +324,11 @@ export default function PaymentPage() {
 
             {payment.canPay && (
               <form onSubmit={handleSubmit} className="payment-form" noValidate aria-busy={isUploading}>
+                {selected ? (
+                  <p className="payment-with" role="status">
+                    You are paying with <strong>{selected.name}</strong>.
+                  </p>
+                ) : null}
                 <div className="form-row">
                   <label htmlFor="reference">Reference number (optional)</label>
                   <input
@@ -380,24 +425,24 @@ export default function PaymentPage() {
         />
       )}
 
-      {qrOpen && payment?.qrImage && (
+      {qrOpen && selected?.qrImage && (
         <Modal
           open
           onClose={() => setQrOpen(false)}
-          title="School QR code"
-          subtitle={payment.accountName ? `Pay to ${payment.accountName}` : undefined}
+          title={`${selected.name} QR code`}
+          subtitle={selected.accountName ? `Pay to ${selected.accountName}` : undefined}
           footer={
             <>
               <button type="button" className="btn btn-secondary" onClick={() => setQrOpen(false)}>
                 Close
               </button>
-              <a className="btn btn-primary" href={payment.qrImage} download="bcas-payment-qr.png">
+              <a className="btn btn-primary" href={selected.qrImage} download={`bcas-${selected.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-qr.png`}>
                 Download QR
               </a>
             </>
           }
         >
-          <img className="payment-qr-large" src={payment.qrImage} alt="The school's QR payment code, enlarged" />
+          <img className="payment-qr-large" src={selected.qrImage} alt={`The school's QR payment code for ${selected.name}, enlarged`} />
         </Modal>
       )}
     </AppLayout>

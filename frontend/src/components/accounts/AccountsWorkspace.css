@@ -1,0 +1,429 @@
+/* The workspace layout: a narrow list of account types on the left, one card on the right. Colours,
+   type, radii and the table itself come from the app's existing styles (the table reuses
+   .ui-datatable-*), so only the arrangement is new. */
+
+.accounts-shell {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+/* ---- Left: account types ---- */
+
+.accounts-nav {
+  position: sticky;
+  top: calc(var(--topbar-height) + var(--space-4));
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+}
+
+.accounts-nav ul {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.accounts-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: var(--text-body);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 140ms var(--ease-out), color 140ms var(--ease-out), transform 140ms var(--ease-out);
+}
+
+.accounts-nav-item:hover {
+  background: var(--color-primary-tint);
+  color: var(--color-text-primary);
+}
+
+.accounts-nav-item:active {
+  transform: scale(0.98);
+}
+
+.accounts-nav-item.is-active {
+  background: var(--color-primary-tint-strong);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.accounts-nav-count {
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-tertiary);
+}
+
+.accounts-nav-item.is-active .accounts-nav-count {
+  color: var(--color-primary);
+}
+
+/* ---- Right: the card ---- */
+
+.accounts-main {
+  min-width: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+}
+
+.accounts-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-5);
+  padding: 20px 24px;
+}
+
+.accounts-heading h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.accounts-heading p {
+  margin: 2px 0 0;
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+/* Search, Filter and Sort by always share one row: the search box gives up width first, and on
+   phones the two buttons shrink to their icons. */
+.accounts-tools {
+  display: flex;
+  flex: 1 1 380px;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.accounts-search {
+  position: relative;
+  display: flex;
+  flex: 1 1 140px;
+  align-items: center;
+  max-width: 300px;
+  min-width: 110px;
+}
+
+.accounts-search .ui-input {
+  padding-left: 36px;
+}
+
+.accounts-tools > .btn {
+  flex: none;
+  min-height: 40px;
+}
+
+/* A long sort name ("Email (Z to A)") is cut short rather than pushing the row wider. */
+.accounts-tools > .btn > span:not(.accounts-count-badge) {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accounts-count-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-white);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.accounts-attention {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--space-3);
+  margin: 0 24px var(--space-4);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-status-amber-bg);
+  color: var(--color-status-amber-text);
+  font: var(--text-dense);
+}
+
+.accounts-bulk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: 0 24px var(--space-4);
+  padding: 10px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-primary-tint);
+  animation: ui-fade-in 160ms var(--ease-out);
+}
+
+.accounts-bulk-count {
+  margin-right: auto;
+  font: var(--text-dense);
+  font-weight: 600;
+}
+
+/* ---- The table ---- */
+
+.accounts-table .accounts-check {
+  width: 44px;
+  padding-right: 0;
+}
+
+.accounts-table .accounts-more {
+  width: 52px;
+  text-align: right;
+}
+
+.accounts-table tr.is-selected td {
+  background: var(--color-primary-tint);
+}
+
+.accounts-table .account-name {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+}
+
+.accounts-table .account-email {
+  display: block;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.accounts-status {
+  color: var(--color-text-secondary);
+}
+
+.accounts-status.is-on {
+  color: var(--color-status-green-text);
+}
+
+/* The role pill, led by a dot the way the reference draws it. */
+.accounts-role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.accounts-role-chip::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+}
+
+.accounts-dept {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+.accounts-dept.department-missing {
+  color: var(--color-status-amber-text);
+  font-weight: 500;
+}
+
+.accounts-kebab {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background-color 140ms var(--ease-out), transform 140ms var(--ease-out);
+}
+
+.accounts-kebab svg {
+  stroke-width: 3.2;
+}
+
+.accounts-kebab:hover,
+.accounts-kebab[aria-expanded="true"] {
+  background: var(--color-primary-tint-strong);
+  color: var(--color-text-primary);
+}
+
+.accounts-kebab:active {
+  transform: scale(0.94);
+}
+
+/* ---- Menus (Filter, Sort by, and each row's actions) ---- */
+
+.accounts-menu {
+  position: fixed;
+  z-index: 60;
+  min-width: 220px;
+  max-width: min(320px, calc(100vw - 24px));
+  padding: 6px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-raised);
+  transform-origin: top right;
+  animation: ui-pop-in 140ms var(--ease-out);
+}
+
+.accounts-menu-title {
+  margin: 6px 10px 4px;
+  font: var(--text-caption);
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+}
+
+.accounts-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-primary);
+  font: var(--text-dense);
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms var(--ease-out);
+}
+
+.accounts-menu-item:hover:not(:disabled),
+.accounts-menu-item:focus-visible {
+  background: var(--color-primary-tint-strong);
+  outline: none;
+}
+
+.accounts-menu-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.accounts-menu-item.is-warn {
+  color: var(--color-status-amber-text);
+}
+
+.accounts-menu-item.is-good {
+  color: var(--color-status-green-text);
+}
+
+.accounts-menu-item.is-bad {
+  color: var(--color-status-red-text);
+}
+
+.accounts-menu-item.is-bad:hover:not(:disabled) {
+  background: var(--color-status-red-bg);
+}
+
+.accounts-menu-check {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 16px;
+  color: var(--color-primary);
+}
+
+.accounts-menu-clear {
+  margin-top: 4px;
+  border-top: 1px solid var(--color-border);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  color: var(--color-text-secondary);
+}
+
+.accounts-subtitle {
+  margin: 0;
+  max-width: 72ch;
+  font: var(--text-dense);
+  color: var(--color-text-secondary);
+}
+
+/* ---- Narrow screens: the type list becomes a row of chips above the card ---- */
+
+@media (max-width: 900px) {
+  .accounts-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .accounts-nav {
+    position: static;
+    padding: var(--space-2);
+    overflow-x: auto;
+  }
+
+  .accounts-nav ul {
+    display: flex;
+    gap: var(--space-2);
+  }
+
+  .accounts-nav-item {
+    width: auto;
+    white-space: nowrap;
+  }
+
+  .accounts-head,
+  .accounts-attention,
+  .accounts-bulk {
+    padding-inline: 16px;
+  }
+
+  .accounts-attention,
+  .accounts-bulk {
+    margin-inline: 16px;
+  }
+
+  .accounts-tools {
+    flex-basis: 100%;
+    justify-content: stretch;
+  }
+
+  .accounts-search {
+    max-width: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .accounts-tools > .btn > span:not(.accounts-count-badge) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+}

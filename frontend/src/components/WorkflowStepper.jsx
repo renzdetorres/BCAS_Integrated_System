@@ -42,6 +42,7 @@ export const ADMISSION_STEP_HINTS = {
 
 export const SCHOLARSHIP_STEP_HINTS = {
   Application: "We received your scholarship application.",
+  Evaluation: "The evaluator is checking your documents and eligibility.",
   ScholarshipExam: "Take the scholarship exam on your schedule.",
   ExamResult: "Your exam result will appear here.",
   InterviewEssay: "Prepare for your interview and essay.",

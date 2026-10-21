@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ApiError } from "../api/apiClient.js";
 import { useToast } from "../context/ToastContext.jsx";
 import { formatDateTime } from "../utils/format.js";
+import AnnouncementSuggestions from "./AnnouncementSuggestions.jsx";
 import AppLayout from "./layout/AppLayout.jsx";
 import ConfirmDialog from "./ui/ConfirmDialog.jsx";
 import DataTable, { RowAction } from "./ui/DataTable.jsx";
@@ -121,6 +122,13 @@ function CreateAnnouncementModal({ open, onClose, onCreated, createAnnouncement 
             {form.body.length.toLocaleString()} of {BODY_LIMIT.toLocaleString()} characters
           </p>
         </div>
+        <AnnouncementSuggestions
+          disabled={Boolean(form.title.trim() || form.body.trim()) || isSaving}
+          onPick={(suggestion) => {
+            setForm(suggestion);
+            setErrorMessage(null);
+          }}
+        />
       </form>
     </Modal>
   );

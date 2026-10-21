@@ -161,6 +161,20 @@ ORDER BY d.UpdatedAt DESC;";
         return items;
     }
 
+    public async Task<bool> RestoreArchivedAsync(Guid documentId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+UPDATE dbo.ApplicantDocuments
+SET IsArchived = 0, UpdatedAt = SYSUTCDATETIME()
+WHERE DocumentId = @DocumentId AND IsArchived = 1;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@DocumentId", SqlDbType.UniqueIdentifier) { Value = documentId });
+        return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
+    }
+
     private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private static AdminDocumentListItem MapItem(SqlDataReader reader)

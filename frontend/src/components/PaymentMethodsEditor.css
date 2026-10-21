@@ -1,0 +1,61 @@
+.pm-editor {
+  margin-top: var(--space-5);
+}
+
+.pm-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-5);
+  margin-bottom: var(--space-4);
+}
+
+.pm-head h4 {
+  margin: 0;
+  font: var(--text-h2);
+}
+
+.pm-head .form-note {
+  margin: 2px 0 0;
+  max-width: 60ch;
+}
+
+.pm-empty {
+  margin: 0;
+  padding: var(--space-5) var(--space-4);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  text-align: center;
+  font: var(--text-dense);
+  color: var(--color-text-secondary);
+}
+
+.pm-list {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pm-card {
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-subtle);
+  animation: ui-fade-in 200ms var(--ease-out);
+}
+
+.pm-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.pm-card-title {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}

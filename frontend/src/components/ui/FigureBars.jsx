@@ -6,20 +6,23 @@ import "./FigureBars.css";
  * Every bar carries its number above it and its name below it, so the value
  * never depends on bar height or colour alone.
  *
- * A figure may also carry `to` (the whole column becomes a link) and `note`
+ * A figure may carry `text` (what is written above the bar when it should differ from the number,
+ * such as "83%"), `max` on the component fixes the scale instead of using the tallest bar (100 for
+ * percentages), and a figure may carry `to` (the whole column becomes a link) and `note`
  * (a small line under the name, e.g. a percentage). With links the graph is a
  * real list of links rather than one described image, so they stay reachable.
  */
-export default function FigureBars({ figures, label = "Summary as a bar graph" }) {
-  const max = Math.max(...figures.map((figure) => figure.value), 1);
+export default function FigureBars({ figures, label = "Summary as a bar graph", max: fixedMax }) {
+  const max = fixedMax ?? Math.max(...figures.map((figure) => figure.value), 1);
   const linked = figures.some((figure) => figure.to);
-  const spoken = (figure) => `${figure.label} ${figure.value}${figure.note ? `, ${figure.note}` : ""}`;
+  const shown = (figure) => figure.text ?? figure.value.toLocaleString();
+  const spoken = (figure) => `${figure.label} ${shown(figure)}${figure.note ? `, ${figure.note}` : ""}`;
 
   const column = (figure) => (
     <>
       <div className="ui-figurebars-well">
         <div className="ui-figurebars-fill" style={{ height: `${Math.max((figure.value / max) * 100, figure.value > 0 ? 3 : 0)}%` }}>
-          <span className="ui-figurebars-value">{figure.value.toLocaleString()}</span>
+          <span className="ui-figurebars-value">{shown(figure)}</span>
           <span className="ui-figurebars-bar" />
         </div>
       </div>

@@ -1,8 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { DOCUMENT_TYPES, searchArchivedDocuments } from "../api/supportStaffDocumentsApi.js";
+import { DOCUMENT_TYPES, restoreArchivedDocument, searchArchivedDocuments } from "../api/supportStaffDocumentsApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
+import ConfirmDialog from "../components/ui/ConfirmDialog.jsx";
+import Icon from "../components/ui/Icon.jsx";
+import { useToast } from "../context/ToastContext.jsx";
 import DataTable from "../components/ui/DataTable.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./SupportStaffDocumentArchivePage.css";
@@ -24,6 +27,24 @@ export default function SupportStaffDocumentArchivePage() {
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
+  const { showToast } = useToast();
+  const [restoreTarget, setRestoreTarget] = useState(null);
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  async function confirmRestore() {
+    const target = restoreTarget;
+    setIsRestoring(true);
+    try {
+      await restoreArchivedDocument(target.documentId);
+      setDocuments((prev) => prev.filter((doc) => doc.documentId !== target.documentId));
+      showToast(`${target.documentType} from ${target.applicantName} was restored to the verification queue.`);
+    } catch (error) {
+      showToast(error instanceof ApiError ? error.message : "Failed to restore the document.", "error");
+    } finally {
+      setIsRestoring(false);
+      setRestoreTarget(null);
+    }
+  }
 
   const loadDocuments = useCallback(async (activeFilters) => {
     setIsLoading(true);
@@ -83,6 +104,23 @@ export default function SupportStaffDocumentArchivePage() {
       sortable: true,
       render: (row) => formatDateTime(row.updatedAt),
     },
+    {
+      key: "action",
+      header: "Action",
+      align: "right",
+      searchable: false,
+      render: (row) => (
+        <button
+          type="button"
+          className="btn btn-soft btn-sm"
+          onClick={() => setRestoreTarget(row)}
+          aria-label={`Restore ${row.documentType} from ${row.applicantName}`}
+        >
+          <Icon name="rotate-ccw" size={15} />
+          Restore
+        </button>
+      ),
+    },
   ];
 
   return (
@@ -121,6 +159,20 @@ export default function SupportStaffDocumentArchivePage() {
           ]}
         />
       </Card>
+
+      <ConfirmDialog
+        open={Boolean(restoreTarget)}
+        title="Restore this document?"
+        message={
+          restoreTarget
+            ? `${restoreTarget.documentType} from ${restoreTarget.applicantName} leaves the archive and goes back to the verification queue with the status it had (${restoreTarget.status}).`
+            : ""
+        }
+        confirmLabel="Restore"
+        isSubmitting={isRestoring}
+        onConfirm={confirmRestore}
+        onCancel={() => setRestoreTarget(null)}
+      />
     </AppLayout>
   );
 }

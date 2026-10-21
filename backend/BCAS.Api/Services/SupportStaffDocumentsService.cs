@@ -116,6 +116,21 @@ public class SupportStaffDocumentsService : ISupportStaffDocumentsService
         return items.Select(item => item.ToResponse()).ToList();
     }
 
+    public async Task<AdminDocumentListItemResponse> RestoreArchivedAsync(Guid documentId, CancellationToken cancellationToken = default)
+    {
+        _ = await _documentsRepository.GetByIdAsync(documentId, cancellationToken)
+            ?? throw new DocumentNotFoundException(documentId);
+
+        if (!await _documentsRepository.RestoreArchivedAsync(documentId, cancellationToken))
+        {
+            throw new DocumentNotArchivedException(documentId);
+        }
+
+        var restored = await _documentsRepository.GetByIdAsync(documentId, cancellationToken)
+            ?? throw new DocumentNotFoundException(documentId);
+        return restored.ToResponse();
+    }
+
     public async Task<BulkOperationResultResponse> BulkReviewDocumentsAsync(
         BulkReviewDocumentsRequest request,
         Guid reviewedByUserId,

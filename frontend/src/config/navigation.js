@@ -93,7 +93,10 @@ export const NAV_ITEMS_BY_ROLE = {
     },
     {
       section: "Reports",
-      items: [{ to: "/admin/reports", label: "Reports", icon: "chart" }],
+      items: [
+        { to: "/admin/analytics", label: "Analytics", icon: "trend-up" },
+        { to: "/admin/reports", label: "Reports", icon: "chart" },
+      ],
     },
     {
       section: "Administration",

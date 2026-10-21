@@ -36,7 +36,8 @@ public static class ApplicationWorkflowSteps
 
     private static readonly IReadOnlyDictionary<string, AdmissionStage> AdmissionStages = new Dictionary<string, AdmissionStage>(StringComparer.Ordinal)
     {
-        ["Submitted"] = new(0, "Requirements submitted", "Your application is received. Upload your required documents so the review can begin.", "/documents"),
+        // Submitting is the applicant's own step, so it is already done: they wait in the review stage (stage 2 of 7).
+        ["Submitted"] = new(1, "Waiting for review", "Your application is received. Upload your required documents so the review can begin.", "/documents"),
         ["UnderReview"] = new(1, "Application evaluation", "The registrar is reviewing your application and documents."),
         ["PendingDocuments"] = new(1, "Document verification", "Upload any missing or rejected documents so the review can continue.", "/documents"),
         ["DocumentsCompleted"] = new(1, "Document verification", "All your documents are in. Staff will verify them next."),

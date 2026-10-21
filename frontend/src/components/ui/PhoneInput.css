@@ -1,0 +1,63 @@
+/* One field that looks like the app's other inputs, with a fixed "+63" in front. The border, focus ring and error
+   colour are on the wrapper; the real input inside is borderless so the two read as one control. */
+
+.phone-input {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid var(--field-border, #c5ccc1);
+  border-radius: 10px;
+  background: var(--field-bg, #fbfcfa);
+  box-shadow: inset 0 1px 2px rgba(18, 48, 31, 0.06);
+  transition: border-color var(--motion-fast), box-shadow var(--motion-fast), background-color var(--motion-fast);
+  overflow: hidden;
+}
+
+.phone-input:hover:not(:focus-within) {
+  border-color: var(--field-border-hover, #929d8f);
+  background: var(--color-white);
+}
+
+.phone-input:focus-within {
+  border-color: var(--color-primary-light);
+  background: var(--color-white);
+  box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
+}
+
+.phone-input.is-invalid {
+  border-color: var(--color-status-red-text);
+  box-shadow: 0 0 0 3px rgba(180, 40, 40, 0.12);
+}
+
+.phone-input-prefix {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  padding: 0 12px;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface-subtle);
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+/* Two classes beat the form-wide input rules, so the inner input stays borderless. */
+.phone-input .phone-input-field {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.phone-input .phone-input-field:focus {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+}

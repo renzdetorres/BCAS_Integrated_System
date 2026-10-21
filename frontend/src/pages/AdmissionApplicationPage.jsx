@@ -12,10 +12,12 @@ import { ApiError } from "../api/apiClient.js";
 import { ACADEMIC_CATEGORIES, SENIOR_HIGH_STRANDS, ageProblem, categoryFor } from "../config/academicStructure.js";
 import { programOptionLabel, programsFor } from "../config/departments.js";
 import { REQUIRED_NOTE, acceptFor, fileProblem, formatsLabel, requiredDocumentsFor } from "../config/requiredDocuments.js";
-import { PHONE_HINT, PHONE_MAX_LENGTH, PHONE_PATTERN, PHONE_PLACEHOLDER, cleanPhoneInput, isValidPhone } from "../utils/phone.js";
+import { PHONE_HINT, cleanPhoneInput, isValidPhone } from "../utils/phone.js";
 import { formatDate, formatFileSize } from "../utils/format.js";
+import { formFromApplication } from "../utils/admissionForm.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
+import PhoneInput from "../components/ui/PhoneInput.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import UploadProgress from "../components/ui/UploadProgress.jsx";
 import FilePreviewModal from "../components/FilePreviewModal.jsx";
@@ -93,30 +95,6 @@ function clearDraft() {
   }
 }
 
-/** A submitted application, flattened back into the shape the form edits. */
-function formFromApplication(application) {
-  const f = application.form ?? {};
-  const member = (m) => ({ name: m?.name ?? "", occupation: m?.occupation ?? "", phone: cleanPhoneInput(m?.phone) });
-  return {
-    applicationType: application.applicationType,
-    department: application.department ?? "",
-    courseAppliedFor: application.courseAppliedFor,
-    yearLevel: f.yearLevel ?? "",
-    academicTerm: f.academicTerm ?? "",
-    previousSchool: application.previousSchool,
-    previousSchoolAddress: f.previousSchoolAddress ?? "",
-    sex: f.sex ?? "",
-    placeOfBirth: f.placeOfBirth ?? "",
-    specialSkills: f.specialSkills ?? "",
-    father: member(f.father),
-    mother: member(f.mother),
-    motherMaidenName: f.motherMaidenName ?? "",
-    guardian: member(f.guardian),
-    studentSignature: f.studentSignature ?? "",
-    guardianSignature: f.guardianSignature ?? "",
-  };
-}
-
 // The one thing wrong with the stage the applicant just tried to leave: { message, field }.
 // Field reads it so the matching input gets a red border and its message right underneath.
 const FormIssue = createContext(null);
@@ -125,7 +103,7 @@ function Field({ id, label, hint, required = false, children }) {
   const issue = useContext(FormIssue);
   const error = issue?.field === id ? issue.message : null;
   const control =
-    error && isValidElement(children) && typeof children.type === "string"
+    error && isValidElement(children) && (typeof children.type === "string" || children.type.isFormControl)
       ? cloneElement(children, { "aria-invalid": "true", "aria-describedby": `${id}-error` })
       : children;
 
@@ -570,21 +548,12 @@ export default function AdmissionApplicationPage() {
                           <input id={`${key}-occupation`} type="text" maxLength={100} value={form[key].occupation} onChange={(e) => handleMemberChange(key, "occupation", e.target.value)} />
                         </Field>
                         <Field id={`${key}-phone`} label="Mobile number">
-                          <input
-                            id={`${key}-phone`}
-                            type="tel"
-                            inputMode="tel"
-                            maxLength={PHONE_MAX_LENGTH}
-                            pattern={PHONE_PATTERN}
-                            placeholder={PHONE_PLACEHOLDER}
-                            value={form[key].phone}
-                            onChange={(e) => handleMemberChange(key, "phone", e.target.value)}
-                          />
+                          <PhoneInput id={`${key}-phone`} value={form[key].phone} onChange={(next) => handleMemberChange(key, "phone", next)} />
                         </Field>
                       </div>
                     </fieldset>
                   ))}
-                  <p className="form-note">Give the name and mobile number of at least one of them. Mobile numbers are {PHONE_HINT}.</p>
+                  <p className="form-note">Give the name and mobile number of at least one of them. Type the number after the fixed +63: {PHONE_HINT}.</p>
                 </div>
               )}
 

@@ -6,6 +6,7 @@ import { ApiError } from "../api/apiClient.js";
 import { buildPdf, downloadBlob } from "../utils/simplePdf.js";
 import { academicDetails } from "../utils/academicDetails.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
+import ApplicationDetailsPreview from "../components/ApplicationDetailsPreview.jsx";
 import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import BcasSeal from "../components/ui/BcasSeal.jsx";
@@ -37,6 +38,7 @@ export default function ApplicationReceiptPage() {
   const [admission, setAdmission] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [previewing, setPreviewing] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,8 +67,8 @@ export default function ApplicationReceiptPage() {
   // The category, program or strand, year level, term and academic year this application is for.
   const levelDetails = admission ? academicDetails(admission) : [];
 
-  // The receipt as a PDF file the applicant can keep.
-  function downloadPdf() {
+  // The receipt as a PDF file: the same one is downloaded and shown in the preview.
+  function buildReceipt() {
     const rows = [
       ["Application number", applicationNumber ?? application.applicationId],
       ["Category", application.category],
@@ -90,7 +92,12 @@ export default function ApplicationReceiptPage() {
       rows,
       footer: "Keep this receipt. Your application number identifies your application on every BCAS screen and email.",
     });
-    downloadBlob(blob, `BCAS-receipt-${applicationNumber ?? application.applicationId}.pdf`);
+    return { blob, fileName: `BCAS-receipt-${applicationNumber ?? application.applicationId}.pdf` };
+  }
+
+  function downloadPdf() {
+    const { blob, fileName } = buildReceipt();
+    downloadBlob(blob, fileName);
   }
 
   // "Download" on the application page opens this page with ?download=1.
@@ -197,12 +204,19 @@ export default function ApplicationReceiptPage() {
             <button type="button" className="btn btn-primary" onClick={downloadPdf}>
               Download PDF
             </button>
+            <button type="button" className="btn btn-secondary" onClick={() => setPreviewing(true)}>
+              Preview
+            </button>
             <button type="button" className="btn btn-secondary" onClick={() => window.print()}>
               Print
             </button>
           </div>
         </Card>
       )}
+
+      {previewing && application ? (
+        <ApplicationDetailsPreview application={application} admission={admission} applicationNumber={applicationNumber} onClose={() => setPreviewing(false)} />
+      ) : null}
     </AppLayout>
   );
 }

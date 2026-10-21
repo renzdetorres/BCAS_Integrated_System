@@ -50,6 +50,7 @@ import AdminArchivePage from "./pages/AdminArchivePage.jsx";
 import AdminRecordsPage from "./pages/AdminRecordsPage.jsx";
 import AdminAnnouncementsPage from "./pages/AdminAnnouncementsPage.jsx";
 import AdminReportsPage from "./pages/AdminReportsPage.jsx";
+import AdminAnalyticsPage from "./pages/AdminAnalyticsPage.jsx";
 import ScholarshipContractPage from "./pages/ScholarshipContractPage.jsx";
 import AdminExamSchedulesPage from "./pages/AdminExamSchedulesPage.jsx";
 import AdminExamPermitsPage from "./pages/AdminExamPermitsPage.jsx";
@@ -87,6 +88,7 @@ export default function App() {
                 <Route path="/admin/archive" element={<AdminArchivePage />} />
                 <Route path="/admin/announcements" element={<AdminAnnouncementsPage />} />
                 <Route path="/admin/reports" element={<AdminReportsPage />} />
+                <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
                 <Route path="/admin/reports/scholarship/:applicationId/contract" element={<ScholarshipContractPage />} />
                 <Route path="/admin/payments" element={<StaffPaymentsPage />} />
                 <Route path="/admin/scholarship-pipeline" element={<ScholarshipPipelinePage />} />

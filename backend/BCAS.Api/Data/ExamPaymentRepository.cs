@@ -19,6 +19,7 @@ public interface IExamPaymentRepository
         Guid applicationId,
         Guid userId,
         decimal amount,
+        string paymentType,
         string? referenceNumber,
         string fileName,
         string contentType,
@@ -87,6 +88,7 @@ ORDER BY CreatedAt DESC;";
         Guid applicationId,
         Guid userId,
         decimal amount,
+        string paymentType,
         string? referenceNumber,
         string fileName,
         string contentType,
@@ -100,19 +102,20 @@ MERGE dbo.ExamPayments WITH (HOLDLOCK) AS target
 USING (SELECT @ApplicationId AS ApplicationId) AS source
 ON target.ApplicationId = source.ApplicationId
 WHEN MATCHED AND target.Status <> N'Verified' THEN
-    UPDATE SET Amount = @Amount, ReferenceNumber = @ReferenceNumber, ProofFileName = @FileName,
+    UPDATE SET Amount = @Amount, PaymentType = @PaymentType, ReferenceNumber = @ReferenceNumber, ProofFileName = @FileName,
                ProofContentType = @ContentType, ProofFileData = @FileData, ProofUploadedAt = SYSUTCDATETIME(),
                Status = N'Pending', RejectionReason = NULL, InvoiceNumber = NULL,
                VerifiedByUserId = NULL, VerifiedAt = NULL, UpdatedAt = SYSUTCDATETIME()
 WHEN NOT MATCHED THEN
-    INSERT (ApplicationId, UserId, Amount, ReferenceNumber, ProofFileName, ProofContentType, ProofFileData)
-    VALUES (@ApplicationId, @UserId, @Amount, @ReferenceNumber, @FileName, @ContentType, @FileData);";
+    INSERT (ApplicationId, UserId, Amount, PaymentType, ReferenceNumber, ProofFileName, ProofContentType, ProofFileData)
+    VALUES (@ApplicationId, @UserId, @Amount, @PaymentType, @ReferenceNumber, @FileName, @ContentType, @FileData);";
 
         await using (var command = new SqlCommand(sql, connection))
         {
             command.Parameters.Add(new SqlParameter("@ApplicationId", SqlDbType.UniqueIdentifier) { Value = applicationId });
             command.Parameters.Add(new SqlParameter("@UserId", SqlDbType.UniqueIdentifier) { Value = userId });
             command.Parameters.Add(new SqlParameter("@Amount", SqlDbType.Decimal) { Precision = 10, Scale = 2, Value = amount });
+            command.Parameters.Add(new SqlParameter("@PaymentType", SqlDbType.NVarChar, 30) { Value = paymentType });
             command.Parameters.Add(new SqlParameter("@ReferenceNumber", SqlDbType.NVarChar, 60) { Value = (object?)referenceNumber ?? DBNull.Value });
             command.Parameters.Add(new SqlParameter("@FileName", SqlDbType.NVarChar, 260) { Value = fileName });
             command.Parameters.Add(new SqlParameter("@ContentType", SqlDbType.NVarChar, 100) { Value = contentType });

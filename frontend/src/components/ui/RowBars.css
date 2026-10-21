@@ -1,0 +1,70 @@
+.ui-rowbars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ui-rowbars-row {
+  display: grid;
+  grid-template-columns: minmax(96px, 160px) minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ui-rowbars-row:last-child {
+  border-bottom: 0;
+}
+
+.ui-rowbars-name {
+  font: var(--text-dense);
+}
+
+.ui-rowbars-value {
+  font: var(--text-dense);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ui-rowbars-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+}
+
+.ui-rowbars-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-primary-light);
+  transform-origin: left;
+  animation: ui-rowbars-grow 600ms var(--ease-out) backwards;
+}
+
+/* The row worth a look (the slowest step, the document sent back most) is the gold one. */
+.is-highlight .ui-rowbars-fill {
+  background: var(--color-accent);
+}
+
+@keyframes ui-rowbars-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (max-width: 640px) {
+  .ui-rowbars-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .ui-rowbars-track {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+}

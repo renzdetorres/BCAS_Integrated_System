@@ -1,4 +1,5 @@
-import { PHONE_ERROR, PHONE_HINT, PHONE_MAX_LENGTH, PHONE_PATTERN, PHONE_PLACEHOLDER, cleanPhoneInput, isValidPhone } from "../utils/phone.js";
+import { PHONE_ERROR, PHONE_HINT, cleanPhoneInput, isValidPhone } from "../utils/phone.js";
+import PhoneInput from "../components/ui/PhoneInput.jsx";
 import { useEffect, useRef, useState } from "react";
 import { getMyProfile, saveMyProfile } from "../api/profileApi.js";
 import { ApiError } from "../api/apiClient.js";
@@ -239,18 +240,12 @@ export default function ApplicantProfilePage() {
 
             <div className="form-row">
               <label htmlFor="contactNumber">Contact number</label>
-              <input placeholder={PHONE_PLACEHOLDER}
+              <PhoneInput
                 id="contactNumber"
                 name="contactNumber"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                maxLength={PHONE_MAX_LENGTH}
-                pattern={PHONE_PATTERN}
-                title={PHONE_HINT}
                 required
                 value={form.contactNumber}
-                onChange={(event) => changeField("contactNumber", cleanPhoneInput(event.target.value))}
+                onChange={(next) => changeField("contactNumber", next)}
                 {...errorProps("contactNumber", "contactNumber-hint")}
               />
               {fieldError("contactNumber")}

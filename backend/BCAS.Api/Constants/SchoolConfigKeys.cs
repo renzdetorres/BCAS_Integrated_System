@@ -26,6 +26,9 @@ public static class SchoolConfigKeys
     /// <summary>The school's QR payment code, stored as an image data URL.</summary>
     public const string PaymentQrImage = "Payment.QrImage";
 
+    /// <summary>The payment methods applicants can choose from, as a JSON list (see PaymentMethods). Blank until an admin sets some up.</summary>
+    public const string PaymentMethods = "Payment.Methods";
+
     /// <summary>How many items the entrance exam has: the highest raw score an applicant can get.</summary>
     public const string ExamTotalItems = "Exam.TotalItems";
 
@@ -52,6 +55,7 @@ public static class SchoolConfigKeys
         [PaymentAccountName] = "",
         [PaymentInstructions] = "Scan the QR code with your banking or e-wallet app, pay the exact exam fee, then upload a screenshot or photo of your receipt.",
         [PaymentQrImage] = "",
+        [PaymentMethods] = "",
         [ExamTotalItems] = "100",
         [ExamPassingScore] = "75",
         [ExamMaxRetakes] = "2",
