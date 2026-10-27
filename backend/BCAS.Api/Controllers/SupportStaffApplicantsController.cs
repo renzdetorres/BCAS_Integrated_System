@@ -5,8 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BCAS.Api.Controllers;
 
-/// <summary>Support Staff's Applicant Records search (BISAASS-53).</summary>
-[Authorize(Roles = "SupportStaff")]
+/// <summary>Applicant Records search (BISAASS-53): Support Staff's page, which the Admin holds too.</summary>
+[Authorize(Roles = "SupportStaff,Admin")]
 [ApiController]
 [Route("api/support-staff/applicants")]
 public class SupportStaffApplicantsController : ControllerBase

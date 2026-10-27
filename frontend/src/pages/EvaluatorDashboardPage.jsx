@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getEvaluatorDashboard } from "../api/evaluatorDashboardApi.js";
 import { ApiError } from "../api/apiClient.js";
+import { useSession } from "../context/SessionContext.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card, { StatCard } from "../components/ui/Card.jsx";
 import DataTable from "../components/ui/DataTable.jsx";
@@ -25,6 +26,9 @@ function daysSince(isoDateTime) {
 
 export default function EvaluatorDashboardPage() {
   const navigate = useNavigate();
+  const { session } = useSession();
+  // The Admin works the same queue from its own routes.
+  const basePath = session.role === "Admin" ? "/admin" : "/evaluator";
   const [dashboard, setDashboard] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -106,7 +110,7 @@ export default function EvaluatorDashboardPage() {
               } waiting on you. Oldest: ${dashboard.queue[0].applicantName}, waiting ${daysSince(
                 dashboard.queue[0].submittedAt
               )} day${daysSince(dashboard.queue[0].submittedAt) === 1 ? "" : "s"}.`}
-              to={`/evaluator/scholarship-applications/${dashboard.queue[0].applicationId}`}
+              to={`${basePath}/scholarship-applications/${dashboard.queue[0].applicationId}`}
               cta="Review Now"
             />
           )}
@@ -138,7 +142,7 @@ export default function EvaluatorDashboardPage() {
               rows={dashboard.queue}
               getRowKey={(row) => row.applicationId}
               emptyMessage="No scholarship applications awaiting evaluation."
-              onRowClick={(row) => navigate(`/evaluator/scholarship-applications/${row.applicationId}`)}
+              onRowClick={(row) => navigate(`${basePath}/scholarship-applications/${row.applicationId}`)}
             />
           </Card>
 
@@ -153,7 +157,7 @@ export default function EvaluatorDashboardPage() {
                     <button
                       type="button"
                       className="evaluator-recent-row"
-                      onClick={() => navigate(`/evaluator/scholarship-applications/${application.applicationId}`)}
+                      onClick={() => navigate(`${basePath}/scholarship-applications/${application.applicationId}`)}
                     >
                       <span className="evaluator-recent-name">{application.applicantName}</span>
                       <span className="evaluator-recent-scholarship">{application.scholarshipName}</span>

@@ -11,7 +11,7 @@ namespace BCAS.Api.Controllers;
 /// management stays wherever an Admin-facing catalog endpoint eventually
 /// lands.
 /// </summary>
-[Authorize(Roles = "Evaluator")]
+[Authorize(Roles = "Evaluator,Admin")]
 [ApiController]
 [Route("api/evaluator/scholarship-slots")]
 public class EvaluatorScholarshipSlotsController : ControllerBase

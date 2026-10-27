@@ -13,13 +13,17 @@ public class ApplicantDocumentService : IApplicantDocumentService
     private readonly IAdmissionApplicationRepository _admissionApplicationRepository;
     private readonly IScholarshipApplicationRepository _scholarshipApplicationRepository;
     private readonly ILogger<ApplicantDocumentService> _logger;
+    private readonly Lazy<IAdmissionFlowService> _flow;
 
     public ApplicantDocumentService(
         IApplicantDocumentRepository documentRepository,
         IAdmissionApplicationRepository admissionApplicationRepository,
         IScholarshipApplicationRepository scholarshipApplicationRepository,
-        ILogger<ApplicantDocumentService> logger)
+        ILogger<ApplicantDocumentService> logger,
+        IServiceProvider services)
     {
+        // Resolved on first use: the flow service reads this service's checklist.
+        _flow = new Lazy<IAdmissionFlowService>(() => services.GetRequiredService<IAdmissionFlowService>());
         _documentRepository = documentRepository;
         _admissionApplicationRepository = admissionApplicationRepository;
         _scholarshipApplicationRepository = scholarshipApplicationRepository;
@@ -103,6 +107,9 @@ public class ApplicantDocumentService : IApplicantDocumentService
         var document = await _documentRepository.UpsertAsync(userId, documentType, fileName, contentType, fileBytes, cancellationToken);
 
         _logger.LogInformation("Document {DocumentType} uploaded by {UserId}", documentType, userId);
+
+        // The application moves to review (and to "documents completed") on its own.
+        await _flow.Value.AfterDocumentUploadedAsync(userId, cancellationToken);
 
         return document.ToResponse();
     }

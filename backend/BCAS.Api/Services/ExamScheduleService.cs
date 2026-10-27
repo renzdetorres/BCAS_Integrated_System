@@ -14,6 +14,7 @@ public class ExamScheduleService : IExamScheduleService
     private readonly IExamPaymentService _paymentService;
     private readonly IAdmissionApplicationRepository _applicationRepository;
     private readonly IAdminApplicationsService _applicationsService;
+    private readonly IAdmissionFlowService _flow;
 
     public ExamScheduleService(
         IExamScheduleRepository examScheduleRepository,
@@ -21,8 +22,10 @@ public class ExamScheduleService : IExamScheduleService
         INotificationDispatchService notificationDispatchService,
         IExamPaymentService paymentService,
         IAdmissionApplicationRepository applicationRepository,
-        IAdminApplicationsService applicationsService)
+        IAdminApplicationsService applicationsService,
+        IAdmissionFlowService flow)
     {
+        _flow = flow;
         _paymentService = paymentService;
         _applicationRepository = applicationRepository;
         _applicationsService = applicationsService;
@@ -80,6 +83,13 @@ public class ExamScheduleService : IExamScheduleService
         {
             await _notificationDispatchService.NotifyExamScheduleAsync(
                 userId, applicant.Email, applicant.FirstName, selection.ExamDate, selection.ExamTime, examType, cancellationToken);
+        }
+
+        // With the fee already verified, booking the slot is what releases the exam permit.
+        if (examType == ExamTypes.Entrance)
+        {
+            await _flow.TryReleasePermitAsync(userId, cancellationToken);
+            selection = await _examScheduleRepository.GetSelectionByUserIdAsync(userId, cancellationToken) ?? selection;
         }
 
         return selection.ToResponse();

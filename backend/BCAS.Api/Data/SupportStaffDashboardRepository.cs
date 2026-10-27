@@ -36,6 +36,25 @@ FROM dbo.ApplicantDocuments;";
             }
         }
 
+        // Payments are what Support Staff verify (documents are the Evaluator's job).
+        const string paymentCountsSql = @"
+SELECT
+    SUM(CASE WHEN Status = N'Pending' THEN 1 ELSE 0 END) AS PendingPaymentsCount,
+    SUM(CASE WHEN Status = N'Verified' AND CAST(VerifiedAt AS DATE) = CAST(SYSUTCDATETIME() AS DATE) THEN 1 ELSE 0 END) AS VerifiedPaymentsTodayCount,
+    SUM(CASE WHEN Status = N'Rejected' THEN 1 ELSE 0 END) AS RejectedPaymentsCount
+FROM dbo.ExamPayments;";
+
+        await using (var command = new SqlCommand(paymentCountsSql, connection))
+        await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
+        {
+            if (await reader.ReadAsync(cancellationToken))
+            {
+                response.PendingPaymentsCount = GetIntOrZero(reader, "PendingPaymentsCount");
+                response.VerifiedPaymentsTodayCount = GetIntOrZero(reader, "VerifiedPaymentsTodayCount");
+                response.RejectedPaymentsCount = GetIntOrZero(reader, "RejectedPaymentsCount");
+            }
+        }
+
         const string totalApplicantsSql = @"
 SELECT COUNT(*)
 FROM dbo.Users u

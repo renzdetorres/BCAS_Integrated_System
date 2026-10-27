@@ -104,6 +104,7 @@ public class SchoolConfigService : ISchoolConfigService
             SchoolConfigKeys.AcademicYearLevels => AcademicCatalog.ValidateYearLevels(value),
             SchoolConfigKeys.AcademicPrograms => AcademicCatalog.ValidatePrograms(value),
             SchoolConfigKeys.PaymentMethods => PaymentMethods.Normalize(value),
+            SchoolConfigKeys.AdmissionLevelSlots => AdmissionLevelSlots.Normalize(value),
             _ => value,
         };
     }

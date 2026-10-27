@@ -111,7 +111,7 @@ export default function ApplicantDashboardPage() {
       text: needsAttentionDocs
         ? "One or more documents need your attention before they can be verified."
         : `You still have ${missingDocs.length} document${missingDocs.length === 1 ? "" : "s"} to submit.`,
-      to: "/documents",
+      to: "/application-tracking",
       cta: "Manage Documents",
     };
   } else if (admission.nextActionPath === "/payment") {

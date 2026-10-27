@@ -56,7 +56,7 @@ public interface IExamPaymentRepository
 public class ExamPaymentRepository : IExamPaymentRepository
 {
     private const string Columns =
-        "PaymentId, ApplicationId, UserId, PaymentType, Amount, ReferenceNumber, ProofFileName, ProofContentType, ProofUploadedAt, Status, RejectionReason, InvoiceNumber, VerifiedAt";
+        "PaymentId, ApplicationId, UserId, PaymentType, Amount, ReferenceNumber, ProofFileName, ProofContentType, ProofUploadedAt, Status, RejectionReason, InvoiceNumber, VerifiedByUserId, VerifiedAt";
 
     private readonly IDbConnectionFactory _connectionFactory;
 
@@ -264,6 +264,7 @@ LEFT JOIN dbo.Users v ON v.UserId = p.VerifiedByUserId";
         Status = reader.GetString(reader.GetOrdinal("Status")),
         RejectionReason = Text(reader, "RejectionReason"),
         InvoiceNumber = Text(reader, "InvoiceNumber"),
+        VerifiedByUserId = reader.IsDBNull(reader.GetOrdinal("VerifiedByUserId")) ? null : reader.GetGuid(reader.GetOrdinal("VerifiedByUserId")),
         VerifiedAt = reader.IsDBNull(reader.GetOrdinal("VerifiedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("VerifiedAt")),
     };
 

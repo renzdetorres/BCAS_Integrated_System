@@ -8,6 +8,7 @@ import {
 import { uploadDocument } from "../api/documentApi.js";
 import { getMyProfile } from "../api/profileApi.js";
 import { getAdmissionConfig } from "../api/schoolConfigApi.js";
+import { getAdmissionSlotAvailability } from "../api/admissionSlotsApi.js";
 import { ApiError } from "../api/apiClient.js";
 import { ACADEMIC_CATEGORIES, SENIOR_HIGH_STRANDS, ageProblem, categoryFor } from "../config/academicStructure.js";
 import { programOptionLabel, programsFor } from "../config/departments.js";
@@ -17,6 +18,7 @@ import { formatDate, formatFileSize } from "../utils/format.js";
 import { formFromApplication } from "../utils/admissionForm.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
+import Notice from "../components/ui/Notice.jsx";
 import PhoneInput from "../components/ui/PhoneInput.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import UploadProgress from "../components/ui/UploadProgress.jsx";
@@ -143,6 +145,8 @@ export default function AdmissionApplicationPage() {
   const navigate = useNavigate();
   const headingRef = useRef(null);
   const [applications, setApplications] = useState([]);
+  // Which levels have no admission slot left; an applicant may still submit, and is told so.
+  const [slotAvailability, setSlotAvailability] = useState([]);
   const [profile, setProfile] = useState(null);
   const [config, setConfig] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -198,6 +202,20 @@ export default function AdmissionApplicationPage() {
   useEffect(() => {
     headingRef.current?.focus({ preventScroll: true });
   }, [step]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getAdmissionSlotAvailability()
+      .then((data) => {
+        if (!cancelled) setSlotAvailability(data);
+      })
+      .catch(() => {
+        // Slots are only a heads-up here; the server decides when the application is submitted.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function set(name, value) {
     setIssue(null);
@@ -261,6 +279,7 @@ export default function AdmissionApplicationPage() {
   }
 
   const category = categoryFor(form.department);
+  const fullLevel = slotAvailability.find((slot) => slot.isFull && slot.category === form.department && slot.level === form.yearLevel);
   const programs = programsFor(form.department);
   const requiredDocuments = requiredDocumentsFor(form.applicationType || "NewStudent", form.department);
   const birthDate = profile?.birthDate ?? null;
@@ -360,11 +379,14 @@ export default function AdmissionApplicationPage() {
         }
       }
 
+      // A full level still takes the application; the applicant is told straight away (and gets a notification).
+      if (created.slotReached) showToast(created.slotMessage, "error");
+
       if (failed.length > 0) {
-        showToast("Application submitted. Some documents did not upload; add them on the Documents page.", "error");
-        navigate("/documents", { state: { uploadFailures: failed } });
+        showToast("Application submitted. Some documents did not upload; add them on the My Application page.", "error");
+        navigate("/application-tracking", { state: { uploadFailures: failed } });
       } else {
-        showToast("Application submitted successfully.");
+        if (!created.slotReached) showToast("Application submitted successfully.");
         navigate(`/applications/receipt/${created.applicationId}`);
       }
     } catch (error) {
@@ -398,7 +420,7 @@ export default function AdmissionApplicationPage() {
             </div>
             <p>
               Your application has been submitted and can no longer be edited or sent again. Follow its progress under{" "}
-              <Link to="/application-tracking">Application Tracking</Link>, check your <Link to="/documents">documents</Link>, and
+              <Link to="/application-tracking">Application Tracking</Link>, check your <Link to="/application-tracking">documents</Link>, and
               watch <Link to="/announcements">Announcements</Link> for your exam schedule.
             </p>
           </div>
@@ -639,6 +661,11 @@ export default function AdmissionApplicationPage() {
                         <p className="form-error" role="alert">
                           {tooYoung}
                         </p>
+                      )}
+                      {fullLevel && (
+                        <Notice tone="warning" title="Admission slot reached">
+                          {fullLevel.message} You can still submit your application, and the registrar&apos;s office will contact you about the next step.
+                        </Notice>
                       )}
                       {config && <p className="form-note">Applying for academic year {config.academicYear}.</p>}
                     </>

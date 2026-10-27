@@ -9,7 +9,6 @@ import {
 } from "../api/documentApi.js";
 import { APPLICATION_TYPE_LABELS } from "../api/admissionApi.js";
 import { ApiError } from "../api/apiClient.js";
-import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import FilePreviewModal from "../components/FilePreviewModal.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
@@ -148,7 +147,12 @@ function DocumentChecklist({ requirements, onUploaded }) {
   );
 }
 
-export default function DocumentsPage() {
+/**
+ * The applicant's document checklists (admission and scholarship) with their upload buttons. It is shown inside
+ * the My Application page, under the tracker; `onChanged` runs after each upload so the tracker can pick up the
+ * status change the upload causes.
+ */
+export default function DocumentsSection({ onChanged }) {
   const uploadFailures = useLocation().state?.uploadFailures ?? [];
   const [applicationType, setApplicationType] = useState(null);
   const [requirements, setRequirements] = useState([]);
@@ -196,12 +200,13 @@ export default function DocumentsPage() {
     const replace = (list) => list.map((r) => (r.documentType === updated.documentType ? updated : r));
     setRequirements((prev) => replace(prev));
     setScholarshipRequirements((prev) => (prev ? replace(prev) : prev));
+    onChanged?.();
   }
 
   const showAdmission = !needsApplication && !errorMessage;
 
   return (
-    <AppLayout title="Documents">
+    <>
       {uploadFailures.length > 0 && (
         <p className="form-error" role="alert">
           Your application was submitted, but these documents did not upload: {uploadFailures.join(", ")}. Upload them below.
@@ -246,6 +251,6 @@ export default function DocumentsPage() {
           <DocumentChecklist requirements={scholarshipRequirements} onUploaded={handleUploaded} />
         </Card>
       )}
-    </AppLayout>
+    </>
   );
 }

@@ -130,6 +130,10 @@ export default function PaymentPage() {
   async function handleSubmit(event) {
     event.preventDefault();
     if (isUploading) return;
+    if (reference.trim().length === 0) {
+      setErrorMessage("Enter the reference number from your payment receipt.");
+      return;
+    }
     if (!file) {
       setFileError("Attach a screenshot or photo of your receipt.");
       return;
@@ -330,10 +334,17 @@ export default function PaymentPage() {
                   </p>
                 ) : null}
                 <div className="form-row">
-                  <label htmlFor="reference">Reference number (optional)</label>
+                  <label htmlFor="reference">
+                    Reference number
+                    <span className="required-mark" title="Required" aria-label="required">
+                      {" "}
+                      *
+                    </span>
+                  </label>
                   <input
                     id="reference"
                     type="text"
+                    required
                     maxLength={60}
                     value={reference}
                     onChange={(e) => setReference(e.target.value)}

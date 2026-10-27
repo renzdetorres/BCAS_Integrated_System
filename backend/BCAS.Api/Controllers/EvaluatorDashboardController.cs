@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BCAS.Api.Controllers;
 
-[Authorize(Roles = "Evaluator")]
+[Authorize(Roles = "Evaluator,Admin")]
 [ApiController]
 [Route("api/evaluator/dashboard")]
 public class EvaluatorDashboardController : ControllerBase

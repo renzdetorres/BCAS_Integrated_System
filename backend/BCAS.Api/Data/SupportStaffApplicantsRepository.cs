@@ -32,7 +32,7 @@ OUTER APPLY (
 ) a
 WHERE r.RoleName = N'Applicant'
   AND (@Search IS NULL OR u.FirstName LIKE '%' + @Search + '%' OR u.LastName LIKE '%' + @Search + '%' OR u.Email LIKE '%' + @Search + '%')
-ORDER BY u.CreatedAt DESC;";
+ORDER BY ISNULL(a.SubmittedAt, u.CreatedAt) DESC;";
 
         await using var command = new SqlCommand(sql, connection);
         command.Parameters.Add(new SqlParameter("@Search", SqlDbType.NVarChar, 256) { Value = (object?)NullIfEmpty(search) ?? DBNull.Value });

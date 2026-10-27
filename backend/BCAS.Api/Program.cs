@@ -61,6 +61,7 @@ builder.Services.AddScoped<IExamScheduleService, ExamScheduleService>();
 builder.Services.AddScoped<IExamRescheduleRequestRepository, ExamRescheduleRequestRepository>();
 builder.Services.AddScoped<IExamPermitService, ExamPermitService>();
 builder.Services.AddScoped<IAdminExamPermitService, AdminExamPermitService>();
+builder.Services.AddScoped<IAdmissionFlowService, AdmissionFlowService>();
 builder.Services.AddScoped<IApplicationTrackingService, ApplicationTrackingService>();
 builder.Services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
 builder.Services.AddScoped<IAnnouncementService, AnnouncementService>();
@@ -75,6 +76,8 @@ builder.Services.AddScoped<ISystemSettingsRepository, SystemSettingsRepository>(
 builder.Services.AddScoped<ISystemSettingsService, SystemSettingsService>();
 builder.Services.AddScoped<ISchoolConfigRepository, SchoolConfigRepository>();
 builder.Services.AddScoped<ISchoolConfigService, SchoolConfigService>();
+builder.Services.AddScoped<IAdmissionSlotsRepository, AdmissionSlotsRepository>();
+builder.Services.AddScoped<IAdmissionSlotsService, AdmissionSlotsService>();
 builder.Services.AddScoped<IExamPaymentRepository, ExamPaymentRepository>();
 builder.Services.AddScoped<IExamPaymentService, ExamPaymentService>();
 builder.Services.AddScoped<IAdmissionSummaryService, AdmissionSummaryService>();

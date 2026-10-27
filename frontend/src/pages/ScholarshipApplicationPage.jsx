@@ -365,7 +365,7 @@ export default function ScholarshipApplicationPage() {
                 ))}
               </ol>
               <p className="form-note">
-                After submitting, upload these as PDF files on the <Link to="/documents">Documents</Link> page.
+                After submitting, upload these as PDF files on the <Link to="/application-tracking">My Application</Link> page.
               </p>
               <p className="form-guidance-title">Screening procedure</p>
               <ol>

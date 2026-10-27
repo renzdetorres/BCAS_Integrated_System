@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { getAdminDashboard } from "../api/adminDashboardApi.js";
 import { getEnrollmentSummary } from "../api/adminReportsApi.js";
 import { getScholarshipSummary } from "../api/scholarshipPipelineApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Icon from "../components/ui/Icon.jsx";
-import StatusBadge from "../components/ui/StatusBadge.jsx";
 import AdmissionPipeline from "../components/AdmissionPipeline.jsx";
 import FigureBars from "../components/ui/FigureBars.jsx";
 import { DEPARTMENT_OPTIONS } from "../config/departments.js";
@@ -30,14 +29,6 @@ const SHORTCUTS = [
 function currentAcademicYear(now = new Date()) {
   const startYear = now.getMonth() >= 5 ? now.getFullYear() : now.getFullYear() - 1;
   return `${startYear}-${startYear + 1}`;
-}
-
-function formatDate(isoDateTime) {
-  return new Date(isoDateTime).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-}
-
-function formatShortDate(isoDateTime) {
-  return new Date(isoDateTime).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 function plural(count, one, many) {
@@ -303,7 +294,6 @@ function DashboardSkeleton() {
 }
 
 export default function AdminDashboardPage() {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const workspace = searchParams.get("workspace") === "scholarship" ? "scholarship" : "admission";
   // The Admin's choice in the top bar: every figure below is for this academic year (empty = all years).
@@ -464,63 +454,6 @@ export default function AdminDashboardPage() {
                 to: applicationsLink({ category: view.category, department: d.department }),
               }))}
             />
-          </section>
-
-          <section className="dash-panel dash-recent" aria-labelledby="dash-recent-title">
-            <div className="dash-panel-head">
-              <h2 id="dash-recent-title" className="dash-panel-title">
-                Latest applications
-              </h2>
-              <Link to={applicationsLink({ category: view.category })} className="dash-link">
-                View all
-                <Icon name="chevron-right" size={14} />
-              </Link>
-            </div>
-            {view.recentApplications.length === 0 ? (
-              <p className="dash-empty">No {workspaceLabel.toLowerCase()} applications submitted yet.</p>
-            ) : (
-              <div className="dash-table-scroll">
-                <table className="dash-table">
-                  <thead>
-                    <tr>
-                      <th scope="col">Applicant</th>
-                      <th scope="col">Department</th>
-                      <th scope="col">Status</th>
-                      <th scope="col" className="dash-table-date">
-                        Submitted
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {view.recentApplications.slice(0, 5).map((application) => (
-                      <tr
-                        key={application.applicationId}
-                        tabIndex={0}
-                        onClick={() => navigate(`/admin/applications/${application.applicationId}`)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") navigate(`/admin/applications/${application.applicationId}`);
-                        }}
-                      >
-                        <td>
-                          <span className="dash-table-name">{application.applicantName}</span>
-                          {workspace === "scholarship" && application.scholarshipName ? (
-                            <span className="dash-table-sub">{application.scholarshipName}</span>
-                          ) : null}
-                        </td>
-                        <td>{application.department ?? <span className="dash-unassigned-text">&mdash;</span>}</td>
-                        <td>
-                          <StatusBadge status={application.status} adminContext />
-                        </td>
-                        <td className="dash-table-date">
-                          <span className="dash-date-full">{formatDate(application.submittedAt)}</span>
-                          <span className="dash-date-short">{formatShortDate(application.submittedAt)}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
           </section>
 
         </div>

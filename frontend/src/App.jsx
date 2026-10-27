@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { SessionProvider } from "./context/SessionContext.jsx";
 import { AcademicYearProvider } from "./context/AcademicYearContext.jsx";
 import { ToastProvider } from "./context/ToastContext.jsx";
@@ -26,7 +26,8 @@ import ApplicantSettingsPage from "./pages/ApplicantSettingsPage.jsx";
 import AdmissionApplicationPage from "./pages/AdmissionApplicationPage.jsx";
 import ScholarshipApplicationPage from "./pages/ScholarshipApplicationPage.jsx";
 import MyApplicationHistoryPage from "./pages/MyApplicationHistoryPage.jsx";
-import DocumentsPage from "./pages/DocumentsPage.jsx";
+import EvaluatorDashboardPage from "./pages/EvaluatorDashboardPage.jsx";
+import AdminAdmissionSlotsPage from "./pages/AdminAdmissionSlotsPage.jsx";
 import ExamSchedulePage from "./pages/ExamSchedulePage.jsx";
 import ExamPermitPage from "./pages/ExamPermitPage.jsx";
 import ApplicationTrackingPage from "./pages/ApplicationTrackingPage.jsx";
@@ -62,6 +63,12 @@ import InquiryDetailPage from "./pages/InquiryDetailPage.jsx";
 import StaffInquiriesPage from "./pages/StaffInquiriesPage.jsx";
 import StaffInquiryDetailPage from "./pages/StaffInquiryDetailPage.jsx";
 
+/** The Documents page now lives inside My Application; old links and bookmarks land there, keeping any upload notice. */
+function DocumentsRedirect() {
+  const { state } = useLocation();
+  return <Navigate to="/application-tracking" replace state={state} />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -84,6 +91,13 @@ export default function App() {
                 <Route path="/admin/applications" element={<AdminApplicationsPage />} />
                 <Route path="/admin/applications/:applicationId" element={<AdminApplicationDetailPage />} />
                 <Route path="/admin/documents" element={<AdminDocumentsPage />} />
+                <Route path="/admin/document-verification" element={<SupportStaffDocumentsPage />} />
+                <Route path="/admin/document-archive" element={<SupportStaffDocumentArchivePage />} />
+                <Route path="/admin/applicant-records" element={<SupportStaffApplicantsPage />} />
+                <Route path="/admin/admission-slots" element={<AdminAdmissionSlotsPage />} />
+                <Route path="/admin/scholarship-slots" element={<ScholarshipSlotsPage />} />
+                <Route path="/admin/scholarship-screening" element={<EvaluatorDashboardPage />} />
+                <Route path="/admin/scholarship-applications/:applicationId" element={<ScholarshipScreeningPage />} />
                 <Route path="/admin/records" element={<AdminRecordsPage />} />
                 <Route path="/admin/archive" element={<AdminArchivePage />} />
                 <Route path="/admin/announcements" element={<AdminAnnouncementsPage />} />
@@ -111,6 +125,7 @@ export default function App() {
                 <Route path="/evaluator/applications" element={<AdminApplicationsPage />} />
                 <Route path="/evaluator/applications/:applicationId" element={<AdminApplicationDetailPage />} />
                 <Route path="/evaluator/documents" element={<SupportStaffDocumentsPage />} />
+                <Route path="/evaluator/documents/archive" element={<SupportStaffDocumentArchivePage />} />
                 <Route path="/evaluator/exam-permits" element={<AdminExamPermitsPage />} />
                 <Route path="/evaluator/exam-results" element={<ExamResultsPage />} />
                 <Route path="/evaluator/interviews" element={<InterviewsPage />} />
@@ -128,8 +143,6 @@ export default function App() {
                 <Route path="/academic-head/settings" element={<AcademicHeadSettingsPage />} />
               </Route>
               <Route element={<RequireRole allowedRoles={["SupportStaff"]} />}>
-                <Route path="/support-staff/documents" element={<SupportStaffDocumentsPage />} />
-                <Route path="/support-staff/documents/archive" element={<SupportStaffDocumentArchivePage />} />
                 <Route path="/support-staff/payments" element={<StaffPaymentsPage />} />
                 <Route path="/support-staff/exam-results" element={<ExamResultsPage />} />
                 <Route path="/support-staff/applicants" element={<SupportStaffApplicantsPage />} />
@@ -142,7 +155,7 @@ export default function App() {
                 <Route path="/applications/history" element={<MyApplicationHistoryPage />} />
                 <Route path="/applications/receipt/:applicationId" element={<ApplicationReceiptPage />} />
                 <Route path="/scholarships" element={<ScholarshipApplicationPage />} />
-                <Route path="/documents" element={<DocumentsPage />} />
+                <Route path="/documents" element={<DocumentsRedirect />} />
                 <Route path="/payment" element={<PaymentPage />} />
                 <Route path="/exam-result" element={<ExamResultPage />} />
                 <Route path="/interview" element={<InterviewPage />} />

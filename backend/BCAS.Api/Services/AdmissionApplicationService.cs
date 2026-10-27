@@ -15,6 +15,7 @@ public class AdmissionApplicationService : IAdmissionApplicationService
     private readonly IUserRepository _userRepository;
     private readonly ISchoolConfigService _schoolConfigService;
     private readonly INotificationDispatchService _notificationDispatchService;
+    private readonly IAdmissionSlotsService _admissionSlots;
     private readonly ILogger<AdmissionApplicationService> _logger;
 
     public AdmissionApplicationService(
@@ -25,8 +26,10 @@ public class AdmissionApplicationService : IAdmissionApplicationService
         IUserRepository userRepository,
         ISchoolConfigService schoolConfigService,
         INotificationDispatchService notificationDispatchService,
+        IAdmissionSlotsService admissionSlots,
         ILogger<AdmissionApplicationService> logger)
     {
+        _admissionSlots = admissionSlots;
         _applicationRepository = applicationRepository;
         _profileRepository = profileRepository;
         _systemSettingsRepository = systemSettingsRepository;
@@ -96,13 +99,18 @@ public class AdmissionApplicationService : IAdmissionApplicationService
             throw new ApplicationAlreadySubmittedException("admission");
         }
 
+        // A level whose slots are all taken still accepts the application; the applicant is told so right away.
+        var slotReached = await _admissionSlots.IsFullAsync(request.Department, form.YearLevel!, cancellationToken);
+
         var application = await _applicationRepository.CreateAsync(userId, request, cancellationToken);
 
         // The opening row of this application's status-history audit trail
         // (BISAASS-56) - FromStatus/changedByUserId both null since there's
         // no prior status and this is the applicant's own action, not staff's.
         await _statusHistoryRepository.InsertAsync(
-            application.ApplicationId, "Admission", fromStatus: null, toStatus: application.Status, remarks: null, changedByUserId: null, cancellationToken);
+            application.ApplicationId, "Admission", fromStatus: null, toStatus: application.Status,
+            remarks: slotReached ? $"The admission slot for {form.YearLevel} was already reached when this was submitted." : null,
+            changedByUserId: null, cancellationToken);
 
         // Application Received notification (BISAASS-59).
         var applicant = await _userRepository.GetByIdAsync(userId, cancellationToken);
@@ -110,6 +118,12 @@ public class AdmissionApplicationService : IAdmissionApplicationService
         {
             await _notificationDispatchService.NotifyApplicationReceivedAsync(
                 userId, applicant.Email, applicant.FirstName, "Admission", application.CourseAppliedFor, cancellationToken);
+
+            if (slotReached)
+            {
+                await _notificationDispatchService.NotifyAdmissionSlotFullAsync(
+                    userId, applicant.Email, applicant.FirstName, form.YearLevel!, cancellationToken);
+            }
         }
 
         _logger.LogInformation(
@@ -117,7 +131,10 @@ public class AdmissionApplicationService : IAdmissionApplicationService
             application.ApplicationId,
             userId);
 
-        return application.ToResponse();
+        var response = application.ToResponse();
+        response.SlotReached = slotReached;
+        response.SlotMessage = slotReached ? AdmissionSlotsService.FullMessage(form.YearLevel!) : null;
+        return response;
     }
 
     public async Task<IReadOnlyList<AdmissionApplicationResponse>> GetMyApplicationsAsync(

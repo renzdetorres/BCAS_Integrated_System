@@ -169,3 +169,58 @@
 .ss-documents-reason-error {
   margin: 0;
 }
+
+/* Document Verification: one row per applicant, their documents in a card that opens over the page. */
+.dv-summary {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+}
+
+.dv-doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dv-doc {
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-white, #fff);
+}
+
+/* Approved and rejected documents stay in the card, below the open ones, and read as done. */
+.dv-doc-decided {
+  background: var(--color-surface-subtle, var(--color-bg));
+}
+
+.dv-doc-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dv-doc-type {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.dv-doc-meta {
+  margin: 4px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.dv-doc-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}

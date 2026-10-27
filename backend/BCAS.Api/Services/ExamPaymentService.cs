@@ -56,6 +56,7 @@ public class ExamPaymentService : IExamPaymentService
     private readonly IUserRepository _userRepository;
     private readonly INotificationDispatchService _notifications;
     private readonly ILogger<ExamPaymentService> _logger;
+    private readonly Lazy<IAdmissionFlowService> _flow;
 
     public ExamPaymentService(
         IExamPaymentRepository repository,
@@ -64,8 +65,11 @@ public class ExamPaymentService : IExamPaymentService
         ISchoolConfigService schoolConfig,
         IUserRepository userRepository,
         INotificationDispatchService notifications,
-        ILogger<ExamPaymentService> logger)
+        ILogger<ExamPaymentService> logger,
+        IServiceProvider services)
     {
+        // Resolved on first use: releasing the permit reads this service's payment state.
+        _flow = new Lazy<IAdmissionFlowService>(() => services.GetRequiredService<IAdmissionFlowService>());
         _repository = repository;
         _applicationRepository = applicationRepository;
         _systemSettings = systemSettings;
@@ -115,8 +119,14 @@ public class ExamPaymentService : IExamPaymentService
             throw new ExamPaymentException("Proof of payment must be a PDF, JPG or PNG file.");
         }
 
+        // The reference number on the receipt is what staff match the payment against.
         var reference = string.IsNullOrWhiteSpace(referenceNumber) ? null : referenceNumber.Trim();
-        if (reference is { Length: > 60 })
+        if (reference is null)
+        {
+            throw new ExamPaymentException("Enter the reference number from your payment receipt.");
+        }
+
+        if (reference.Length > 60)
         {
             throw new ExamPaymentException("The reference number is too long.");
         }
@@ -175,8 +185,13 @@ public class ExamPaymentService : IExamPaymentService
             throw new ExamPaymentException("A sales invoice number can only be set on a verified payment.");
         }
 
+        var updated = (await _repository.GetQueueItemAsync(paymentId, cancellationToken))!;
+
+        // The SI number was the missing piece when a permit could not be released yet.
+        await _flow.Value.TryReleasePermitAsync(updated.UserId, cancellationToken);
+
         _logger.LogInformation("Sales invoice {Invoice} set on payment {PaymentId}", invoice, paymentId);
-        return ToResponse((await _repository.GetQueueItemAsync(paymentId, cancellationToken))!);
+        return ToResponse(updated);
     }
 
     public async Task<ExamPaymentQueueItemResponse> RejectAsync(
@@ -234,6 +249,12 @@ public class ExamPaymentService : IExamPaymentService
         if (applicant is not null)
         {
             await _notifications.NotifyPaymentReviewedAsync(item.UserId, applicant.Email, applicant.FirstName, status, reason, cancellationToken);
+        }
+
+        // A verified payment releases the exam permit by itself once a slot is booked (and the SI number is on file).
+        if (status == "Verified")
+        {
+            await _flow.Value.TryReleasePermitAsync(item.UserId, cancellationToken);
         }
 
         _logger.LogInformation("Exam payment {PaymentId} {Status} by {ReviewerUserId}", paymentId, status, reviewerUserId);

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getMyApplicationTracking } from "../api/applicationTrackingApi.js";
-import { DOCUMENT_TYPE_LABELS } from "../api/documentApi.js";
 import { ApiError } from "../api/apiClient.js";
 import WorkflowStepper, {
   ADMISSION_STEP_HINTS,
@@ -13,7 +12,7 @@ import { usePolling } from "../hooks/usePolling.js";
 import TrackerStatus from "../components/TrackerStatus.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
-import StatusBadge from "../components/ui/StatusBadge.jsx";
+import DocumentsSection from "./DocumentsPage.jsx";
 import "./ApplicationTrackingPage.css";
 import Skeleton from "../components/ui/Skeleton.jsx";
 
@@ -93,7 +92,7 @@ export default function ApplicationTrackingPage() {
   }, []);
 
   return (
-    <AppLayout title="Application Tracking">
+    <AppLayout title="My Application">
       <Card>
         {isLoading && <Skeleton />}
 
@@ -148,25 +147,12 @@ export default function ApplicationTrackingPage() {
         )}
       </Card>
 
-      {!isLoading && !errorMessage && tracking?.documents && (
-        <Card>
-          <h2>Document Status</h2>
-          <ul className="tracking-documents-list">
-            {tracking.documents.requirements.map((requirement) => (
-              <li key={requirement.documentType}>
-                <div className="tracking-documents-header">
-                  <span className="tracking-documents-type">
-                    {DOCUMENT_TYPE_LABELS[requirement.documentType] ?? requirement.documentType}
-                  </span>
-                  <StatusBadge status={requirement.status === "NotSubmitted" ? "NotUploaded" : requirement.status} />
-                </div>
-                {requirement.status === "Flagged" && requirement.flaggedReason && (
-                  <p className="tracking-documents-reason">Reason: {requirement.flaggedReason}</p>
-                )}
-              </li>
-            ))}
-          </ul>
-        </Card>
+      {!isLoading && !errorMessage && (
+        <section id="documents" className="tracking-documents-section">
+          <h2 className="tracking-documents-title">Your documents</h2>
+          {/* Uploading moves the application along by itself, so the tracker above is refreshed after each upload. */}
+          <DocumentsSection onChanged={refresh} />
+        </section>
       )}
     </AppLayout>
   );

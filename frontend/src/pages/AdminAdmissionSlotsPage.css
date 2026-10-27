@@ -1,0 +1,62 @@
+.admission-slots-intro {
+  margin: 0 0 20px;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  max-width: 70ch;
+}
+
+.admission-slots-group {
+  margin-bottom: 24px;
+}
+
+.admission-slots-category {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.admission-slots-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.admission-slots-table th,
+.admission-slots-table td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.admission-slots-table th {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admission-slots-input {
+  width: 8rem;
+  max-width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm, 6px);
+  font: inherit;
+}
+
+.admission-slots-muted {
+  color: var(--color-text-secondary);
+}
+
+.admission-slots-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+@media (max-width: 640px) {
+  .admission-slots-table th:nth-child(3),
+  .admission-slots-table td:nth-child(3) {
+    display: none;
+  }
+}

@@ -282,6 +282,18 @@ public class NotificationDispatchService : INotificationDispatchService
             "Log in to your applicant portal to read it and respond.",
             cancellationToken);
 
+    public Task NotifyAdmissionSlotFullAsync(Guid userId, string email, string firstName, string level, CancellationToken cancellationToken = default) =>
+        DispatchAsync(
+            userId,
+            email,
+            NotificationEventTypes.AdmissionSlotFull,
+            $"Admission Slot Reached for {level}",
+            $"Hi {firstName},\n\n" +
+            $"Sorry, the admission slot for {level} has been reached. We still received your application, " +
+            "and the registrar's office will contact you about the next step. " +
+            "You can follow it anytime from your applicant portal.",
+            cancellationToken);
+
     public Task NotifyStaffMessageAsync(
         Guid userId, string email, string firstName, string subject, string message, CancellationToken cancellationToken = default) =>
         DispatchAsync(
@@ -316,6 +328,7 @@ public class NotificationDispatchService : INotificationDispatchService
 
             // A message a staff member wrote by hand is not an automatic event, so no preference can switch it off.
             if (notificationType != NotificationEventTypes.StaffMessage
+                && notificationType != NotificationEventTypes.AdmissionSlotFull
                 && !await _preferenceRepository.IsEnabledAsync(userId, notificationType, cancellationToken))
             {
                 return;

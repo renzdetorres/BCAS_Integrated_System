@@ -99,7 +99,7 @@ function PaymentReview({ payment, onClose, onChanged }) {
             </div>
           ) : (
             <div className="form-row">
-              <label htmlFor="invoice">Sales invoice (SI) number (optional now, required when releasing the permit)</label>
+              <label htmlFor="invoice">Sales invoice (SI) number (with it, the exam permit is released automatically once the applicant has booked a slot)</label>
               <input id="invoice" type="text" maxLength={50} value={invoice} onChange={(e) => setInvoice(e.target.value)} />
             </div>
           )}

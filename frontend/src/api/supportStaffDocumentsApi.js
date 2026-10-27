@@ -18,6 +18,23 @@ export async function listPendingAndFlaggedDocuments() {
   return data;
 }
 
+/** Every active document in any status; the queue lists the approved and rejected ones after the open ones. */
+export async function listAllDocuments() {
+  const response = await fetch(`${API_BASE_URL}/api/support-staff/documents?includeReviewed=true`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  const data = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const message = resolveErrorMessage(response, data, "Failed to load documents.");
+    throw new ApiError(message, response.status);
+  }
+
+  return data;
+}
+
 export async function listDocumentsForApplicant(applicantUserId) {
   const response = await fetch(
     `${API_BASE_URL}/api/support-staff/documents?userId=${encodeURIComponent(applicantUserId)}`,

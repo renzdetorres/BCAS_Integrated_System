@@ -45,6 +45,28 @@ ORDER BY d.UploadedAt DESC;";
         return items;
     }
 
+    public async Task<IReadOnlyList<AdminDocumentListItem>> GetAllActiveAsync(CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        var sql = $@"
+SELECT {SelectColumns}
+{FromClause}
+WHERE d.IsArchived = 0
+ORDER BY d.UploadedAt DESC;";
+
+        await using var command = new SqlCommand(sql, connection);
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        var items = new List<AdminDocumentListItem>();
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            items.Add(MapItem(reader));
+        }
+
+        return items;
+    }
+
     public async Task<IReadOnlyList<AdminDocumentListItem>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);

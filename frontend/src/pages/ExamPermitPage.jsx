@@ -105,7 +105,7 @@ export default function ExamPermitPage() {
             title="Your permit hasn't been released yet"
             message="The registrar releases it once all of your required documents have been verified."
             action={
-              <Link className="btn btn-secondary btn-sm" to="/documents">
+              <Link className="btn btn-secondary btn-sm" to="/application-tracking">
                 Check your Documents checklist
               </Link>
             }

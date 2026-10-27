@@ -35,7 +35,7 @@ export default function SubmittedDocuments() {
       <section className="submitted-docs" aria-labelledby="submitted-docs-title">
         <h3 id="submitted-docs-title">Documents</h3>
         <p className="submitted-docs-note">Your document list couldn&apos;t be loaded. Open the Documents page to see what is needed.</p>
-        <Link className="btn btn-secondary" to="/documents">
+        <Link className="btn btn-secondary" to="/application-tracking">
           Go to Documents
         </Link>
       </section>
@@ -57,7 +57,7 @@ export default function SubmittedDocuments() {
               : "Every required document is uploaded. Staff will review them and tell you if anything needs to be corrected."}
           </p>
         </div>
-        <Link className={`btn ${toUpload.length > 0 ? "btn-primary" : "btn-secondary"}`} to="/documents">
+        <Link className={`btn ${toUpload.length > 0 ? "btn-primary" : "btn-secondary"}`} to="/application-tracking">
           {toUpload.length > 0 ? "Upload documents" : "View documents"}
         </Link>
       </div>

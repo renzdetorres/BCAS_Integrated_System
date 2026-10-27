@@ -11,12 +11,16 @@ public class SupportStaffDocumentsService : ISupportStaffDocumentsService
     private readonly ISupportStaffDocumentsRepository _documentsRepository;
     private readonly INotificationDispatchService _notificationDispatchService;
     private readonly IApplicantDocumentService _applicantDocumentService;
+    private readonly Lazy<IAdmissionFlowService> _flow;
 
     public SupportStaffDocumentsService(
         ISupportStaffDocumentsRepository documentsRepository,
         INotificationDispatchService notificationDispatchService,
-        IApplicantDocumentService applicantDocumentService)
+        IApplicantDocumentService applicantDocumentService,
+        IServiceProvider services)
     {
+        // Resolved on first use: the flow service reaches back into the document and application services.
+        _flow = new Lazy<IAdmissionFlowService>(() => services.GetRequiredService<IAdmissionFlowService>());
         _applicantDocumentService = applicantDocumentService;
         _documentsRepository = documentsRepository;
         _notificationDispatchService = notificationDispatchService;
@@ -25,6 +29,12 @@ public class SupportStaffDocumentsService : ISupportStaffDocumentsService
     public async Task<IReadOnlyList<AdminDocumentListItemResponse>> GetPendingAndFlaggedAsync(CancellationToken cancellationToken = default)
     {
         var items = await _documentsRepository.GetPendingAndFlaggedAsync(cancellationToken);
+        return items.Select(item => item.ToResponse()).ToList();
+    }
+
+    public async Task<IReadOnlyList<AdminDocumentListItemResponse>> GetAllActiveAsync(CancellationToken cancellationToken = default)
+    {
+        var items = await _documentsRepository.GetAllActiveAsync(cancellationToken);
         return items.Select(item => item.ToResponse()).ToList();
     }
 
@@ -85,6 +95,9 @@ public class SupportStaffDocumentsService : ISupportStaffDocumentsService
         {
             await NotifyIfAllRequirementsVerifiedAsync(updated, cancellationToken);
         }
+
+        // The workflow status follows the review by itself (cleared once everything is verified).
+        await _flow.Value.AfterDocumentReviewedAsync(updated.UserId, reviewedByUserId, cancellationToken);
 
         return updated.ToResponse();
     }

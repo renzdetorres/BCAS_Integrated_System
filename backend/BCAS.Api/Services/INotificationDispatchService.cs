@@ -80,6 +80,9 @@ public interface INotificationDispatchService
     Task NotifyInquiryReplyAsync(
         Guid userId, string email, string firstName, string threadSubject, CancellationToken cancellationToken = default);
 
+    /// <summary>The level the applicant chose has no admission slot left; their application was still received. Always delivered.</summary>
+    Task NotifyAdmissionSlotFullAsync(Guid userId, string email, string firstName, string level, CancellationToken cancellationToken = default);
+
     /// <summary>A message a staff member wrote to this applicant: a system notification plus an email, always delivered.</summary>
     Task NotifyStaffMessageAsync(
         Guid userId, string email, string firstName, string subject, string message, CancellationToken cancellationToken = default);

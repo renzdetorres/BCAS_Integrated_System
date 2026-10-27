@@ -13,6 +13,12 @@ public interface ISupportStaffDocumentsRepository
     Task<IReadOnlyList<AdminDocumentListItem>> GetPendingAndFlaggedAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Every non-archived document in any status, most recently uploaded first - the verification queue
+    /// that also keeps the approved and rejected documents, which the screen lists after the open ones.
+    /// </summary>
+    Task<IReadOnlyList<AdminDocumentListItem>> GetAllActiveAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Every non-archived document belonging to one applicant, regardless
     /// of status, most recently uploaded first - used when Support Staff
     /// navigates directly into Document Verification for a specific

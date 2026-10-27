@@ -15,8 +15,7 @@ export const NAV_ITEMS_BY_ROLE = {
       items: [
         { to: "/applications", label: "Admission Application", icon: "doc" },
         { to: "/applications/history", label: "Application History", icon: "history" },
-        { to: "/application-tracking", label: "Application Tracking", icon: "track" },
-        { to: "/documents", label: "Documents", icon: "folder" },
+        { to: "/application-tracking", label: "Tracking & Documents", icon: "track" },
       ],
     },
     {
@@ -66,13 +65,17 @@ export const NAV_ITEMS_BY_ROLE = {
       section: "Admission Management",
       items: [
         { to: "/admin/applications", label: "Applications", icon: "doc" },
-        { to: "/admin/documents", label: "Document Log", icon: "folder" },
+        { to: "/admin/document-verification", label: "Document Verification", icon: "folder" },
+        { to: "/admin/document-archive", label: "Document Archive", icon: "archive" },
+        { to: "/admin/documents", label: "Document Log", icon: "history" },
         { to: "/admin/payments", label: "Payments", icon: "clipboard" },
+        { to: "/admin/admission-slots", label: "Admission Slots", icon: "bookmark" },
         { to: "/admin/exam-schedules", label: "Exam Schedules", icon: "calendar" },
         { to: "/admin/exam-permits", label: "Exam Permits", icon: "ticket" },
         { to: "/admin/exam-results", label: "Exam Results", icon: "chart" },
         { to: "/admin/interviews", label: "Interviews & Results", icon: "users" },
         { to: "/admin/reservations", label: "Reservations", icon: "bookmark" },
+        { to: "/admin/applicant-records", label: "Applicant Records", icon: "users" },
         { to: "/admin/records", label: "Records", icon: "clipboard" },
         { to: "/admin/archive", label: "Archives", icon: "archive" },
       ],
@@ -81,6 +84,8 @@ export const NAV_ITEMS_BY_ROLE = {
       section: "Scholarships",
       items: [
         { to: "/admin/scholarships", label: "Scholarships", icon: "award" },
+        { to: "/admin/scholarship-slots", label: "Scholarship Slots", icon: "award" },
+        { to: "/admin/scholarship-screening", label: "Screening", icon: "clipboard" },
         { to: "/admin/scholarship-pipeline", label: "Exam & Grantees", icon: "chart" },
       ],
     },
@@ -116,6 +121,7 @@ export const NAV_ITEMS_BY_ROLE = {
         { to: "/evaluator/scholarship-pipeline", label: "Scholarship Grantees", icon: "chart" },
         { to: "/evaluator/applications", label: "Applications", icon: "doc" },
         { to: "/evaluator/documents", label: "Document Verification", icon: "folder" },
+        { to: "/evaluator/documents/archive", label: "Document Archive", icon: "archive" },
         { to: "/evaluator/exam-permits", label: "Exam Permits", icon: "ticket" },
         { to: "/evaluator/exam-results", label: "Exam Results", icon: "chart" },
         { to: "/evaluator/interviews", label: "Interviews & Results", icon: "users" },
@@ -143,10 +149,8 @@ export const NAV_ITEMS_BY_ROLE = {
       items: [{ to: "/portal", label: "Dashboard", icon: "home", end: true }],
     },
     {
-      section: "Document Verification",
+      section: "Payments & Results",
       items: [
-        { to: "/support-staff/documents", label: "Verification Queue", icon: "folder" },
-        { to: "/support-staff/documents/archive", label: "Document Archive", icon: "archive" },
         { to: "/support-staff/payments", label: "Payment Verification", icon: "clipboard" },
         { to: "/support-staff/exam-results", label: "Exam Results", icon: "chart" },
       ],

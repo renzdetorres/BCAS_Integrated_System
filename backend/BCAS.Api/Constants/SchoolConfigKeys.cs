@@ -38,6 +38,9 @@ public static class SchoolConfigKeys
     /// <summary>How many times an applicant who falls short may retake the exam before the result is Failed.</summary>
     public const string ExamMaxRetakes = "Exam.MaxRetakes";
 
+    /// <summary>How many admission slots each level has, as JSON (see AdmissionLevelSlots). Blank means no level is limited.</summary>
+    public const string AdmissionLevelSlots = "Admission.LevelSlots";
+
     // The academic lists, each stored as JSON (see AcademicCatalog).
     public const string AcademicStrands = "Academic.Strands";
     public const string AcademicTerms = "Academic.Terms";
@@ -59,5 +62,6 @@ public static class SchoolConfigKeys
         [ExamTotalItems] = "100",
         [ExamPassingScore] = "75",
         [ExamMaxRetakes] = "2",
+        [AdmissionLevelSlots] = "",
     };
 }

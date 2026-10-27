@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { searchApplicants } from "../api/supportStaffApplicantsApi.js";
 import { ApiError } from "../api/apiClient.js";
+import { useSession } from "../context/SessionContext.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import DataTable, { RowAction } from "../components/ui/DataTable.jsx";
@@ -19,6 +20,8 @@ function formatDate(isoDateTime) {
 }
 
 export default function SupportStaffApplicantsPage() {
+  const { session } = useSession();
+  const canViewDocuments = session.role === "Admin";
   const [search, setSearch] = useState("");
   const [applicants, setApplicants] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,9 +87,11 @@ export default function SupportStaffApplicantsPage() {
       header: "",
       render: (row) => (
         <div className="ss-applicants-actions">
-          <Link className="ss-applicants-verify-link" to={`/support-staff/documents?applicantId=${row.userId}`}>
-            View Documents
-          </Link>
+          {canViewDocuments && (
+            <Link className="ss-applicants-verify-link" to={`/admin/document-verification?applicantId=${row.userId}`}>
+              View Documents
+            </Link>
+          )}
           <RowAction
             label="Notify"
             icon="bell"
@@ -102,8 +107,7 @@ export default function SupportStaffApplicantsPage() {
     <AppLayout title="Applicant Records">
       <Card tier="data">
         <p className="ss-applicants-subtitle">
-          Search applicants by name or email, view their admission application info, and jump directly into
-          Document Verification for one.
+          Search applicants by name or email, view their admission application info{canViewDocuments ? ", and jump directly into Document Verification for one" : ""}.
         </p>
 
         {errorMessage && (

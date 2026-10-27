@@ -48,6 +48,12 @@ public static class NotificationEventTypes
     /// </summary>
     public const string StaffMessage = "StaffMessage";
 
+    /// <summary>
+    /// The level the applicant chose has no admission slot left. It is a notice about their own submission, not an
+    /// optional event, so like StaffMessage it is always delivered and is not listed in DisplayNames.
+    /// </summary>
+    public const string AdmissionSlotFull = "AdmissionSlotFull";
+
     public static readonly IReadOnlyDictionary<string, string> DisplayNames = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         [ApplicationReceived] = "Application Received",
@@ -93,5 +99,6 @@ public static class NotificationEventTypes
         [MissingDocumentReminder] = "MissingDocumentReminder",
         [InquiryReply] = "InquiryReply",
         [StaffMessage] = null,
+        [AdmissionSlotFull] = null,
     };
 }

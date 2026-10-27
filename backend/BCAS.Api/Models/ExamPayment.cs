@@ -20,6 +20,7 @@ public class ExamPayment
 
     public string? RejectionReason { get; set; }
     public string? InvoiceNumber { get; set; }
+    public Guid? VerifiedByUserId { get; set; }
     public DateTime? VerifiedAt { get; set; }
 }
 

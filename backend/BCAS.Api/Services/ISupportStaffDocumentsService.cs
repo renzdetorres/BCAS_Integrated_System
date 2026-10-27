@@ -7,6 +7,9 @@ public interface ISupportStaffDocumentsService
     /// <summary>Every non-archived document awaiting review or currently flagged, most recently uploaded first.</summary>
     Task<IReadOnlyList<AdminDocumentListItemResponse>> GetPendingAndFlaggedAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>Every non-archived document in any status, most recently uploaded first - the verification queue with the decided documents included.</summary>
+    Task<IReadOnlyList<AdminDocumentListItemResponse>> GetAllActiveAsync(CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Every non-archived document belonging to one applicant, regardless
     /// of status - used when navigating directly into Document

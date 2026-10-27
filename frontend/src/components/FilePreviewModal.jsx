@@ -11,6 +11,7 @@ import "./FilePreviewModal.css";
  */
 export default function FilePreviewModal({ title, subtitle, fileName, loadFile, details, actions, busy = false, onClose }) {
   const [fileUrl, setFileUrl] = useState(null);
+  const [isImage, setIsImage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
 
@@ -22,6 +23,7 @@ export default function FilePreviewModal({ title, subtitle, fileName, loadFile, 
       .then((blob) => {
         if (cancelled) return;
         objectUrl = URL.createObjectURL(blob);
+        setIsImage(blob.type.startsWith("image/"));
         setFileUrl(objectUrl);
       })
       .catch((error) => {
@@ -69,6 +71,12 @@ export default function FilePreviewModal({ title, subtitle, fileName, loadFile, 
           <p className="form-error" role="alert">
             {errorMessage}
           </p>
+        ) : isImage ? (
+          // A photo (the 2x2 picture) is shown whole, fitted to the box. The browser's own viewer inside an
+          // iframe can open it at full size and crop the face.
+          <div className="file-preview file-preview-image">
+            <img src={fileUrl} alt={`${title}, shown in full`} />
+          </div>
         ) : (
           <iframe className="file-preview" src={fileUrl} title={`${title} preview`} />
         )}

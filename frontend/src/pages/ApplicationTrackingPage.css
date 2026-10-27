@@ -73,3 +73,13 @@
   color: var(--color-status-red-text);
   font-size: 0.8rem;
 }
+
+/* The documents live under the tracker on the same page, so a move of the stepper and an upload sit together. */
+.tracking-documents-section {
+  margin-top: 1.5rem;
+}
+
+.tracking-documents-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.125rem;
+}

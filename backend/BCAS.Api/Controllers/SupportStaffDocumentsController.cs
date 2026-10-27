@@ -8,8 +8,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BCAS.Api.Controllers;
 
-/// <summary>Support Staff's Document Verification screen (BISAASS-51 quick link; approve/reject/flag added by BISAASS-52).</summary>
-[Authorize(Roles = "SupportStaff,Evaluator")]
+/// <summary>
+/// The Document Verification screen (BISAASS-51 quick link; approve/reject/flag added by BISAASS-52). The Evaluator
+/// verifies documents and the Admin holds the same controls; Support Staff does not review documents. The route keeps
+/// its original name so existing links and the role-access prefixes still match.
+/// </summary>
+[Authorize(Roles = "Evaluator,Admin")]
 [ApiController]
 [Route("api/support-staff/documents")]
 public class SupportStaffDocumentsController : ControllerBase
@@ -43,11 +47,14 @@ public class SupportStaffDocumentsController : ControllerBase
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<AdminDocumentListItemResponse>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<AdminDocumentListItemResponse>>> GetDocuments(
-        [FromQuery] Guid? userId, CancellationToken cancellationToken)
+        [FromQuery] Guid? userId, [FromQuery] bool includeReviewed, CancellationToken cancellationToken)
     {
+        // includeReviewed adds the approved and rejected documents, so the queue can list them after the open ones.
         var documents = userId.HasValue
             ? await _documentsService.GetByApplicantAsync(userId.Value, cancellationToken)
-            : await _documentsService.GetPendingAndFlaggedAsync(cancellationToken);
+            : includeReviewed
+                ? await _documentsService.GetAllActiveAsync(cancellationToken)
+                : await _documentsService.GetPendingAndFlaggedAsync(cancellationToken);
         return Ok(documents);
     }
 

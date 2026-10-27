@@ -1,11 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { getAdmissionSummary } from "../api/admissionSummaryApi.js";
 import { ApiError } from "../api/apiClient.js";
-import { APPLICATION_TYPE_LABELS } from "../api/admissionApi.js";
-import { formatDate } from "../utils/format.js";
 import FigureBars from "./ui/FigureBars.jsx";
-import StatusBadge from "./ui/StatusBadge.jsx";
 import TrendChart from "./ui/TrendChart.jsx";
 import "./AdmissionPipeline.css";
 
@@ -23,9 +19,8 @@ const FIGURES = [
 ];
 
 // The first four are the headline figures, laid out exactly like the Scholarship summary
-// (numbers plus a vertical bar graph); the rest are the stages applicants pass through.
+// (numbers plus a vertical bar graph).
 const HEADLINE = FIGURES.slice(0, 4);
-const STAGES = FIGURES.slice(4);
 
 const SERIES = [
   { key: "applicants", label: "Applicants", color: "var(--color-primary-light)" },
@@ -53,7 +48,7 @@ function collegeData(points, years) {
   });
 }
 
-/** The admission process at a glance: where applicants are, who applied last, and five academic years of trend. */
+/** The admission process at a glance: the headline figures and five academic years of trend. */
 export default function AdmissionPipeline({ academicYear = "" }) {
   const [summary, setSummary] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -108,16 +103,6 @@ export default function AdmissionPipeline({ academicYear = "" }) {
         <FigureBars label="Admission applicants as a bar graph" figures={HEADLINE.map((figure) => ({ label: figure.label, value: summary[figure.key] }))} />
       </div>
 
-      <h3 className="pipeline-subtitle">Where applicants are now</h3>
-      <dl className="pipeline-figures pipeline-stages" style={{ "--figure-count": STAGES.length }}>
-        {STAGES.map((figure) => (
-          <div key={figure.key}>
-            <dt>{figure.label}</dt>
-            <dd>{summary[figure.key].toLocaleString()}</dd>
-          </div>
-        ))}
-      </dl>
-
       <div className="pipeline-charts">
         <div>
           <h3 className="pipeline-subtitle">Applicants and enrolled, last 5 academic years</h3>
@@ -132,49 +117,6 @@ export default function AdmissionPipeline({ academicYear = "" }) {
             <TrendChart data={collegeData(summary.collegeTrend, summary.academicYears)} series={COLLEGE_SERIES} />
           </div>
         )}
-      </div>
-
-      <div className="pipeline-latest">
-          <h3 className="pipeline-subtitle">Latest applicants</h3>
-          {summary.latest.length === 0 ? (
-            <p className="dash-empty">No applicants for this selection.</p>
-          ) : (
-            <div className="dash-table-scroll">
-              <table className="dash-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Applicant</th>
-                    <th scope="col">Level</th>
-                    <th scope="col">Type</th>
-                    <th scope="col">Status</th>
-                    <th scope="col" className="dash-table-date">
-                      Applied
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {summary.latest.map((applicant) => (
-                    <tr key={applicant.applicationId}>
-                      <td>
-                        <Link to={`/admin/applications/${applicant.applicationId}`} className="dash-table-name">
-                          {applicant.applicantName}
-                        </Link>
-                        <span className="dash-table-sub">{applicant.applicationNumber}</span>
-                      </td>
-                      <td>
-                        {[applicant.department, applicant.yearLevel].filter(Boolean).join(" · ") || applicant.courseAppliedFor}
-                      </td>
-                      <td>{APPLICATION_TYPE_LABELS[applicant.applicationType] ?? applicant.applicationType}</td>
-                      <td>
-                        <StatusBadge status={applicant.status} adminContext />
-                      </td>
-                      <td className="dash-table-date">{formatDate(applicant.submittedAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
       </div>
     </section>
   );

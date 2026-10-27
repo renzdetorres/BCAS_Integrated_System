@@ -53,20 +53,20 @@ export default function SupportStaffDashboardPage() {
       {!isLoading && !errorMessage && dashboard && (
         <>
           <section className="ss-stat-grid">
-            <Link to="/support-staff/documents" className="ui-card ss-action-tile">
-              <span className="ui-stat-card-label">Pending Verification</span>
-              <span className="ui-stat-card-value">{dashboard.pendingVerificationCount}</span>
-              <span className="ss-action-tile-hint">Go to verification queue</span>
+            <Link to="/support-staff/payments" className="ui-card ss-action-tile">
+              <span className="ui-stat-card-label">Payments to Verify</span>
+              <span className="ui-stat-card-value">{dashboard.pendingPaymentsCount}</span>
+              <span className="ss-action-tile-hint">Go to payment verification</span>
             </Link>
-            <Link to="/support-staff/documents" className="ui-card ss-action-tile">
-              <span className="ui-stat-card-label">Flagged Documents</span>
-              <span className="ui-stat-card-value">{dashboard.flaggedDocsCount}</span>
-              <span className="ss-action-tile-hint">Review flagged items</span>
+            <Link to="/support-staff/payments" className="ui-card ss-action-tile">
+              <span className="ui-stat-card-label">Rejected Payments</span>
+              <span className="ui-stat-card-value">{dashboard.rejectedPaymentsCount}</span>
+              <span className="ss-action-tile-hint">Waiting for a new proof</span>
             </Link>
             <div className="ui-card ss-action-tile ss-action-tile-static">
               <span className="ui-stat-card-label">Verified Today</span>
-              <span className="ui-stat-card-value">{dashboard.verifiedTodayCount}</span>
-              <span className="ss-action-tile-hint ss-action-tile-hint-muted">Counted today</span>
+              <span className="ui-stat-card-value">{dashboard.verifiedPaymentsTodayCount}</span>
+              <span className="ss-action-tile-hint ss-action-tile-hint-muted">Payments verified today</span>
             </div>
             <Link to="/support-staff/applicants" className="ui-card ss-action-tile">
               <span className="ui-stat-card-label">Total Applicants</span>
@@ -75,20 +75,11 @@ export default function SupportStaffDashboardPage() {
             </Link>
           </section>
 
-          {(dashboard.pendingVerificationCount > 0 || dashboard.flaggedDocsCount > 0) && (
+          {dashboard.pendingPaymentsCount > 0 && (
             <NextActionBanner
-              text={[
-                dashboard.pendingVerificationCount > 0 &&
-                  `${dashboard.pendingVerificationCount} document${
-                    dashboard.pendingVerificationCount === 1 ? "" : "s"
-                  } awaiting review`,
-                dashboard.flaggedDocsCount > 0 &&
-                  `${dashboard.flaggedDocsCount} flagged item${dashboard.flaggedDocsCount === 1 ? "" : "s"} to resolve`,
-              ]
-                .filter(Boolean)
-                .join(" and ") + "."}
-              to="/support-staff/documents"
-              cta="Open Queue"
+              text={`${dashboard.pendingPaymentsCount} payment${dashboard.pendingPaymentsCount === 1 ? "" : "s"} waiting to be verified.`}
+              to="/support-staff/payments"
+              cta="Verify Payments"
             />
           )}
         </>

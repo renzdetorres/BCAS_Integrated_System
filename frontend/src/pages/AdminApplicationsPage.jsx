@@ -113,10 +113,10 @@ export default function AdminApplicationsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.search, filters.category, filters.program, filters.department, filters.yearLevel, filters.academicYear, filters.academicTerm, loadApplications]);
 
-  // Most recently active first (last updated, then submitted).
+  // Newest submission first, so a new application lands at the top of the list.
   const applications = useMemo(() => {
     const shown = filters.status ? loaded.filter((row) => row.status === filters.status) : loaded;
-    return [...shown].sort((a, b) => (b.updatedAt ?? b.submittedAt).localeCompare(a.updatedAt ?? a.submittedAt));
+    return [...shown].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
   }, [loaded, filters.status]);
 
   // Level and term choices belong to the academic category picked in the sidebar or the filter.
