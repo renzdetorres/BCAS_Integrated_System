@@ -83,6 +83,8 @@ export default function SupportStaffDocumentArchivePage() {
       header: "Status",
       accessor: (row) => row.status,
       sortable: true,
+      // The reason can be a whole sentence: let it wrap so the table fits instead of scrolling sideways.
+      nowrap: false,
       render: (row) => (
         <>
           <StatusBadge status={row.status} />
@@ -95,6 +97,7 @@ export default function SupportStaffDocumentArchivePage() {
       header: "Uploaded",
       accessor: (row) => row.uploadedAt,
       sortable: true,
+      nowrap: false,
       render: (row) => formatDateTime(row.uploadedAt),
     },
     {
@@ -102,6 +105,7 @@ export default function SupportStaffDocumentArchivePage() {
       header: "Archived/Updated",
       accessor: (row) => row.updatedAt,
       sortable: true,
+      nowrap: false,
       render: (row) => formatDateTime(row.updatedAt),
     },
     {

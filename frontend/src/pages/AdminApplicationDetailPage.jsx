@@ -4,10 +4,12 @@ import {
   ARCHIVABLE_STATUSES,
   archiveApplication,
   getApplicationLogs,
+  getAutomationIssues,
   getEntranceForm,
   getValidNextAdmissionStatuses,
   getValidNextScholarshipStatuses,
   promoteFromWaitlist,
+  runAutomation,
   searchApplications,
   setApplicationDepartment,
   updateApplicationStatus,
@@ -19,6 +21,7 @@ import { DEPARTMENT_OPTIONS, programOptionLabel, programsFor } from "../config/d
 import WorkflowStepper, { ADMISSION_STEP_LABELS, SCHOLARSHIP_STEP_LABELS } from "../components/WorkflowStepper.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import EntranceFormView from "../components/EntranceFormView.jsx";
+import Notice from "../components/ui/Notice.jsx";
 import StatusBadge, { statusLabel } from "../components/ui/StatusBadge.jsx";
 import { searchDocuments } from "../api/adminDocumentsApi.js";
 import { DOCUMENT_TYPE_LABELS } from "../api/documentApi.js";
@@ -67,6 +70,38 @@ export default function AdminApplicationDetailPage() {
   const [logsError, setLogsError] = useState(null);
   const [documents, setDocuments] = useState(null);
   const [entranceForm, setEntranceForm] = useState(null);
+
+  // Steps the automatic flow should have done but has not: the banner under the workflow stepper.
+  const [automationIssues, setAutomationIssues] = useState([]);
+  const [isRunningAutomation, setIsRunningAutomation] = useState(false);
+  const [automationResult, setAutomationResult] = useState(null);
+  const [automationError, setAutomationError] = useState(null);
+
+  const loadAutomationIssues = useCallback(() => {
+    if (!application || application.category !== "Admission") return;
+    getAutomationIssues(applicationId)
+      .then(setAutomationIssues)
+      .catch(() => setAutomationIssues([]));
+  }, [application, applicationId]);
+
+  useEffect(() => loadAutomationIssues(), [loadAutomationIssues]);
+
+  async function handleRunAutomation() {
+    setIsRunningAutomation(true);
+    setAutomationError(null);
+    setAutomationResult(null);
+    try {
+      const result = await runAutomation(applicationId);
+      setAutomationResult(result);
+      loadApplication();
+      loadLogs();
+      loadAutomationIssues();
+    } catch (error) {
+      setAutomationError(error instanceof ApiError ? error.message : "Failed to run the automatic steps.");
+    } finally {
+      setIsRunningAutomation(false);
+    }
+  }
 
   const loadApplication = useCallback(() => {
     let cancelled = false;
@@ -446,6 +481,38 @@ export default function AdminApplicationDetailPage() {
               <div className="admin-app-dossier-section">
                 <h2>Workflow Status</h2>
                 <WorkflowStepper steps={application.steps} labels={stepLabels} />
+                {(automationIssues.length > 0 || automationResult || automationError) && (
+                  <div className="admin-app-automation">
+                    {automationIssues.length > 0 && (
+                      <Notice tone="warning" title="The status is behind">
+                        <ul className="admin-app-automation-list">
+                          {automationIssues.map((issue) => (
+                            <li key={issue.code}>{issue.message}</li>
+                          ))}
+                        </ul>
+                        {automationIssues.some((issue) => issue.canFix) && (
+                          <button type="button" className="btn btn-primary btn-sm" onClick={handleRunAutomation} disabled={isRunningAutomation}>
+                            {isRunningAutomation ? "Moving..." : "Move it now"}
+                          </button>
+                        )}
+                      </Notice>
+                    )}
+                    {automationResult && (
+                      <Notice tone={automationResult.problems.length > 0 ? "danger" : "success"} title={automationResult.problems.length > 0 ? "Some steps could not run" : "Done"}>
+                        <ul className="admin-app-automation-list">
+                          {[...automationResult.done, ...automationResult.problems].map((line) => (
+                            <li key={line}>{line}</li>
+                          ))}
+                        </ul>
+                      </Notice>
+                    )}
+                    {automationError && (
+                      <p className="form-error" role="alert">
+                        {automationError}
+                      </p>
+                    )}
+                  </div>
+                )}
                 {application.remarks && (
                   <p className="admin-app-detail-remarks">
                     <strong>Remarks:</strong> {application.remarks}

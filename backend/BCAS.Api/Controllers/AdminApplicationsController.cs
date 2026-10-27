@@ -15,12 +15,29 @@ public class AdminApplicationsController : ControllerBase
 {
     private readonly IAdminApplicationsService _applicationsService;
     private readonly IAuditLogService _auditLogService;
+    private readonly IAdmissionFlowService _flowService;
 
-    public AdminApplicationsController(IAdminApplicationsService applicationsService, IAuditLogService auditLogService)
+    public AdminApplicationsController(IAdminApplicationsService applicationsService, IAuditLogService auditLogService, IAdmissionFlowService flowService)
     {
+        _flowService = flowService;
         _applicationsService = applicationsService;
         _auditLogService = auditLogService;
     }
+
+    /// <summary>
+    /// What the automatic admission flow should have done for this application but has not: the status is behind its
+    /// documents, or a permit is waiting to be released. Empty when it is where it should be.
+    /// </summary>
+    [HttpGet("{applicationId:guid}/automation")]
+    [ProducesResponseType(typeof(IReadOnlyList<AdmissionFlowIssue>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<AdmissionFlowIssue>>> GetAutomationIssues(Guid applicationId, CancellationToken cancellationToken) =>
+        Ok(await _flowService.CheckAsync(applicationId, cancellationToken));
+
+    /// <summary>Runs the automatic steps for this application now and reports what moved and what could not.</summary>
+    [HttpPost("{applicationId:guid}/automation/run")]
+    [ProducesResponseType(typeof(AdmissionFlowRunResult), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AdmissionFlowRunResult>> RunAutomation(Guid applicationId, CancellationToken cancellationToken) =>
+        Ok(await _flowService.RunNowAsync(applicationId, User.GetUserId(), cancellationToken));
 
     /// <summary>
     /// Admin-only: every admission and scholarship application, most recent

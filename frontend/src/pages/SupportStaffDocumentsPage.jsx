@@ -113,6 +113,8 @@ export default function SupportStaffDocumentsPage() {
   const [reasonText, setReasonText] = useState("");
   const [reasonError, setReasonError] = useState(null);
   const [isApprovingAll, setIsApprovingAll] = useState(false);
+  // The approval waiting for a yes: the applicant's last open document, or every open one at once.
+  const [confirming, setConfirming] = useState(null);
 
   const loadDocuments = useCallback(async () => {
     try {
@@ -150,6 +152,15 @@ export default function SupportStaffDocumentsPage() {
     setReasonAction(action);
     setReasonText("");
     setReasonError(null);
+  }
+
+  /** Approving an applicant's last open document may clear their whole application, so it asks first. */
+  function requestApprove(group, documentId) {
+    if (group.openCount === 1) {
+      setConfirming({ kind: "one", group, documentId });
+    } else {
+      handleApprove(documentId);
+    }
   }
 
   async function handleApprove(documentId) {
@@ -307,7 +318,7 @@ export default function SupportStaffDocumentsPage() {
                 Close
               </button>
               {openGroup.openCount > 0 && (
-                <button type="button" className="btn btn-primary" onClick={() => handleApproveAll(openGroup)} disabled={isApprovingAll}>
+                <button type="button" className="btn btn-primary" onClick={() => setConfirming({ kind: "all", group: openGroup })} disabled={isApprovingAll}>
                   {isApprovingAll ? "Approving..." : `Approve all ${openGroup.openCount} open`}
                 </button>
               )}
@@ -363,7 +374,7 @@ export default function SupportStaffDocumentsPage() {
                         </div>
                       ) : (
                         <div className="row-actions">
-                          <button type="button" className="action-approve" onClick={() => handleApprove(document.documentId)} disabled={busy}>
+                          <button type="button" className="action-approve" onClick={() => requestApprove(openGroup, document.documentId)} disabled={busy}>
                             {busy ? "Saving..." : "Approve"}
                           </button>
                           <button type="button" className="action-reject" onClick={() => startReasonPrompt(document.documentId, "Rejected")} disabled={busy}>
@@ -379,6 +390,40 @@ export default function SupportStaffDocumentsPage() {
               );
             })}
           </ul>
+        </Modal>
+      )}
+
+      {confirming && (
+        <Modal
+          open
+          onClose={() => setConfirming(null)}
+          size="sm"
+          title="Approve and clear this application?"
+          footer={
+            <>
+              <button type="button" className="btn btn-secondary" onClick={() => setConfirming(null)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  const choice = confirming;
+                  setConfirming(null);
+                  if (choice.kind === "all") handleApproveAll(choice.group);
+                  else handleApprove(choice.documentId);
+                }}
+              >
+                Approve
+              </button>
+            </>
+          }
+        >
+          <p>
+            {confirming.kind === "all" ? "This approves every open document" : "This is the last document waiting for review"} for{" "}
+            <strong>{confirming.group.name}</strong>. If every required document is then verified, the application moves to Documents
+            Cleared and the applicant is told to pay the entrance exam fee. An approved document cannot be un-approved.
+          </p>
         </Modal>
       )}
 

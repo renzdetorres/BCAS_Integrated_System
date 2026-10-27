@@ -255,3 +255,31 @@ export async function archiveApplication(applicationId, { category, reason }) {
 
   return data;
 }
+
+/** What the automatic admission flow should have done for this application but has not: [{ code, message, canFix }]. */
+export async function getAutomationIssues(applicationId) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/applications/${applicationId}/automation`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to check this application's automatic steps."), response.status);
+  }
+
+  return response.json();
+}
+
+/** Runs the automatic steps for this application now: { done: [...], problems: [...] }. */
+export async function runAutomation(applicationId) {
+  const response = await fetch(`${API_BASE_URL}/api/admin/applications/${applicationId}/automation/run`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new ApiError(resolveErrorMessage(response, null, "Failed to run the automatic steps."), response.status);
+  }
+
+  return response.json();
+}

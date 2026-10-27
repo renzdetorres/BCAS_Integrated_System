@@ -30,6 +30,9 @@
 
 .ss-archive-reason {
   display: block;
+  max-width: 28ch;
+  white-space: normal;
+  overflow-wrap: break-word;
   color: var(--color-text-secondary);
   font-size: 0.75rem;
   margin-top: 4px;

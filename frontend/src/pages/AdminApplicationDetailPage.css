@@ -293,3 +293,16 @@
 .admin-app-documents li:last-child {
   border-bottom: none;
 }
+
+/* Banner under the workflow stepper: steps the automatic flow should have done but has not. */
+.admin-app-automation {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.admin-app-automation-list {
+  margin: 0 0 10px;
+  padding-left: 1.1rem;
+}
