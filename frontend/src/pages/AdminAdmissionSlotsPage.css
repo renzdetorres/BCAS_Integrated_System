@@ -14,11 +14,19 @@
   font-size: 1rem;
 }
 
+/* Fixed layout with set column widths, so every category's table lines up with the others. */
 .admission-slots-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
   font-size: 0.9rem;
 }
+
+.admission-slots-table th:nth-child(1) { width: 26%; }
+.admission-slots-table th:nth-child(2) { width: 22%; }
+.admission-slots-table th:nth-child(3) { width: 14%; }
+.admission-slots-table th:nth-child(4) { width: 18%; }
+.admission-slots-table th:nth-child(5) { width: 20%; }
 
 .admission-slots-table th,
 .admission-slots-table td {
