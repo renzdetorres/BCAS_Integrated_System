@@ -28,7 +28,7 @@
 
 .admission-stepper-done:not(:first-child)::before,
 .admission-stepper-current:not(:first-child)::before {
-  background: var(--color-status-green-text);
+  background: var(--color-status-green-solid);
 }
 
 .admission-stepper-button {
@@ -71,7 +71,7 @@
 }
 
 .admission-stepper-done .admission-stepper-circle {
-  background: var(--color-status-green-text);
+  background: var(--color-status-green-solid);
   border-color: var(--color-status-green-text);
   color: var(--color-white);
 }
@@ -96,7 +96,7 @@
 }
 
 .admission-stepper-current .admission-stepper-label {
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   font-weight: 700;
 }
 
@@ -106,7 +106,7 @@
 
 @media (hover: hover) and (pointer: fine) {
   .admission-stepper-done .admission-stepper-button:hover .admission-stepper-label {
-    color: var(--color-primary);
+    color: var(--color-primary-text);
   }
 }
 

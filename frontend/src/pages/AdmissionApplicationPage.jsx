@@ -821,7 +821,7 @@ export default function AdmissionApplicationPage() {
                 ) : (
                   <span />
                 )}
-                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                <button type="submit" className="btn btn-primary" disabled={isSubmitting} aria-busy={isSubmitting}>
                   {isLastStep ? "Submit Application" : "Continue"}
                 </button>
               </div>

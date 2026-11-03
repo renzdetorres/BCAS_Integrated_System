@@ -21,7 +21,7 @@
 
 .status-legend-button:hover,
 .status-legend-button[aria-expanded="true"] {
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   border-color: var(--color-primary);
 }
 

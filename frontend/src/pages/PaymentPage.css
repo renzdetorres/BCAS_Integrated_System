@@ -46,7 +46,7 @@
   font-weight: 700 !important;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 .payment-instructions {
@@ -72,7 +72,7 @@
   padding: var(--space-3);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-lg);
-  background: var(--color-white);
+  background: var(--color-paper);
 }
 
 .payment-qr figcaption {
@@ -146,7 +146,7 @@
   border-radius: var(--radius-sm);
   object-fit: cover;
   border: 1px solid var(--color-border);
-  background: var(--color-white);
+  background: var(--color-paper);
 }
 
 .payment-chosen-pdf {
@@ -183,7 +183,7 @@
   width: min(100%, 420px);
   margin: 0 auto;
   border-radius: var(--radius-lg);
-  background: var(--color-white);
+  background: var(--color-paper);
 }
 
 /* ---- Choosing how to pay: one tile per method, the picked one filled ---- */
@@ -235,7 +235,7 @@
 .payment-method.is-chosen {
   border-color: var(--color-primary);
   background: var(--color-primary-tint-strong);
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 .payment-method:has(input:focus-visible) {

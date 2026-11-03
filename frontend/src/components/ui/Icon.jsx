@@ -62,6 +62,8 @@ export const PATHS = {
   trash: "M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v6m4-6v6",
   megaphone: "M3 10v4h3l7 4V6l-7 4H3Zm13-1a4 4 0 0 1 0 6",
   dots: "M12 5h.01M12 12h.01M12 19h.01",
+  sun: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0-5v2m0 14v2M3 12h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4",
+  info: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-10v6m0-9v.01",
 };
 
 export default function Icon({ name, size = 18, className = "" }) {

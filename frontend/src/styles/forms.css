@@ -139,13 +139,13 @@ html :is(input:not([type="checkbox"], [type="radio"], [type="file"], [type="rang
 
 html :is(input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"], [type="button"], [type="submit"], [type="reset"], [type="hidden"], [type="image"]), select, textarea):hover:not(:focus):not(:disabled):not([readonly]) {
   border-color: var(--field-border-hover, #929d8f);
-  background-color: var(--color-white);
+  background-color: var(--color-paper);
 }
 
 html :is(input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="color"], [type="button"], [type="submit"], [type="reset"], [type="hidden"], [type="image"]), select, textarea):focus {
   outline: none;
   border-color: var(--color-primary-light);
-  background-color: var(--color-white);
+  background-color: var(--color-paper);
   box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
 }
 

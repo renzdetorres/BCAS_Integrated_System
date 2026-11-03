@@ -35,7 +35,7 @@
 
 .deadline-type {
   grid-column: 1 / -1;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   font-size: 0.78rem;
   font-weight: 600;
 }
@@ -151,7 +151,7 @@
 }
 
 .applicant-announcements-header a {
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   font-size: 0.8rem;
   font-weight: 600;
   text-decoration: none;

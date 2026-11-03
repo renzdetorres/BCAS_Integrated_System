@@ -1,4 +1,7 @@
-:root {
+/* `.auth-page` re-declares the light set so the sign-in screens keep their own look when the rest
+   of the app is switched to a dark theme (appearance.css). */
+:root,
+.auth-page {
   /* Brand - the BCAS forest green and seal gold. The green is the one
      accent the UI acts with; gold is reserved for brand moments (seal,
      motto, notification count) so it keeps meaning something. */
@@ -7,6 +10,11 @@
   --color-primary-light: #2d6a4f;
   --color-accent: #d9a441;
   --color-accent-dark: #946a1f;
+  /* The green used as text and links. Same as the primary in the light theme; the dark theme
+     lightens it so it stays readable on dark surfaces while the primary stays a fill for buttons. */
+  --color-primary-text: var(--color-primary);
+  /* Text on the gold accent (the notification count, a top-3 rank). Stays a deep green in every theme. */
+  --color-on-accent: var(--color-primary-dark);
 
   /* Surfaces - a near-neutral canvas with the faintest green cast, so white
      panels lift off it by value alone instead of needing heavy shadows. */
@@ -16,6 +24,9 @@
   --color-border: #e3e6e0;
   --color-border-strong: #cfd4cc;
   --color-white: #ffffff;
+  /* White as a surface (a field's focused fill, a sheet of paper) as opposed to white as text on a
+     coloured fill, which stays --color-white in every theme. */
+  --color-paper: #ffffff;
 
   /* Text - ink tinted toward the brand green rather than a cool slate gray,
      so body copy and the palette read as one family. All pass 4.5:1 on
@@ -31,6 +42,10 @@
   --color-status-red-bg: #fbeaea;
   --color-status-red-text: #b42828;
   --color-status-red-dark: #8f1f1f;
+  /* Status colours used as a solid fill (legend dots, bars, completed steps) rather than as text. */
+  --color-status-green-solid: var(--color-status-green-text);
+  --color-status-red-solid: var(--color-status-red-text);
+  --color-status-amber-solid: var(--color-status-amber-text);
   --color-status-amber-bg: #fcf1dc;
   --color-status-amber-text: #8f5a0b;
   --color-status-gray-bg: #eef0ed;

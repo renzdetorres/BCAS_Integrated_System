@@ -8,7 +8,7 @@
 
 .inquiry-detail-back-link {
   display: inline-block;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   font-size: 0.85rem;
   font-weight: 600;
   text-decoration: none;

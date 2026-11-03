@@ -1,4 +1,5 @@
 import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
+import { markSessionStart } from "../utils/sessionClock.js";
 
 export async function getMyEvaluatorProfile() {
   const response = await fetch(`${API_BASE_URL}/api/evaluator/settings`, {
@@ -43,6 +44,7 @@ export async function changeMyEvaluatorPassword({ currentPassword, newPassword }
   });
 
   if (response.status === 204) {
+    markSessionStart();
     return;
   }
 

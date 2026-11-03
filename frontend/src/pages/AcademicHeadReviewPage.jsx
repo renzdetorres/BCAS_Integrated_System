@@ -11,6 +11,7 @@ import Card from "../components/ui/Card.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import ScholarshipFormSummary from "../components/ui/ScholarshipFormSummary.jsx";
 import WorkflowStepper, { SCHOLARSHIP_STEP_LABELS } from "../components/WorkflowStepper.jsx";
+import { useToast } from "../context/ToastContext.jsx";
 import "./AcademicHeadReviewPage.css";
 import Skeleton from "../components/ui/Skeleton.jsx";
 
@@ -26,6 +27,7 @@ function formatDateTime(isoDateTime) {
 
 export default function AcademicHeadReviewPage() {
   const { applicationId } = useParams();
+  const { showSuccessMoment } = useToast();
   const [application, setApplication] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
@@ -68,6 +70,9 @@ export default function AcademicHeadReviewPage() {
       const updated = await recordFinalDecision(applicationId, { decision, remarks });
       setApplication(updated);
       setSavedMessage("Final decision confirmed.");
+      if (decision === "Approved") {
+        showSuccessMoment({ title: "Scholarship approved", detail: updated.applicantName ?? application?.applicantName });
+      }
     } catch (error) {
       setSaveError(error instanceof ApiError ? error.message : "Failed to confirm the decision.");
     } finally {

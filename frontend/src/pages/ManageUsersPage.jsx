@@ -115,7 +115,7 @@ function AddStaffModal({ onClose, onCreated }) {
           <label className="ui-label" htmlFor="add-email">
             Email
           </label>
-          <input placeholder="e.g. juan.delacruz@email.com" id="add-email" type="email" autoComplete="off" className="ui-input" value={form.email} onChange={(e) => setField("email", e.target.value)} />
+          <input placeholder="Enter your email address" id="add-email" type="email" autoComplete="off" className="ui-input" value={form.email} onChange={(e) => setField("email", e.target.value)} />
         </div>
         <div className="ui-field">
           <label className="ui-label" htmlFor="add-password">
@@ -253,7 +253,7 @@ function EditAccountModal({ user, isSelf, callerIsSuperAdmin, onClose, onSaved }
           <label className="ui-label" htmlFor="edit-email">
             Email
           </label>
-          <input placeholder="e.g. juan.delacruz@email.com" id="edit-email" type="email" className="ui-input" value={form.email} onChange={(e) => setField("email", e.target.value)} />
+          <input placeholder="Enter your email address" id="edit-email" type="email" className="ui-input" value={form.email} onChange={(e) => setField("email", e.target.value)} />
         </div>
         <div className="ui-field-row">
           <div className="ui-field">

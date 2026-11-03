@@ -9,7 +9,12 @@ import App from "./App.jsx";
 import "./styles/base.css";
 import "./styles/responsive.css";
 import "./styles/motion.css";
+import "./styles/appearance.css";
 import { loadAcademicCatalog } from "./config/academicCatalog.js";
+import { applyAppearance, loadAppearance } from "./utils/appearance.js";
+
+// The saved look is on the page before the first paint, so a dark theme never flashes light.
+applyAppearance(loadAppearance());
 
 
 // The school's saved strands, programs and levels load first (never longer than 2 seconds), so the first screen already shows them.

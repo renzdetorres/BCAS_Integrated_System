@@ -6,6 +6,7 @@ import { ApiError } from "../api/apiClient.js";
 import { useSession } from "../context/SessionContext.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
+import AppearanceSettings from "../components/AppearanceSettings.jsx";
 import ConfirmDialog from "../components/ui/ConfirmDialog.jsx";
 import { useToast } from "../context/ToastContext.jsx";
 import "./ApplicantProfilePage.css";
@@ -303,11 +304,12 @@ export default function ApplicantProfilePage() {
               </select>
             </div>
 
-            <button type="submit" disabled={isSubmitting}>
+            <button type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
               {isSubmitting ? "Saving..." : "Save Profile"}
             </button>
           </form>
       </Card>
+      <AppearanceSettings />
       </div>
       </div>
 

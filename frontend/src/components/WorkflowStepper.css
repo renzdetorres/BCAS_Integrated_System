@@ -36,7 +36,7 @@
 }
 
 .tracking-step-complete:not(:first-child)::before {
-  background: var(--color-status-green-text);
+  background: var(--color-status-green-solid);
 }
 
 .tracking-step-dot {
@@ -51,7 +51,7 @@
 }
 
 .tracking-step-complete .tracking-step-dot {
-  background: var(--color-status-green-text);
+  background: var(--color-status-green-solid);
   border-color: var(--color-status-green-text);
 }
 
@@ -120,7 +120,7 @@
 
 .tracking-stepper-numbered .tracking-step-complete:not(:first-child)::before,
 .tracking-stepper-numbered .tracking-step-current:not(:first-child)::before {
-  background: var(--color-status-green-text);
+  background: var(--color-status-green-solid);
 }
 
 .tracking-step-circle {
@@ -142,7 +142,7 @@
 }
 
 .tracking-stepper-numbered .tracking-step-complete .tracking-step-circle {
-  background: var(--color-status-green-text);
+  background: var(--color-status-green-solid);
   border-color: var(--color-status-green-text);
   color: var(--color-white);
 }
@@ -165,7 +165,7 @@
 }
 
 .tracking-stepper-numbered .tracking-step-current .tracking-step-label {
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   font-weight: 700;
 }
 
@@ -236,6 +236,37 @@
 .tracking-stepper-numbered .tracking-step-complete:not(:first-child)::before,
 .tracking-stepper-numbered .tracking-step-current:not(:first-child)::before {
   background-size: 100% 100%;
+}
+
+/* On arrival the rule grows from the first stage to the one the applicant is on, one stage after
+   another, so the position reads at a glance. */
+@keyframes tracking-line-grow {
+  from {
+    background-size: 0% 100%;
+  }
+}
+
+@keyframes tracking-line-grow-down {
+  from {
+    background-size: 100% 0%;
+  }
+}
+
+.tracking-stepper-numbered .tracking-step-complete:not(:first-child)::before,
+.tracking-stepper-numbered .tracking-step-current:not(:first-child)::before {
+  animation: tracking-line-grow 560ms var(--ease-out) calc(var(--step-index, 0) * 130ms) backwards;
+}
+
+@media (max-width: 720px) {
+  .tracking-stepper-numbered .tracking-step:not(:first-child)::before {
+    background: linear-gradient(var(--color-status-green-text), var(--color-status-green-text)) no-repeat top / 100% 0% var(--color-border);
+  }
+
+  .tracking-stepper-numbered .tracking-step-complete:not(:first-child)::before,
+  .tracking-stepper-numbered .tracking-step-current:not(:first-child)::before {
+    background-size: 100% 100%;
+    animation-name: tracking-line-grow-down;
+  }
 }
 
 .tracking-step-complete .tracking-step-circle svg path {

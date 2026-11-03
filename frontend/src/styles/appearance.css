@@ -1,0 +1,296 @@
+/* Appearance and Layout settings (Profile / Appearance).
+
+   Everything a person can change lives in this one file, keyed off attributes that
+   utils/appearance.js writes on <html>:
+
+     data-theme        light | dark          (System resolves to one of these)
+     data-temperature  cool | neutral | warm
+     data-contrast     standard | high
+     --font-scale      1 by default          every font size is wired to it at build time
+     --layout-scale    1 by default          CSS zoom below
+
+   With the defaults (light, neutral, standard, 100%, 100%) nothing here applies, so the app
+   looks exactly as it did before these settings existed. The sign-in screens (.auth-page)
+   re-declare the light tokens and keep their own look in every theme. It loads last (main.jsx). */
+
+/* ---- Layout scale and font size ---------------------------------------------------------------
+   `zoom` scales the whole interface like a browser zoom that belongs to the app. Viewport units
+   ignore it, which is why build/appearanceScale.js divides every vh by --layout-scale. Font size
+   scales text only (and rem-based spacing with it). 100% keeps the browser's own default size. */
+
+html {
+  zoom: var(--layout-scale, 1);
+  font-size: calc(100% * var(--font-scale, 1));
+}
+
+/* The sidebar widens with the type size, so larger text does not cut its labels short. */
+:root {
+  --sidebar-width: calc(256px * max(1, var(--font-scale, 1)));
+}
+
+/* ---- Dark theme --------------------------------------------------------------------------------
+   Green-tinted darks, not grey, so the brand still reads. The primary stays a mid green that white
+   text sits on (buttons, selected rows); --color-primary-text is the lighter green for text and
+   links. @media screen keeps print (exam slips, receipts) on the light set. */
+
+@media screen {
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+
+    --color-primary: #2f7d57;
+    --color-primary-dark: #276a49;
+    --color-primary-light: #5db28a;
+    --color-primary-text: #86d3ab;
+    --color-accent-dark: #e5b95c;
+    --color-on-accent: #12301f;
+
+    --color-bg: #101714;
+    --color-surface: #17201b;
+    --color-surface-subtle: #1c2721;
+    --color-paper: #1f2b24;
+    --color-border: #2a362f;
+    --color-border-strong: #3b4a41;
+
+    --color-text-primary: #e9f0eb;
+    --color-text-secondary: #aebbb3;
+    --color-text-tertiary: #93a198;
+
+    --color-status-green-bg: #173a29;
+    --color-status-green-text: #84d9a6;
+    --color-status-green-solid: #258050;
+    --color-status-red-bg: #3f2020;
+    --color-status-red-text: #ff9e9e;
+    --color-status-red-dark: #a82c2c;
+    --color-status-red-solid: #c43c3c;
+    --color-status-amber-solid: #9a5f08;
+    --color-status-amber-bg: #3f3014;
+    --color-status-amber-text: #f2c36b;
+    --color-status-gray-bg: #25302a;
+    --color-status-gray-text: #b6c3bb;
+    --color-status-purple-bg: #2d2543;
+    --color-status-purple-text: #c9aef2;
+
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 10px -2px rgba(0, 0, 0, 0.35);
+    --shadow-raised: 0 1px 3px rgba(0, 0, 0, 0.4), 0 12px 28px -8px rgba(0, 0, 0, 0.55);
+    --shadow-overlay: 0 2px 6px rgba(0, 0, 0, 0.45), 0 24px 56px -12px rgba(0, 0, 0, 0.7);
+
+    --field-bg: #1b2620;
+    --field-border: #3d4c43;
+    --field-border-hover: #5f7266;
+
+    --color-primary-tint: rgba(134, 211, 171, 0.07);
+    --color-primary-tint-strong: rgba(134, 211, 171, 0.14);
+    --color-primary-focus-ring: rgba(93, 178, 138, 0.32);
+    --color-accent-focus-ring: rgba(93, 178, 138, 0.6);
+  }
+
+  /* The sign-in screens stay light, native controls included (checkboxes, the date picker). */
+  .auth-page {
+    color-scheme: light;
+  }
+
+  /* The chart palette is declared on the chart wrapper, so it is re-declared there. */
+  html[data-theme="dark"] .viz-wrap {
+    --viz-main: #5db28a;
+    --viz-highlight: #e0a63a;
+    --viz-context: #5f6e65;
+    --viz-bad: #e5655f;
+    --viz-ord-1: #2f6f52;
+    --viz-ord-2: #4a9672;
+    --viz-ord-3: #7fbb9a;
+    --viz-ord-4: #b2dcc4;
+    --viz-heat-1: #1e3a2d;
+    --viz-heat-2: #27503c;
+    --viz-heat-3: #2f7352;
+    --viz-heat-4: #68b58c;
+    --viz-heat-5: #a6dcc0;
+  }
+
+  /* Fields: a darker well that lifts a little on hover and focus. */
+  html[data-theme="dark"] :where(input, select, textarea):not(.auth-page *) {
+    --field-bg: #1b2620;
+    --field-border: #3d4c43;
+    --field-border-hover: #5f7266;
+  }
+
+  html[data-theme="dark"] input::placeholder,
+  html[data-theme="dark"] textarea::placeholder {
+    color: var(--color-text-tertiary);
+  }
+
+  /* Surfaces that are not token-driven. */
+  html[data-theme="dark"] .topbar {
+    background: rgba(16, 23, 20, 0.86);
+  }
+
+  html[data-theme="dark"] .sidebar {
+    background: linear-gradient(180deg, #0f2a1d 0%, #0a1b13 100%);
+  }
+
+  html[data-theme="dark"] .viz-cell[data-step="3"] {
+    color: #ffffff;
+  }
+
+  html[data-theme="dark"] .viz-cell[data-step="4"],
+  html[data-theme="dark"] .viz-cell[data-step="5"] {
+    color: #0f1a14;
+  }
+
+}
+
+/* ---- Colour temperature -------------------------------------------------------------------------
+   Shifts only the neutrals (canvas, borders, text) toward blue or amber. Brand green and the status
+   colours do not move. Neutral is the shipped green-tinted set. */
+
+:root[data-theme="light"][data-temperature="cool"] {
+  --color-bg: #e4ecf4;
+  --color-surface: #fafcfe;
+  --color-surface-subtle: #eef3f9;
+  --color-paper: #fafcfe;
+  --color-border: #d0dbe6;
+  --color-border-strong: #b4c4d3;
+  --color-status-gray-bg: #e6edf4;
+  --color-text-primary: #121d29;
+  --color-text-secondary: #4a5a6a;
+  --color-text-tertiary: #5a6a7b;
+}
+
+:root[data-theme="light"][data-temperature="warm"] {
+  --color-bg: #f4ebdd;
+  --color-surface: #fffcf6;
+  --color-surface-subtle: #faf3e7;
+  --color-paper: #fffcf6;
+  --color-border: #e5d8c3;
+  --color-border-strong: #cdbca1;
+  --color-status-gray-bg: #f0e7d8;
+  --color-text-primary: #251d13;
+  --color-text-secondary: #62584a;
+  --color-text-tertiary: #716755;
+}
+
+/* The translucent top bar follows the cast too. */
+:root[data-theme="light"][data-temperature="cool"] .topbar {
+  background: rgba(250, 252, 254, 0.86);
+}
+
+:root[data-theme="light"][data-temperature="warm"] .topbar {
+  background: rgba(255, 252, 246, 0.86);
+}
+
+/* Fields pick up the same cast. */
+:root[data-theme="light"][data-temperature="cool"] :where(input, select, textarea):not(.auth-page *) {
+  --field-bg: #f5f9fd;
+  --field-border: #b4c4d3;
+  --field-border-hover: #7d93a8;
+}
+
+:root[data-theme="light"][data-temperature="warm"] :where(input, select, textarea):not(.auth-page *) {
+  --field-bg: #fdf8ef;
+  --field-border: #d3c3a8;
+  --field-border-hover: #a8946f;
+}
+
+@media screen {
+  :root[data-theme="dark"][data-temperature="neutral"] {
+    --color-bg: #111513;
+    --color-surface: #181d1a;
+    --color-surface-subtle: #1d231f;
+    --color-paper: #212824;
+    --color-border: #2a322d;
+    --color-border-strong: #3a443d;
+  }
+
+  :root[data-theme="dark"][data-temperature="cool"] {
+    --color-bg: #0e1519;
+    --color-surface: #151e24;
+    --color-surface-subtle: #1a252c;
+    --color-paper: #1e2a32;
+    --color-border: #263540;
+    --color-border-strong: #36495a;
+    --color-status-gray-bg: #212d35;
+    --color-text-primary: #e6eef3;
+    --color-text-secondary: #a9bbc7;
+    --color-text-tertiary: #8fa1ae;
+  }
+
+  :root[data-theme="dark"][data-temperature="warm"] {
+    --color-bg: #17130f;
+    --color-surface: #1f1a15;
+    --color-surface-subtle: #25201a;
+    --color-paper: #2a241d;
+    --color-border: #352d25;
+    --color-border-strong: #483d31;
+    --color-status-gray-bg: #2c261f;
+    --color-text-primary: #f1ebe3;
+    --color-text-secondary: #bfb3a3;
+    --color-text-tertiary: #a39787;
+  }
+}
+
+/* ---- High contrast ------------------------------------------------------------------------------
+   Darker text and status colours, firmer borders and fields, a thicker focus ring. */
+
+:root[data-theme="light"][data-contrast="high"] {
+  --color-text-primary: #070d0a;
+  --color-text-secondary: #2b3730;
+  --color-text-tertiary: #38443d;
+  --color-border: #a9b2a7;
+  --color-border-strong: #747f72;
+  --color-status-green-text: #124f29;
+  --color-status-red-text: #7d1818;
+  --color-status-amber-text: #613b04;
+  --color-status-gray-text: #2f3732;
+  --color-status-purple-text: #47227a;
+  --color-primary-focus-ring: rgba(27, 67, 50, 0.4);
+}
+
+:root[data-theme="light"][data-contrast="high"] :where(input, select, textarea) {
+  --field-border: #66715f;
+  --field-border-hover: #3f4a3d;
+}
+
+@media screen {
+  :root[data-theme="dark"][data-contrast="high"] {
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #dce6df;
+    --color-text-tertiary: #c5d2c9;
+    --color-border: #566a5e;
+    --color-border-strong: #86a090;
+    --color-status-green-text: #a9efc6;
+    --color-status-red-text: #ffbcbc;
+    --color-status-amber-text: #ffd98c;
+    --color-status-gray-text: #d3ded7;
+    --color-status-purple-text: #dcc8fb;
+    --color-primary-text: #a9efc6;
+    --color-primary-focus-ring: rgba(169, 239, 198, 0.4);
+  }
+
+  html[data-theme="dark"][data-contrast="high"] :where(input, select, textarea):not(.auth-page *) {
+    --field-border: #86a090;
+    --field-border-hover: #b3cbbb;
+  }
+}
+
+:root[data-contrast="high"] a:focus-visible,
+:root[data-contrast="high"] button:focus-visible,
+:root[data-contrast="high"] [tabindex]:focus-visible,
+:root[data-contrast="high"] summary:focus-visible {
+  outline-width: 3px;
+}
+
+:root[data-contrast="high"] :is(input, select, textarea):focus {
+  box-shadow: 0 0 0 3px var(--color-primary-focus-ring) !important;
+}
+
+/* Paper is always printed at its real size, whatever the screen is set to (exam slips, receipts). */
+@media print {
+  :root {
+    --font-scale: 1 !important;
+    --layout-scale: 1 !important;
+  }
+
+  html {
+    zoom: 1;
+  }
+}

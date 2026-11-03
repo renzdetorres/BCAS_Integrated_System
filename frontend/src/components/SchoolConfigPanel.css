@@ -42,7 +42,7 @@
   padding: var(--space-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: var(--color-white);
+  background: var(--color-paper);
 }
 
 .school-config-qr-empty {

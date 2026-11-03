@@ -59,7 +59,7 @@
 
 .accounts-nav-item.is-active {
   background: var(--color-primary-tint-strong);
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   font-weight: 600;
 }
 
@@ -70,7 +70,7 @@
 }
 
 .accounts-nav-item.is-active .accounts-nav-count {
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 /* ---- Right: the card ---- */
@@ -357,7 +357,7 @@
   place-items: center;
   flex: none;
   width: 16px;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 .accounts-menu-clear {

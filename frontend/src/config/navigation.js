@@ -168,18 +168,22 @@ export const NAV_ITEMS_BY_ROLE = {
 // The profile dropdown's own menu (TopBar), separate from primary sidebar
 // nav - account-level settings live here for every role instead of
 // competing for space with the actual work the sidebar is for.
+const APPEARANCE_MENU_ITEM = { to: "/appearance", label: "Appearance", icon: "sun" };
+
 export const PROFILE_MENU_BY_ROLE = {
   Applicant: [
     { to: "/profile", label: "Profile", icon: "user" },
     { to: "/settings", label: "Settings", icon: "settings" },
   ],
+  // Applicants change Appearance and layout on their Profile; every other role has this page.
   Admin: [
     { to: "/admin/notification-settings", label: "Notification Settings", icon: "mail" },
     { to: "/admin/settings", label: "System Settings", icon: "settings" },
+    APPEARANCE_MENU_ITEM,
   ],
-  Evaluator: [{ to: "/evaluator/settings", label: "Settings", icon: "settings" }],
-  AcademicHead: [{ to: "/academic-head/settings", label: "Settings", icon: "settings" }],
-  SupportStaff: [{ to: "/support-staff/settings", label: "Settings", icon: "settings" }],
+  Evaluator: [{ to: "/evaluator/settings", label: "Settings", icon: "settings" }, APPEARANCE_MENU_ITEM],
+  AcademicHead: [{ to: "/academic-head/settings", label: "Settings", icon: "settings" }, APPEARANCE_MENU_ITEM],
+  SupportStaff: [{ to: "/support-staff/settings", label: "Settings", icon: "settings" }, APPEARANCE_MENU_ITEM],
 };
 
 export const ROLE_LABELS = {

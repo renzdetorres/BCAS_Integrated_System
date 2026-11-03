@@ -47,7 +47,7 @@
 }
 
 .ss-documents-queue-link {
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   font-weight: 600;
   text-decoration: none;
 }
@@ -189,7 +189,7 @@
   padding: 14px 16px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: var(--color-white, #fff);
+  background: var(--color-paper);
 }
 
 /* Approved and rejected documents stay in the card, below the open ones, and read as done. */

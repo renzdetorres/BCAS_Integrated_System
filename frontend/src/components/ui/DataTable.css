@@ -280,6 +280,15 @@ h2.ui-datatable-title {
   color: var(--color-text-secondary);
 }
 
+.ui-datatable-empty .empty-illustration {
+  display: block;
+  margin: 0 auto 8px;
+}
+
+.ui-datatable-empty-text {
+  display: block;
+}
+
 .ui-datatable-error {
   color: var(--color-status-red-text);
 }
@@ -786,6 +795,8 @@ h2.ui-datatable-title {
 
   .ui-datatable-table td.ui-datatable-empty,
   .ui-datatable-table td.ui-datatable-error {
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
     text-align: center;
   }

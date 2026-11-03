@@ -102,7 +102,7 @@ function ScheduleModal({ row, onClose, onSaved }) {
 }
 
 function EvaluateModal({ row, onClose, onSaved }) {
-  const { showToast } = useToast();
+  const { showToast, showSuccessMoment } = useToast();
   const [evaluation, setEvaluation] = useState("Passed");
   const [notes, setNotes] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -113,7 +113,11 @@ function EvaluateModal({ row, onClose, onSaved }) {
     setErrorMessage(null);
     try {
       await evaluateInterview(row.applicationId, { evaluation, notes: notes.trim() });
-      showToast(evaluation === "Passed" ? "Admission result recorded. The applicant can proceed to enrollment." : "Admission result recorded.");
+      if (evaluation === "Passed") {
+        showSuccessMoment({ title: "Admission approved", detail: `${row.applicantName} can proceed to enrollment.` });
+      } else {
+        showToast("Admission result recorded.");
+      }
       await onSaved(evaluation);
       onClose();
     } catch (error) {

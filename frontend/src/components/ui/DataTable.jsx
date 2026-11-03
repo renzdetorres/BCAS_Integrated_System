@@ -1,3 +1,4 @@
+import EmptyIllustration from "./EmptyIllustration.jsx";
 import { useMemo, useState } from "react";
 import {
   getCoreRowModel,
@@ -359,7 +360,8 @@ export default function DataTable({
             ) : pageRows.length === 0 ? (
               <tr>
                 <td colSpan={columns.length} className="ui-datatable-empty">
-                  {emptyMessage}
+                  <EmptyIllustration size={72} />
+                  <span className="ui-datatable-empty-text">{emptyMessage}</span>
                 </td>
               </tr>
             ) : (

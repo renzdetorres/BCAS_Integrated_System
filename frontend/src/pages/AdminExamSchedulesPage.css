@@ -35,7 +35,7 @@
   width: 14px;
   height: 14px;
   border-radius: var(--radius-full);
-  background: var(--color-white);
+  background: var(--color-paper);
   box-shadow: var(--shadow-xs);
   transition: transform 180ms var(--ease-out);
 }
@@ -255,7 +255,7 @@
 @media (hover: hover) and (pointer: fine) {
   .exam-icon-button:hover:not(:disabled) {
     background: var(--color-primary-tint);
-    color: var(--color-primary);
+    color: var(--color-primary-text);
   }
 
   .exam-icon-button-danger:hover:not(:disabled) {

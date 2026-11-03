@@ -38,7 +38,7 @@
    with white text. Hover eases to a darker shade on pointer devices only; the shared
    .btn:active scale-down still applies. */
 .admin-applications-bulk .btn {
-  --bulk-bg: var(--color-status-red-text);
+  --bulk-bg: var(--color-status-red-solid);
   background: var(--bulk-bg);
   color: var(--color-white);
   border-color: transparent;
@@ -52,7 +52,7 @@
 
 .admin-applications-bulk .btn-secondary {
   --bulk-bg: var(--color-status-green-bg);
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   border-color: rgba(27, 67, 50, 0.22);
   box-shadow: none;
 }

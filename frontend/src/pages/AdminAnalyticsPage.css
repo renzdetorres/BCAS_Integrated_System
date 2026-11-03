@@ -190,7 +190,7 @@
 
 .analytics-stack .is-good,
 .analytics-swatch.is-good {
-  background: var(--color-status-green-text);
+  background: var(--color-status-green-solid);
 }
 
 .analytics-stack .is-wait,
@@ -200,7 +200,7 @@
 
 .analytics-stack .is-bad,
 .analytics-swatch.is-bad {
-  background: var(--color-status-red-text);
+  background: var(--color-status-red-solid);
 }
 
 .analytics-legend {

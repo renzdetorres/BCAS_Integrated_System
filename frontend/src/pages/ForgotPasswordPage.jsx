@@ -76,7 +76,7 @@ export default function ForgotPasswordPage() {
                 <label htmlFor="email">Email</label>
                 <div className="input-with-icon">
                   <Icon name="mail" size={18} className="input-icon" />
-                  <input placeholder="e.g. juan.delacruz@email.com"
+                  <input placeholder="Enter your email address"
                     id="email"
                     name="email"
                     type="email"

@@ -177,7 +177,7 @@ export default function SupportStaffSettingsPage() {
 
             <div className="form-row">
               <label htmlFor="email">Email</label>
-              <input placeholder="e.g. juan.delacruz@email.com" id="email" name="email" type="email" required value={form.email} onChange={handleChange} />
+              <input placeholder="Enter your email address" id="email" name="email" type="email" required value={form.email} onChange={handleChange} />
             </div>
 
             {emailChanged && (
@@ -196,7 +196,7 @@ export default function SupportStaffSettingsPage() {
               </div>
             )}
 
-            <button type="submit" disabled={isSubmitting}>
+            <button type="submit" disabled={isSubmitting} aria-busy={isSubmitting}>
               {isSubmitting ? "Saving..." : "Save Profile"}
             </button>
           </form>
@@ -259,7 +259,7 @@ export default function SupportStaffSettingsPage() {
               />
             </div>
 
-            <button type="submit" disabled={isChangingPassword}>
+            <button type="submit" disabled={isChangingPassword} aria-busy={isChangingPassword}>
               {isChangingPassword ? "Changing password..." : "Change Password"}
             </button>
           </form>

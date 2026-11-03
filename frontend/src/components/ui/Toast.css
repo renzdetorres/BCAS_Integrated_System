@@ -1,39 +1,48 @@
+/* Notifications stack at the top right, just under the top bar so the account menu stays reachable.
+   New ones slide down into place; one leaves with a short fade. */
 .toast-viewport {
   position: fixed;
+  top: calc(var(--topbar-height) + 12px);
   right: 24px;
-  bottom: 24px;
   z-index: 200;
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: column;
   gap: 10px;
-  width: min(380px, calc(100vw - 32px));
+  width: min(392px, calc(100vw - 32px));
+  pointer-events: none;
 }
 
 @media (max-width: 640px) {
   .toast-viewport {
+    top: calc(var(--topbar-height) + 8px);
     right: 16px;
-    bottom: 16px;
   }
 }
 
 .toast {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: 12px;
   padding: 12px 12px 12px 14px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   box-shadow: var(--shadow-raised);
-  font-size: 13.5px;
   color: var(--color-text-primary);
+  pointer-events: auto;
   animation: toast-slide-in 320ms var(--ease-out);
+  transition: opacity 160ms var(--ease-out), transform 160ms var(--ease-out);
+}
+
+.toast.is-leaving {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
 }
 
 @keyframes toast-slide-in {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.98);
+    transform: translateY(-10px) scale(0.98);
   }
   to {
     opacity: 1;
@@ -41,18 +50,27 @@
   }
 }
 
-/* Tone comes from a small filled status glyph, not a thick colored edge. */
+/* Tone comes from a small filled status glyph, not a thick coloured edge. */
 .toast-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
-  margin-top: 0;
+  width: 34px;
+  height: 34px;
   border-radius: var(--radius-full);
   background: var(--color-status-green-bg);
   color: var(--color-status-green-text);
   flex-shrink: 0;
+}
+
+.toast-info .toast-icon {
+  background: var(--color-status-gray-bg);
+  color: var(--color-status-gray-text);
+}
+
+.toast-warning .toast-icon {
+  background: var(--color-status-amber-bg);
+  color: var(--color-status-amber-text);
 }
 
 .toast-error .toast-icon {
@@ -60,18 +78,34 @@
   color: var(--color-status-red-text);
 }
 
-.toast-message {
+.toast-text {
   flex: 1;
-  line-height: 1.45;
+  min-width: 0;
   padding-top: 1px;
+}
+
+.toast-title {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--color-text-primary);
+}
+
+.toast-message {
+  margin: 2px 0 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
 }
 
 .toast-dismiss {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   margin: -2px -2px 0 0;
   border: none;
   border-radius: var(--radius-sm);
@@ -85,4 +119,13 @@
 .toast-dismiss:hover {
   background: var(--color-surface-subtle);
   color: var(--color-text-primary);
+}
+
+/* Touch screens: the dismiss control gets a full-size target. */
+@media (pointer: coarse) {
+  .toast-dismiss {
+    width: 44px;
+    height: 44px;
+    margin: -10px -10px -10px 0;
+  }
 }

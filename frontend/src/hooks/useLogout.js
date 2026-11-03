@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { logoutUser } from "../api/authApi.js";
 import { useSession } from "../context/SessionContext.jsx";
+import { clearSessionClock } from "../utils/sessionClock.js";
 
 export function useLogout() {
   const { setSession } = useSession();
@@ -12,6 +13,7 @@ export function useLogout() {
     } finally {
       // Clear local state regardless of network outcome - the server-side
       // cookie clear is what actually ends the session.
+      clearSessionClock();
       setSession(null);
       navigate("/login", { replace: true });
     }

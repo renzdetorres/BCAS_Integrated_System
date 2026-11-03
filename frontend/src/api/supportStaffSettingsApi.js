@@ -1,4 +1,5 @@
 import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
+import { markSessionStart } from "../utils/sessionClock.js";
 
 export async function getMySupportStaffProfile() {
   const response = await fetch(`${API_BASE_URL}/api/support-staff/settings`, {
@@ -43,6 +44,7 @@ export async function changeMySupportStaffPassword({ currentPassword, newPasswor
   });
 
   if (response.status === 204) {
+    markSessionStart();
     return;
   }
 

@@ -199,7 +199,7 @@
 }
 
 .history-action:hover .history-action-arrow {
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   transform: translateX(2px);
 }
 

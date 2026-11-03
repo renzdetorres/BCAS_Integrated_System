@@ -43,7 +43,7 @@ export default function ConfirmDialog({
           <Button type="button" tone="secondary" onClick={onCancel} disabled={isSubmitting}>
             {cancelLabel}
           </Button>
-          <Button type="button" tone="danger" onClick={onConfirm} disabled={isSubmitting}>
+          <Button type="button" tone="danger" onClick={onConfirm} loading={isSubmitting}>
             {isSubmitting ? "Please wait..." : confirmLabel}
           </Button>
         </div>

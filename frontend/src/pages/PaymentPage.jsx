@@ -402,7 +402,7 @@ export default function PaymentPage() {
 
                 {isUploading && <UploadProgress percent={percent} label="Uploading your proof of payment" />}
 
-                <button type="submit" className="btn btn-primary" disabled={isUploading}>
+                <button type="submit" className="btn btn-primary" disabled={isUploading} aria-busy={isUploading}>
                   {isUploading
                     ? `Uploading... ${percent}%`
                     : payment.status === "Rejected"

@@ -80,6 +80,7 @@ export default function WorkflowStepper({ steps, labels, hints = null, numbered 
               (caption === "Locked" ? " tracking-step-locked" : "")
             }
             aria-current={step.isCurrent ? "step" : undefined}
+            style={{ "--step-index": index }}
           >
             {numbered ? (
               <span className="tracking-step-circle" aria-hidden="true">

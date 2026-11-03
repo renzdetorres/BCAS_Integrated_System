@@ -1,16 +1,16 @@
-/* The campus photograph is the one full-bleed image in the product; the
-   brand sits quietly at the top and the school motto carries the bottom
-   in the serif display voice. */
+/* The campus photograph as a rounded card set into the page: the seal and school name sit on the
+   sky at the top, the motto on green hills over the lawn at the bottom. The sign-in panel's
+   curved edge overlaps the card's right side, so text stays clear of it. */
 .auth-showcase {
   position: relative;
-  flex: 1 1 46%;
+  flex: 1 1 54%;
   min-width: 0;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: 48px;
   margin: 12px 0 12px 12px;
-  padding: 40px 48px 48px;
+  padding: clamp(24px, 3.6vw, 52px) clamp(28px, 4vw, 64px) clamp(28px, 3.6vw, 52px);
   border-radius: 20px;
   background: var(--color-primary-dark) url("/images/bcas-campus.png") center / cover no-repeat;
   color: var(--color-white);
@@ -18,65 +18,100 @@
   isolation: isolate;
 }
 
-.auth-showcase-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background:
-    linear-gradient(180deg, rgba(12, 32, 21, 0.62) 0%, rgba(12, 32, 21, 0.1) 30%, rgba(12, 32, 21, 0.2) 50%, rgba(12, 32, 21, 0.9) 100%);
-}
-
 .auth-showcase-brand {
   display: flex;
   align-items: center;
-  gap: 14px;
-  color: var(--color-accent);
+  gap: clamp(12px, 1.4vw, 20px);
+  max-width: 100%;
   animation: ui-fade-in 600ms var(--ease-out) both;
+}
+
+.auth-showcase-brand img {
+  width: clamp(56px, 5.4vw, 76px);
+  height: auto;
+  flex-shrink: 0;
+  filter: drop-shadow(0 4px 10px rgba(12, 32, 21, 0.28));
 }
 
 .auth-showcase-brand-text {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding-left: clamp(12px, 1.4vw, 20px);
+  border-left: 1.5px solid var(--color-primary-dark);
 }
 
 .auth-showcase-mark {
-  color: var(--color-white);
-  font-size: 22px;
-  font-weight: 600;
-  letter-spacing: 0.03em;
+  color: var(--color-primary-dark);
+  font-size: clamp(22px, 2vw, 30px);
+  font-weight: 700;
+  letter-spacing: 0.01em;
   line-height: 1.1;
 }
 
 .auth-showcase-tagline {
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 13px;
+  color: var(--color-primary-dark);
+  font-size: clamp(12.5px, 1.05vw, 16px);
   font-weight: 500;
 }
 
+.auth-showcase-hills {
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 48%;
+  pointer-events: none;
+}
+
 .auth-showcase-footer {
-  max-width: 460px;
+  max-width: min(480px, 100%);
   animation: auth-rise 700ms 120ms var(--ease-out) both;
 }
 
 .auth-showcase-motto {
   margin: 0;
-  font-weight: 500;
-  font-size: clamp(26px, 2.6vw, 36px);
+  font-weight: 600;
+  font-size: clamp(22px, 2.2vw, 34px);
   line-height: 1.2;
   padding-bottom: 2px;
   letter-spacing: -0.015em;
   color: var(--color-white);
   text-wrap: balance;
+  text-shadow: 0 2px 16px rgba(8, 30, 18, 0.4);
 }
 
+/* A short bright rule between the motto and the line under it. */
 .auth-showcase-est {
+  position: relative;
   margin: 18px 0 0;
   padding-top: 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.18);
-  font-size: 13px;
+  font-size: clamp(11.5px, 0.85vw, 13px);
+  font-style: italic;
   line-height: 1.55;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+/* Two lines: the system name, then a softer line under it. */
+.auth-showcase-est span {
+  display: block;
+}
+
+.auth-showcase-est span + span {
   color: rgba(255, 255, 255, 0.72);
+}
+
+.auth-showcase-est::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 64px;
+  height: 3px;
+  border-radius: 3px;
+  background: #5fd37f;
 }
 
 @keyframes auth-rise {

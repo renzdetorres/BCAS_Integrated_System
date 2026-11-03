@@ -16,7 +16,7 @@
 .upload-progress-percent {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 .upload-progress-track {

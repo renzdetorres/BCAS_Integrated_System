@@ -1,4 +1,5 @@
 import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
+import { markSessionStart } from "../utils/sessionClock.js";
 
 export async function getMyAcademicHeadProfile() {
   const response = await fetch(`${API_BASE_URL}/api/academic-head/settings`, {
@@ -43,6 +44,7 @@ export async function changeMyAcademicHeadPassword({ currentPassword, newPasswor
   });
 
   if (response.status === 204) {
+    markSessionStart();
     return;
   }
 

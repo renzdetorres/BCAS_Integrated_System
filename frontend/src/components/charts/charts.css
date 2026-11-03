@@ -386,7 +386,7 @@
 
 .viz-cell[data-step="1"] { background: var(--viz-heat-1); color: var(--color-text-primary); outline-color: transparent; }
 .viz-cell[data-step="2"] { background: var(--viz-heat-2); color: var(--color-text-primary); outline-color: transparent; }
-.viz-cell[data-step="3"] { background: var(--viz-heat-3); color: #fff; outline-color: transparent; }
+.viz-cell[data-step="3"] { background: var(--viz-heat-3); color: #0f1a14; outline-color: transparent; }
 .viz-cell[data-step="4"] { background: var(--viz-heat-4); color: #fff; outline-color: transparent; }
 .viz-cell[data-step="5"] { background: var(--viz-heat-5); color: #fff; outline-color: transparent; }
 

@@ -276,7 +276,7 @@ button[type="submit"]:active:not(:disabled) {
   border: 1px solid rgba(45, 106, 79, 0.2);
   border-radius: var(--radius-full);
   background: var(--color-primary-tint);
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;

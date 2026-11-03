@@ -168,6 +168,7 @@ export default function SupportStaffDocumentsPage() {
     try {
       await reviewDocument(documentId, { status: "Verified" });
       await loadDocuments();
+      showToast("The document was approved.", "success", { title: "Document verified" });
     } catch (error) {
       showToast(error instanceof ApiError ? error.message : "Failed to approve the document.", "error");
     } finally {
@@ -202,11 +203,17 @@ export default function SupportStaffDocumentsPage() {
     try {
       const result = await bulkReviewDocuments(ids, { status: "Verified" });
       await loadDocuments();
-      showToast(
-        result.failures.length === 0
-          ? `${result.succeededCount} document${result.succeededCount === 1 ? "" : "s"} approved.`
-          : `${result.succeededCount} approved, ${result.failures.length} couldn't be reviewed (already handled or removed).`,
-      );
+      if (result.failures.length === 0) {
+        showToast(`${result.succeededCount} document${result.succeededCount === 1 ? "" : "s"} approved.`, "success", {
+          title: result.succeededCount === 1 ? "Document verified" : "Documents verified",
+        });
+      } else {
+        showToast(
+          `${result.succeededCount} approved, ${result.failures.length} couldn't be reviewed (already handled or removed).`,
+          "warning",
+          { title: "Some documents were skipped" },
+        );
+      }
     } catch (error) {
       showToast(error instanceof ApiError ? error.message : "Failed to approve the documents.", "error");
     } finally {

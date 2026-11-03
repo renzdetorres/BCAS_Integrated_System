@@ -12,14 +12,14 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 .receipt-letterhead {
   display: flex;
   align-items: center;
   gap: 14px;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   margin-bottom: 20px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--color-border);

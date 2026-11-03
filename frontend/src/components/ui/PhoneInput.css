@@ -16,12 +16,12 @@
 
 .phone-input:hover:not(:focus-within) {
   border-color: var(--field-border-hover, #929d8f);
-  background: var(--color-white);
+  background: var(--color-paper);
 }
 
 .phone-input:focus-within {
   border-color: var(--color-primary-light);
-  background: var(--color-white);
+  background: var(--color-paper);
   box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
 }
 

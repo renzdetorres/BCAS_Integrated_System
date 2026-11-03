@@ -93,7 +93,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 .dash-intro-meta {
@@ -117,7 +117,7 @@
 .dash-intro-title em {
   font-style: normal;
   font-weight: 600;
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 .dash-intro-cta {
@@ -228,7 +228,7 @@
 }
 
 .dash-link:hover {
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -312,7 +312,7 @@
 }
 
 .dash-mix-approved {
-  background: var(--color-status-green-text);
+  background: var(--color-status-green-solid);
 }
 
 .dash-mix-pending {
@@ -320,7 +320,7 @@
 }
 
 .dash-mix-rejected {
-  background: var(--color-status-red-text);
+  background: var(--color-status-red-solid);
 }
 
 .dash-mix-legend {
@@ -912,7 +912,7 @@
 }
 
 .dash-figure-note a {
-  color: var(--color-primary);
+  color: var(--color-primary-text);
 }
 
 .dash-enroll-list {

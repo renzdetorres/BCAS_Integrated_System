@@ -1,7 +1,9 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { isPathBlocked } from "../config/access.js";
 import AppLayout from "./layout/AppLayout.jsx";
+import BootScreen from "./BootScreen.jsx";
 import EmptyState from "./ui/EmptyState.jsx";
+import SessionWarning from "./SessionWarning.jsx";
 import { useSession } from "../context/SessionContext.jsx";
 
 export default function RequireAuth() {
@@ -9,12 +11,7 @@ export default function RequireAuth() {
   const location = useLocation();
 
   if (isLoading) {
-    return (
-      <div className="app-boot" role="status">
-        <span className="app-boot-spinner" aria-hidden="true" />
-        Loading your workspace...
-      </div>
-    );
+    return <BootScreen />;
   }
 
   if (!session) {
@@ -33,5 +30,10 @@ export default function RequireAuth() {
     );
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <Outlet />
+      <SessionWarning />
+    </>
+  );
 }

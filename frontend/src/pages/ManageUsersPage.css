@@ -116,7 +116,7 @@
   height: 36px;
   border-radius: 50%;
   background: var(--color-primary-tint-strong);
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -203,7 +203,7 @@
 .account-actions .btn-secondary {
   --action-bg: var(--color-status-green-bg);
   --action-bg-hover: color-mix(in srgb, var(--color-status-green-bg), var(--color-primary) 14%);
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   border-color: rgba(27, 67, 50, 0.22);
   box-shadow: none;
 }
@@ -214,15 +214,15 @@
 }
 
 .account-actions .btn-warning {
-  --action-bg: var(--color-status-amber-text);
+  --action-bg: var(--color-status-amber-solid);
 }
 
 .account-actions .btn-success {
-  --action-bg: var(--color-status-green-text);
+  --action-bg: var(--color-status-green-solid);
 }
 
 .account-actions .btn-danger {
-  --action-bg: var(--color-status-red-text);
+  --action-bg: var(--color-status-red-solid);
 }
 
 @media (hover: hover) {

@@ -1,0 +1,226 @@
+/* Below another card (the applicant's Profile Details) the two are spaced like every other pair. */
+.settings-content > .appearance-card:not(:first-child) {
+  margin-top: var(--space-6);
+}
+
+.appearance-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.appearance-card h2 {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+  color: var(--color-text-primary);
+}
+
+.appearance-subtitle {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}
+
+.appearance-section {
+  display: grid;
+  gap: var(--space-5);
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+
+.appearance-section h3 {
+  font: var(--text-h2);
+  color: var(--color-text-primary);
+}
+
+.appearance-group {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.appearance-group legend {
+  margin-bottom: 10px;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.appearance-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.appearance-options-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+}
+
+.appearance-option {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+/* The radio is the real control (keyboard, screen readers); the card beside it is what you see. */
+.appearance-option input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.appearance-option-body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 8px 16px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  transition:
+    border-color var(--motion-fast),
+    background-color var(--motion-fast),
+    box-shadow var(--motion-fast),
+    transform var(--motion-fast);
+}
+
+.appearance-option:hover input:not(:checked) + .appearance-option-body {
+  border-color: var(--color-text-tertiary);
+  background: var(--color-surface-subtle);
+}
+
+.appearance-option input:checked + .appearance-option-body {
+  border-color: var(--color-primary-light);
+  background: var(--color-primary-tint);
+  box-shadow: 0 0 0 1px var(--color-primary-light);
+  color: var(--color-primary-text);
+  font-weight: 600;
+}
+
+.appearance-option input:focus-visible + .appearance-option-body {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+.appearance-option:active .appearance-option-body {
+  transform: scale(0.98);
+}
+
+/* ---- Colour scheme previews ---- */
+
+.appearance-swatch {
+  position: relative;
+  width: 30px;
+  height: 22px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 5px;
+}
+
+.appearance-swatch::before,
+.appearance-swatch::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+/* A page of the light theme: pale canvas, white card, green bar. */
+.appearance-swatch-light::before {
+  background: #f4f5f2;
+}
+
+.appearance-swatch-light::after {
+  inset: 5px 4px 0 4px;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(#1b4332 0 4px, #ffffff 4px);
+}
+
+.appearance-swatch-dark::before {
+  background: #101714;
+}
+
+.appearance-swatch-dark::after {
+  inset: 5px 4px 0 4px;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(#2f7d57 0 4px, #17201b 4px);
+}
+
+/* System: half and half, the way the device decides. */
+.appearance-swatch-system::before {
+  background: linear-gradient(105deg, #f4f5f2 50%, #101714 50%);
+}
+
+.appearance-swatch-system::after {
+  inset: 5px 4px 0 4px;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(105deg, #ffffff 50%, #17201b 50%);
+}
+
+/* ---- Colour temperature dots ---- */
+
+.appearance-dot {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: var(--radius-full);
+}
+
+.appearance-dot-cool {
+  background: linear-gradient(135deg, #eaf1f8, #b9cde0);
+}
+
+.appearance-dot-neutral {
+  background: linear-gradient(135deg, #f1f4ef, #c8d3c9);
+}
+
+.appearance-dot-warm {
+  background: linear-gradient(135deg, #f8f0e3, #dcc7a4);
+}
+
+/* ---- Font size samples ---- */
+
+.appearance-aa {
+  font-size: var(--aa, 18px);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--color-text-secondary);
+}
+
+.appearance-option input:checked + .appearance-option-body .appearance-aa {
+  color: var(--color-primary-text);
+}
+
+@media (max-width: 640px) {
+  .appearance-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .appearance-options-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Touch screens: the small Reset button gets a full-size target. */
+@media (pointer: coarse) {
+  .appearance-heading .btn {
+    min-height: 44px;
+  }
+}

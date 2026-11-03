@@ -1,2 +1,465 @@
 /* Page-specific overrides live here; shared auth layout/form styles are in
    components/auth/AuthForm.css so Login and Register never drift apart. */
+
+/* ---- Sign-in card ---------------------------------------------------------------------
+   The whole screen is one rounded card on a light page: the campus photo on the left (about
+   54%), the white sign-in panel on the right. The photo runs under the panel, whose left edge
+   is a smooth curve with a thin pale band and a leaf at the top. Pale circles sit in the top
+   corner and soft mountains and a low hill along the bottom right.
+
+   The form is centred in the white area and sized in proportion to the window (vw), taken from
+   the design image: at an 818px-wide design the form is 283px (35%), the heading about 27px,
+   labels 10.5px, fields 27px tall, the button 31px tall. Each size has a floor for small laptops
+   and a ceiling for very wide screens. */
+
+.auth-page.login-page {
+  padding: 0;
+  background: var(--color-white);
+  overflow-x: hidden;
+}
+
+.login-page .auth-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: var(--color-white);
+}
+
+/* The photo is flush with the window edges, with no margin or rounded corners. */
+.login-page .auth-showcase {
+  margin: 0;
+  border-radius: 0;
+}
+
+.auth-form-side.login-side {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 46%;
+  /* The photo runs this far under the panel so it meets the curve all the way down. */
+  margin-left: -130px;
+  /* Even top and bottom so the form sits in the middle. The generous left padding leaves clear space
+     between the curve and the form, including on the lower rows where the curve sweeps toward it. */
+  padding: 24px clamp(24px, 3vw, 56px) 96px clamp(120px, 9vw, 170px);
+  background: transparent;
+}
+
+/* White from where the curve graphic ends to the right edge. */
+.login-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 249px;
+  right: 0;
+  /* Soft gray at the top easing to white by the middle, matching the curve graphic above. */
+  background: linear-gradient(180deg, #e8f5ec 0%, #f6fbf8 26%, #ffffff 48%);
+}
+
+/* The curve: pale band, leaf at the top, white. Hangs 10px left of the panel. */
+.login-edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -10px;
+  width: 260px;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Corner circles and bottom mountains; clipped to the panel. */
+.login-deco {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.login-deco-top {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: clamp(190px, 17vw, 320px);
+  height: auto;
+}
+
+.login-deco-bottom {
+  position: absolute;
+  left: 40px;
+  right: 0;
+  bottom: 0;
+  width: calc(100% - 40px);
+  height: clamp(110px, 21vh, 190px);
+}
+
+.auth-form-panel.login-panel {
+  position: relative;
+  width: 100%;
+  max-width: min(100%, clamp(380px, 34.6vw, 640px));
+}
+
+/* Centred heading block: cap, heading, subtitle, short green line. */
+.login-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.login-cap {
+  width: clamp(52px, 6.4vw, 112px);
+  height: auto;
+  color: var(--color-primary);
+  margin-bottom: clamp(6px, 0.7vw, 12px);
+}
+
+.auth-form-panel.login-panel h1 {
+  margin: 0 0 clamp(6px, 0.7vw, 12px);
+  font: 700 clamp(30px, 3.3vw, 56px) / 1.1 var(--font-sans);
+  letter-spacing: -0.02em;
+  color: var(--color-primary-dark);
+}
+
+.login-hero .auth-subtitle {
+  margin: 0;
+  font-size: clamp(14px, 1.35vw, 23px);
+}
+
+.login-rule {
+  display: block;
+  width: clamp(48px, 6.2vw, 96px);
+  height: 3px;
+  margin: clamp(10px, 1.2vw, 20px) auto clamp(22px, 2.6vw, 44px);
+  border-radius: 3px;
+  background: #4ab36a;
+}
+
+.login-panel .input-group {
+  margin-bottom: clamp(14px, 1.7vw, 28px);
+}
+
+/* Labels carry a small icon, like the design. */
+.login-panel .input-group label.login-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: clamp(13px, 1.28vw, 20px);
+  font-weight: 700;
+}
+
+.login-panel .login-label svg {
+  width: clamp(17px, 1.4vw, 24px);
+  height: auto;
+  color: var(--color-primary);
+}
+
+.login-panel .input-group-aside-link {
+  font-size: clamp(13px, 1.2vw, 19px);
+  font-weight: 600;
+  color: var(--color-primary-light);
+}
+
+/* Fields: taller and rounder, with bigger icons. The html prefix matches the global field rules. */
+html .login-panel .input-with-icon input {
+  min-height: clamp(46px, 3.4vw, 62px);
+  border-radius: clamp(10px, 0.95vw, 16px);
+  font-size: clamp(14px, 1.22vw, 19px);
+  padding-left: clamp(42px, 3.2vw, 56px);
+}
+
+.login-panel .input-with-icon .input-icon {
+  left: clamp(13px, 1vw, 18px);
+  width: clamp(17px, 1.3vw, 23px);
+  height: auto;
+}
+
+.login-panel .input-with-icon.has-toggle input {
+  padding-right: clamp(46px, 3.4vw, 58px);
+}
+
+.login-panel .password-toggle {
+  right: 6px;
+  width: 40px;
+  height: 40px;
+}
+
+/* "Remember this email": a 44px-tall row so it is easy to tap. */
+.login-remember {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin: -4px 0 clamp(6px, 0.8vw, 14px);
+  font-size: clamp(13px, 1.2vw, 19px);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.login-remember input {
+  width: clamp(17px, 1.3vw, 22px);
+  height: clamp(17px, 1.3vw, 22px);
+  margin: 0;
+  accent-color: var(--color-primary);
+}
+
+.login-panel .auth-submit {
+  min-height: clamp(50px, 3.8vw, 66px);
+  gap: 10px;
+  border-radius: clamp(10px, 1vw, 18px);
+  font-size: clamp(15px, 1.5vw, 21px);
+}
+
+.login-panel .auth-submit svg {
+  width: clamp(18px, 1.5vw, 24px);
+  height: auto;
+}
+
+.login-panel .auth-submit:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 3px;
+}
+
+.login-panel .auth-switch {
+  margin-top: clamp(16px, 1.7vw, 30px);
+  padding-top: clamp(14px, 1.6vw, 28px);
+  font-size: clamp(13px, 1.25vw, 19px);
+  color: var(--color-text-primary);
+}
+
+.login-panel .auth-switch a {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* Short laptop screens: tighten the heading block so the button stays on screen. */
+@media (min-width: 901px) and (max-height: 800px) {
+  .auth-form-side.login-side {
+    padding-block: 20px;
+  }
+
+  .login-cap {
+    width: 58px;
+    margin-bottom: 4px;
+  }
+
+  .auth-form-panel.login-panel h1 {
+    font-size: 36px;
+  }
+
+  .login-rule {
+    margin: 8px auto 16px;
+  }
+
+  .login-panel .input-group {
+    margin-bottom: 10px;
+  }
+
+  .login-panel .auth-switch {
+    margin-top: 12px;
+    padding-top: 12px;
+  }
+}
+
+/* Tablets and narrower laptops: the form side takes a little more of the width. */
+@media (min-width: 901px) and (max-width: 1100px) {
+  .auth-form-side.login-side {
+    flex-basis: 50%;
+  }
+}
+
+/* Phones and narrow windows: no photo, so no curve and no card frame. The seal and name replace
+   the cap, and the mountains stay along the bottom. */
+@media (max-width: 900px) {
+  .auth-form-side.login-side {
+    flex: 1 1 100%;
+    margin-left: 0;
+    padding: 32px 20px 120px;
+  }
+
+  .login-fill {
+    left: 0;
+  }
+
+  .login-edge {
+    display: none;
+  }
+
+  .login-deco-bottom {
+    left: 0;
+    width: 100%;
+  }
+
+  .login-cap {
+    display: none;
+  }
+
+  .login-panel .auth-mobile-brand {
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  .auth-form-panel.login-panel h1 {
+    font-size: 30px;
+  }
+
+  .login-rule {
+    margin-bottom: 24px;
+  }
+}
+
+/* ---- Form look (from the design image) --------------------------------------------------
+   An icon beside each bold label (a solid lock for Password), white fields with a thin border and
+   a leading icon, a bright-green Log In button with an arrow, and small green links. Sizes follow
+   the design's proportions, with a 44px floor on the controls so they stay easy to tap. */
+
+.login-panel .input-group label.login-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: clamp(13px, 1.05vw, 17px);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.login-panel .login-label svg {
+  width: clamp(16px, 1.25vw, 21px);
+  height: auto;
+  color: var(--color-text-primary);
+}
+
+/* The Password label's lock is solid, like the design. */
+.login-panel .login-label .login-lock path {
+  fill: currentColor;
+}
+
+html .login-panel .input-with-icon input {
+  min-height: clamp(44px, 3.2vw, 60px);
+  background-color: var(--color-white);
+  border-color: #d6dbd2;
+  border-radius: clamp(10px, 0.85vw, 13px);
+  box-shadow: none;
+  font-size: clamp(13.5px, 1vw, 16px);
+  padding-left: clamp(40px, 2.9vw, 52px);
+}
+
+html .login-panel .input-with-icon input:focus {
+  border-color: #2d6a4f;
+  box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
+}
+
+.login-panel .input-with-icon .input-icon {
+  left: clamp(12px, 0.95vw, 16px);
+  width: clamp(16px, 1.2vw, 20px);
+  height: auto;
+  color: #4a5750;
+}
+
+.login-panel .input-group-aside-link {
+  font-size: clamp(12.5px, 1vw, 16px);
+  font-weight: 600;
+  color: #1b6b3a;
+}
+
+.login-remember {
+  font-size: clamp(12.5px, 1vw, 16px);
+}
+
+.login-panel .auth-submit {
+  min-height: clamp(46px, 3.5vw, 64px);
+  background: #1b6434;
+  border-radius: clamp(10px, 0.85vw, 13px);
+  font-size: clamp(15px, 1.25vw, 20px);
+  font-weight: 700;
+}
+
+.login-panel .auth-submit:hover:not(:disabled) {
+  background: #14522a;
+}
+
+.login-panel .auth-submit svg {
+  width: clamp(17px, 1.4vw, 22px);
+  height: auto;
+}
+
+.login-panel .auth-switch {
+  font-size: clamp(12.5px, 1vw, 16px);
+  border-top-color: #e3e7df;
+}
+
+.login-panel .auth-switch a {
+  font-weight: 700;
+  color: #1b6b3a;
+}
+
+/* ---- Polish -----------------------------------------------------------------------------
+   Depth, a tactile button and small focus details. Nothing here moves the layout. */
+
+/* The shadow cast by the curve is drawn inside the graphic, so let it spill past the box. */
+.login-edge {
+  overflow: visible;
+}
+
+/* The label of the field being typed in turns green. */
+.login-panel .input-group:focus-within label.login-label {
+  color: #1b6434;
+}
+
+/* A short green line that draws out once when the page opens. */
+@keyframes login-rule-in {
+  from {
+    opacity: 0;
+    transform: scaleX(0.3);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.login-rule {
+  animation: login-rule-in 600ms var(--ease-out) 250ms backwards;
+}
+
+/* The Log In button has a little depth and answers a press. */
+.login-panel .auth-submit {
+  background: linear-gradient(180deg, #1f7040 0%, #1b6434 100%);
+  box-shadow:
+    0 10px 20px -10px rgba(27, 100, 52, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  transition:
+    background-color 160ms var(--ease-out),
+    box-shadow 160ms var(--ease-out),
+    transform 160ms var(--ease-out);
+}
+
+.login-panel .auth-submit:hover:not(:disabled) {
+  background: linear-gradient(180deg, #1b6434 0%, #14522a 100%);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .login-panel .auth-submit:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow:
+      0 14px 24px -12px rgba(27, 100, 52, 0.75),
+      inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  }
+}
+
+.login-panel .auth-submit:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.login-panel .auth-submit:disabled {
+  background: #5a8a6a;
+  box-shadow: none;
+}
+
+.login-panel .password-toggle:focus-visible {
+  outline: 2px solid #2d6a4f;
+  outline-offset: 1px;
+}
+
+/* Short windows: give the form the room and keep the waves from crowding "Need an account?". */
+@media (min-width: 901px) and (max-height: 700px) {
+  .login-deco-bottom {
+    height: clamp(80px, 13vh, 120px);
+  }
+}

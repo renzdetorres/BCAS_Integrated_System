@@ -39,3 +39,16 @@
 .empty-state-action {
   margin-top: 16px;
 }
+
+/* The illustrated version: a dashed panel with the picture above the words. */
+.empty-state-illustrated {
+  gap: 2px;
+  padding: 36px 20px 32px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-subtle);
+}
+
+.empty-state-illustrated .empty-illustration {
+  margin-bottom: 10px;
+}

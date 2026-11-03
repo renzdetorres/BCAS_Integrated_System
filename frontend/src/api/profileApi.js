@@ -1,4 +1,5 @@
 import { API_BASE_URL, ApiError, resolveErrorMessage } from "./apiClient.js";
+import { markSessionStart } from "../utils/sessionClock.js";
 
 /** Returns the applicant's saved profile, or null if setup hasn't been completed yet. */
 export async function getMyProfile() {
@@ -45,6 +46,7 @@ export async function changeMyPassword({ currentPassword, newPassword }) {
   });
 
   if (response.status === 204) {
+    markSessionStart();
     return;
   }
 

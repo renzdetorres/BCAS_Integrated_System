@@ -6,10 +6,68 @@
     <meta name="theme-color" content="#1b4332" />
     <meta name="color-scheme" content="light" />
     <link rel="icon" type="image/png" href="/images/bcas-logo.png" />
+    <link rel="preload" href="/fonts/fraunces-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/src/styles/splash.css" />
     <title>BCAS Integrated Scholarship and Admissions System</title>
+    <style>
+      /* The splash below covers the whole window, so the page behind it is the splash's own green. */
+      body { margin: 0; background: #1b4332; }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- First paint: the branded splash, shown until the app mounts (the school's saved lists load
+           first, up to 2 seconds) and replaced by React. Same markup and styles as
+           src/components/Splash.jsx; the script below moves the figure the way
+           src/utils/bootProgress.js does, so the number carries on when React takes over. -->
+      <div class="splash" role="status" aria-live="polite" aria-label="Loading Scholarship and Admissions">
+        <div class="splash-topline" aria-hidden="true"><span class="splash-topline-fill" style="width: 0%"></span></div>
+        <div class="splash-center">
+          <div class="splash-seal" aria-hidden="true">
+            <span class="splash-seal-halo"></span>
+            <svg class="splash-seal-arc" viewBox="0 0 100 100" focusable="false">
+              <circle class="splash-seal-ring" cx="50" cy="50" r="47"></circle>
+              <circle class="splash-seal-spin" cx="50" cy="50" r="47" pathLength="100" stroke-dasharray="22 78"></circle>
+            </svg>
+            <span class="splash-seal-disc"><img src="/images/bcas-logo.png" alt="" width="118" height="118" /></span>
+          </div>
+          <p class="splash-title">Scholarship and Admissions</p>
+          <p class="splash-sub">BCAS Integrated System</p>
+          <div class="splash-progress" aria-hidden="true">
+            <div class="splash-track"><span class="splash-fill" style="width: 0%"></span></div>
+            <div class="splash-meta"><span class="splash-stage">Starting up</span><span class="splash-percent">0%</span></div>
+          </div>
+        </div>
+        <ul class="splash-steps" aria-hidden="true">
+          <li data-from="18">Secure sign-in</li>
+          <li data-from="55">Your workspace</li>
+          <li data-from="80">Latest updates</li>
+        </ul>
+      </div>
+      <script>
+        (function () {
+          var root = document.querySelector(".splash");
+          if (!root) return;
+          var fills = root.querySelectorAll(".splash-topline-fill, .splash-fill");
+          var stage = root.querySelector(".splash-stage");
+          var percentLabel = root.querySelector(".splash-percent");
+          var steps = root.querySelectorAll(".splash-steps li");
+          var stages = [[0, "Starting up"], [18, "Securing your session"], [55, "Preparing your workspace"], [80, "Loading the latest updates"]];
+          function tick() {
+            if (!root.isConnected) return;
+            var p = Math.min(94, Math.round(100 * (1 - Math.exp(-performance.now() / 3200))));
+            for (var i = 0; i < fills.length; i++) fills[i].style.width = p + "%";
+            percentLabel.textContent = p + "%";
+            var label = stages[0][1];
+            for (var s = 0; s < stages.length; s++) if (p >= stages[s][0]) label = stages[s][1];
+            stage.textContent = label;
+            for (var n = 0; n < steps.length; n++) steps[n].className = p >= Number(steps[n].getAttribute("data-from")) ? "is-on" : "";
+            setTimeout(tick, 120);
+          }
+          tick();
+        })();
+      </script>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -59,7 +59,7 @@
 .scholarship-actions .ui-datatable-row-action,
 .scholarship-actions .ui-datatable-row-action:disabled:hover {
   background: var(--color-status-green-bg);
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   border-color: rgba(27, 67, 50, 0.22);
 }
 
@@ -68,14 +68,14 @@
 }
 
 .scholarship-status-button {
-  --status-bg: var(--color-status-amber-text);
+  --status-bg: var(--color-status-amber-solid);
   background: var(--status-bg);
   color: var(--color-white);
   box-shadow: 0 1px 2px rgba(18, 48, 31, 0.18);
 }
 
 .scholarship-status-activate {
-  --status-bg: var(--color-status-green-text);
+  --status-bg: var(--color-status-green-solid);
 }
 
 @media (hover: hover) {

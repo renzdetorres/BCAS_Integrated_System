@@ -1,0 +1,249 @@
+/* The branded splash. Loaded by index.html (first paint) and by components/Splash.jsx, so both
+   draw the identical screen. It has its own colours on purpose: it is the school's deep green in
+   every theme and does not depend on the app's tokens, which are not loaded yet at first paint. */
+
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/fraunces-latin-600-normal.woff2") format("woff2");
+}
+
+/* The splash fills the window edge to edge: no reserved scrollbar strip beside it. */
+html:has(.splash) {
+  scrollbar-gutter: auto;
+  background: #14301f;
+}
+
+.splash {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px 96px;
+  overflow: hidden;
+  background:
+    radial-gradient(60% 55% at 7% 6%, rgba(58, 138, 104, 0.32) 0%, rgba(58, 138, 104, 0) 100%),
+    radial-gradient(48% 46% at 94% 96%, rgba(132, 128, 44, 0.36) 0%, rgba(132, 128, 44, 0) 100%),
+    linear-gradient(165deg, #20523d 0%, #1b4332 48%, #14301f 100%);
+  color: #ffffff;
+  font-family: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* A gold line across the top edge, the same one that runs on every route change in the app. */
+.splash-topline {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.splash-topline-fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #d9a441, #ecd49b);
+  border-radius: 0 3px 3px 0;
+  transition: width 240ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.splash-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  text-align: center;
+}
+
+/* The seal: a white disc, a faint halo, a thin gold ring and a short gold arc turning around it. */
+.splash-seal {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: clamp(150px, 12vw, 184px);
+  aspect-ratio: 1;
+  margin-bottom: clamp(36px, 7vh, 64px);
+}
+
+.splash-seal-halo {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.splash-seal-arc {
+  position: absolute;
+  inset: 3%;
+  width: 94%;
+  height: 94%;
+  overflow: visible;
+}
+
+.splash-seal-ring {
+  fill: none;
+  stroke: rgba(217, 164, 65, 0.62);
+  stroke-width: 0.5;
+}
+
+.splash-seal-spin {
+  fill: none;
+  stroke: #d9a441;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  transform-origin: 50% 50%;
+  animation: splash-spin 1.8s linear infinite;
+}
+
+.splash-seal-disc {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 70%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(5, 22, 13, 0.4), 0 2px 6px rgba(5, 22, 13, 0.3);
+}
+
+.splash-seal-disc img {
+  display: block;
+  width: 88%;
+  height: 88%;
+  object-fit: contain;
+}
+
+.splash-title {
+  margin: 0;
+  max-width: 92vw;
+  font-family: "Fraunces", Georgia, "Times New Roman", serif;
+  font-size: clamp(32px, 4.3vw, 54px);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.012em;
+  color: #ffffff;
+  text-wrap: balance;
+}
+
+.splash-sub {
+  margin: 12px 0 0;
+  font-size: clamp(14px, 1.25vw, 17px);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.splash-progress {
+  width: min(560px, 86vw);
+  margin-top: clamp(32px, 6vh, 52px);
+}
+
+.splash-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.splash-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #d9a441 0%, #e8c677 55%, #f0dcaa 100%);
+  transition: width 240ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.splash-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.splash-stage {
+  color: rgba(255, 255, 255, 0.88);
+  text-align: left;
+}
+
+.splash-percent {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #e8c26a;
+}
+
+/* Three checkpoints along the bottom; each one lights as the loading passes it. */
+.splash-steps {
+  position: absolute;
+  inset: auto 0 clamp(28px, 6vh, 56px) 0;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px clamp(20px, 3vw, 44px);
+  margin: 0;
+  padding: 0 24px;
+  list-style: none;
+  font-size: clamp(13px, 1.1vw, 15px);
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.splash-steps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: color 300ms ease;
+}
+
+.splash-steps li::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.34);
+  transition: background-color 300ms ease, box-shadow 300ms ease;
+}
+
+.splash-steps li.is-on {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.splash-steps li.is-on::before {
+  background: #d9a441;
+  box-shadow: 0 0 0 4px rgba(217, 164, 65, 0.2);
+}
+
+@keyframes splash-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-height: 560px) {
+  .splash {
+    justify-content: flex-start;
+    padding-top: 28px;
+  }
+
+  .splash-steps {
+    position: static;
+    margin-top: 28px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-seal-spin {
+    animation-duration: 6s;
+  }
+
+  .splash-topline-fill,
+  .splash-fill {
+    transition: none;
+  }
+}

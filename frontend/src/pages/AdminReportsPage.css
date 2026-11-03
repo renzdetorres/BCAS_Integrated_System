@@ -186,7 +186,7 @@
 }
 
 .report-contract-link {
-  color: var(--color-primary);
+  color: var(--color-primary-text);
   font-weight: 600;
   font-size: 0.8rem;
   text-decoration: none;

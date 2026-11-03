@@ -1,67 +1,78 @@
+import { Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { SessionProvider } from "./context/SessionContext.jsx";
 import { AcademicYearProvider } from "./context/AcademicYearContext.jsx";
 import { ToastProvider } from "./context/ToastContext.jsx";
+import { AppearanceProvider } from "./context/AppearanceContext.jsx";
 import RequireAuth from "./components/RequireAuth.jsx";
 import RequireRole from "./components/RequireRole.jsx";
-import RegisterPage from "./pages/RegisterPage.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
-import ForgotPasswordPage from "./pages/ForgotPasswordPage.jsx";
-import AdminRoleAccessPage from "./pages/AdminRoleAccessPage.jsx";
-import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
-import PortalRouter from "./pages/PortalRouter.jsx";
-import PaymentPage from "./pages/PaymentPage.jsx";
-import StaffPaymentsPage from "./pages/StaffPaymentsPage.jsx";
-import ExamResultPage from "./pages/ExamResultPage.jsx";
-import InterviewPage from "./pages/InterviewPage.jsx";
-import ExamResultsPage from "./pages/ExamResultsPage.jsx";
-import InterviewsPage from "./pages/InterviewsPage.jsx";
-import ScholarshipPipelinePage from "./pages/ScholarshipPipelinePage.jsx";
-import ManageUsersPage from "./pages/ManageUsersPage.jsx";
-import NotificationSettingsPage from "./pages/NotificationSettingsPage.jsx";
-import AdminSettingsPage from "./pages/AdminSettingsPage.jsx";
-import AnnouncementsRouter from "./pages/AnnouncementsRouter.jsx";
-import ApplicantProfilePage from "./pages/ApplicantProfilePage.jsx";
-import ApplicantSettingsPage from "./pages/ApplicantSettingsPage.jsx";
-import AdmissionApplicationPage from "./pages/AdmissionApplicationPage.jsx";
-import ScholarshipApplicationPage from "./pages/ScholarshipApplicationPage.jsx";
-import MyApplicationHistoryPage from "./pages/MyApplicationHistoryPage.jsx";
-import EvaluatorDashboardPage from "./pages/EvaluatorDashboardPage.jsx";
-import AdminAdmissionSlotsPage from "./pages/AdminAdmissionSlotsPage.jsx";
-import ExamSchedulePage from "./pages/ExamSchedulePage.jsx";
-import ExamPermitPage from "./pages/ExamPermitPage.jsx";
-import ApplicationTrackingPage from "./pages/ApplicationTrackingPage.jsx";
-import ApplicationReceiptPage from "./pages/ApplicationReceiptPage.jsx";
-import ScholarshipScreeningPage from "./pages/ScholarshipScreeningPage.jsx";
-import ScholarshipSlotsPage from "./pages/ScholarshipSlotsPage.jsx";
-import EvaluatorSettingsPage from "./pages/EvaluatorSettingsPage.jsx";
-import AcademicHeadReviewPage from "./pages/AcademicHeadReviewPage.jsx";
-import AcademicHeadScholarshipsPage from "./pages/AcademicHeadScholarshipsPage.jsx";
-import AcademicHeadAnnouncementsPage from "./pages/AcademicHeadAnnouncementsPage.jsx";
-import AcademicHeadReportsPage from "./pages/AcademicHeadReportsPage.jsx";
-import AcademicHeadSettingsPage from "./pages/AcademicHeadSettingsPage.jsx";
-import SupportStaffDocumentsPage from "./pages/SupportStaffDocumentsPage.jsx";
-import SupportStaffApplicantsPage from "./pages/SupportStaffApplicantsPage.jsx";
-import SupportStaffSettingsPage from "./pages/SupportStaffSettingsPage.jsx";
-import SupportStaffDocumentArchivePage from "./pages/SupportStaffDocumentArchivePage.jsx";
-import AdminApplicationsPage from "./pages/AdminApplicationsPage.jsx";
-import AdminApplicationDetailPage from "./pages/AdminApplicationDetailPage.jsx";
-import AdminDocumentsPage from "./pages/AdminDocumentsPage.jsx";
-import AdminArchivePage from "./pages/AdminArchivePage.jsx";
-import AdminRecordsPage from "./pages/AdminRecordsPage.jsx";
-import AdminAnnouncementsPage from "./pages/AdminAnnouncementsPage.jsx";
-import AdminReportsPage from "./pages/AdminReportsPage.jsx";
-import AdminAnalyticsPage from "./pages/AdminAnalyticsPage.jsx";
-import ScholarshipContractPage from "./pages/ScholarshipContractPage.jsx";
-import AdminExamSchedulesPage from "./pages/AdminExamSchedulesPage.jsx";
-import AdminExamPermitsPage from "./pages/AdminExamPermitsPage.jsx";
-import AdminScholarshipsPage from "./pages/AdminScholarshipsPage.jsx";
-import AdminReservationsPage from "./pages/AdminReservationsPage.jsx";
-import AdminAuditLogsPage from "./pages/AdminAuditLogsPage.jsx";
-import InquiriesPage from "./pages/InquiriesPage.jsx";
-import InquiryDetailPage from "./pages/InquiryDetailPage.jsx";
-import StaffInquiriesPage from "./pages/StaffInquiriesPage.jsx";
-import StaffInquiryDetailPage from "./pages/StaffInquiryDetailPage.jsx";
+import { lazyPage } from "./utils/lazyPage.js";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
+import BootScreen from "./components/BootScreen.jsx";
+import RouteProgress from "./components/RouteProgress.jsx";
+
+// Each page is its own file, fetched when its route is first opened, so sign-in and the
+// first screen load only what they need.
+const NotFoundPage = lazyPage(() => import("./pages/NotFoundPage.jsx"));
+const AppearancePage = lazyPage(() => import("./pages/AppearancePage.jsx"));
+const RegisterPage = lazyPage(() => import("./pages/RegisterPage.jsx"));
+const ForgotPasswordPage = lazyPage(() => import("./pages/ForgotPasswordPage.jsx"));
+const AdminRoleAccessPage = lazyPage(() => import("./pages/AdminRoleAccessPage.jsx"));
+const ResetPasswordPage = lazyPage(() => import("./pages/ResetPasswordPage.jsx"));
+const PortalRouter = lazyPage(() => import("./pages/PortalRouter.jsx"));
+const PaymentPage = lazyPage(() => import("./pages/PaymentPage.jsx"));
+const StaffPaymentsPage = lazyPage(() => import("./pages/StaffPaymentsPage.jsx"));
+const ExamResultPage = lazyPage(() => import("./pages/ExamResultPage.jsx"));
+const InterviewPage = lazyPage(() => import("./pages/InterviewPage.jsx"));
+const ExamResultsPage = lazyPage(() => import("./pages/ExamResultsPage.jsx"));
+const InterviewsPage = lazyPage(() => import("./pages/InterviewsPage.jsx"));
+const ScholarshipPipelinePage = lazyPage(() => import("./pages/ScholarshipPipelinePage.jsx"));
+const ManageUsersPage = lazyPage(() => import("./pages/ManageUsersPage.jsx"));
+const NotificationSettingsPage = lazyPage(() => import("./pages/NotificationSettingsPage.jsx"));
+const AdminSettingsPage = lazyPage(() => import("./pages/AdminSettingsPage.jsx"));
+const AnnouncementsRouter = lazyPage(() => import("./pages/AnnouncementsRouter.jsx"));
+const ApplicantProfilePage = lazyPage(() => import("./pages/ApplicantProfilePage.jsx"));
+const ApplicantSettingsPage = lazyPage(() => import("./pages/ApplicantSettingsPage.jsx"));
+const AdmissionApplicationPage = lazyPage(() => import("./pages/AdmissionApplicationPage.jsx"));
+const ScholarshipApplicationPage = lazyPage(() => import("./pages/ScholarshipApplicationPage.jsx"));
+const MyApplicationHistoryPage = lazyPage(() => import("./pages/MyApplicationHistoryPage.jsx"));
+const EvaluatorDashboardPage = lazyPage(() => import("./pages/EvaluatorDashboardPage.jsx"));
+const AdminAdmissionSlotsPage = lazyPage(() => import("./pages/AdminAdmissionSlotsPage.jsx"));
+const ExamSchedulePage = lazyPage(() => import("./pages/ExamSchedulePage.jsx"));
+const ExamPermitPage = lazyPage(() => import("./pages/ExamPermitPage.jsx"));
+const ApplicationTrackingPage = lazyPage(() => import("./pages/ApplicationTrackingPage.jsx"));
+const ApplicationReceiptPage = lazyPage(() => import("./pages/ApplicationReceiptPage.jsx"));
+const ScholarshipScreeningPage = lazyPage(() => import("./pages/ScholarshipScreeningPage.jsx"));
+const ScholarshipSlotsPage = lazyPage(() => import("./pages/ScholarshipSlotsPage.jsx"));
+const EvaluatorSettingsPage = lazyPage(() => import("./pages/EvaluatorSettingsPage.jsx"));
+const AcademicHeadReviewPage = lazyPage(() => import("./pages/AcademicHeadReviewPage.jsx"));
+const AcademicHeadScholarshipsPage = lazyPage(() => import("./pages/AcademicHeadScholarshipsPage.jsx"));
+const AcademicHeadAnnouncementsPage = lazyPage(() => import("./pages/AcademicHeadAnnouncementsPage.jsx"));
+const AcademicHeadReportsPage = lazyPage(() => import("./pages/AcademicHeadReportsPage.jsx"));
+const AcademicHeadSettingsPage = lazyPage(() => import("./pages/AcademicHeadSettingsPage.jsx"));
+const SupportStaffDocumentsPage = lazyPage(() => import("./pages/SupportStaffDocumentsPage.jsx"));
+const SupportStaffApplicantsPage = lazyPage(() => import("./pages/SupportStaffApplicantsPage.jsx"));
+const SupportStaffSettingsPage = lazyPage(() => import("./pages/SupportStaffSettingsPage.jsx"));
+const SupportStaffDocumentArchivePage = lazyPage(() => import("./pages/SupportStaffDocumentArchivePage.jsx"));
+const AdminApplicationsPage = lazyPage(() => import("./pages/AdminApplicationsPage.jsx"));
+const AdminApplicationDetailPage = lazyPage(() => import("./pages/AdminApplicationDetailPage.jsx"));
+const AdminDocumentsPage = lazyPage(() => import("./pages/AdminDocumentsPage.jsx"));
+const AdminArchivePage = lazyPage(() => import("./pages/AdminArchivePage.jsx"));
+const AdminRecordsPage = lazyPage(() => import("./pages/AdminRecordsPage.jsx"));
+const AdminAnnouncementsPage = lazyPage(() => import("./pages/AdminAnnouncementsPage.jsx"));
+const AdminReportsPage = lazyPage(() => import("./pages/AdminReportsPage.jsx"));
+const AdminAnalyticsPage = lazyPage(() => import("./pages/AdminAnalyticsPage.jsx"));
+const ScholarshipContractPage = lazyPage(() => import("./pages/ScholarshipContractPage.jsx"));
+const AdminExamSchedulesPage = lazyPage(() => import("./pages/AdminExamSchedulesPage.jsx"));
+const AdminExamPermitsPage = lazyPage(() => import("./pages/AdminExamPermitsPage.jsx"));
+const AdminScholarshipsPage = lazyPage(() => import("./pages/AdminScholarshipsPage.jsx"));
+const AdminReservationsPage = lazyPage(() => import("./pages/AdminReservationsPage.jsx"));
+const AdminAuditLogsPage = lazyPage(() => import("./pages/AdminAuditLogsPage.jsx"));
+const InquiriesPage = lazyPage(() => import("./pages/InquiriesPage.jsx"));
+const InquiryDetailPage = lazyPage(() => import("./pages/InquiryDetailPage.jsx"));
+const StaffInquiriesPage = lazyPage(() => import("./pages/StaffInquiriesPage.jsx"));
+const StaffInquiryDetailPage = lazyPage(() => import("./pages/StaffInquiryDetailPage.jsx"));
 
 /** The Documents page now lives inside My Application; old links and bookmarks land there, keeping any upload notice. */
 function DocumentsRedirect() {
@@ -71,10 +82,16 @@ function DocumentsRedirect() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    // startTransition keeps the current page on screen while the next page's file loads,
+    // instead of flashing the loading screen on every first visit to a page.
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <AppearanceProvider>
       <SessionProvider>
         <AcademicYearProvider>
         <ToastProvider>
+          <RouteProgress />
+          <ErrorBoundary>
+          <Suspense fallback={<BootScreen />}>
           <Routes>
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/login" element={<LoginPage />} />
@@ -83,6 +100,7 @@ export default function App() {
             <Route element={<RequireAuth />}>
               <Route path="/portal" element={<PortalRouter />} />
               <Route path="/announcements" element={<AnnouncementsRouter />} />
+              <Route path="/appearance" element={<AppearancePage />} />
               <Route element={<RequireRole allowedRoles={["Admin"]} />}>
                 <Route path="/admin/staff" element={<Navigate to="/admin/users?new=1" replace />} />
                 <Route path="/admin/users" element={<ManageUsersPage />} />
@@ -170,11 +188,14 @@ export default function App() {
                 <Route path="/staff/inquiries/:threadId" element={<StaffInquiryDetailPage />} />
               </Route>
             </Route>
-            <Route path="*" element={<Navigate to="/login" replace />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
+          </Suspense>
+          </ErrorBoundary>
         </ToastProvider>
         </AcademicYearProvider>
       </SessionProvider>
+      </AppearanceProvider>
     </BrowserRouter>
   );
 }

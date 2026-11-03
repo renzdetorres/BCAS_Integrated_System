@@ -199,7 +199,7 @@ export default function ApplicantSettingsPage() {
               />
             </div>
 
-            <button type="submit" disabled={isChangingPassword}>
+            <button type="submit" disabled={isChangingPassword} aria-busy={isChangingPassword}>
               {isChangingPassword ? "Changing password..." : "Change Password"}
             </button>
           </form>
