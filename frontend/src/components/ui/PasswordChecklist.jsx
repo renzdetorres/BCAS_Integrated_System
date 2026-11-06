@@ -3,8 +3,8 @@ import { checkPassword } from "../../utils/passwordStrength.js";
 import "./PasswordChecklist.css";
 
 /**
- * What a new password needs, ticking off as the person types. It uses the same rules as the server
- * (utils/passwordStrength.js), so a password that ticks every line is one the server accepts.
+ * What a new password needs, ticking off as the person types, with one short note under it about
+ * easy passwords. The server also refuses common or simple ones; that is told in the message on submit.
  * `person` is { email, firstName, lastName } where the form has them: a password built from those is refused.
  */
 export default function PasswordChecklist({ id, password, person }) {
@@ -27,6 +27,7 @@ export default function PasswordChecklist({ id, password, person }) {
           </li>
         );
       })}
+      <li className="password-note">Avoid easy ones like password123 or 123456.</li>
     </ul>
   );
 }

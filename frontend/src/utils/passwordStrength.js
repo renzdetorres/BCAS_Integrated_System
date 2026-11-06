@@ -148,7 +148,8 @@ export function isGuessable(password, { email, firstName, lastName } = {}) {
 }
 
 /**
- * The four things the checklist shows, and the first thing to tell the person when one is not met.
+ * The three things the checklist ticks, and the first thing to tell the person when any rule is not met
+ * (the "not too common or simple" rule is checked too, and is only ever shown as a message).
  * `person` is { email, firstName, lastName }: a password built from those is refused.
  */
 export function checkPassword(password, person = {}) {
@@ -159,7 +160,6 @@ export function checkPassword(password, person = {}) {
     { id: "length", label: `At least ${MIN_LENGTH} characters`, met: password.length >= MIN_LENGTH },
     { id: "letter", label: "A letter", met: hasLetter },
     { id: "number", label: "A number or a symbol", met: hasNumberOrSymbol },
-    { id: "simple", label: "Not a common or simple password (like password123 or 12345678)", met: password.length > 0 && !guessable },
   ];
 
   let problem = null;
