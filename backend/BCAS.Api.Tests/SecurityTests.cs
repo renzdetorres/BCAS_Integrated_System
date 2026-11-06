@@ -200,6 +200,38 @@ public class StrongPasswordTests
         Assert.False(StrongPasswordAttribute.IsGuessable(password, null));
     }
 
+    [Theory]
+    [InlineData("A1!b@example.com", "A1!b@example.com")]        // the whole email
+    [InlineData("a1!b@EXAMPLE.com", "A1!b@example.com")]        // any letter case
+    [InlineData("Zq7!mK2#vR9", "Zq7!mK2#vR9@example.com")]      // the username, before the @
+    public void A_password_that_is_the_email_or_username_is_refused(string password, string email)
+    {
+        Assert.True(StrongPasswordAttribute.MatchesAccount(password, email));
+        Assert.Contains("can't be the same as your email or username", StrongPasswordAttribute.Check(password, email));
+    }
+
+    [Fact]
+    public void A_password_that_only_contains_the_email_name_is_not_the_same_as_it()
+    {
+        Assert.True(StrongPasswordAttribute.MatchesAccount("zq7!mk2#vr9", "Zq7!mK2#vR9@example.com")); // letter case is ignored
+        Assert.False(StrongPasswordAttribute.MatchesAccount("Zq7!mK2#vR9pLw", "Zq7!mK2#vR9@example.com"));
+        Assert.False(StrongPasswordAttribute.MatchesAccount("anything", null));
+        Assert.False(StrongPasswordAttribute.MatchesAccount("anything", ""));
+    }
+
+    [Theory]
+    [InlineData("Tulip-River-88")]
+    [InlineData("N0t-So-Simple!")]
+    [InlineData("Zq7!mK2#vR9pLw")]
+    [InlineData("BlueTiger#58")]
+    [InlineData("Verify#12345")]
+    [InlineData("Mango_Sunset47")]
+    [InlineData("Kape&Pandesal9")]
+    public void Passwords_that_meet_every_rule_are_accepted(string password)
+    {
+        Assert.Null(StrongPasswordAttribute.Check(password, "maria.santos@gmail.com", "Maria", "Santos"));
+    }
+
     [Fact]
     public void A_password_built_from_the_persons_own_name_is_guessable()
     {
@@ -209,10 +241,18 @@ public class StrongPasswordTests
     }
 
     [Theory]
-    [InlineData("tulipriver", "Add at least one number or symbol to your password.")]
-    [InlineData("58301427", "Add at least one letter to your password.")]
-    [InlineData("password 123", "harder to guess")]
-    [InlineData("12345678", "harder to guess")]
+    // One rule at a time, in the order the policy lists them.
+    [InlineData("tulip-river-88", "uppercase letter (A–Z)")]
+    [InlineData("TULIP-RIVER-88", "lowercase letter (a–z)")]
+    [InlineData("Tulip-River!!", "number (0–9)")]
+    [InlineData("TulipRiver88", "special character (! @ # $ % ^ & *)")]
+    [InlineData("Tulip River-88", "can't contain spaces")]
+    [InlineData("password 123", "uppercase letter")]
+    [InlineData("12345678", "uppercase letter")]
+    // Every rule met, but still one of the first passwords anyone tries.
+    [InlineData("Password123!", "harder to guess")]
+    [InlineData("Qwerty12345!", "harder to guess")]
+    [InlineData("Welcome@2026", "harder to guess")]
     public void The_message_says_what_to_change(string password, string expected)
     {
         Assert.Contains(expected, StrongPasswordAttribute.Check(password, null));
@@ -238,7 +278,7 @@ public class StrongPasswordTests
     [Fact]
     public void The_registration_request_is_rejected_with_a_readable_message()
     {
-        var weak = new RegisterRequest { FirstName = "A", LastName = "B", Email = "a.b@gmail.com", Password = "Password123" };
+        var weak = new RegisterRequest { FirstName = "A", LastName = "B", Email = "a.b@gmail.com", Password = "Password123!" };
         var results = new List<ValidationResult>();
 
         Assert.False(Validator.TryValidateObject(weak, new ValidationContext(weak), results, validateAllProperties: true));

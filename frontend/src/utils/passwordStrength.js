@@ -2,10 +2,10 @@
  * The password rules, in the browser so people see them while they type. This mirrors
  * backend/BCAS.Api/Models/StrongPasswordAttribute.cs, which is the one that decides: change them together.
  *
- * A password is refused when what is left of it, after the guessable parts are taken out, is not enough:
- * common words (also with look-alike characters like p@ssw0rd, or split by spaces and symbols), number and letter
- * runs (1234, abcd), keyboard walks (qwerty, 1q2w3e), repeated characters (aaa), years (2026), and the person's
- * own name or email. It also needs a letter and a number or symbol.
+ * The school's written policy (length, uppercase, lowercase, number, special character, no spaces, not the email),
+ * then a check that what is left of the password, after the guessable parts are taken out, is enough: common words
+ * (also with look-alike characters like p@ssw0rd, or split by symbols), number and letter runs (1234, abcd), keyboard
+ * walks (qwerty, 1q2w3e), repeated characters (aaa), years (2026), and the person's own name or email.
  */
 
 export const MIN_LENGTH = 8;
@@ -147,26 +147,56 @@ export function isGuessable(password, { email, firstName, lastName } = {}) {
   return left.length < 5 || new Set(left).size < 4;
 }
 
+/** True when the password is the account's email address or its username (the part before the @), in any letter case. */
+export function matchesAccount(password, email) {
+  const trimmed = (email ?? "").trim();
+  if (!trimmed) return false;
+  const username = trimmed.split("@")[0];
+  const lower = password.toLowerCase();
+  return lower === trimmed.toLowerCase() || (username.length > 0 && lower === username.toLowerCase());
+}
+
+const SPECIAL = /[!-/:-@[-`{-~]/; // printable ASCII that is not a letter, a digit or a space
+
 /**
- * The three things the checklist ticks, and the first thing to tell the person when any rule is not met
- * (the "not too common or simple" rule is checked too, and is only ever shown as a message).
- * `person` is { email, firstName, lastName }: a password built from those is refused.
+ * The school's password policy, as the checklist shows it and in the order the server checks it:
+ * 8 or more characters, an uppercase letter (A-Z), a lowercase letter (a-z), a number (0-9), a special
+ * character (! @ # $ % ^ & *), no spaces, and not the same as the account's email or username. After those,
+ * the server also refuses passwords that are common or simple (told only as a message, not a line here).
+ * `person` is { email, firstName, lastName }; the email line only appears where the email is known.
+ * Returns the lines to tick and the first thing to tell the person (null when the password is acceptable).
  */
 export function checkPassword(password, person = {}) {
-  const hasLetter = [...password].some(isLetter);
-  const hasNumberOrSymbol = [...password].some((c) => !isLetter(c) && !/\s/.test(c));
-  const guessable = isGuessable(password, person);
+  const has = {
+    length: password.length >= MIN_LENGTH,
+    upper: /[A-Z]/.test(password),
+    lower: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+    special: SPECIAL.test(password),
+    noSpaces: !/\s/.test(password),
+    notEmail: !matchesAccount(password, person.email),
+  };
+  const knowsEmail = Boolean((person.email ?? "").trim());
+
   const rules = [
-    { id: "length", label: `At least ${MIN_LENGTH} characters`, met: password.length >= MIN_LENGTH },
-    { id: "letter", label: "A letter", met: hasLetter },
-    { id: "number", label: "A number or a symbol", met: hasNumberOrSymbol },
+    { id: "length", label: `At least ${MIN_LENGTH} characters`, met: has.length },
+    { id: "upper", label: "An uppercase letter (A\u2013Z)", met: has.upper },
+    { id: "lower", label: "A lowercase letter (a\u2013z)", met: has.lower },
+    { id: "number", label: "A number (0\u20139)", met: has.number },
+    { id: "special", label: "A special character (! @ # $ % ^ & *)", met: has.special },
+    { id: "spaces", label: "No spaces", met: has.noSpaces },
+    ...(knowsEmail ? [{ id: "email", label: "Not the same as your email", met: has.notEmail }] : []),
   ];
 
   let problem = null;
-  if (password.length < MIN_LENGTH) problem = `Password must be at least ${MIN_LENGTH} characters long.`;
-  else if (guessable) problem = "Choose a password that is harder to guess: this one is too common or too simple.";
-  else if (!hasLetter) problem = "Add at least one letter to your password.";
-  else if (!hasNumberOrSymbol) problem = "Add at least one number or symbol to your password.";
+  if (!has.length) problem = `Password must be at least ${MIN_LENGTH} characters long.`;
+  else if (!has.upper) problem = "Add at least one uppercase letter (A\u2013Z) to your password.";
+  else if (!has.lower) problem = "Add at least one lowercase letter (a\u2013z) to your password.";
+  else if (!has.number) problem = "Add at least one number (0\u20139) to your password.";
+  else if (!has.special) problem = "Add at least one special character (! @ # $ % ^ & *) to your password.";
+  else if (!has.noSpaces) problem = "Your password can't contain spaces.";
+  else if (!has.notEmail) problem = "Your password can't be the same as your email or username.";
+  else if (isGuessable(password, person)) problem = "Choose a password that is harder to guess: this one is too common or too simple.";
 
   return { ok: problem === null, problem, rules };
 }

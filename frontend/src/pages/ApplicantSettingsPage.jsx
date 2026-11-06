@@ -10,6 +10,7 @@ import "./ApplicantProfilePage.css";
 import Skeleton from "../components/ui/Skeleton.jsx";
 import PasswordChecklist from "../components/ui/PasswordChecklist.jsx";
 import { checkPassword } from "../utils/passwordStrength.js";
+import { useSession } from "../context/SessionContext.jsx";
 
 const SETTINGS_TABS = [
   {
@@ -25,6 +26,7 @@ const SETTINGS_TABS = [
 const initialPasswordForm = { currentPassword: "", newPassword: "", confirmNewPassword: "" };
 
 export default function ApplicantSettingsPage() {
+  const { session } = useSession();
   const [activeTab, setActiveTab] = useState("password");
 
   const [passwordForm, setPasswordForm] = useState(initialPasswordForm);
@@ -99,7 +101,7 @@ export default function ApplicantSettingsPage() {
       setPasswordError("New passwords do not match.");
       return;
     }
-    const strength = checkPassword(passwordForm.newPassword);
+    const strength = checkPassword(passwordForm.newPassword, { email: session?.email });
     if (strength.problem) {
       setPasswordError(strength.problem);
       return;
@@ -187,7 +189,7 @@ export default function ApplicantSettingsPage() {
                 onChange={handlePasswordChange}
                 aria-describedby="new-password-rules"
               />
-              <PasswordChecklist id="new-password-rules" password={passwordForm.newPassword} />
+              <PasswordChecklist id="new-password-rules" password={passwordForm.newPassword} person={{ email: session?.email }} />
             </div>
 
             <div className="form-row">

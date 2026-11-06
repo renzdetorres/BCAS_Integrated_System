@@ -9,9 +9,12 @@ namespace BCAS.Api.Models;
 /// is left of a password after the guessable parts are taken out: common words (also when spelled with
 /// look-alike characters such as p@ssw0rd or split by spaces and symbols), number and letter runs (1234, abcd),
 /// keyboard walks (qwerty, 1q2w3e), repeated characters (aaa), years (2026), and the person's own name or email.
-/// What remains has to be enough to carry the password, so "password 123", "Password123!" and "Qwerty12345" are
-/// refused while an ordinary mixed password is not. It also asks for a letter and for a number or symbol.
-/// The length rule (8 or more) is separate. The same rules run in the browser (frontend/src/utils/passwordStrength.js)
+/// What remains has to be enough to carry the password, so "Password123!" and "Qwerty12345" are refused while an
+/// ordinary mixed password is not.
+///
+/// Before that, the password has to meet the school's written policy: at least one uppercase letter (A-Z), one
+/// lowercase letter (a-z), one number (0-9) and one special character (! @ # $ % ^ & *, or any other ASCII symbol),
+/// no spaces, and not the same as the account's email or username. The length rule (8 or more) is separate. The same rules run in the browser (frontend/src/utils/passwordStrength.js)
 /// so people see them while typing; this is the one that counts.
 /// </summary>
 [AttributeUsage(AttributeTargets.Property)]
@@ -48,8 +51,12 @@ public sealed class StrongPasswordAttribute : ValidationAttribute
     private static readonly string[] DecodedWords = Words.Select(Decode).ToArray();
 
     private const string Message = "Choose a password that is harder to guess: this one is too common or too simple.";
-    private const string NeedsLetter = "Add at least one letter to your password.";
-    private const string NeedsNumberOrSymbol = "Add at least one number or symbol to your password.";
+    private const string NeedsUppercase = "Add at least one uppercase letter (A–Z) to your password.";
+    private const string NeedsLowercase = "Add at least one lowercase letter (a–z) to your password.";
+    private const string NeedsNumber = "Add at least one number (0–9) to your password.";
+    private const string NeedsSpecial = "Add at least one special character (! @ # $ % ^ & *) to your password.";
+    private const string NoSpaces = "Your password can't contain spaces.";
+    private const string SameAsAccount = "Your password can't be the same as your email or username.";
 
     protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
     {
@@ -66,22 +73,54 @@ public sealed class StrongPasswordAttribute : ValidationAttribute
     /// <summary>The first thing wrong with a password, in plain words, or null when it is acceptable.</summary>
     public static string? Check(string password, string? email, string? firstName = null, string? lastName = null)
     {
-        if (IsGuessable(password, email, firstName, lastName))
+        if (!password.Any(c => c is >= 'A' and <= 'Z'))
         {
-            return Message;
+            return NeedsUppercase;
         }
 
-        if (!password.Any(char.IsLetter))
+        if (!password.Any(c => c is >= 'a' and <= 'z'))
         {
-            return NeedsLetter;
+            return NeedsLowercase;
         }
 
-        if (!password.Any(c => !char.IsLetter(c) && !char.IsWhiteSpace(c)))
+        if (!password.Any(c => c is >= '0' and <= '9'))
         {
-            return NeedsNumberOrSymbol;
+            return NeedsNumber;
         }
 
-        return null;
+        if (!password.Any(IsSpecial))
+        {
+            return NeedsSpecial;
+        }
+
+        if (password.Any(char.IsWhiteSpace))
+        {
+            return NoSpaces;
+        }
+
+        if (MatchesAccount(password, email))
+        {
+            return SameAsAccount;
+        }
+
+        return IsGuessable(password, email, firstName, lastName) ? Message : null;
+    }
+
+    /// <summary>A printable ASCII character that is not a letter, a digit or a space: ! @ # $ % ^ & * and the rest.</summary>
+    private static bool IsSpecial(char c) => c is > ' ' and <= '~' && !char.IsAsciiLetterOrDigit(c);
+
+    /// <summary>True when the password is the account's email address or its username (the part before the @), in any letter case.</summary>
+    public static bool MatchesAccount(string password, string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            return false;
+        }
+
+        var trimmed = email.Trim();
+        var username = trimmed.Split('@')[0];
+        return string.Equals(password, trimmed, StringComparison.OrdinalIgnoreCase)
+            || (username.Length > 0 && string.Equals(password, username, StringComparison.OrdinalIgnoreCase));
     }
 
     public static bool IsGuessable(string password, string? email) => IsGuessable(password, email, null, null);

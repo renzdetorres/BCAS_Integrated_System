@@ -10,4 +10,9 @@ public class NewPasswordSameAsCurrentException : Exception
         : base("That's your current password. Please choose a new one.")
     {
     }
+
+    protected NewPasswordSameAsCurrentException(string message)
+        : base(message)
+    {
+    }
 }

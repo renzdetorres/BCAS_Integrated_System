@@ -122,6 +122,11 @@ public class AuthService : IAuthService
             throw new NewPasswordSameAsCurrentException();
         }
 
+        if (StrongPasswordAttribute.MatchesAccount(request.NewPassword, user.Email))
+        {
+            throw new PasswordSameAsAccountException();
+        }
+
         var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword, workFactor: PasswordWorkFactor);
         await _userRepository.UpdatePasswordHashAsync(userId, newPasswordHash, cancellationToken);
 
@@ -235,6 +240,11 @@ public class AuthService : IAuthService
         if (BCrypt.Net.BCrypt.Verify(newPassword, user.PasswordHash))
         {
             throw new NewPasswordSameAsCurrentException();
+        }
+
+        if (StrongPasswordAttribute.MatchesAccount(newPassword, user.Email))
+        {
+            throw new PasswordSameAsAccountException();
         }
 
         var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword, workFactor: PasswordWorkFactor);

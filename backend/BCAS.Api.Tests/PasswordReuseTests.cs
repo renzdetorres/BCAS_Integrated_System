@@ -167,6 +167,35 @@ public class PasswordReuseTests
         Assert.Null(fixture.SavedHash);
     }
 
+    [Theory]
+    [InlineData("maria@example.com")]
+    [InlineData("Maria")]
+    public async Task Change_to_the_accounts_own_email_or_username_is_refused_and_nothing_is_saved(string newPassword)
+    {
+        var fixture = new Fixture();
+        var request = new ChangePasswordRequest { CurrentPassword = CurrentPassword, NewPassword = newPassword };
+
+        var failure = await Assert.ThrowsAsync<PasswordSameAsAccountException>(
+            () => fixture.Service.ChangePasswordAsync(fixture.UserId, request));
+
+        Assert.Contains("email or username", failure.Message);
+        Assert.Null(fixture.SavedHash);
+    }
+
+    [Theory]
+    [InlineData("maria@example.com")]
+    [InlineData("MARIA")]
+    public async Task Reset_to_the_accounts_own_email_or_username_is_refused_and_the_link_stays_usable(string newPassword)
+    {
+        var fixture = new Fixture();
+
+        await Assert.ThrowsAsync<PasswordSameAsAccountException>(
+            () => fixture.Service.ResetPasswordAsync(RawToken, newPassword));
+
+        Assert.False(fixture.TokenUsed);
+        Assert.Null(fixture.SavedHash);
+    }
+
     [Fact]
     public async Task Change_with_a_wrong_current_password_is_still_reported_as_that()
     {
@@ -290,8 +319,8 @@ public class PasswordReuseTests
     [Fact]
     public void The_weak_password_check_still_applies_to_reset_and_change_requests()
     {
-        var weakReset = new ResetPasswordRequest { Token = RawToken, NewPassword = "Password123" };
-        var weakChange = new ChangePasswordRequest { CurrentPassword = CurrentPassword, NewPassword = "Password123" };
+        var weakReset = new ResetPasswordRequest { Token = RawToken, NewPassword = "Password123!" };
+        var weakChange = new ChangePasswordRequest { CurrentPassword = CurrentPassword, NewPassword = "Password123!" };
 
         foreach (var request in new object[] { weakReset, weakChange })
         {
