@@ -19,6 +19,8 @@ import AppLayout from "../components/layout/AppLayout.jsx";
 import ConfirmDialog from "../components/ui/ConfirmDialog.jsx";
 import AccountsWorkspace from "../components/accounts/AccountsWorkspace.jsx";
 import Icon from "../components/ui/Icon.jsx";
+import PasswordChecklist from "../components/ui/PasswordChecklist.jsx";
+import { checkPassword } from "../utils/passwordStrength.js";
 import Modal from "../components/ui/Modal.jsx";
 import "./ManageUsersPage.css";
 
@@ -56,8 +58,9 @@ function AddStaffModal({ onClose, onCreated }) {
       setErrorMessage("Name and email are required.");
       return;
     }
-    if (form.password.length < 8) {
-      setErrorMessage("Password must be at least 8 characters long.");
+    const strength = checkPassword(form.password, { email: form.email, firstName: form.firstName, lastName: form.lastName });
+    if (strength.problem) {
+      setErrorMessage(strength.problem);
       return;
     }
     if (form.role === "AcademicHead" && !form.department) {
@@ -121,7 +124,8 @@ function AddStaffModal({ onClose, onCreated }) {
           <label className="ui-label" htmlFor="add-password">
             Temporary password
           </label>
-          <input placeholder="At least 8 characters" id="add-password" type="password" autoComplete="new-password" className="ui-input" value={form.password} onChange={(e) => setField("password", e.target.value)} />
+          <input placeholder="At least 8 characters" id="add-password" type="password" autoComplete="new-password" className="ui-input" value={form.password} onChange={(e) => setField("password", e.target.value)} aria-describedby="add-password-rules" />
+          <PasswordChecklist id="add-password-rules" password={form.password} person={{ email: form.email, firstName: form.firstName, lastName: form.lastName }} />
           <p className="ui-hint">They can sign in with it right away.</p>
         </div>
         <div className="ui-field-row">

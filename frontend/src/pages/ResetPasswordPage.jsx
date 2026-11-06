@@ -4,6 +4,8 @@ import { resetPassword, ApiError } from "../api/authApi.js";
 import AuthShowcase from "../components/auth/AuthShowcase.jsx";
 import Icon from "../components/ui/Icon.jsx";
 import BcasSeal from "../components/ui/BcasSeal.jsx";
+import PasswordChecklist from "../components/ui/PasswordChecklist.jsx";
+import { checkPassword } from "../utils/passwordStrength.js";
 import "../components/auth/AuthForm.css";
 
 export default function ResetPasswordPage() {
@@ -34,8 +36,9 @@ export default function ResetPasswordPage() {
       setErrorMessage("Passwords do not match.");
       return;
     }
-    if (newPassword.length < 8) {
-      setErrorMessage("Password must be at least 8 characters long.");
+    const strength = checkPassword(newPassword);
+    if (strength.problem) {
+      setErrorMessage(strength.problem);
       return;
     }
 
@@ -132,7 +135,11 @@ export default function ResetPasswordPage() {
                     minLength={8}
                     required
                     value={newPassword}
-                    onChange={(event) => setNewPassword(event.target.value)}
+                    onChange={(event) => {
+                      setNewPassword(event.target.value);
+                      setErrorMessage(null);
+                    }}
+                    aria-describedby="new-password-rules"
                   />
                   <button
                     type="button"
@@ -143,7 +150,7 @@ export default function ResetPasswordPage() {
                     <Icon name={showPassword ? "eye-off" : "eye"} size={18} />
                   </button>
                 </div>
-                <p className="input-hint">At least 8 characters.</p>
+                <PasswordChecklist id="new-password-rules" password={newPassword} />
               </div>
 
               <div className="input-group">

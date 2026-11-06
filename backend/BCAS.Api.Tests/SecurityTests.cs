@@ -166,6 +166,22 @@ public class StrongPasswordTests
     [InlineData("abcdefgh")]
     [InlineData("98765432")]
     [InlineData("BCAS2026")]
+    // Dressed-up versions of the same thing: spaces, symbols, look-alike characters, a year or a short run added on.
+    [InlineData("password 123")]
+    [InlineData("Password123!")]
+    [InlineData("P@ssw0rd!")]
+    [InlineData("p a s s w o r d 1")]
+    [InlineData("Qwerty12345")]
+    [InlineData("Admin@12345")]
+    [InlineData("iloveyou2026")]
+    [InlineData("Welcome 2026")]
+    [InlineData("Batangas@2026")]
+    [InlineData("Student2026")]
+    [InlineData("Applicant123")]
+    [InlineData("1q2w3e4r5t")]
+    [InlineData("12345abc")]
+    [InlineData("aaaa1111")]
+    [InlineData("9876543210")]
     public void Common_repeated_and_straight_run_passwords_are_guessable(string password)
     {
         Assert.True(StrongPasswordAttribute.IsGuessable(password, null));
@@ -173,12 +189,41 @@ public class StrongPasswordTests
 
     [Theory]
     [InlineData("Verify#12345")]
-    [InlineData("Applicant123")]
     [InlineData("tulip-River-88")]
     [InlineData("N0t-So-Simple!")]
+    [InlineData("Zq7!mK2#vR9pLw")]
+    [InlineData("BlueTiger#58")]
+    [InlineData("mango-Sunset-47")]
+    [InlineData("Kape at Pandesal 9")]
     public void Ordinary_passwords_are_accepted(string password)
     {
         Assert.False(StrongPasswordAttribute.IsGuessable(password, null));
+    }
+
+    [Fact]
+    public void A_password_built_from_the_persons_own_name_is_guessable()
+    {
+        Assert.True(StrongPasswordAttribute.IsGuessable("Maria2026", null, "Maria", "Santos"));
+        Assert.True(StrongPasswordAttribute.IsGuessable("santos#1999", null, "Maria", "Santos"));
+        Assert.False(StrongPasswordAttribute.IsGuessable("tulip-River-88", null, "Maria", "Santos"));
+    }
+
+    [Theory]
+    [InlineData("tulipriver", "Add at least one number or symbol to your password.")]
+    [InlineData("58301427", "Add at least one letter to your password.")]
+    [InlineData("password 123", "harder to guess")]
+    [InlineData("12345678", "harder to guess")]
+    public void The_message_says_what_to_change(string password, string expected)
+    {
+        Assert.Contains(expected, StrongPasswordAttribute.Check(password, null));
+    }
+
+    [Theory]
+    [InlineData("tulip-River-88")]
+    [InlineData("Zq7!mK2#vR9pLw")]
+    public void An_acceptable_password_has_no_problem(string password)
+    {
+        Assert.Null(StrongPasswordAttribute.Check(password, "a.b@gmail.com", "A", "B"));
     }
 
     [Fact]

@@ -4,6 +4,8 @@ import { registerApplicant, ApiError } from "../api/authApi.js";
 import AuthShowcase from "../components/auth/AuthShowcase.jsx";
 import Icon from "../components/ui/Icon.jsx";
 import BcasSeal from "../components/ui/BcasSeal.jsx";
+import PasswordChecklist from "../components/ui/PasswordChecklist.jsx";
+import { checkPassword } from "../utils/passwordStrength.js";
 import "../components/auth/AuthForm.css";
 import "./RegisterPage.css";
 
@@ -26,6 +28,8 @@ export default function RegisterPage() {
   function handleChange(event) {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    // A message about the password is out of date as soon as the password changes.
+    if (name === "password" || name === "confirmPassword") setErrorMessage(null);
   }
 
   async function handleSubmit(event) {
@@ -36,8 +40,9 @@ export default function RegisterPage() {
       setErrorMessage("Passwords do not match.");
       return;
     }
-    if (form.password.length < 8) {
-      setErrorMessage("Password must be at least 8 characters long.");
+    const strength = checkPassword(form.password, { email: form.email, firstName: form.firstName, lastName: form.lastName });
+    if (strength.problem) {
+      setErrorMessage(strength.problem);
       return;
     }
 
@@ -170,6 +175,7 @@ export default function RegisterPage() {
                     required
                     value={form.password}
                     onChange={handleChange}
+                    aria-describedby="password-rules"
                   />
                   <button
                     type="button"
@@ -180,7 +186,11 @@ export default function RegisterPage() {
                     <Icon name={showPassword ? "eye-off" : "eye"} size={18} />
                   </button>
                 </div>
-                <p className="input-hint">At least 8 characters.</p>
+                <PasswordChecklist
+                  id="password-rules"
+                  password={form.password}
+                  person={{ email: form.email, firstName: form.firstName, lastName: form.lastName }}
+                />
               </div>
 
               <div className="input-group">

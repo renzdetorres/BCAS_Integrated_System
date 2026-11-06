@@ -11,6 +11,8 @@ import SettingsSearch from "../components/ui/SettingsSearch.jsx";
 import { ACADEMIC_HEAD_DEPARTMENT_ENTRY, STAFF_ACCOUNT_ENTRIES } from "../config/settingsSearchEntries.js";
 import "./AcademicHeadSettingsPage.css";
 import Skeleton from "../components/ui/Skeleton.jsx";
+import PasswordChecklist from "../components/ui/PasswordChecklist.jsx";
+import { checkPassword } from "../utils/passwordStrength.js";
 
 const initialPasswordForm = { currentPassword: "", newPassword: "", confirmNewPassword: "" };
 
@@ -106,8 +108,9 @@ export default function AcademicHeadSettingsPage() {
       setPasswordError("New passwords do not match.");
       return;
     }
-    if (passwordForm.newPassword.length < 8) {
-      setPasswordError("New password must be at least 8 characters long.");
+    const strength = checkPassword(passwordForm.newPassword);
+    if (strength.problem) {
+      setPasswordError(strength.problem);
       return;
     }
 
@@ -250,7 +253,9 @@ export default function AcademicHeadSettingsPage() {
                 required
                 value={passwordForm.newPassword}
                 onChange={handlePasswordChange}
+                aria-describedby="new-password-rules"
               />
+              <PasswordChecklist id="new-password-rules" password={passwordForm.newPassword} />
             </div>
 
             <div className="form-row">
