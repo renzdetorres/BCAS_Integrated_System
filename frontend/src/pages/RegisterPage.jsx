@@ -6,6 +6,7 @@ import Icon from "../components/ui/Icon.jsx";
 import BcasSeal from "../components/ui/BcasSeal.jsx";
 import PasswordChecklist from "../components/ui/PasswordChecklist.jsx";
 import { checkPassword } from "../utils/passwordStrength.js";
+import PasswordSuggest from "../components/ui/PasswordSuggest.jsx";
 import "../components/auth/AuthForm.css";
 import "./RegisterPage.css";
 
@@ -186,6 +187,17 @@ export default function RegisterPage() {
                     <Icon name={showPassword ? "eye-off" : "eye"} size={18} />
                   </button>
                 </div>
+                <PasswordSuggest
+                  inputId="password"
+                  person={{ email: form.email, firstName: form.firstName, lastName: form.lastName }}
+                  password={form.password}
+                  onSuggest={(suggestion) => {
+                    setForm((prev) => ({ ...prev, password: suggestion, confirmPassword: suggestion }));
+                    setShowPassword(true);
+                    setShowConfirmPassword(true);
+                    setErrorMessage(null);
+                  }}
+                />
                 <PasswordChecklist
                   id="password-rules"
                   password={form.password}

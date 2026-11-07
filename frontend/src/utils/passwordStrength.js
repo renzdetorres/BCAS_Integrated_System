@@ -200,3 +200,48 @@ export function checkPassword(password, person = {}) {
 
   return { ok: problem === null, problem, rules };
 }
+
+// ---- Suggested passwords ---------------------------------------------------------------------------------
+// Characters that are easy to tell apart when read or typed by hand: no I, O, l, o, 0 or 1.
+const SUGGEST_UPPER = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+const SUGGEST_LOWER = "abcdefghijkmnpqrstuvwxyz";
+const SUGGEST_DIGITS = "23456789";
+const SUGGEST_SYMBOLS = "!@#$%^&*";
+
+/** A fair random whole number below `max`, from the browser's secure random source (no modulo bias). */
+function randomBelow(max) {
+  const limit = Math.floor(4294967296 / max) * max;
+  const buffer = new Uint32Array(1);
+  do {
+    crypto.getRandomValues(buffer);
+  } while (buffer[0] >= limit);
+  return buffer[0] % max;
+}
+
+const pickFrom = (characters) => characters[randomBelow(characters.length)];
+
+/**
+ * A random password that meets every rule above: 14 characters with at least two uppercase letters, two
+ * lowercase letters, two numbers and one special character, shuffled. It is made here in the browser and goes
+ * nowhere until the person registers with it. `person` is { email, firstName, lastName }, so it can never be
+ * built from the person's own details.
+ */
+export function generatePassword(person = {}, length = 14) {
+  const everything = SUGGEST_UPPER + SUGGEST_LOWER + SUGGEST_DIGITS + SUGGEST_SYMBOLS;
+  let candidate = "";
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const characters = [
+      pickFrom(SUGGEST_UPPER), pickFrom(SUGGEST_UPPER), pickFrom(SUGGEST_LOWER), pickFrom(SUGGEST_LOWER),
+      pickFrom(SUGGEST_DIGITS), pickFrom(SUGGEST_DIGITS), pickFrom(SUGGEST_SYMBOLS),
+    ];
+    while (characters.length < length) characters.push(pickFrom(everything));
+    for (let i = characters.length - 1; i > 0; i--) {
+      const j = randomBelow(i + 1);
+      [characters[i], characters[j]] = [characters[j], characters[i]];
+    }
+    candidate = characters.join("");
+    // Almost always accepted first time; a pattern that happens to look guessable (like 234) is drawn again.
+    if (checkPassword(candidate, person).ok) return candidate;
+  }
+  return candidate;
+}
