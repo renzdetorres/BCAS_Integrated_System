@@ -128,7 +128,7 @@ export default function ApplicationDetailModal({ application, onClose, tracker =
               </span>
               <span className="tracking-application-meta">Submitted {formatDateTime(application.submittedAt)}</span>
             </div>
-            <WorkflowStepper steps={application.steps} labels={stepLabels} numbered />
+            <WorkflowStepper steps={application.steps} labels={stepLabels} />
             <TrackerStatus
               steps={application.steps}
               labels={stepLabels}

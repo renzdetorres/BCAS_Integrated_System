@@ -58,18 +58,17 @@ function stageCaption(step, index, currentIndex) {
   return index === currentIndex + 1 ? "Pending" : "Locked";
 }
 
-// A workflow step row (BISAASS-22), shared by ApplicationTrackingPage
-// (an applicant's own applications), the applicant dashboard and
-// AdminApplicationDetailPage (any application, BISAASS-31) so they never
-// drift apart. `numbered` draws the circular 1-7 tracker used for
-// admission; without it, the compact diamond rail used for scholarships.
-export default function WorkflowStepper({ steps, labels, hints = null, numbered = false }) {
+// A workflow step row (BISAASS-22), shared by every role's screens (an applicant's own tracking and dashboard,
+// the staff application and scholarship pages, the exam and payment steps) so they never drift apart. It is
+// always the circular tracker: a numbered circle per stage (a check once done, the gold ring on the current
+// one), the label and a Completed / Current / Pending / Locked caption beneath.
+export default function WorkflowStepper({ steps, labels, hints = null }) {
   const currentIndex = steps.findIndex((step) => step.isCurrent);
 
   return (
-    <ol className={"tracking-stepper" + (numbered ? " tracking-stepper-numbered" : "")}>
+    <ol className="tracking-stepper tracking-stepper-numbered">
       {steps.map((step, index) => {
-        const caption = numbered ? stageCaption(step, index, currentIndex) : null;
+        const caption = stageCaption(step, index, currentIndex);
         return (
           <li
             key={step.step}
@@ -82,23 +81,19 @@ export default function WorkflowStepper({ steps, labels, hints = null, numbered 
             aria-current={step.isCurrent ? "step" : undefined}
             style={{ "--step-index": index }}
           >
-            {numbered ? (
-              <span className="tracking-step-circle" aria-hidden="true">
-                {step.isComplete ? (
-                  <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="m3.5 8.5 3 3 6-7" />
-                  </svg>
-                ) : (
-                  index + 1
-                )}
-              </span>
-            ) : (
-              <span className="tracking-step-dot" aria-hidden="true" />
-            )}
+            <span className="tracking-step-circle" aria-hidden="true">
+              {step.isComplete ? (
+                <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m3.5 8.5 3 3 6-7" />
+                </svg>
+              ) : (
+                index + 1
+              )}
+            </span>
             <span className="tracking-step-text">
               <span className="tracking-step-label">{labels[step.step] ?? step.step}</span>
-              {caption && <span className="tracking-step-caption">{caption}</span>}
-              {numbered && hints && step.isCurrent && !step.isComplete && hints[step.step] ? (
+              <span className="tracking-step-caption">{caption}</span>
+              {hints && step.isCurrent && !step.isComplete && hints[step.step] ? (
                 <span className="tracking-step-hint">{hints[step.step]}</span>
               ) : null}
             </span>

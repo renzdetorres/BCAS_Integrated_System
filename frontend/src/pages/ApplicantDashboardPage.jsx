@@ -143,7 +143,7 @@ export default function ApplicantDashboardPage() {
                   <span className="applicant-app-course">{admission.courseAppliedFor}</span>
                   <StatusBadge status={admission.status} />
                 </div>
-                <WorkflowStepper steps={admission.steps} labels={ADMISSION_STEP_LABELS} numbered />
+                <WorkflowStepper steps={admission.steps} labels={ADMISSION_STEP_LABELS} />
                 <TrackerStatus steps={admission.steps} subProcess={admission.subProcess} nextAction={admission.nextAction} nextActionPath={admission.nextActionPath} />
 
                 <div className="applicant-requirements">
@@ -187,7 +187,7 @@ export default function ApplicantDashboardPage() {
                       <span className="applicant-app-course">{scholarship.scholarshipName}</span>
                       <StatusBadge status={scholarship.status} />
                     </div>
-                    <WorkflowStepper steps={scholarship.steps} labels={SCHOLARSHIP_STEP_LABELS} numbered />
+                    <WorkflowStepper steps={scholarship.steps} labels={SCHOLARSHIP_STEP_LABELS} />
                     <TrackerStatus
                       steps={scholarship.steps}
                       labels={SCHOLARSHIP_STEP_LABELS}

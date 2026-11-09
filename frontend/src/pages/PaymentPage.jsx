@@ -198,7 +198,7 @@ export default function PaymentPage() {
 
       {payment && payment.required && (
         <Card className="payment-steps">
-          <WorkflowStepper steps={steps} labels={PAYMENT_STEP_LABELS} hints={PAYMENT_STEP_HINTS} numbered />
+          <WorkflowStepper steps={steps} labels={PAYMENT_STEP_LABELS} hints={PAYMENT_STEP_HINTS} />
         </Card>
       )}
 

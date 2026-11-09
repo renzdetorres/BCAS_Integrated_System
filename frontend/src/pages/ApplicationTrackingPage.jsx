@@ -118,7 +118,7 @@ export default function ApplicationTrackingPage() {
                     Submitted {formatDate(application.submittedAt)}
                   </span>
                 </div>
-                <WorkflowStepper steps={application.steps} labels={ADMISSION_STEP_LABELS} hints={ADMISSION_STEP_HINTS} numbered />
+                <WorkflowStepper steps={application.steps} labels={ADMISSION_STEP_LABELS} hints={ADMISSION_STEP_HINTS} />
                 <TrackerStatus steps={application.steps} subProcess={application.subProcess} nextAction={application.nextAction} nextActionPath={application.nextActionPath} />
               </div>
             ))}
@@ -133,7 +133,7 @@ export default function ApplicationTrackingPage() {
                     Submitted {formatDate(application.submittedAt)}
                   </span>
                 </div>
-                <WorkflowStepper steps={application.steps} labels={SCHOLARSHIP_STEP_LABELS} hints={SCHOLARSHIP_STEP_HINTS} numbered />
+                <WorkflowStepper steps={application.steps} labels={SCHOLARSHIP_STEP_LABELS} hints={SCHOLARSHIP_STEP_HINTS} />
                 <TrackerStatus
                   steps={application.steps}
                   labels={SCHOLARSHIP_STEP_LABELS}

@@ -39,22 +39,6 @@
   background: var(--color-status-green-solid);
 }
 
-.tracking-step-dot {
-  position: relative;
-  z-index: 1;
-  width: 8px;
-  height: 8px;
-  flex-shrink: 0;
-  transform: rotate(45deg);
-  background: var(--color-surface);
-  border: 2px solid var(--color-status-gray-text);
-}
-
-.tracking-step-complete .tracking-step-dot {
-  background: var(--color-status-green-solid);
-  border-color: var(--color-status-green-text);
-}
-
 .tracking-step-label {
   font-size: 12px;
   font-weight: 600;
@@ -69,24 +53,6 @@
 .tracking-step-current .tracking-step-label {
   color: var(--color-accent-dark);
   font-weight: 700;
-}
-
-/* The one deliberate motion moment: a slow pulse on the waypoint that's
-   actually in progress right now, not applied to anything else. */
-.tracking-step-current .tracking-step-dot {
-  background: var(--color-accent);
-  border-color: var(--color-accent-dark);
-  animation: tracking-step-pulse 2.2s ease-in-out infinite;
-}
-
-@keyframes tracking-step-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(217, 164, 65, 0.45);
-  }
-  50% {
-    box-shadow: 0 0 0 4px rgba(217, 164, 65, 0);
-  }
 }
 
 /* The label + caption pair sits as one block under the marker. */
@@ -214,12 +180,6 @@
   .tracking-stepper-numbered .tracking-step-text {
     align-items: flex-start;
     padding-top: 2px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .tracking-step-current .tracking-step-dot {
-    animation: none;
   }
 }
 
