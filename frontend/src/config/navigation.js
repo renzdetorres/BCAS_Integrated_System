@@ -114,17 +114,26 @@ export const NAV_ITEMS_BY_ROLE = {
   ],
   Evaluator: [
     {
-      section: null,
+      section: "Overview",
+      items: [{ to: "/portal", label: "Dashboard", icon: "grid", end: true }],
+    },
+    {
+      section: "Admission Management",
       items: [
-        { to: "/portal", label: "Dashboard", icon: "home", end: true },
-        { to: "/evaluator/scholarship-slots", label: "Scholarship Slots", icon: "award" },
-        { to: "/evaluator/scholarship-pipeline", label: "Scholarship Grantees", icon: "chart" },
         { to: "/evaluator/applications", label: "Applications", icon: "doc" },
         { to: "/evaluator/documents", label: "Document Verification", icon: "folder" },
         { to: "/evaluator/documents/archive", label: "Document Archive", icon: "archive" },
         { to: "/evaluator/exam-permits", label: "Exam Permits", icon: "ticket" },
         { to: "/evaluator/exam-results", label: "Exam Results", icon: "chart" },
         { to: "/evaluator/interviews", label: "Interviews & Results", icon: "users" },
+      ],
+    },
+    {
+      section: "Scholarships",
+      items: [
+        { to: "/evaluator/scholarship-screening", label: "Screening", icon: "clipboard" },
+        { to: "/evaluator/scholarship-slots", label: "Scholarship Slots", icon: "award" },
+        { to: "/evaluator/scholarship-pipeline", label: "Scholarship Grantees", icon: "chart" },
       ],
     },
   ],

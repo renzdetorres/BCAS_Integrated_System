@@ -21,18 +21,21 @@ async function send(path, method, body, fallback) {
 
 const seatsOrNull = (capacity) => (capacity === "" || capacity == null ? null : Number(capacity));
 
+// A time input gives "08:00", but the server only reads a time as "08:00:00".
+const withSeconds = (time) => (/^\d{2}:\d{2}$/.test(time ?? "") ? `${time}:00` : time);
+
 export function listExamSchedules() {
   return send("", "GET", undefined, "Failed to load exam schedules.");
 }
 
 /** Adds a time slot to a date. Times are Philippine time. */
 export function createExamSchedule({ examDate, examTime, isOffered = true, capacity }) {
-  return send("", "POST", { examDate, examTime, isOffered, capacity: seatsOrNull(capacity) }, "Failed to add the time slot. Please try again.");
+  return send("", "POST", { examDate, examTime: withSeconds(examTime), isOffered, capacity: seatsOrNull(capacity) }, "Failed to add the time slot. Please try again.");
 }
 
 /** Changes a slot's time and seats. */
 export function updateExamSchedule(examScheduleId, { examTime, capacity }) {
-  return send(`/${examScheduleId}`, "PUT", { examTime, capacity: seatsOrNull(capacity) }, "Failed to update the time slot. Please try again.");
+  return send(`/${examScheduleId}`, "PUT", { examTime: withSeconds(examTime), capacity: seatsOrNull(capacity) }, "Failed to update the time slot. Please try again.");
 }
 
 export function deleteExamSchedule(examScheduleId) {

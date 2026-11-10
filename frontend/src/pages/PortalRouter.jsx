@@ -1,7 +1,6 @@
 import { useSession } from "../context/SessionContext.jsx";
 import ApplicantDashboardPage from "./ApplicantDashboardPage.jsx";
 import AdminDashboardPage from "./AdminDashboardPage.jsx";
-import EvaluatorDashboardPage from "./EvaluatorDashboardPage.jsx";
 import AcademicHeadDashboardPage from "./AcademicHeadDashboardPage.jsx";
 import SupportStaffDashboardPage from "./SupportStaffDashboardPage.jsx";
 import PortalPage from "./PortalPage.jsx";
@@ -17,7 +16,8 @@ export default function PortalRouter() {
   const { session } = useSession();
   if (session.role === "Applicant") return <ApplicantDashboardPage />;
   if (session.role === "Admin") return <AdminDashboardPage />;
-  if (session.role === "Evaluator") return <EvaluatorDashboardPage />;
+  // The Evaluator's dashboard is the Admin's, minus the Admin-only parts; the old screening queue is its own page.
+  if (session.role === "Evaluator") return <AdminDashboardPage />;
   if (session.role === "AcademicHead") return <AcademicHeadDashboardPage />;
   if (session.role === "SupportStaff") return <SupportStaffDashboardPage />;
   return <PortalPage />;

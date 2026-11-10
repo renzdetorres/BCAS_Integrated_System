@@ -48,6 +48,10 @@ function PaymentReview({ payment, onClose, onChanged }) {
   }
 
   function handleVerify() {
+    if (!invoice.trim()) {
+      setErrorMessage("Enter the sales invoice (SI) number before verifying the payment.");
+      return Promise.resolve();
+    }
     return run(() => verifyExamPayment(payment.paymentId, invoice.trim()), "Payment verified.");
   }
 
@@ -99,8 +103,8 @@ function PaymentReview({ payment, onClose, onChanged }) {
             </div>
           ) : (
             <div className="form-row">
-              <label htmlFor="invoice">Sales invoice (SI) number (with it, the exam permit is released automatically once the applicant has booked a slot)</label>
-              <input id="invoice" type="text" maxLength={50} value={invoice} onChange={(e) => setInvoice(e.target.value)} />
+              <label htmlFor="invoice">Sales invoice (SI) number (required; the exam permit is released automatically once the applicant has booked a slot)</label>
+              <input id="invoice" type="text" maxLength={50} value={invoice} onChange={(e) => setInvoice(e.target.value)} required aria-required="true" />
             </div>
           )}
         </div>
@@ -141,7 +145,7 @@ function PaymentReview({ payment, onClose, onChanged }) {
         <button type="button" className="btn btn-secondary" onClick={() => setRejecting(true)} disabled={isSaving}>
           Reject
         </button>
-        <button type="button" className="btn btn-primary" onClick={handleVerify} disabled={isSaving}>
+        <button type="button" className="btn btn-primary" onClick={handleVerify} disabled={isSaving || !invoice.trim()}>
           {isSaving ? "Verifying..." : "Verify payment"}
         </button>
       </>

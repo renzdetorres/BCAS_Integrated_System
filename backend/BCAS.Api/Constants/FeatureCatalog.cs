@@ -51,6 +51,7 @@ public static class FeatureCatalog
             },
             ["Evaluator"] = new FeatureDefinition[]
             {
+                new("/evaluator/scholarship-screening", "Scholarship Screening", "Scholarships", "/api/evaluator/dashboard"),
                 new("/evaluator/scholarship-slots", "Scholarship Slots", "Scholarships",
                     "/api/evaluator/scholarship-slots", "/api/evaluator/scholarship-applications"),
                 new("/evaluator/scholarship-pipeline", "Scholarship Exam & Grantees", "Scholarships", "/api/staff/scholarship-pipeline"),

@@ -11,7 +11,7 @@ namespace BCAS.Api.Controllers;
 /// process, the latest applicants, and five academic years of trend. An
 /// Academic Head sees only their own department.
 /// </summary>
-[Authorize(Roles = "Admin,AcademicHead")]
+[Authorize(Roles = "Admin,Evaluator,AcademicHead")]
 [ApiController]
 [Route("api/admin/admission-summary")]
 public class AdmissionSummaryController : ControllerBase

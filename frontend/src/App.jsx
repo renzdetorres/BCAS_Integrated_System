@@ -138,6 +138,7 @@ export default function App() {
                   path="/evaluator/scholarship-applications/:applicationId"
                   element={<ScholarshipScreeningPage />}
                 />
+                <Route path="/evaluator/scholarship-screening" element={<EvaluatorDashboardPage />} />
                 <Route path="/evaluator/scholarship-slots" element={<ScholarshipSlotsPage />} />
                 <Route path="/evaluator/scholarship-pipeline" element={<ScholarshipPipelinePage />} />
                 <Route path="/evaluator/applications" element={<AdminApplicationsPage />} />

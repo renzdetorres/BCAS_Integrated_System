@@ -163,7 +163,13 @@ public class ExamPaymentService : IExamPaymentService
     public async Task<ExamPaymentQueueItemResponse> VerifyAsync(
         Guid paymentId, Guid reviewerUserId, string? invoiceNumber, CancellationToken cancellationToken = default)
     {
-        var invoice = string.IsNullOrWhiteSpace(invoiceNumber) ? null : invoiceNumber.Trim();
+        // The SI number is what the exam permit is issued against, so a payment is never verified without it.
+        var invoice = invoiceNumber?.Trim();
+        if (string.IsNullOrEmpty(invoice))
+        {
+            throw new ExamPaymentException("Enter the sales invoice (SI) number before verifying the payment.");
+        }
+
         return await ReviewAsync(paymentId, reviewerUserId, "Verified", null, invoice, cancellationToken);
     }
 

@@ -10,6 +10,7 @@ import AdmissionPipeline from "../components/AdmissionPipeline.jsx";
 import FigureBars from "../components/ui/FigureBars.jsx";
 import { DEPARTMENT_OPTIONS } from "../config/departments.js";
 import { useAcademicYear } from "../context/AcademicYearContext.jsx";
+import { useSession } from "../context/SessionContext.jsx";
 import "../components/AdmissionPipeline.css";
 import "./AdminDashboardPage.css";
 
@@ -35,10 +36,10 @@ function plural(count, one, many) {
   return `${count.toLocaleString()} ${count === 1 ? one : many}`;
 }
 
-function applicationsLink(params) {
+function applicationsLink(params, path = "/admin/applications") {
   const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value));
   const search = query.toString();
-  return search ? `/admin/applications?${search}` : "/admin/applications";
+  return search ? `${path}?${search}` : path;
 }
 
 /** The same figures for either workspace, so the page renders one shape. */
@@ -297,7 +298,14 @@ export default function AdminDashboardPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const workspace = searchParams.get("workspace") === "scholarship" ? "scholarship" : "admission";
   // The Admin's choice in the top bar: every figure below is for this academic year (empty = all years).
-  const { academicYear } = useAcademicYear();
+  const { academicYear: chosenYear } = useAcademicYear();
+  // The Evaluator sees the same dashboard with its own links, across all academic years, and without
+  // the Admin-only parts (enrollment report, shortcuts) or the five-year trend.
+  const { session } = useSession();
+  const isEvaluator = session?.role === "Evaluator";
+  const academicYear = isEvaluator ? "" : chosenYear;
+  const applicationsPath = isEvaluator ? "/evaluator/applications" : "/admin/applications";
+  const documentsPath = isEvaluator ? "/evaluator/documents" : "/admin/documents";
 
   const [dashboard, setDashboard] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -308,11 +316,13 @@ export default function AdminDashboardPage() {
     let cancelled = false;
     setIsLoading(true);
 
-    getEnrollmentSummary(academicYear)
-      .then((data) => {
-        if (!cancelled) setEnrollment(data);
-      })
-      .catch(() => {});
+    if (!isEvaluator) {
+      getEnrollmentSummary(academicYear)
+        .then((data) => {
+          if (!cancelled) setEnrollment(data);
+        })
+        .catch(() => {});
+    }
 
     getAdminDashboard(academicYear)
       .then((data) => {
@@ -330,7 +340,7 @@ export default function AdminDashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [academicYear]);
+  }, [academicYear, isEvaluator]);
 
   function setWorkspace(next) {
     setSearchParams(next === "admission" ? {} : { workspace: next }, { replace: true });
@@ -350,14 +360,14 @@ export default function AdminDashboardPage() {
           label: workspace === "scholarship" ? "In screening" : "Awaiting a decision",
           detail: "Submitted and not yet approved or rejected",
           tone: "amber",
-          to: applicationsLink({ category: view.category, academicYear }),
+          to: applicationsLink({ category: view.category, academicYear }, applicationsPath),
         },
         {
           count: view.pendingDocumentsCount,
           label: "Documents to verify",
           detail: "Uploaded by applicants, not yet reviewed",
           tone: "amber",
-          to: "/admin/documents",
+          to: documentsPath,
         },
       ]
     : [];
@@ -369,7 +379,7 @@ export default function AdminDashboardPage() {
           <h1 className="dash-title">{workspaceLabel}</h1>
           <p className="dash-intro-meta">{academicYear ? `Academic Year ${academicYear}` : `All academic years (current: ${currentAcademicYear()})`}</p>
         </div>
-        <Link to={applicationsLink({ category: workspaceLabel, academicYear })} className="btn btn-primary dash-intro-cta">
+        <Link to={applicationsLink({ category: workspaceLabel, academicYear }, applicationsPath)} className="btn btn-primary dash-intro-cta">
           Open the queue
           <Icon name="chevron-right" size={16} />
         </Link>
@@ -451,7 +461,7 @@ export default function AdminDashboardPage() {
                 label: d.department,
                 value: d.count,
                 note: `${view.totalApplications > 0 ? Math.round((d.count / view.totalApplications) * 100) : 0}%`,
-                to: applicationsLink({ category: view.category, department: d.department }),
+                to: applicationsLink({ category: view.category, department: d.department }, applicationsPath),
               }))}
             />
           </section>
@@ -459,10 +469,10 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {workspace === "admission" && <AdmissionPipeline academicYear={academicYear} />}
+      {workspace === "admission" && <AdmissionPipeline academicYear={academicYear} showTrend={!isEvaluator} />}
       {workspace === "scholarship" && <ScholarshipSummary academicYear={academicYear} />}
 
-      <ShortcutFab />
+      {!isEvaluator && <ShortcutFab />}
     </AppLayout>
   );
 }

@@ -12,7 +12,7 @@ namespace BCAS.Api.Controllers;
 // write endpoints - BISAASS-47 gives Academic Head read access to this
 // Admin-Registrar oversight screen "as needed for approval decisions",
 // with every figure scoped to their assigned department.
-[Authorize(Roles = "Admin,AcademicHead")]
+[Authorize(Roles = "Admin,Evaluator,AcademicHead")]
 [ApiController]
 [Route("api/admin/dashboard")]
 public class AdminDashboardController : ControllerBase
