@@ -114,6 +114,22 @@ export default function LoginPage() {
             <path d="M41 0C22 40 10 200 8 450C7 640 30 820 73 1000H82C44 820 22 640 17 450C16 300 24 190 80 100C108 56 135 22 150 0Z" fill="url(#login-band)" />
             <path d="M150 0H3000V1000H82C44 820 22 640 17 450C16 300 24 190 80 100C108 56 135 22 150 0Z" fill="url(#login-white)" />
           </svg>
+          {/* On tablets and phones the photo sits above the form instead of beside it, so the same pale band
+              and white sheet meet it along a soft wave. Own gradient ids: the side curve above is hidden there. */}
+          <svg className="login-crest" viewBox="0 0 1000 120" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+            <defs>
+              <linearGradient id="login-crest-band" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stopColor="#d3ecdc" />
+                <stop offset="1" stopColor="#eef8f1" />
+              </linearGradient>
+              <filter id="login-crest-shadow" x="-5%" y="-40%" width="110%" height="180%">
+                <feGaussianBlur stdDeviation="7" />
+              </filter>
+            </defs>
+            <path d="M0 52C160 4 330 2 500 40C670 78 840 82 1000 20V120H0Z" fill="#06240f" opacity="0.3" filter="url(#login-crest-shadow)" />
+            <path d="M0 58C160 10 330 8 500 46C670 84 840 88 1000 26V120H0Z" fill="url(#login-crest-band)" />
+            <path d="M0 76C160 30 330 28 500 64C670 100 840 102 1000 46V120H0Z" fill="#e8f5ec" />
+          </svg>
           <div className="login-deco" aria-hidden="true">
             <svg className="login-deco-top" viewBox="0 0 300 300" focusable="false">
               <circle cx="236" cy="64" r="170" fill="#e4f3e9" />
@@ -146,6 +162,7 @@ export default function LoginPage() {
           </div>
 
           <div className="auth-form-panel login-panel">
+            <div className="login-intro">
             <div className="auth-mobile-brand">
               <BcasSeal size={28} />
               BCAS
@@ -163,6 +180,7 @@ export default function LoginPage() {
               <h1>Welcome back</h1>
               <p className="auth-subtitle">Sign in to continue to your application.</p>
               <span className="login-rule" aria-hidden="true" />
+            </div>
             </div>
 
             <form onSubmit={handleSubmit} noValidate>

@@ -13,9 +13,29 @@
    and a ceiling for very wide screens. */
 
 .auth-page.login-page {
+  /* The curve's width. Everything that depends on it (how far the panel overlaps the photo, where the
+     white starts, the gap to the form) is a multiple of this one value, so the whole shape grows and
+     shrinks together with the window instead of staying a fixed 260px. 18vw is 260px at 1440px wide. */
+  --curve: clamp(170px, 18vw, 420px);
+
   padding: 0;
   background: var(--color-white);
   overflow-x: hidden;
+}
+
+/* The page normally reserves room for a scrollbar; here that would show as a pale strip beside the
+   panel, so the sign-in screen only gives the room when it actually scrolls. */
+html:has(.login-page) {
+  scrollbar-gutter: auto;
+}
+
+/* The wave and the intro wrapper only matter in the stacked (tablet and phone) layout below. */
+.login-crest {
+  display: none;
+}
+
+.login-intro {
+  display: block;
 }
 
 .login-page .auth-shell {
@@ -35,11 +55,11 @@
   position: relative;
   z-index: 1;
   flex: 0 0 46%;
-  /* The photo runs this far under the panel so it meets the curve all the way down. */
-  margin-left: -130px;
+  /* The photo runs half a curve-width under the panel so it meets the curve all the way down. */
+  margin-left: calc(var(--curve) * -0.5);
   /* Even top and bottom so the form sits in the middle. The generous left padding leaves clear space
      between the curve and the form, including on the lower rows where the curve sweeps toward it. */
-  padding: 24px clamp(24px, 3vw, 56px) 96px clamp(120px, 9vw, 170px);
+  padding: 24px clamp(24px, 3vw, 56px) 96px clamp(110px, calc(var(--curve) * 0.5), 200px);
   background: transparent;
 }
 
@@ -48,7 +68,7 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 249px;
+  left: calc(var(--curve) * 0.958);
   right: 0;
   /* Soft gray at the top easing to white by the middle, matching the curve graphic above. */
   background: linear-gradient(180deg, #e8f5ec 0%, #f6fbf8 26%, #ffffff 48%);
@@ -59,8 +79,8 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  left: -10px;
-  width: 260px;
+  left: calc(var(--curve) * -0.0385);
+  width: var(--curve);
   height: 100%;
   pointer-events: none;
 }
@@ -265,45 +285,7 @@ html .login-panel .input-with-icon input {
   }
 }
 
-/* Phones and narrow windows: no photo, so no curve and no card frame. The seal and name replace
-   the cap, and the mountains stay along the bottom. */
-@media (max-width: 900px) {
-  .auth-form-side.login-side {
-    flex: 1 1 100%;
-    margin-left: 0;
-    padding: 32px 20px 120px;
-  }
-
-  .login-fill {
-    left: 0;
-  }
-
-  .login-edge {
-    display: none;
-  }
-
-  .login-deco-bottom {
-    left: 0;
-    width: 100%;
-  }
-
-  .login-cap {
-    display: none;
-  }
-
-  .login-panel .auth-mobile-brand {
-    justify-content: center;
-    margin-bottom: 20px;
-  }
-
-  .auth-form-panel.login-panel h1 {
-    font-size: 30px;
-  }
-
-  .login-rule {
-    margin-bottom: 24px;
-  }
-}
+/* Tablets and phones: see "Stacked layout" at the end of this file. */
 
 /* ---- Form look (from the design image) --------------------------------------------------
    An icon beside each bold label (a solid lock for Password), white fields with a thin border and
@@ -461,5 +443,205 @@ html .login-panel .input-with-icon input:focus {
 @media (min-width: 901px) and (max-height: 700px) {
   .login-deco-bottom {
     height: clamp(80px, 13vh, 120px);
+  }
+}
+
+/* ---- Stacked layout: tablets and phones -----------------------------------------------------
+   Below 900px there is no room to put the photo beside the form, so it becomes a header band across
+   the top and the form sits on a white sheet that meets it along a soft wave (the same pale band and
+   white as the side curve). Sizes follow the window: the band is a share of the height, the wave a
+   share of the width, and the shapes keep their proportions from a small phone to a tablet. This
+   block is last on purpose: it has to beat the form-look rules above, which come later than the
+   old mobile rules did. */
+@media (max-width: 900px) {
+  .auth-page.login-page {
+    --crest-h: clamp(34px, 8.5vw, 76px);
+    --hero-h: clamp(172px, 32dvh, 380px);
+  }
+
+  .login-page .auth-shell {
+    flex-direction: column;
+  }
+
+  /* The campus photo as the header band, with the seal and name on the sky. */
+  .login-page .auth-showcase {
+    display: flex;
+    flex: 0 0 var(--hero-h);
+    min-height: var(--hero-h);
+    gap: 8px;
+    padding: clamp(16px, 4vw, 32px) clamp(20px, 6vw, 56px) calc(var(--crest-h) + 10px);
+    background-position: center 38%;
+  }
+
+  .login-page .auth-showcase-brand img {
+    width: clamp(44px, 8vw, 64px);
+  }
+
+  /* The name sits on a soft white chip: on a short band it lands on the building, not on the sky. */
+  .login-page .auth-showcase-brand {
+    align-self: flex-start;
+    padding: 6px clamp(12px, 2.4vw, 18px) 6px 8px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow: 0 6px 18px -8px rgba(6, 36, 15, 0.45);
+  }
+
+  .login-page .auth-showcase-hills {
+    height: 66%;
+  }
+
+  .login-page .auth-showcase-motto {
+    font-size: clamp(17px, 3.4vw, 26px);
+  }
+
+  /* One line of the motto is enough on a band; the longer description stays on the wide layout. */
+  .login-page .auth-showcase-est {
+    display: none;
+  }
+
+  .auth-form-side.login-side {
+    flex: 1 1 auto;
+    margin-left: 0;
+    padding: clamp(6px, 2vw, 20px) clamp(20px, 6vw, 56px) clamp(56px, 12vw, 120px);
+  }
+
+  .login-fill {
+    left: 0;
+  }
+
+  .login-edge {
+    display: none;
+  }
+
+  /* The wave hangs above the white sheet, over the foot of the photo. */
+  .login-crest {
+    display: block;
+    position: absolute;
+    left: 0;
+    width: 100%;
+    top: calc(var(--crest-h) * -1 + 1px);
+    height: var(--crest-h);
+    pointer-events: none;
+  }
+
+  .login-deco-top {
+    display: none;
+  }
+
+  .login-deco-bottom {
+    left: 0;
+    width: 100%;
+    height: clamp(64px, 14vw, 140px);
+  }
+
+  .auth-form-panel.login-panel {
+    max-width: min(100%, clamp(320px, 72vw, 480px));
+  }
+
+  /* The photo band already carries the seal and name, and the cap would repeat it. */
+  .login-cap,
+  .login-panel .auth-mobile-brand {
+    display: none;
+  }
+
+  .auth-form-panel.login-panel h1 {
+    font-size: clamp(26px, 6.4vw, 38px);
+  }
+
+  .login-hero .auth-subtitle {
+    font-size: clamp(14px, 2.4vw, 17px);
+  }
+
+  .login-rule {
+    margin: 10px auto clamp(16px, 4vw, 26px);
+  }
+
+  /* 16px text in the fields: smaller and iPhones zoom the whole page when a field is tapped. */
+  html .login-panel .input-with-icon input {
+    min-height: 48px;
+    font-size: 16px;
+  }
+
+  .login-panel .input-group label.login-label,
+  .login-panel .input-group-aside-link,
+  .login-remember,
+  .login-panel .auth-switch {
+    font-size: clamp(13.5px, 2.3vw, 15.5px);
+  }
+
+  .login-panel .auth-submit {
+    min-height: 50px;
+    font-size: 16px;
+  }
+}
+
+/* A phone on its side: the photo band would take most of the height, so it goes, and the form splits
+   into two columns (title on the left, fields on the right) so the button stays in view. */
+@media (max-width: 900px) and (max-height: 560px) and (orientation: landscape) {
+  .login-page .auth-showcase,
+  .login-crest {
+    display: none;
+  }
+
+  .auth-form-side.login-side {
+    padding: 12px clamp(20px, 5vw, 48px) 40px;
+  }
+
+  .auth-form-panel.login-panel {
+    max-width: min(100%, 780px);
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    column-gap: clamp(24px, 5vw, 56px);
+    align-items: center;
+  }
+
+  .login-intro {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .login-panel form {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .login-panel .auth-switch {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  /* With the band gone, the seal and name come back above the title. */
+  .login-panel .auth-mobile-brand {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+
+  .auth-form-panel.login-panel h1 {
+    font-size: 28px;
+  }
+
+  .login-rule {
+    margin-bottom: 0;
+  }
+
+  .login-panel .input-group {
+    margin-bottom: 10px;
+  }
+
+  .login-deco-bottom {
+    height: 56px;
+  }
+}
+
+/* Phones: the band is only tall enough for the seal and name (the motto would sit across the bright
+   building), so the form stays mostly in view without scrolling. */
+@media (max-width: 600px) {
+  .auth-page.login-page {
+    --hero-h: clamp(132px, 22dvh, 210px);
+  }
+
+  .login-page .auth-showcase-motto {
+    display: none;
   }
 }
