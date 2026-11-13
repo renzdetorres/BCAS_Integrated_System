@@ -53,11 +53,12 @@ public class ExamPermitController : ControllerBase
     /// <summary>The signed-in applicant's most recently submitted reschedule request, if any.</summary>
     [HttpGet("reschedule-request")]
     [ProducesResponseType(typeof(ExamRescheduleRequestResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<ActionResult<ExamRescheduleRequestResponse>> GetMyRescheduleRequest(CancellationToken cancellationToken)
     {
         var request = await _examPermitService.GetMyRescheduleRequestAsync(User.GetUserId(), cancellationToken);
-        return request is null ? NotFound() : Ok(request);
+        // 204 rather than 404: no request yet is a normal state, not an error in the browser console.
+        return request is null ? NoContent() : Ok(request);
     }
 
     /// <summary>

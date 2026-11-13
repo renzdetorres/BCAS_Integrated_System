@@ -66,6 +66,7 @@ export default function WorkflowStepper({ steps, labels, hints = null }) {
   const currentIndex = steps.findIndex((step) => step.isCurrent);
 
   return (
+    <div className="tracking-stepper-box">
     <ol className="tracking-stepper tracking-stepper-numbered">
       {steps.map((step, index) => {
         const caption = stageCaption(step, index, currentIndex);
@@ -101,5 +102,6 @@ export default function WorkflowStepper({ steps, labels, hints = null }) {
         );
       })}
     </ol>
+    </div>
   );
 }

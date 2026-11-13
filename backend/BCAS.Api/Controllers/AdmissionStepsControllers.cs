@@ -7,7 +7,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BCAS.Api.Controllers;
 
-/// <summary>Staff side of exam results. Admins, Evaluators and Support Staff enter raw scores; the result follows from the score.</summary>
+/// <summary>
+/// Staff side of exam results. The Evaluator records each raw score (the result follows from the score); Support Staff
+/// then release it to the applicant. The Admin can do both.
+/// </summary>
 [Authorize(Roles = "Admin,Evaluator,SupportStaff")]
 [ApiController]
 [Route("api/staff/exam-results")]
@@ -31,7 +34,8 @@ public class StaffExamResultsController : ControllerBase
     public async Task<ActionResult<ExamScoringRulesResponse>> GetRules(CancellationToken cancellationToken) =>
         Ok(await _service.GetRulesAsync(cancellationToken));
 
-    /// <summary>Records the raw score of an applicant who has taken the exam, works out Passed, Retake or Failed, and moves the application on.</summary>
+    /// <summary>Records the raw score of an applicant who has taken the exam and works out Passed, Retake or Failed. The applicant is told only when Support Staff release it.</summary>
+    [Authorize(Roles = "Admin,Evaluator")]
     [HttpPost("{applicationId:guid}")]
     [ProducesResponseType(typeof(ExamResultQueueItem), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -49,6 +53,28 @@ public class StaffExamResultsController : ControllerBase
         catch (Exception ex) when (ex is AdmissionStepException or InvalidStatusTransitionException or StatusPreconditionNotMetException)
         {
             return Problem(ex.Message, title: "Result not recorded", statusCode: StatusCodes.Status400BadRequest);
+        }
+    }
+
+    /// <summary>Releases a recorded result to the applicant and moves the application on: a pass to the interview, a retake back to choosing a schedule, a fail to a closed application.</summary>
+    [Authorize(Roles = "Admin,SupportStaff")]
+    [HttpPost("{applicationId:guid}/release")]
+    [ProducesResponseType(typeof(ExamResultQueueItem), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ExamResultQueueItem>> Release(Guid applicationId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _service.ReleaseAsync(applicationId, User.GetUserId(), cancellationToken));
+        }
+        catch (ApplicationNotFoundException ex)
+        {
+            return Problem(ex.Message, title: "Application not found", statusCode: StatusCodes.Status404NotFound);
+        }
+        catch (Exception ex) when (ex is AdmissionStepException or InvalidStatusTransitionException or StatusPreconditionNotMetException)
+        {
+            return Problem(ex.Message, title: "Result not released", statusCode: StatusCodes.Status400BadRequest);
         }
     }
 }

@@ -3,6 +3,9 @@
   flex-direction: column;
   gap: 2px;
   max-width: 52ch;
+  /* In the phone card layout the cell is a flex item; without this its one-line message sets its width
+     and pushes the whole page sideways. */
+  min-width: 0;
 }
 
 .announcement-cell-title {

@@ -42,6 +42,9 @@
 
 .analytics-section {
   display: grid;
+  /* An explicit shrinkable track: the default auto track grows to a chart's minimum width (seven 56px
+     columns) and pushes the whole page sideways on a phone. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
   margin-top: var(--space-4);
 }

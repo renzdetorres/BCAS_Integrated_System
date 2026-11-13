@@ -25,6 +25,11 @@ canvas {
   min-width: 0;
 }
 
+/* A native file picker has a fixed intrinsic width; keep it inside its form. */
+input[type="file"] {
+  max-width: 100%;
+}
+
 /* Tables scroll inside their container, never the page. */
 table {
   max-width: 100%;

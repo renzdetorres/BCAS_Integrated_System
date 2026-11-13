@@ -58,7 +58,6 @@ public static class FeatureCatalog
                 new("/evaluator/applications", "Applications", "Admission", "/api/admin/applications"),
                 new("/evaluator/documents", "Document Verification", "Admission", "/api/support-staff/documents"),
                 new("/evaluator/documents/archive", "Document Archive", "Admission"),
-                new("/evaluator/exam-permits", "Exam Permits", "Admission", "/api/admin/exam-permits"),
                 new("/evaluator/exam-results", "Exam Results", "Admission", "/api/staff/exam-results"),
             },
             ["AcademicHead"] = new FeatureDefinition[]
@@ -72,6 +71,7 @@ public static class FeatureCatalog
             ["SupportStaff"] = new FeatureDefinition[]
             {
                 new("/support-staff/payments", "Payment Verification", "Payments", "/api/staff/payments"),
+                new("/support-staff/exam-permits", "Exam Permits", "Payments", "/api/admin/exam-permits"),
                 new("/support-staff/exam-results", "Exam Results", "Records", "/api/staff/exam-results"),
                 new("/support-staff/interviews", "Interviews & Results", "Records", "/api/staff/interviews"),
                 new("/support-staff/applicants", "Applicant Records", "Records", "/api/support-staff/applicants"),

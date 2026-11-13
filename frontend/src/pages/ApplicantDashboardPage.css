@@ -141,16 +141,22 @@
 
 .applicant-announcements-header {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  align-items: baseline;
   justify-content: space-between;
+  gap: 4px 12px;
   margin-bottom: 16px;
 }
 
+/* The title keeps its words whole; when the card is narrow the link drops below it. */
 .applicant-announcements-header h2 {
   margin: 0;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .applicant-announcements-header a {
+  white-space: nowrap;
   color: var(--color-primary-text);
   font-size: 0.8rem;
   font-weight: 600;

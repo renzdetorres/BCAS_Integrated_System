@@ -122,7 +122,7 @@ export default function PaymentMethodsEditor({ methods, onChange }) {
                       <label className="btn btn-secondary" htmlFor={`${id}-qr`}>
                         {method.qrImage ? "Replace QR code" : "Upload QR code"}
                       </label>
-                      <input id={`${id}-qr`} className="admission-doc-input" type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" onChange={(event) => upload(index, event)} />
+                      <input id={`${id}-qr`} className="visually-hidden" type="file" accept=".png,.jpg,.jpeg,image/png,image/jpeg" onChange={(event) => upload(index, event)} />
                       {method.qrImage ? (
                         <button type="button" className="btn btn-secondary" onClick={() => update(index, { qrImage: "" })}>
                           Remove

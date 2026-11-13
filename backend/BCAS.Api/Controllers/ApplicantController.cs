@@ -28,11 +28,12 @@ public class ApplicantController : ControllerBase
     /// </summary>
     [HttpGet("profile")]
     [ProducesResponseType(typeof(ApplicantProfileResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<ActionResult<ApplicantProfileResponse>> GetProfile(CancellationToken cancellationToken)
     {
         var profile = await _profileService.GetMyProfileAsync(User.GetUserId(), cancellationToken);
-        return profile is null ? NotFound() : Ok(profile);
+        // 204 rather than 404: no saved profile yet is a normal state, not an error in the browser console.
+        return profile is null ? NoContent() : Ok(profile);
     }
 
     /// <summary>

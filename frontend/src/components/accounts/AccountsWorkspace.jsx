@@ -3,6 +3,9 @@ import { ALL_ROLES } from "../../api/adminApi.js";
 import { ROLE_SHORT_LABELS } from "../../config/navigation.js";
 import Icon from "../ui/Icon.jsx";
 import SearchSuggest, { buildSuggestions } from "../ui/SearchSuggest.jsx";
+// The table reuses the shared .ui-datatable-* styles. Importing them here keeps them on the page when it is
+// opened directly, instead of only when some other screen that uses DataTable was visited first.
+import "../ui/DataTable.css";
 import "./AccountsWorkspace.css";
 
 const PAGE_SIZES = [10, 25, 50];

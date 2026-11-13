@@ -227,7 +227,7 @@ export default function PaymentPage() {
               </fieldset>
             ) : null}
 
-            <dl className="payment-facts" key={selected?.name}>
+            <dl className="payment-facts" key={`facts-${selected?.name}`}>
               <div>
                 <dt>Amount to pay</dt>
                 <dd className="payment-amount">{peso(payment.amount)}</dd>
@@ -260,7 +260,7 @@ export default function PaymentPage() {
             {selected?.instructions ? <p className="payment-instructions">{selected.instructions}</p> : null}
 
             {selected?.qrImage ? (
-              <figure className="payment-qr" key={selected.name}>
+              <figure className="payment-qr" key={`qr-${selected.name}`}>
                 <img src={selected.qrImage} alt={`The school's QR payment code for ${selected.name}`} width="220" height="220" />
                 <figcaption>Scan with your banking or e-wallet app</figcaption>
                 <button type="button" className="btn btn-secondary btn-sm" onClick={() => setQrOpen(true)}>

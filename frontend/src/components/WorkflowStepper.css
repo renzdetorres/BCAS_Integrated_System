@@ -5,6 +5,12 @@
    deliberate break from that convention - and the connecting rule
    itself turns green as it's crossed, so progress is legible without
    reading any label. */
+/* The stepper stacks top to bottom when its own box is narrow, not when the window is: in a two-column
+   page on a laptop the card is only about 400px wide, and seven columns would split words mid-line. */
+.tracking-stepper-box {
+  container: tracking-stepper / inline-size;
+}
+
 .tracking-stepper {
   list-style: none;
   margin: 0;
@@ -150,7 +156,7 @@
   font-weight: 600;
 }
 
-@media (max-width: 720px) {
+@container tracking-stepper (max-width: 560px) {
   .tracking-stepper-numbered {
     flex-direction: column;
     gap: 0;
@@ -217,7 +223,7 @@
   animation: tracking-line-grow 560ms var(--ease-out) calc(var(--step-index, 0) * 130ms) backwards;
 }
 
-@media (max-width: 720px) {
+@container tracking-stepper (max-width: 560px) {
   .tracking-stepper-numbered .tracking-step:not(:first-child)::before {
     background: linear-gradient(var(--color-status-green-text), var(--color-status-green-text)) no-repeat top / 100% 0% var(--color-border);
   }
@@ -297,7 +303,7 @@
 }
 
 /* Stacked on phones the rule runs top to bottom, so it fills that way. */
-@media (max-width: 720px) {
+@container tracking-stepper (max-width: 560px) {
   .tracking-stepper-numbered .tracking-step:not(:first-child)::before {
     background: linear-gradient(var(--color-status-green-text), var(--color-status-green-text)) no-repeat top / 100% 0% var(--color-border);
   }

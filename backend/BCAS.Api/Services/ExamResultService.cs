@@ -21,11 +21,17 @@ public interface IExamResultService
     Task<ExamScoringRulesResponse> GetRulesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Records the applicant's raw entrance exam score, works out the result from it
-    /// (see ExamScoring) and moves the application on: Passed to the interview, Failed to a
-    /// closed application, Retake back to choosing a new exam schedule.
+    /// Records the applicant's raw entrance exam score (the Evaluator's step) and works out the result from it
+    /// (see ExamScoring). The applicant is not told yet and the application does not move: the score waits
+    /// for Support Staff to release it. Recording again before the release corrects the score.
     /// </summary>
     Task<ExamResultQueueItem> RecordAsync(Guid applicationId, RecordExamResultRequest request, Guid recordedByUserId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Releases a recorded result to the applicant (the Support Staff's step) and moves the application on:
+    /// Passed to the interview, Failed to a closed application, Retake back to choosing a new exam schedule.
+    /// </summary>
+    Task<ExamResultQueueItem> ReleaseAsync(Guid applicationId, Guid releasedByUserId, CancellationToken cancellationToken = default);
 
     Task<MyExamResultResponse> GetMyResultAsync(Guid userId, CancellationToken cancellationToken = default);
 }
@@ -94,12 +100,38 @@ public class ExamResultService : IExamResultService
                 "A result can only be recorded for an applicant who has taken the exam. Mark their exam as done first.");
         }
 
-        var attemptNumber = (await _repository.GetByUserIdAsync(item.UserId, cancellationToken)).Count + 1;
+        // Only released attempts count towards the retake limit; an unreleased score is replaced, not added to.
+        var existing = await _repository.GetByUserIdAsync(item.UserId, cancellationToken);
+        var attemptNumber = existing.Count(a => a.ReleasedAt is not null) + 1;
         var result = ExamScoring.Decide(score, attemptNumber, rules);
 
         var remarks = string.IsNullOrWhiteSpace(request.Remarks) ? null : request.Remarks.Trim();
         var examDate = await _repository.GetBookedExamDateAsync(item.UserId, cancellationToken);
-        await _repository.InsertAsync(applicationId, item.UserId, result, score, remarks, examDate, recordedByUserId, cancellationToken);
+        var corrected = await _repository.UpdatePendingAsync(applicationId, result, score, remarks, examDate, recordedByUserId, cancellationToken);
+        if (!corrected)
+        {
+            await _repository.InsertAsync(applicationId, item.UserId, result, score, remarks, examDate, recordedByUserId, cancellationToken);
+        }
+
+        _logger.LogInformation("Exam score recorded for application {ApplicationId} by {UserId} (result {Result}, awaiting release)", applicationId, recordedByUserId, result);
+        return (await _repository.GetQueueItemAsync(applicationId, cancellationToken))!;
+    }
+
+    public async Task<ExamResultQueueItem> ReleaseAsync(Guid applicationId, Guid releasedByUserId, CancellationToken cancellationToken = default)
+    {
+        var item = await _repository.GetQueueItemAsync(applicationId, cancellationToken)
+            ?? throw new ApplicationNotFoundException(applicationId);
+
+        if (item.Result is null || item.ReleasedAt is not null || item.ApplicationStatus != "ExamDone")
+        {
+            throw new AdmissionStepException(
+                item.ReleasedAt is not null
+                    ? "This result has already been released to the applicant."
+                    : "There is no recorded score to release yet. The Evaluator records the score first.");
+        }
+
+        var result = item.Result;
+        var remarks = item.Remarks;
 
         // Move the application along. The more specific notification below replaces the generic one.
         var nextStatus = result switch
@@ -117,8 +149,10 @@ public class ExamResultService : IExamResultService
                 Remarks = $"Entrance exam result: {result}" + (remarks is null ? string.Empty : $". {remarks}"),
                 SuppressNotification = true,
             },
-            recordedByUserId,
+            releasedByUserId,
             cancellationToken);
+
+        await _repository.ReleaseAsync(applicationId, cancellationToken);
 
         // A retake starts over at choosing a slot, so the old booking (and its permit) goes.
         if (result == "Retake")
@@ -132,7 +166,7 @@ public class ExamResultService : IExamResultService
             await _notifications.NotifyExamResultAsync(item.UserId, applicant.Email, applicant.FirstName, result, cancellationToken);
         }
 
-        _logger.LogInformation("Exam result {Result} recorded for application {ApplicationId} by {UserId}", result, applicationId, recordedByUserId);
+        _logger.LogInformation("Exam result {Result} released for application {ApplicationId} by {UserId}", result, applicationId, releasedByUserId);
         return (await _repository.GetQueueItemAsync(applicationId, cancellationToken))!;
     }
 
@@ -140,7 +174,8 @@ public class ExamResultService : IExamResultService
     {
         var application = (await _applicationRepository.GetByUserIdAsync(userId, cancellationToken)).FirstOrDefault()
             ?? throw new NoAdmissionApplicationException();
-        var attempts = await _repository.GetByUserIdAsync(userId, cancellationToken);
+        // A score the Evaluator has recorded stays hidden from the applicant until Support Staff release it.
+        var attempts = (await _repository.GetByUserIdAsync(userId, cancellationToken)).Where(a => a.ReleasedAt is not null).ToList();
         var latest = attempts.FirstOrDefault();
 
         var history = attempts
@@ -165,7 +200,7 @@ public class ExamResultService : IExamResultService
             Status = latest.Result,
             Score = latest.Score,
             Remarks = latest.Remarks,
-            ReleasedAt = latest.RecordedAt,
+            ReleasedAt = latest.ReleasedAt,
             Attempt = latest.Attempt,
             History = history,
         };

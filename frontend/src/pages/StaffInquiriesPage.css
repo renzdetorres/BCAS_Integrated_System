@@ -3,6 +3,8 @@
   flex-direction: column;
   gap: 2px;
   max-width: 48ch;
+  /* Lets the one-line preview truncate inside the phone card layout instead of widening the page. */
+  min-width: 0;
 }
 
 .inquiry-cell-subject {

@@ -1993,6 +1993,19 @@ BEGIN
 END
 GO
 
+-- ExamResults.ReleasedAt
+-- The Evaluator records a score; Support Staff then release it to the applicant. ReleasedAt is NULL while a
+-- score is recorded but not yet released. Every result that existed before this column was added had
+-- already reached the applicant, so those rows are marked released. Safe to re-run; the API also applies
+-- this at startup (see DatabaseStartupCheck).
+IF OBJECT_ID(N'dbo.ExamResults', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.ExamResults') AND name = N'ReleasedAt')
+BEGIN
+    ALTER TABLE dbo.ExamResults ADD ReleasedAt DATETIME2(3) NULL;
+    EXEC (N'UPDATE dbo.ExamResults SET ReleasedAt = RecordedAt WHERE ReleasedAt IS NULL');
+END
+GO
+
 -- -----------------------------------------------------------------------------
 -- InterviewSchedules
 -- One interview per application, for applicants who passed the exam. The

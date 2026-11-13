@@ -17,6 +17,9 @@ public class ExamResultRecord
     public string? Remarks { get; set; }
     public DateOnly? ExamDate { get; set; }
     public DateTime RecordedAt { get; set; }
+
+    /// <summary>When Support Staff released the result to the applicant; null while it is only recorded.</summary>
+    public DateTime? ReleasedAt { get; set; }
 }
 
 /// <summary>An applicant on the staff exam-results list: waiting for a result, or already given one.</summary>
@@ -37,8 +40,13 @@ public class ExamResultQueueItem
 
     public decimal? Score { get; set; }
     public string? Remarks { get; set; }
+    /// <summary>Released attempts only; a score that is recorded but not yet released is not counted.</summary>
     public int Attempts { get; set; }
+
     public DateTime? RecordedAt { get; set; }
+
+    /// <summary>When the latest result was released to the applicant; null while it is recorded and waiting for Support Staff.</summary>
+    public DateTime? ReleasedAt { get; set; }
 }
 
 /// <summary>

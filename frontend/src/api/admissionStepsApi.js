@@ -39,7 +39,15 @@ export async function getExamScoringRules() {
   return read(await fetch(`${API_BASE_URL}/api/staff/exam-results/rules`, get), "Failed to load the scoring rules.");
 }
 
-/** Sends the raw score; the server works out Passed, Retake or Failed from it. */
+/** Support Staff release a recorded result to the applicant, which moves their application on. */
+export async function releaseExamResult(applicationId) {
+  return read(
+    await fetch(`${API_BASE_URL}/api/staff/exam-results/${applicationId}/release`, json("POST", {})),
+    "Failed to release the result."
+  );
+}
+
+/** Sends the raw score; the server works out Passed, Retake or Failed from it. The applicant is told only on release. */
 export async function recordExamResult(applicationId, { score, remarks }) {
   return read(
     await fetch(

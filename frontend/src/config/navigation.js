@@ -123,7 +123,6 @@ export const NAV_ITEMS_BY_ROLE = {
         { to: "/evaluator/applications", label: "Applications", icon: "doc" },
         { to: "/evaluator/documents", label: "Document Verification", icon: "folder" },
         { to: "/evaluator/documents/archive", label: "Document Archive", icon: "archive" },
-        { to: "/evaluator/exam-permits", label: "Exam Permits", icon: "ticket" },
         { to: "/evaluator/exam-results", label: "Exam Results", icon: "chart" },
       ],
     },
@@ -160,6 +159,7 @@ export const NAV_ITEMS_BY_ROLE = {
       section: "Payments & Results",
       items: [
         { to: "/support-staff/payments", label: "Payment Verification", icon: "clipboard" },
+        { to: "/support-staff/exam-permits", label: "Exam Permits", icon: "ticket" },
         { to: "/support-staff/exam-results", label: "Exam Results", icon: "chart" },
         { to: "/support-staff/interviews", label: "Interviews & Results", icon: "users" },
       ],

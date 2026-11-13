@@ -20,6 +20,22 @@ public interface IExamResultRepository
         Guid recordedByUserId,
         CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Corrects the score of the newest attempt while it is still unreleased. Returns false when there is no
+    /// unreleased attempt to correct.
+    /// </summary>
+    Task<bool> UpdatePendingAsync(
+        Guid applicationId,
+        string result,
+        decimal? score,
+        string? remarks,
+        DateOnly? examDate,
+        Guid recordedByUserId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Marks the unreleased attempt as released to the applicant. Returns false when there was none.</summary>
+    Task<bool> ReleaseAsync(Guid applicationId, CancellationToken cancellationToken = default);
+
     /// <summary>Applicants who took the exam (waiting for a result) and those who already have one.</summary>
     Task<IReadOnlyList<ExamResultQueueItem>> GetQueueAsync(CancellationToken cancellationToken = default);
 
@@ -43,7 +59,7 @@ public class ExamResultRepository : IExamResultRepository
         await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
 
         const string sql = @"
-SELECT ResultId, ApplicationId, UserId, Attempt, Result, Score, Remarks, ExamDate, RecordedAt
+SELECT ResultId, ApplicationId, UserId, Attempt, Result, Score, Remarks, ExamDate, RecordedAt, ReleasedAt
 FROM dbo.ExamResults
 WHERE UserId = @UserId
 ORDER BY Attempt DESC;";
@@ -76,7 +92,7 @@ ORDER BY Attempt DESC;";
         const string sql = @"
 INSERT INTO dbo.ExamResults (ApplicationId, UserId, Attempt, Result, Score, Remarks, ExamDate, RecordedByUserId)
 OUTPUT inserted.ResultId, inserted.ApplicationId, inserted.UserId, inserted.Attempt, inserted.Result, inserted.Score,
-       inserted.Remarks, inserted.ExamDate, inserted.RecordedAt
+       inserted.Remarks, inserted.ExamDate, inserted.RecordedAt, inserted.ReleasedAt
 SELECT @ApplicationId, @UserId, ISNULL(MAX(Attempt), 0) + 1, @Result, @Score, @Remarks, @ExamDate, @RecordedByUserId
 FROM dbo.ExamResults WITH (UPDLOCK, HOLDLOCK)
 WHERE ApplicationId = @ApplicationId;";
@@ -93,6 +109,43 @@ WHERE ApplicationId = @ApplicationId;";
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         await reader.ReadAsync(cancellationToken);
         return MapRecord(reader);
+    }
+
+    public async Task<bool> UpdatePendingAsync(
+        Guid applicationId,
+        string result,
+        decimal? score,
+        string? remarks,
+        DateOnly? examDate,
+        Guid recordedByUserId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        const string sql = @"
+UPDATE dbo.ExamResults
+SET Result = @Result, Score = @Score, Remarks = @Remarks, ExamDate = @ExamDate,
+    RecordedByUserId = @RecordedByUserId, RecordedAt = SYSUTCDATETIME()
+WHERE ApplicationId = @ApplicationId AND ReleasedAt IS NULL;";
+
+        await using var command = new SqlCommand(sql, connection);
+        command.Parameters.Add(new SqlParameter("@ApplicationId", SqlDbType.UniqueIdentifier) { Value = applicationId });
+        command.Parameters.Add(new SqlParameter("@Result", SqlDbType.NVarChar, 10) { Value = result });
+        command.Parameters.Add(new SqlParameter("@Score", SqlDbType.Decimal) { Precision = 5, Scale = 2, Value = (object?)score ?? DBNull.Value });
+        command.Parameters.Add(new SqlParameter("@Remarks", SqlDbType.NVarChar, 500) { Value = (object?)remarks ?? DBNull.Value });
+        command.Parameters.Add(new SqlParameter("@ExamDate", SqlDbType.Date) { Value = examDate is null ? DBNull.Value : examDate.Value.ToDateTime(TimeOnly.MinValue) });
+        command.Parameters.Add(new SqlParameter("@RecordedByUserId", SqlDbType.UniqueIdentifier) { Value = recordedByUserId });
+        return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
+    }
+
+    public async Task<bool> ReleaseAsync(Guid applicationId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await _connectionFactory.CreateOpenConnectionAsync(cancellationToken);
+
+        await using var command = new SqlCommand(
+            "UPDATE dbo.ExamResults SET ReleasedAt = SYSUTCDATETIME() WHERE ApplicationId = @ApplicationId AND ReleasedAt IS NULL;", connection);
+        command.Parameters.Add(new SqlParameter("@ApplicationId", SqlDbType.UniqueIdentifier) { Value = applicationId });
+        return await command.ExecuteNonQueryAsync(cancellationToken) > 0;
     }
 
     public async Task<IReadOnlyList<ExamResultQueueItem>> GetQueueAsync(CancellationToken cancellationToken = default)
@@ -141,14 +194,14 @@ WHERE sel.UserId = @UserId;";
 
     private const string QueueSelect = @"
 SELECT a.ApplicationId, a.UserId, u.FirstName, u.LastName, u.Email, a.Department, a.CourseAppliedFor, a.YearLevel, a.Status,
-       sch.ExamDate, r.Result, r.Score, r.Remarks, r.RecordedAt,
-       (SELECT COUNT(*) FROM dbo.ExamResults x WHERE x.ApplicationId = a.ApplicationId) AS Attempts
+       sch.ExamDate, r.Result, r.Score, r.Remarks, r.RecordedAt, r.ReleasedAt,
+       (SELECT COUNT(*) FROM dbo.ExamResults x WHERE x.ApplicationId = a.ApplicationId AND x.ReleasedAt IS NOT NULL) AS Attempts
 FROM dbo.AdmissionApplications a
 JOIN dbo.Users u ON u.UserId = a.UserId
 LEFT JOIN dbo.ExamScheduleSelections sel ON sel.UserId = a.UserId
 LEFT JOIN dbo.ExamSchedules sch ON sch.ExamScheduleId = sel.ExamScheduleId
 OUTER APPLY (
-    SELECT TOP (1) x.ResultId, x.Result, x.Score, x.Remarks, x.RecordedAt
+    SELECT TOP (1) x.ResultId, x.Result, x.Score, x.Remarks, x.RecordedAt, x.ReleasedAt
     FROM dbo.ExamResults x
     WHERE x.ApplicationId = a.ApplicationId
     ORDER BY x.Attempt DESC
@@ -165,6 +218,7 @@ OUTER APPLY (
         Remarks = reader.IsDBNull(6) ? null : reader.GetString(6),
         ExamDate = reader.IsDBNull(7) ? null : DateOnly.FromDateTime(reader.GetDateTime(7)),
         RecordedAt = reader.GetDateTime(8),
+        ReleasedAt = reader.IsDBNull(9) ? null : reader.GetDateTime(9),
     };
 
     private static ExamResultQueueItem MapQueueItem(SqlDataReader reader)
@@ -187,6 +241,7 @@ OUTER APPLY (
             Remarks = Text("Remarks"),
             Attempts = reader.GetInt32(reader.GetOrdinal("Attempts")),
             RecordedAt = reader.IsDBNull(reader.GetOrdinal("RecordedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("RecordedAt")),
+            ReleasedAt = reader.IsDBNull(reader.GetOrdinal("ReleasedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("ReleasedAt")),
         };
     }
 }

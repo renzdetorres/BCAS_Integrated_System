@@ -34,11 +34,12 @@ public class ExamSchedulesController : ControllerBase
     /// <summary>The signed-in applicant's confirmed exam schedule, if one has been selected.</summary>
     [HttpGet("selection")]
     [ProducesResponseType(typeof(ExamScheduleSelectionResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<ActionResult<ExamScheduleSelectionResponse>> GetMySelection(CancellationToken cancellationToken)
     {
         var selection = await _examScheduleService.GetMySelectionAsync(User.GetUserId(), cancellationToken);
-        return selection is null ? NotFound() : Ok(selection);
+        // 204 rather than 404: having no schedule yet is a normal state, and a 404 shows as a red error in the browser console.
+        return selection is null ? NoContent() : Ok(selection);
     }
 
     /// <summary>

@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace BCAS.Api.Controllers;
 
 /// <summary>Admin-Registrar exam permit generation and release (BISAASS-30).</summary>
-[Authorize(Roles = "Admin,Evaluator")]
+[Authorize(Roles = "Admin,SupportStaff")]
 [ApiController]
 [Route("api/admin/exam-permits")]
 public class AdminExamPermitsController : ControllerBase

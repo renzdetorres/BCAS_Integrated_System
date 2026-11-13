@@ -30,6 +30,7 @@ public static class DatabaseStartupCheck
         ("table dbo.ExamPayments", "SELECT OBJECT_ID(N'dbo.ExamPayments', N'U')"),
         ("table dbo.Notifications", "SELECT OBJECT_ID(N'dbo.Notifications', N'U')"),
         ("column ExamSchedules.Capacity", "SELECT COL_LENGTH(N'dbo.ExamSchedules', N'Capacity')"),
+        ("column ExamResults.ReleasedAt", "SELECT COL_LENGTH(N'dbo.ExamResults', N'ReleasedAt')"),
         ("tables dbo.ExamResults/InterviewSchedules", "SELECT CASE WHEN OBJECT_ID(N'dbo.ExamResults', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.InterviewSchedules', N'U') IS NOT NULL THEN 1 END"),
         ("column AdmissionApplications.ApplicationSeq", "SELECT COL_LENGTH(N'dbo.AdmissionApplications', N'ApplicationSeq')"),
         ("tables dbo.ScholarshipExamResults/ScholarshipInterviewEvaluations", "SELECT CASE WHEN OBJECT_ID(N'dbo.ScholarshipExamResults', N'U') IS NOT NULL AND OBJECT_ID(N'dbo.ScholarshipInterviewEvaluations', N'U') IS NOT NULL THEN 1 END"),
@@ -38,6 +39,33 @@ public static class DatabaseStartupCheck
         ("table dbo.SentReminders", "SELECT OBJECT_ID(N'dbo.SentReminders', N'U')"),
         ("view dbo.vw_ApplicantDepartments", "SELECT OBJECT_ID(N'dbo.vw_ApplicantDepartments', N'V')"),
     };
+
+    /// <summary>
+    /// Small additive changes the API applies to an older database itself, so shipping them does not depend on
+    /// someone remembering to run schema.sql first. Each is idempotent, adds only a nullable column, and a failure
+    /// is logged without stopping the app (the probe below then reports it as missing).
+    /// </summary>
+    private static async Task ApplyAdditiveUpgradesAsync(SqlConnection connection, ILogger logger)
+    {
+        // An exam score is recorded by the Evaluator and released by Support Staff. Results that predate the
+        // column had already reached the applicant, so they are marked released.
+        const string examResultsReleasedAt = @"
+IF OBJECT_ID(N'dbo.ExamResults', N'U') IS NOT NULL AND COL_LENGTH(N'dbo.ExamResults', N'ReleasedAt') IS NULL
+BEGIN
+    ALTER TABLE dbo.ExamResults ADD ReleasedAt DATETIME2(3) NULL;
+    EXEC (N'UPDATE dbo.ExamResults SET ReleasedAt = RecordedAt WHERE ReleasedAt IS NULL');
+END";
+
+        try
+        {
+            await using var command = new SqlCommand(examResultsReleasedAt, connection);
+            await command.ExecuteNonQueryAsync();
+        }
+        catch (SqlException ex)
+        {
+            logger.LogError("Could not add ExamResults.ReleasedAt automatically ({Message}). Run database/schema.sql against this database.", ex.Message);
+        }
+    }
 
     public static async Task RunAsync(IConfiguration configuration, IHostEnvironment environment, ILogger logger)
     {
@@ -56,6 +84,8 @@ public static class DatabaseStartupCheck
         {
             await using var connection = new SqlConnection(connectionString);
             await connection.OpenAsync();
+
+            await ApplyAdditiveUpgradesAsync(connection, logger);
 
             var missing = new List<string>();
             foreach (var (what, probe) in Required)
