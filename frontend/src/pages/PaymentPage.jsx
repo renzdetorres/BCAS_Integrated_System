@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { getMyExamPayment, getMyPaymentProofFile, submitPaymentProof } from "../api/examPaymentApi.js";
 import { ApiError } from "../api/apiClient.js";
 import { fileProblem } from "../config/requiredDocuments.js";
@@ -8,8 +8,7 @@ import { useToast } from "../context/ToastContext.jsx";
 import { usePolling } from "../hooks/usePolling.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import FilePreviewModal from "../components/FilePreviewModal.jsx";
-import WorkflowStepper from "../components/WorkflowStepper.jsx";
-import Card from "../components/ui/Card.jsx";
+import Icon from "../components/ui/Icon.jsx";
 import Modal from "../components/ui/Modal.jsx";
 import Notice from "../components/ui/Notice.jsx";
 import Skeleton from "../components/ui/Skeleton.jsx";
@@ -19,23 +18,8 @@ import "./PaymentPage.css";
 
 const PROOF_FORMATS = ["PDF", "JPG", "PNG"];
 
-// The road from "you owe the fee" to "you can sit the exam", drawn with the same tracker the
-// application uses so the two read as one system.
-const PAYMENT_STEPS = ["Required", "Pay", "Upload", "Verifying", "Confirmed", "Permit"];
-const PAYMENT_STEP_LABELS = {
-  Required: "Payment required",
-  Pay: "Scan QR and pay",
-  Upload: "Upload proof",
-  Verifying: "Under verification",
-  Confirmed: "Payment confirmed",
-  Permit: "Exam permit available",
-};
-const PAYMENT_STEP_HINTS = {
-  Pay: "Pay with the method you chose, using the details shown.",
-  Upload: "Attach a clear photo or screenshot of your receipt.",
-  Verifying: "Staff are checking your receipt. You'll be notified.",
-  Permit: "Choose your exam schedule to get your permit.",
-};
+// The three things an applicant does here: pick how to pay, send the proof, then wait for staff to confirm it.
+const PROGRESS_STEPS = ["Select Method", "Submit Proof", "Confirmation"];
 
 // How often a payment that is waiting on staff is re-checked while this page is open.
 const REFRESH_MS = 30000;
@@ -44,16 +28,80 @@ function peso(amount) {
   return new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" }).format(amount);
 }
 
-/** Which of the six stages the applicant is on right now. */
-function currentStage(payment, hasFile) {
-  if (payment.status === "Verified") return 5;
-  if (payment.status === "Pending") return 3;
-  if (payment.status === "Rejected") return 2;
-  return hasFile ? 2 : 1;
+/** Which of the three steps the applicant is on right now (3 = all done). */
+function currentStep(payment, hasFile) {
+  if (payment.status === "Verified") return 3;
+  if (payment.status === "Pending") return 2;
+  if (payment.status === "Rejected") return 1;
+  return hasFile ? 1 : 0;
+}
+
+/** The kind of method a configured name is, so each one gets a fitting icon and a plain description. */
+function methodKind(name) {
+  const n = (name ?? "").toLowerCase();
+  if (n.includes("gcash")) return "gcash";
+  if (n.includes("maya")) return "maya";
+  if (/(bank|transfer|bdo|bpi|unionbank|landbank|metrobank)/.test(n)) return "bank";
+  if (/(counter|office|cash|walk|onsite|on-site)/.test(n)) return "counter";
+  return "wallet";
+}
+
+function methodHint(name) {
+  const kind = methodKind(name);
+  if (kind === "bank") return "Online banking";
+  if (kind === "counter") return "Pay at the BCAS office";
+  return `Pay using ${name}`;
+}
+
+const STROKE_ICONS = {
+  bank: "M3 10 12 4l9 6M5 10v8m4-8v8m6-8v8m4-8v8M3 20h18M3 10h18",
+  counter: "M4 9l1.5-5h13L20 9M4 9v11h16V9M4 9c0 1.7 1.3 3 2.7 3S9.3 10.7 9.3 9c0 1.7 1.3 3 2.7 3s2.7-1.3 2.7-3c0 1.7 1.3 3 2.7 3S20 10.7 20 9M9 20v-5h6v5",
+  wallet: "M4 7a2 2 0 0 1 2-2h12v4M4 7v11a2 2 0 0 0 2 2h14V9H6a2 2 0 0 1-2-2Zm12 6h4v3h-4a1.5 1.5 0 0 1 0-3Z",
+};
+
+function MethodIcon({ kind }) {
+  if (kind === "gcash") {
+    return (
+      <span className="payment-method-mark payment-method-mark-gcash" aria-hidden="true">
+        G
+      </span>
+    );
+  }
+  if (kind === "maya") {
+    return (
+      <span className="payment-method-mark payment-method-mark-maya" aria-hidden="true">
+        maya
+      </span>
+    );
+  }
+  return (
+    <svg className="payment-method-glyph" viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={STROKE_ICONS[kind] ?? STROKE_ICONS.wallet} />
+    </svg>
+  );
+}
+
+function PaymentProgress({ step }) {
+  return (
+    <ol className="payment-progress" aria-label="Payment progress">
+      {PROGRESS_STEPS.map((label, index) => {
+        const state = index < step ? "done" : index === step ? "current" : "next";
+        return (
+          <li key={label} className={`payment-progress-step payment-progress-${state}`} aria-current={state === "current" ? "step" : undefined}>
+            <span className="payment-progress-dot" aria-hidden="true">
+              {state === "done" ? <Icon name="check" size={13} /> : index + 1}
+            </span>
+            <span className="payment-progress-label">{label}</span>
+          </li>
+        );
+      })}
+    </ol>
+  );
 }
 
 export default function PaymentPage() {
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const [payment, setPayment] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
@@ -68,6 +116,7 @@ export default function PaymentPage() {
   const [previewingChosen, setPreviewingChosen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
   const [chosenMethod, setChosenMethod] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -118,13 +167,24 @@ export default function PaymentPage() {
 
   usePolling(checkStatus, REFRESH_MS, payment?.status === "Pending");
 
-  function handleFile(event) {
-    const chosen = event.target.files?.[0];
-    event.target.value = "";
+  function acceptFile(chosen) {
     if (!chosen) return;
     const problem = fileProblem(chosen, PROOF_FORMATS);
     setFileError(problem);
     setFile(problem ? null : chosen);
+  }
+
+  function handleFile(event) {
+    const chosen = event.target.files?.[0];
+    event.target.value = "";
+    acceptFile(chosen);
+  }
+
+  function handleDrop(event) {
+    event.preventDefault();
+    setIsDragging(false);
+    if (isUploading) return;
+    acceptFile(event.dataTransfer?.files?.[0]);
   }
 
   async function handleSubmit(event) {
@@ -169,111 +229,176 @@ export default function PaymentPage() {
     }
   }
 
-  const stage = payment ? currentStage(payment, Boolean(file)) : 0;
-  const steps = PAYMENT_STEPS.map((key, index) => ({ step: key, isComplete: index < stage, isCurrent: index === stage }));
+  function goBack() {
+    if (window.history.length > 1) navigate(-1);
+    else navigate("/portal");
+  }
+
+  const step = payment ? currentStep(payment, Boolean(file)) : 0;
 
   return (
-    <AppLayout title="Entrance Exam Payment">
+    <AppLayout>
       {isLoading && (
-        <Card>
+        <section className="payment-panel">
           <Skeleton />
-        </Card>
+        </section>
       )}
 
       {!isLoading && needsApplication && (
-        <Card>
+        <section className="payment-panel">
           <p className="form-error" role="alert">
             Submit an admission application first. <Link to="/applications">Apply now</Link>.
           </p>
-        </Card>
+        </section>
       )}
 
       {!isLoading && errorMessage && !payment && (
-        <Card>
+        <section className="payment-panel">
           <p className="form-error" role="alert">
             {errorMessage}
           </p>
-        </Card>
-      )}
-
-      {payment && payment.required && (
-        <Card className="payment-steps">
-          <WorkflowStepper steps={steps} labels={PAYMENT_STEP_LABELS} hints={PAYMENT_STEP_HINTS} />
-        </Card>
+        </section>
       )}
 
       {payment && (
         <div className="payment-layout">
-          <Card>
-            <div className="payment-head">
-              <div>
-                <h2>Pay the entrance exam fee</h2>
-                <p className="payment-sub">{selected?.name ?? payment.paymentType}</p>
+          <section className="payment-panel payment-pay" aria-labelledby="payment-title">
+            <button type="button" className="payment-back" onClick={goBack}>
+              <Icon name="arrow-left" size={16} />
+              Back
+            </button>
+            <h1 id="payment-title" className="payment-title">
+              Pay Entrance Exam Fee
+            </h1>
+            <p className="payment-lead">Complete your payment to proceed with your application.</p>
+
+            <div className="payment-summary">
+              <span className="payment-summary-icon" aria-hidden="true">
+                <Icon name="doc" size={26} />
+              </span>
+              <div className="payment-summary-block">
+                <span className="payment-summary-label">Entrance Exam Fee</span>
+                <span className="payment-summary-amount">{peso(payment.amount)}</span>
               </div>
-              <StatusBadge status={payment.status} label={payment.status === "NotPaid" ? "Not paid yet" : undefined} />
+              <div className="payment-summary-block payment-summary-app">
+                <span className="payment-summary-label">Application</span>
+                <span className="payment-summary-value">Admission Application</span>
+              </div>
+              {/* "Not paid yet" is a waiting state, so it wears the amber pill. */}
+              <StatusBadge status={payment.status === "NotPaid" ? "Pending" : payment.status} label={payment.status === "NotPaid" ? "Not Paid Yet" : undefined} />
             </div>
 
-            {methods.length > 1 ? (
+            {payment.required ? <PaymentProgress step={step} /> : null}
+
+            {methods.length > 0 ? (
               <fieldset className="payment-methods" disabled={payment.status === "Verified"}>
-                <legend>Pay with</legend>
+                <legend className="payment-section-head">
+                  <span className="payment-section-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d={STROKE_ICONS.wallet} />
+                    </svg>
+                  </span>
+                  <span>
+                    <span className="payment-section-title">Choose Payment Method</span>
+                    <span className="payment-section-sub">Select your preferred payment method below.</span>
+                  </span>
+                </legend>
                 <div className="payment-method-grid">
-                  {methods.map((method) => (
-                    <label key={method.name} className={`payment-method${selected?.name === method.name ? " is-chosen" : ""}`}>
-                      <input type="radio" name="payment-method" value={method.name} checked={selected?.name === method.name} onChange={() => setChosenMethod(method.name)} />
-                      <span>{method.name}</span>
-                    </label>
-                  ))}
+                  {methods.map((method) => {
+                    const chosen = selected?.name === method.name;
+                    return (
+                      <label key={method.name} className={`payment-method${chosen ? " is-chosen" : ""}`}>
+                        <input type="radio" name="payment-method" value={method.name} checked={chosen} onChange={() => setChosenMethod(method.name)} />
+                        <MethodIcon kind={methodKind(method.name)} />
+                        <span className="payment-method-text">
+                          <span className="payment-method-name">{method.name}</span>
+                          <span className="payment-method-hint">{methodHint(method.name)}</span>
+                        </span>
+                        {chosen ? (
+                          <span className="payment-method-check" aria-hidden="true">
+                            <Icon name="check" size={13} />
+                          </span>
+                        ) : null}
+                      </label>
+                    );
+                  })}
                 </div>
               </fieldset>
             ) : null}
 
-            <dl className="payment-facts" key={`facts-${selected?.name}`}>
-              <div>
-                <dt>Amount to pay</dt>
-                <dd className="payment-amount">{peso(payment.amount)}</dd>
-              </div>
-              {selected?.accountName ? (
-                <div>
-                  <dt>Pay to</dt>
-                  <dd>{selected.accountName}</dd>
+            {selected ? (
+              <section className="payment-instructions-card" key={`facts-${selected.name}`} aria-label={`Payment instructions for ${selected.name}`}>
+                <div className="payment-instructions-main">
+                  <h2 className="payment-instructions-title">
+                    <Icon name="info" size={20} />
+                    Payment Instructions ({selected.name})
+                  </h2>
+                  <dl className="payment-facts">
+                    <div>
+                      <dt>Amount to Pay:</dt>
+                      <dd className="payment-amount">{peso(payment.amount)}</dd>
+                    </div>
+                    {selected.accountName ? (
+                      <div>
+                        <dt>Send Payment to:</dt>
+                        <dd>{selected.accountName}</dd>
+                      </div>
+                    ) : null}
+                    {selected.accountNumber ? (
+                      <div>
+                        <dt>{selected.name} Number:</dt>
+                        <dd className="payment-number">
+                          <span>{selected.accountNumber}</span>
+                          <button type="button" className="payment-copy" onClick={() => copyNumber(selected.accountNumber)}>
+                            <Icon name="copy" size={14} />
+                            Copy
+                          </button>
+                        </dd>
+                      </div>
+                    ) : null}
+                    {payment.invoiceNumber ? (
+                      <div>
+                        <dt>Sales invoice no.:</dt>
+                        <dd>{payment.invoiceNumber}</dd>
+                      </div>
+                    ) : null}
+                  </dl>
+                  {selected.instructions ? <p className="payment-instructions">{selected.instructions}</p> : null}
+                  {selected.qrImage ? (
+                    <p className="payment-scan-note">
+                      <Icon name="info" size={15} />
+                      Scan the QR code using your {selected.name} or banking app.
+                    </p>
+                  ) : null}
+                  {!selected.qrImage && !selected.accountNumber && !selected.instructions ? (
+                    <p className="payment-qr-missing">The school hasn&apos;t published its payment details yet. Check back soon or contact the admissions office.</p>
+                  ) : null}
                 </div>
-              ) : null}
-              {selected?.accountNumber ? (
-                <div>
-                  <dt>{selected.name} number</dt>
-                  <dd className="payment-number">
-                    <span>{selected.accountNumber}</span>
-                    <button type="button" className="documents-view-link" onClick={() => copyNumber(selected.accountNumber)}>
-                      Copy
+
+                {selected.qrImage ? (
+                  <figure className="payment-qr" key={`qr-${selected.name}`}>
+                    <button type="button" className="payment-qr-button" onClick={() => setQrOpen(true)} aria-label="View the QR code larger">
+                      <img src={selected.qrImage} alt={`The school's QR payment code for ${selected.name}`} width="160" height="160" />
                     </button>
-                  </dd>
-                </div>
-              ) : null}
-              {payment.invoiceNumber ? (
-                <div>
-                  <dt>Sales invoice no.</dt>
-                  <dd>{payment.invoiceNumber}</dd>
-                </div>
-              ) : null}
-            </dl>
-
-            {selected?.instructions ? <p className="payment-instructions">{selected.instructions}</p> : null}
-
-            {selected?.qrImage ? (
-              <figure className="payment-qr" key={`qr-${selected.name}`}>
-                <img src={selected.qrImage} alt={`The school's QR payment code for ${selected.name}`} width="220" height="220" />
-                <figcaption>Scan with your banking or e-wallet app</figcaption>
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setQrOpen(true)}>
-                  View larger
-                </button>
-              </figure>
-            ) : !selected?.accountNumber && !selected?.instructions ? (
-              <p className="payment-qr-missing">The school hasn&apos;t published its payment details yet. Check back soon or contact the admissions office.</p>
+                    <figcaption>Tap to enlarge</figcaption>
+                  </figure>
+                ) : null}
+              </section>
             ) : null}
-          </Card>
+          </section>
 
-          <Card>
-            <h2>Proof of payment</h2>
+          <section className="payment-panel payment-proof" aria-labelledby="payment-proof-title">
+            <div className="payment-proof-head">
+              <span className="payment-proof-icon" aria-hidden="true">
+                <Icon name="upload" size={24} />
+              </span>
+              <div>
+                <h2 id="payment-proof-title" className="payment-proof-title">
+                  Proof of Payment
+                </h2>
+                <p className="payment-proof-sub">After making the payment, provide the required details below.</p>
+              </div>
+            </div>
 
             {payment.status === "Verified" && (
               <>
@@ -328,14 +453,9 @@ export default function PaymentPage() {
 
             {payment.canPay && (
               <form onSubmit={handleSubmit} className="payment-form" noValidate aria-busy={isUploading}>
-                {selected ? (
-                  <p className="payment-with" role="status">
-                    You are paying with <strong>{selected.name}</strong>.
-                  </p>
-                ) : null}
                 <div className="form-row">
                   <label htmlFor="reference">
-                    Reference number
+                    Reference Number
                     <span className="required-mark" title="Required" aria-label="required">
                       {" "}
                       *
@@ -348,21 +468,38 @@ export default function PaymentPage() {
                     maxLength={60}
                     value={reference}
                     onChange={(e) => setReference(e.target.value)}
-                    placeholder="From your payment receipt"
+                    placeholder="e.g. 1234567890"
                     disabled={isUploading}
                   />
                 </div>
 
                 <div className="form-row">
                   <label htmlFor="proof">
-                    Screenshot or photo of your receipt (PDF, JPG or PNG)
+                    Upload Receipt
                     <span className="required-mark" title="Required" aria-label="required">
                       {" "}
                       *
                     </span>
                   </label>
+                  <label
+                    htmlFor="proof"
+                    className={`payment-drop${isDragging ? " is-dragging" : ""}${fileError ? " has-error" : ""}`}
+                    onDragOver={(event) => {
+                      event.preventDefault();
+                      if (!isUploading) setIsDragging(true);
+                    }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={handleDrop}
+                  >
+                    <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M7 18a4 4 0 0 1-.5-7.97A5.5 5.5 0 0 1 17 8.5a4.5 4.5 0 0 1 .5 9M12 21v-8m-3.5 3.5L12 13l3.5 3.5" />
+                    </svg>
+                    <span className="payment-drop-title">Click to upload or drag and drop</span>
+                    <span className="payment-drop-hint">PNG, JPG or PDF (Max 10 MB)</span>
+                  </label>
                   <input
                     id="proof"
+                    className="visually-hidden"
                     type="file"
                     accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                     onChange={handleFile}
@@ -402,18 +539,19 @@ export default function PaymentPage() {
 
                 {isUploading && <UploadProgress percent={percent} label="Uploading your proof of payment" />}
 
-                <button type="submit" className="btn btn-primary" disabled={isUploading} aria-busy={isUploading}>
+                <button type="submit" className="btn btn-primary payment-submit" disabled={isUploading} aria-busy={isUploading}>
+                  <Icon name="send" size={18} />
                   {isUploading
                     ? `Uploading... ${percent}%`
                     : payment.status === "Rejected"
-                      ? "Upload new proof"
+                      ? "Upload New Proof"
                       : payment.status === "Pending"
-                        ? "Replace proof"
-                        : "Submit proof of payment"}
+                        ? "Replace Proof"
+                        : "Submit Proof of Payment"}
                 </button>
               </form>
             )}
-          </Card>
+          </section>
         </div>
       )}
 

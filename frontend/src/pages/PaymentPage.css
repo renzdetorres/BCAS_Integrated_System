@@ -1,78 +1,492 @@
+/* The applicant's payment page: a pay panel on the left (fee, method, instructions) and the proof form on the right. */
+
 .payment-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
   gap: var(--space-6);
   align-items: start;
 }
 
-.payment-layout h2 {
+.payment-panel {
+  min-width: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  padding: var(--space-6) var(--space-8);
+}
+
+.payment-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 var(--space-4);
+  padding: 6px 8px 6px 0;
+  border: 0;
+  background: none;
+  font: var(--text-body);
+  font-weight: 500;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.payment-back:hover {
+  color: var(--color-primary-text);
+}
+
+.payment-back:focus-visible {
+  outline: 3px solid var(--color-primary-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.payment-title {
   margin: 0;
-  font: var(--text-h1);
+  font-size: clamp(24px, 2.2vw, 30px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--color-text-primary);
 }
 
-.payment-head {
+.payment-lead {
+  margin: 4px 0 var(--space-5);
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+}
+
+/* ---- Fee summary --------------------------------------------------------- */
+
+.payment-summary {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-3);
-  margin-bottom: var(--space-5);
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-6);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-primary-light) 13%, var(--color-surface));
 }
 
-.payment-sub {
-  margin: 2px 0 0;
+.payment-summary-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-primary-light);
+}
+
+.payment-summary-block {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding-left: var(--space-5);
+  border-left: 1px solid var(--color-border-strong);
+}
+
+.payment-summary-label {
   font: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+.payment-summary-amount {
+  font-size: clamp(26px, 2.4vw, 32px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-primary-text);
+}
+
+.payment-summary-value {
+  font: var(--text-body);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* The status pill sits at the end of the band; on a narrow screen it wraps under the figures. */
+.payment-summary .status-badge {
+  margin-left: auto;
+}
+
+/* ---- Three-step progress ------------------------------------------------- */
+
+.payment-progress {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0 0 var(--space-6);
+  padding: 0;
+  list-style: none;
+}
+
+.payment-progress-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+/* The line runs from this dot to the next one. */
+.payment-progress-step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 13px;
+  left: calc(50% + 22px);
+  width: calc(100% - 44px);
+  height: 2px;
+  background: var(--color-border-strong);
+}
+
+.payment-progress-done:not(:last-child)::after {
+  background: var(--color-primary-light);
+}
+
+.payment-progress-dot {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border-strong);
+  background: var(--color-surface);
+  font-size: 12px;
+  font-weight: 700;
   color: var(--color-text-tertiary);
+}
+
+.payment-progress-current .payment-progress-dot,
+.payment-progress-done .payment-progress-dot {
+  border-color: var(--color-primary-light);
+  background: var(--color-primary-light);
+  color: #fff;
+}
+
+.payment-progress-label {
+  font: var(--text-dense);
+  color: var(--color-text-tertiary);
+}
+
+.payment-progress-current .payment-progress-label,
+.payment-progress-done .payment-progress-label {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* ---- Choosing how to pay ------------------------------------------------- */
+
+.payment-methods {
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.payment-section-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding: 0;
+}
+
+.payment-section-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  color: var(--color-text-primary);
+}
+
+.payment-section-title {
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+}
+
+.payment-section-sub {
+  display: block;
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+}
+
+.payment-method-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.payment-method {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
+  min-height: 84px;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: border-color 160ms var(--ease-out), background-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out), transform 160ms var(--ease-out);
+}
+
+.payment-method:hover {
+  border-color: var(--color-primary-light);
+}
+
+.payment-method:active {
+  transform: scale(0.985);
+}
+
+.payment-method.is-chosen {
+  border: 2px solid var(--color-primary-light);
+  padding: calc(var(--space-4) - 1px);
+  background: var(--color-primary-tint);
+}
+
+.payment-method:has(input:focus-visible) {
+  outline: 3px solid var(--color-primary-focus-ring);
+  outline-offset: 2px;
+}
+
+/* The radio is the real control, kept for keyboards and screen readers but drawn as the card. */
+.payment-method input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  cursor: pointer;
+}
+
+.payment-methods:disabled .payment-method {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.payment-method-mark,
+.payment-method-glyph {
+  flex: none;
+  width: 48px;
+  height: 48px;
+}
+
+.payment-method-glyph {
+  padding: 6px;
+  color: var(--color-text-primary);
+}
+
+.payment-method-mark {
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.payment-method-mark-gcash {
+  border-radius: 50%;
+  background: #0b63d1;
+  color: #fff;
+  font-size: 26px;
+}
+
+.payment-method-mark-maya {
+  border-radius: var(--radius-md);
+  background: #111;
+  color: #38e07b;
+  font-size: 13px;
+  letter-spacing: -0.02em;
+}
+
+.payment-method-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.payment-method-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.payment-method-hint {
+  font: var(--text-body);
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.payment-method-check {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  color: #fff;
+}
+
+/* ---- Payment instructions ----------------------------------------------- */
+
+.payment-instructions-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, #3b82f6 11%, var(--color-surface));
+}
+
+.payment-instructions-main {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.payment-instructions-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.payment-instructions-title svg {
+  flex: none;
+  color: #2563eb;
 }
 
 .payment-facts {
   display: grid;
-  gap: var(--space-4);
-  margin: 0 0 var(--space-5);
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+}
+
+.payment-facts > div {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.9fr) minmax(0, 1.4fr);
+  align-items: center;
+  gap: var(--space-3);
 }
 
 .payment-facts dt {
-  font: var(--text-caption);
-  color: var(--color-text-tertiary);
+  font: var(--text-body);
+  color: var(--color-text-secondary);
 }
 
 .payment-facts dd {
-  margin: 2px 0 0;
+  margin: 0;
   font: var(--text-body);
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  overflow-wrap: anywhere;
 }
 
 .payment-amount {
-  font-size: 28px !important;
-  font-weight: 700 !important;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
-  color: var(--color-primary-text);
+}
+
+.payment-number {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.payment-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid #2563eb;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font: var(--text-dense);
+  font-weight: 600;
+  color: #2563eb;
+  cursor: pointer;
+  transition: background-color 140ms var(--ease-out), transform 140ms var(--ease-out);
+}
+
+.payment-copy:hover {
+  background: color-mix(in srgb, #2563eb 10%, var(--color-surface));
+}
+
+.payment-copy:active {
+  transform: scale(0.97);
+}
+
+.payment-copy:focus-visible {
+  outline: 3px solid var(--color-primary-focus-ring);
+  outline-offset: 2px;
 }
 
 .payment-instructions {
-  margin: 0 0 var(--space-5);
+  margin: 0 0 var(--space-3);
   max-width: 60ch;
   font: var(--text-body);
   color: var(--color-text-secondary);
 }
 
-.payment-qr {
-  display: inline-flex;
-  flex-direction: column;
+.payment-scan-note {
+  display: flex;
   align-items: center;
   gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  font: var(--text-dense);
+  color: var(--color-text-secondary);
+}
+
+.payment-scan-note svg {
+  flex: none;
+  color: #2563eb;
+}
+
+.payment-qr {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-1);
+  flex: none;
   margin: 0;
+}
+
+.payment-qr-button {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: none;
+  cursor: zoom-in;
+}
+
+.payment-qr-button:focus-visible {
+  outline: 3px solid var(--color-primary-focus-ring);
+  outline-offset: 2px;
 }
 
 .payment-qr img {
   display: block;
-  width: min(100%, 260px);
+  width: 160px;
+  max-width: 100%;
   aspect-ratio: 1;
   object-fit: contain;
-  padding: var(--space-3);
-  border: 1px solid var(--color-border-strong);
+  padding: var(--space-2);
   border-radius: var(--radius-lg);
-  background: var(--color-paper);
+  background: #fff;
 }
 
 .payment-qr figcaption {
@@ -89,6 +503,44 @@
   color: var(--color-text-secondary);
 }
 
+/* ---- Proof of payment ---------------------------------------------------- */
+
+.payment-proof-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.payment-proof-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.payment-proof-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--color-text-primary);
+}
+
+.payment-proof-sub {
+  margin: 2px 0 0;
+  font: var(--text-dense);
+  color: var(--color-text-secondary);
+}
+
+.payment-proof .ui-notice {
+  margin-bottom: var(--space-4);
+}
+
 .payment-uploaded {
   margin: var(--space-4) 0;
   font: var(--text-dense);
@@ -100,30 +552,74 @@
 }
 
 .payment-form {
-  margin-top: var(--space-5);
+  margin-top: var(--space-4);
+}
+
+/* Labels sit above their fields, as in the rest of the form. */
+.payment-form .form-row {
+  display: grid;
+  gap: 6px;
+  margin-bottom: var(--space-4);
+}
+
+.payment-form .form-row > label:first-child {
+  font-weight: 700;
 }
 
 .payment-next {
   margin: var(--space-4) 0 0;
 }
 
-@media (max-width: 860px) {
-  .payment-layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
+/* The whole box is the file picker; a file can also be dropped on it. */
+.payment-drop {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: var(--space-6) var(--space-4);
+  border: 1.5px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-subtle);
+  text-align: center;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: border-color 160ms var(--ease-out), background-color 160ms var(--ease-out);
 }
 
-.payment-layout .ui-card > h2 {
-  margin-bottom: var(--space-4);
+.payment-drop:hover,
+.payment-drop.is-dragging {
+  border-color: var(--color-primary-light);
+  background: var(--color-primary-tint);
 }
 
-/* The six-stage tracker above the two cards. */
-.payment-steps {
-  padding-block: var(--space-5);
+.payment-drop.has-error {
+  border-color: var(--color-status-red-text);
 }
 
-.payment-qr button {
-  margin-top: var(--space-1);
+.payment-form:has(#proof:focus-visible) .payment-drop {
+  outline: 3px solid var(--color-primary-focus-ring);
+  outline-offset: 2px;
+}
+
+.payment-drop svg {
+  color: var(--color-text-primary);
+}
+
+.payment-drop-title {
+  font: var(--text-body);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.payment-drop-hint {
+  font: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.payment-submit {
+  width: 100%;
+  min-height: 48px;
+  margin-top: var(--space-4);
+  gap: var(--space-2);
 }
 
 /* The receipt picked but not yet sent: thumbnail, name, size, and the two things you can do with it. */
@@ -183,90 +679,36 @@
   width: min(100%, 420px);
   margin: 0 auto;
   border-radius: var(--radius-lg);
-  background: var(--color-paper);
+  background: #fff;
 }
 
-/* ---- Choosing how to pay: one tile per method, the picked one filled ---- */
+/* ---- Smaller screens ----------------------------------------------------- */
 
-.payment-methods {
-  margin: 0 0 var(--space-5);
-  padding: 0;
-  border: 0;
+@media (max-width: 1100px) {
+  .payment-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
-.payment-methods legend {
-  margin-bottom: var(--space-2);
-  padding: 0;
-  font: var(--text-body);
-  font-weight: 600;
-}
+@media (max-width: 640px) {
+  .payment-panel {
+    padding: var(--space-5) var(--space-4);
+  }
 
-.payment-method-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: var(--space-2);
-}
+  .payment-summary-block {
+    padding-left: var(--space-4);
+  }
 
-.payment-method {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 8px 12px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  font: var(--text-dense);
-  font-weight: 600;
-  text-align: center;
-  cursor: pointer;
-  transition: background-color 160ms var(--ease-out), border-color 160ms var(--ease-out), transform 160ms var(--ease-out);
-}
+  .payment-method-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 
-.payment-method:hover {
-  border-color: var(--color-primary-light);
-}
+  .payment-facts > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
 
-.payment-method:active {
-  transform: scale(0.97);
-}
-
-.payment-method.is-chosen {
-  border-color: var(--color-primary);
-  background: var(--color-primary-tint-strong);
-  color: var(--color-primary-text);
-}
-
-.payment-method:has(input:focus-visible) {
-  outline: 3px solid var(--color-primary-focus-ring);
-  outline-offset: 2px;
-}
-
-/* The radio is the real control, kept for keyboards and screen readers but drawn as the tile. */
-.payment-method input {
-  position: absolute;
-  opacity: 0;
-  inset: 0;
-  cursor: pointer;
-}
-
-.payment-methods:disabled .payment-method {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.payment-number {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  font-variant-numeric: tabular-nums;
-}
-
-.payment-with {
-  margin: 0 0 var(--space-4);
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
-  background: var(--color-primary-tint);
-  font: var(--text-dense);
+  .payment-instructions-card {
+    justify-content: center;
+  }
 }
