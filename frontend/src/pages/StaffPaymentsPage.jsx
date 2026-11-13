@@ -103,8 +103,30 @@ function PaymentReview({ payment, onClose, onChanged }) {
             </div>
           ) : (
             <div className="form-row">
-              <label htmlFor="invoice">Sales invoice (SI) number (required; the exam permit is released automatically once the applicant has booked a slot)</label>
-              <input id="invoice" type="text" maxLength={50} value={invoice} onChange={(e) => setInvoice(e.target.value)} required aria-required="true" />
+              <label htmlFor="invoice">
+                Sales invoice (SI) number
+                <span className="required-mark" title="Required" aria-label="required">
+                  {" "}
+                  *
+                </span>
+              </label>
+              <input
+                id="invoice"
+                type="text"
+                maxLength={50}
+                value={invoice}
+                onChange={(e) => setInvoice(e.target.value)}
+                placeholder="From the cashier's receipt"
+                required
+                aria-required="true"
+                aria-describedby="invoice-help"
+                disabled={isSaving}
+              />
+              <p className="form-hint" id="invoice-help">
+                {invoice.trim()
+                  ? "The exam permit is released automatically once the applicant has booked a slot."
+                  : "Enter the SI number to enable Verify payment."}
+              </p>
             </div>
           )}
         </div>

@@ -2,6 +2,15 @@
   margin-top: var(--space-4);
 }
 
+.payment-review .form-row {
+  display: grid;
+  gap: 6px;
+}
+
+.payment-review .form-row > label {
+  font-weight: 700;
+}
+
 .payment-review .form-row:last-child {
   margin-bottom: 0;
 }

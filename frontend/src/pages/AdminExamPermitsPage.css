@@ -34,5 +34,11 @@
 }
 
 .permit-invoice {
+  display: grid;
+  gap: 6px;
   margin-top: 16px;
+}
+
+.permit-invoice > label {
+  font-weight: 700;
 }

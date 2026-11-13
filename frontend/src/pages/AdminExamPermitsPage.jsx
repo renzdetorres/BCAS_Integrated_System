@@ -58,14 +58,26 @@ function PermitModal({ permit, isReleasing, onRelease, onClose }) {
       </dl>
       {!permit.isReleased && permit.documentsVerified ? (
         <div className="form-row permit-invoice">
-          <label htmlFor="invoiceNumber">Invoice (SI) number</label>
+          <label htmlFor="invoiceNumber">
+            Invoice (SI) number
+            <span className="required-mark" title="Required" aria-label="required">
+              {" "}
+              *
+            </span>
+          </label>
           <input
             id="invoiceNumber"
             value={invoiceNumber}
             maxLength={50}
             placeholder="From the cashier's receipt"
+            required
+            aria-required="true"
+            aria-describedby="invoiceNumber-help"
             onChange={(event) => setInvoiceNumber(event.target.value)}
           />
+          <p className="form-hint" id="invoiceNumber-help">
+            {invoiceNumber.trim() ? "Ready to release." : "Enter the SI number to enable Generate & release permit."}
+          </p>
         </div>
       ) : null}
       {!permit.isReleased && !permit.documentsVerified ? (

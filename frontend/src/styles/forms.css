@@ -191,3 +191,10 @@ html textarea {
     transition: none;
   }
 }
+
+/* A short line under a field: what it is for, or what is still needed. */
+.form-hint {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
