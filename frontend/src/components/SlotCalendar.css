@@ -109,6 +109,87 @@
   color: var(--color-text-secondary);
 }
 
+/* Each legend entry is a filter button: a pill with its swatch, name and the count for this month. */
+.slot-calendar-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  font: var(--text-caption);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background var(--motion-fast), border-color var(--motion-fast), color var(--motion-fast), transform 160ms var(--ease-out);
+}
+
+.slot-calendar-filter:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.slot-calendar-filter:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.slot-calendar-filter.is-active {
+  border-color: var(--color-primary-light);
+  background: var(--color-primary-tint-strong);
+  color: var(--color-primary-text);
+  font-weight: 600;
+}
+
+.slot-calendar-filter:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .slot-calendar-filter:hover:not(:disabled):not(.is-active) {
+    border-color: var(--color-border-strong);
+    background: var(--color-surface-subtle);
+  }
+}
+
+.slot-calendar-filter .slot-calendar-key {
+  margin-left: 0;
+}
+
+.slot-calendar-filter-count {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-subtle);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--color-text-primary);
+}
+
+/* While a filter is on, the other days step back. They stay clickable. */
+.slot-calendar-day.slot-calendar-day-dim:not(.slot-calendar-day-selected) {
+  opacity: 0.28;
+}
+
+.slot-calendar-jump {
+  margin: var(--space-2) 0 0;
+  font: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+.slot-calendar-jump-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-primary-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
 .slot-calendar-key {
   width: 12px;
   height: 12px;
