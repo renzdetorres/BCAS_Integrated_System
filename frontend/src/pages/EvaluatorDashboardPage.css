@@ -12,75 +12,140 @@
   margin: 4px 0 0;
 }
 
-.evaluator-stat-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 16px;
-  margin-bottom: 20px;
+/* ---- Screening queue ---------------------------------------------------- */
+
+/* Grades and waiting times line up on their digits so a column reads as numbers. */
+.evaluator-number,
+.evaluator-wait {
+  font-variant-numeric: tabular-nums;
 }
 
-.evaluator-queue-header {
-  margin-bottom: 18px;
-}
-
-.evaluator-queue-header h2 {
-  margin: 0;
-}
-
-.evaluator-scholarship-cell {
-  display: flex;
-  flex-direction: column;
-}
-
-.evaluator-scholarship-type {
+.evaluator-wait {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   color: var(--color-text-secondary);
-  font-size: 0.8rem;
+  white-space: nowrap;
 }
 
-.evaluator-recent-card h2 {
-  margin: 0 0 12px;
+/* Late is said twice, in a word and in tone, so it never depends on colour alone. */
+.evaluator-wait-late {
+  color: var(--color-status-amber-text);
+  font-weight: 600;
+}
+
+.evaluator-wait-flag {
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  background: var(--color-status-amber-bg);
+  color: var(--color-status-amber-text);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* ---- Recently decided ---------------------------------------------------- */
+
+.evaluator-recent-card {
+  margin-top: 20px;
+}
+
+.evaluator-recent-title {
+  margin: 0 0 8px;
   font-size: 0.95rem;
-  color: var(--color-text-secondary);
+  font-weight: 600;
+  color: var(--color-text-primary);
 }
 
 .evaluator-recent-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
 }
 
+.evaluator-recent-list li + li {
+  border-top: 1px solid var(--color-border);
+}
+
+/* Three real columns, so the scholarship names and the decisions line up down the list. */
 .evaluator-recent-row {
-  display: flex;
+  display: grid;
+  /* The decision column has one fixed width, so every row's columns start at the same place. */
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr) 124px 16px;
   align-items: center;
-  gap: 14px;
+  column-gap: 16px;
   width: 100%;
-  padding: 10px 8px;
+  padding: 11px 8px;
   border: none;
   border-radius: var(--radius-md);
   background: transparent;
   cursor: pointer;
   text-align: left;
   font-family: inherit;
+  transition: background-color 120ms var(--ease-out);
 }
 
-.evaluator-recent-row:hover {
-  background: var(--color-bg);
+.evaluator-recent-row:focus-visible {
+  outline: 2px solid var(--color-primary-focus-ring);
+  outline-offset: -2px;
 }
 
 .evaluator-recent-name {
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: var(--color-text-primary);
-  flex: 1;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
 }
 
 .evaluator-recent-scholarship {
-  color: var(--color-text-secondary);
-  font-size: 0.8rem;
-  flex: 1;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.evaluator-recent-row > :nth-child(3) {
+  justify-self: end;
+}
+
+.evaluator-recent-chevron {
+  color: var(--color-text-tertiary);
+}
+
+/* Hover only where there is a pointer; touch screens would otherwise keep it stuck after a tap. */
+@media (hover: hover) and (pointer: fine) {
+  .evaluator-recent-row:hover {
+    background: var(--color-surface-subtle);
+  }
+
+  .evaluator-recent-row:hover .evaluator-recent-chevron {
+    color: var(--color-primary-text);
+  }
+}
+
+@media (max-width: 640px) {
+  .evaluator-recent-row {
+    grid-template-columns: minmax(0, 1fr) max-content 16px;
+    row-gap: 2px;
+  }
+
+  .evaluator-recent-scholarship {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .evaluator-recent-row > :nth-child(3) {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .evaluator-recent-chevron {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
 }

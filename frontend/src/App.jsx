@@ -147,7 +147,6 @@ export default function App() {
                 <Route path="/evaluator/documents/archive" element={<SupportStaffDocumentArchivePage />} />
                 <Route path="/evaluator/exam-permits" element={<AdminExamPermitsPage />} />
                 <Route path="/evaluator/exam-results" element={<ExamResultsPage />} />
-                <Route path="/evaluator/interviews" element={<InterviewsPage />} />
                 <Route path="/evaluator/settings" element={<EvaluatorSettingsPage />} />
               </Route>
               <Route element={<RequireRole allowedRoles={["AcademicHead"]} />}>
@@ -164,6 +163,7 @@ export default function App() {
               <Route element={<RequireRole allowedRoles={["SupportStaff"]} />}>
                 <Route path="/support-staff/payments" element={<StaffPaymentsPage />} />
                 <Route path="/support-staff/exam-results" element={<ExamResultsPage />} />
+                <Route path="/support-staff/interviews" element={<InterviewsPage />} />
                 <Route path="/support-staff/applicants" element={<SupportStaffApplicantsPage />} />
                 <Route path="/support-staff/settings" element={<SupportStaffSettingsPage />} />
               </Route>

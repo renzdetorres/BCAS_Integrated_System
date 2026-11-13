@@ -119,7 +119,7 @@ public static class ScholarshipTracker
         }
 
         return row.ExamScheduled
-            ? (2, "Exam scheduled", "Your scholarship exam is scheduled. Open your exam permit for the date, time and venue.", "/exam-permit")
+            ? (2, "Exam scheduled", "Your scholarship exam is scheduled. Open your exam permit for the date and time.", "/exam-permit")
             : (2, "Waiting for your exam schedule", "You passed screening. Choose your scholarship exam schedule.", "/exam-schedule");
     }
 

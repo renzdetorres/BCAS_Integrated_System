@@ -357,6 +357,11 @@ IF EXISTS (SELECT 1 FROM dbo.ScholarshipEligibilityScreenings WHERE EvaluatedByU
    OR EXISTS (SELECT 1 FROM dbo.ScholarshipFinalDecisions WHERE DecidedByUserId = @UserId AND ApplicationId NOT IN (SELECT ApplicationId FROM @Apps))
    OR EXISTS (SELECT 1 FROM dbo.AdmissionReservations WHERE RecordedByUserId = @UserId AND ApplicationId NOT IN (SELECT ApplicationId FROM @Apps))
    OR EXISTS (SELECT 1 FROM dbo.InquiryMessages m WHERE m.SenderUserId = @UserId AND m.ThreadId NOT IN (SELECT ThreadId FROM dbo.InquiryThreads WHERE UserId = @UserId))
+   OR EXISTS (SELECT 1 FROM dbo.ExamPayments WHERE VerifiedByUserId = @UserId AND ApplicationId NOT IN (SELECT ApplicationId FROM @Apps))
+   OR EXISTS (SELECT 1 FROM dbo.ExamResults WHERE RecordedByUserId = @UserId AND ApplicationId NOT IN (SELECT ApplicationId FROM @Apps))
+   OR EXISTS (SELECT 1 FROM dbo.InterviewSchedules WHERE (ScheduledByUserId = @UserId OR EvaluatedByUserId = @UserId) AND ApplicationId NOT IN (SELECT ApplicationId FROM @Apps))
+   OR EXISTS (SELECT 1 FROM dbo.ScholarshipExamResults WHERE RecordedByUserId = @UserId AND ApplicationId NOT IN (SELECT ApplicationId FROM @Apps))
+   OR EXISTS (SELECT 1 FROM dbo.ScholarshipInterviewEvaluations WHERE EvaluatedByUserId = @UserId AND ApplicationId NOT IN (SELECT ApplicationId FROM @Apps))
 BEGIN
     ROLLBACK TRANSACTION;
     SELECT N'HasRecordedActivity';
@@ -380,6 +385,12 @@ DELETE FROM dbo.ApplicationStatusHistory         WHERE ApplicationId IN (SELECT 
 DELETE FROM dbo.ScholarshipFinalDecisions        WHERE ApplicationId IN (SELECT ApplicationId FROM @Apps);
 DELETE FROM dbo.ScholarshipEligibilityScreenings WHERE ApplicationId IN (SELECT ApplicationId FROM @Apps);
 DELETE FROM dbo.AdmissionReservations            WHERE ApplicationId IN (SELECT ApplicationId FROM @Apps);
+DELETE FROM dbo.ExamPayments                     WHERE ApplicationId IN (SELECT ApplicationId FROM @Apps) OR UserId = @UserId;
+DELETE FROM dbo.ExamResults                      WHERE ApplicationId IN (SELECT ApplicationId FROM @Apps) OR UserId = @UserId;
+DELETE FROM dbo.InterviewSchedules               WHERE ApplicationId IN (SELECT ApplicationId FROM @Apps) OR UserId = @UserId;
+DELETE FROM dbo.ScholarshipExamResults           WHERE ApplicationId IN (SELECT ApplicationId FROM @Apps);
+DELETE FROM dbo.ScholarshipInterviewEvaluations  WHERE ApplicationId IN (SELECT ApplicationId FROM @Apps);
+DELETE FROM dbo.Notifications                    WHERE UserId = @UserId;
 DELETE FROM dbo.ScholarshipApplications          WHERE UserId = @UserId;
 DELETE FROM dbo.AdmissionApplications            WHERE UserId = @UserId;
 DELETE FROM dbo.ExamScheduleSelections           WHERE UserId = @UserId;

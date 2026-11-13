@@ -19,7 +19,7 @@ public class ExamPermitController : ControllerBase
         _examPermitService = examPermitService;
     }
 
-    /// <summary>The signed-in applicant's exam permit - schedule, venue, and permit number.</summary>
+    /// <summary>The signed-in applicant's exam permit - schedule and permit number.</summary>
     [HttpGet]
     [ProducesResponseType(typeof(ExamPermitResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

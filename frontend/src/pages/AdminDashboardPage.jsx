@@ -377,7 +377,9 @@ export default function AdminDashboardPage() {
       <header className="dash-intro">
         <div className="dash-intro-text">
           <h1 className="dash-title">{workspaceLabel}</h1>
-          <p className="dash-intro-meta">{academicYear ? `Academic Year ${academicYear}` : `All academic years (current: ${currentAcademicYear()})`}</p>
+          {!isEvaluator && (
+            <p className="dash-intro-meta">{academicYear ? `Academic Year ${academicYear}` : `All academic years (current: ${currentAcademicYear()})`}</p>
+          )}
         </div>
         <Link to={applicationsLink({ category: workspaceLabel, academicYear }, applicationsPath)} className="btn btn-primary dash-intro-cta">
           Open the queue
@@ -394,7 +396,9 @@ export default function AdminDashboardPage() {
       )}
 
       {!isLoading && !errorMessage && view && (
-        <div className={`dash-layout dash-layout-${workspace}`} key={workspace}>
+        // Without the enrollment panel (Scholarship, or an Evaluator) the departments chart takes the whole row,
+        // so both workspaces are laid out the same way and no gap is left beside it.
+        <div className={`dash-layout dash-layout-${workspace}${workspace !== "scholarship" && isEvaluator ? " dash-layout-scholarship" : ""}`} key={workspace}>
           <section className="dash-panel dash-ledger" aria-label={`${workspaceLabel} figures`}>
             <dl className="dash-figures">
               <div>
@@ -469,8 +473,9 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {workspace === "admission" && <AdmissionPipeline academicYear={academicYear} showTrend={!isEvaluator} />}
-      {workspace === "scholarship" && <ScholarshipSummary academicYear={academicYear} />}
+      {/* The Evaluator's dashboard ends at the departments chart: these summaries repeat its figures. */}
+      {!isEvaluator && workspace === "admission" && <AdmissionPipeline academicYear={academicYear} />}
+      {!isEvaluator && workspace === "scholarship" && <ScholarshipSummary academicYear={academicYear} />}
 
       {!isEvaluator && <ShortcutFab />}
     </AppLayout>

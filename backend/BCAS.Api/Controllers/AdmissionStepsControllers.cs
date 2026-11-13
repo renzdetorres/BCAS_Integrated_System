@@ -53,8 +53,8 @@ public class StaffExamResultsController : ControllerBase
     }
 }
 
-/// <summary>Staff side of interviews and the admission result they decide.</summary>
-[Authorize(Roles = "Admin,Evaluator")]
+/// <summary>Staff side of interviews and the admission result they decide: Support Staff run them, and the Admin can too.</summary>
+[Authorize(Roles = "Admin,SupportStaff")]
 [ApiController]
 [Route("api/staff/interviews")]
 public class StaffInterviewsController : ControllerBase

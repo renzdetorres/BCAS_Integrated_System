@@ -49,7 +49,7 @@ function collegeData(points, years) {
 }
 
 /** The admission process at a glance: the headline figures and five academic years of trend. */
-export default function AdmissionPipeline({ academicYear = "", showTrend = true }) {
+export default function AdmissionPipeline({ academicYear = "" }) {
   const [summary, setSummary] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
 
@@ -103,7 +103,6 @@ export default function AdmissionPipeline({ academicYear = "", showTrend = true 
         <FigureBars label="Admission applicants as a bar graph" figures={HEADLINE.map((figure) => ({ label: figure.label, value: summary[figure.key] }))} />
       </div>
 
-      {showTrend && (
       <div className="pipeline-charts">
         <div>
           <h3 className="pipeline-subtitle">Applicants and enrolled, last 5 academic years</h3>
@@ -119,7 +118,6 @@ export default function AdmissionPipeline({ academicYear = "", showTrend = true 
           </div>
         )}
       </div>
-      )}
     </section>
   );
 }

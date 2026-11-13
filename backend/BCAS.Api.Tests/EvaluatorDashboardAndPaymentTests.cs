@@ -1,6 +1,8 @@
 using BCAS.Api.Constants;
+using BCAS.Api.Controllers;
 using BCAS.Api.Exceptions;
 using BCAS.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -21,6 +23,39 @@ public class EvaluatorDashboardAndPaymentTests
         var error = await Assert.ThrowsAsync<ExamPaymentException>(() => service.VerifyAsync(Guid.NewGuid(), Guid.NewGuid(), invoice));
 
         Assert.Contains("SI", error.Message);
+    }
+
+    [Fact]
+    public void Support_Staff_schedule_interviews_and_the_Evaluator_does_not()
+    {
+        Assert.True(FeatureCatalog.IsKnown("SupportStaff", "/support-staff/interviews"));
+        Assert.Equal("/support-staff/interviews", FeatureCatalog.FindByApiPath("SupportStaff", new PathString("/api/staff/interviews"))?.Key);
+        Assert.DoesNotContain(FeatureCatalog.ByRole["Evaluator"], f => f.Key.Contains("interviews"));
+        Assert.Null(FeatureCatalog.FindByApiPath("Evaluator", new PathString("/api/staff/interviews")));
+    }
+
+    [Fact]
+    public void The_interview_endpoints_are_open_to_Support_Staff_and_Admin_but_not_the_Evaluator()
+    {
+        var roles = typeof(StaffInterviewsController)
+            .GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true)
+            .Cast<AuthorizeAttribute>()
+            .Select(a => a.Roles ?? string.Empty)
+            .Single()
+            .Split(',');
+
+        Assert.Contains("SupportStaff", roles);
+        Assert.Contains("Admin", roles);
+        Assert.DoesNotContain("Evaluator", roles);
+    }
+
+    [Fact]
+    public void The_exam_permit_hint_no_longer_mentions_a_venue()
+    {
+        var stage = ApplicationWorkflowSteps.DescribeAdmission("ExamScheduled");
+
+        Assert.NotNull(stage);
+        Assert.DoesNotContain("venue", stage!.NextAction, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

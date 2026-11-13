@@ -41,7 +41,7 @@ public static class ApplicationWorkflowSteps
         ["UnderReview"] = new(1, "Application evaluation", "The registrar is reviewing your application and documents."),
         ["PendingDocuments"] = new(1, "Document verification", "Upload any missing or rejected documents so the review can continue.", "/application-tracking"),
         ["DocumentsCompleted"] = new(1, "Document verification", "All your documents are in. Staff will verify them next."),
-        ["ExamScheduled"] = new(3, "Exam scheduled", "Your exam is scheduled. Open your exam permit for the date, time and venue.", "/exam-permit"),
+        ["ExamScheduled"] = new(3, "Exam scheduled", "Your exam is scheduled. Open your exam permit for the date and time.", "/exam-permit"),
         [AdmissionWorkflowConstants.DidNotTakeExam] = new(3, "Exam missed", "You missed your entrance exam. The registrar will help you get a new schedule."),
         ["ExamDone"] = new(4, "Result processing", "You took the exam. Your result will be released soon.", "/exam-result"),
         ["Registration"] = new(5, "Interview scheduling", "You passed the exam. The school will set your interview schedule. Bring the original copies of your submitted documents to the interview.", "/interview"),
