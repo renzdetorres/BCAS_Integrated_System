@@ -11,6 +11,8 @@ import "./ExamSlip.css";
  * filled in when the registrar releases the permit.
  */
 export default function ExamSlip({ permit, released = true }) {
+  // The scholarship exam has no fee, so its slip says so and has no invoice number.
+  const isFree = permit.examType === "Scholarship Exam";
   const level = [permit.levelApplying, permit.program].filter(Boolean).join(" · ");
   const fields = [
     ["Type of exam", permit.examType],
@@ -21,8 +23,8 @@ export default function ExamSlip({ permit, released = true }) {
     ["Level applying for", level],
     ["Date", formatCalendarDate(permit.examDate)],
     ["Time", formatTime(permit.examTime)],
-    ["Exam fee", permit.examFee ? formatPeso(permit.examFee) : released ? "" : "Set at release"],
-    ["Invoice (SI) no.", permit.invoiceNumber || (released ? "" : "Entered at release")],
+    ["Exam fee", isFree ? "Free" : permit.examFee ? formatPeso(permit.examFee) : released ? "" : "Set at release"],
+    ...(isFree ? [] : [["Invoice (SI) no.", permit.invoiceNumber || (released ? "" : "Entered at release")]]),
   ];
 
   return (

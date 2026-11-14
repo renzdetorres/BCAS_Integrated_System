@@ -16,7 +16,10 @@ function examLabel(permit) {
 
 function PermitModal({ permit, isReleasing, onRelease, onClose }) {
   const [invoiceNumber, setInvoiceNumber] = useState("");
-  const canRelease = !permit.isReleased && permit.documentsVerified && invoiceNumber.trim().length > 0;
+  // The entrance exam is paid for and invoiced, so releasing its permit needs the SI number. The scholarship exam is
+  // free: there is nothing to invoice, and staff only have to release the permit.
+  const needsInvoice = permit.examType !== "Scholarship Exam";
+  const canRelease = !permit.isReleased && permit.documentsVerified && (!needsInvoice || invoiceNumber.trim().length > 0);
   return (
     <Modal
       open
@@ -31,7 +34,7 @@ function PermitModal({ permit, isReleasing, onRelease, onClose }) {
             Close
           </button>
           {!permit.isReleased ? (
-            <button type="button" className="btn btn-primary" onClick={() => onRelease(permit, invoiceNumber.trim())} disabled={!canRelease || isReleasing}>
+            <button type="button" className="btn btn-primary" onClick={() => onRelease(permit, needsInvoice ? invoiceNumber.trim() : "")} disabled={!canRelease || isReleasing}>
               {isReleasing ? "Releasing..." : "Generate & release permit"}
             </button>
           ) : null}
@@ -56,7 +59,12 @@ function PermitModal({ permit, isReleasing, onRelease, onClose }) {
           </dd>
         </div>
       </dl>
-      {!permit.isReleased && permit.documentsVerified ? (
+      {!permit.isReleased && permit.documentsVerified && !needsInvoice ? (
+        <p className="permit-free-note" role="status">
+          The scholarship exam is free, so no SI number is needed. Release the permit to send it to the applicant.
+        </p>
+      ) : null}
+      {!permit.isReleased && permit.documentsVerified && needsInvoice ? (
         <div className="form-row permit-invoice">
           <label htmlFor="invoiceNumber">
             Invoice (SI) number

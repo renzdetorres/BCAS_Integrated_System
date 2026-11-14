@@ -42,3 +42,13 @@
 .permit-invoice > label {
   font-weight: 700;
 }
+
+/* A scholarship permit needs no SI number: just a line saying so, in the place the field would be. */
+.permit-free-note {
+  margin: 16px 0 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-tint);
+  font: var(--text-dense);
+  color: var(--color-text-secondary);
+}
