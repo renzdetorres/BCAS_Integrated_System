@@ -634,14 +634,21 @@ html .login-panel .input-with-icon input:focus {
   }
 }
 
-/* Phones: the band is only tall enough for the seal and name (the motto would sit across the bright
-   building), so the form stays mostly in view without scrolling. */
+/* Phones: no photo band or wave at the top at all. The seal and name sit above the title instead, so the
+   form starts at the top of the screen and stays in view without scrolling. */
 @media (max-width: 600px) {
-  .auth-page.login-page {
-    --hero-h: clamp(132px, 22dvh, 210px);
+  .login-page .auth-showcase,
+  .login-crest {
+    display: none;
   }
 
-  .login-page .auth-showcase-motto {
-    display: none;
+  .auth-form-side.login-side {
+    padding-top: clamp(28px, 9vw, 48px);
+  }
+
+  .login-panel .auth-mobile-brand {
+    display: flex;
+    justify-content: center;
+    margin-bottom: clamp(14px, 4vw, 22px);
   }
 }
