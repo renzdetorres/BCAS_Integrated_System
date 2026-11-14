@@ -336,3 +336,18 @@
   font-style: italic;
   width: 100%;
 }
+
+/* A verdict that can't be picked (Qualified, when the grade is below the minimum) reads as unavailable. */
+.verdict-option-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.verdict-option-disabled input {
+  cursor: not-allowed;
+}
+
+.verdict-blocked-note {
+  margin: 8px 0 0;
+  color: var(--color-status-red-text);
+}

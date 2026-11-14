@@ -52,6 +52,18 @@ public class EvaluatorScholarshipApplicationService : IEvaluatorScholarshipAppli
             throw new InvalidScreeningVerdictException(request.Verdict);
         }
 
+        // An applicant below the scholarship's minimum grade can't be marked Qualified; Not Qualified is always fine.
+        if (request.Verdict == "Qualified")
+        {
+            var application = await _applicationRepository.GetDetailAsync(applicationId, cancellationToken)
+                ?? throw new ScholarshipApplicationNotFoundException(applicationId);
+
+            if (application.MinimumGradeAverage.HasValue && application.GradeAverage < application.MinimumGradeAverage.Value)
+            {
+                throw new ScreeningRequirementNotMetException(application.GradeAverage, application.MinimumGradeAverage.Value);
+            }
+        }
+
         var remarks = string.IsNullOrWhiteSpace(request.Remarks) ? null : request.Remarks.Trim();
 
         _ = await _applicationRepository.UpsertScreeningAsync(applicationId, request.Verdict, remarks, evaluatorUserId, cancellationToken)

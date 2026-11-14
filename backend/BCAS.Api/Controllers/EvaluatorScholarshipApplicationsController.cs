@@ -76,6 +76,15 @@ public class EvaluatorScholarshipApplicationsController : ControllerBase
                 Status = StatusCodes.Status400BadRequest,
             });
         }
+        catch (ScreeningRequirementNotMetException ex)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Requirement not met",
+                Detail = ex.Message,
+                Status = StatusCodes.Status400BadRequest,
+            });
+        }
         catch (ScholarshipApplicationNotFoundException ex)
         {
             return NotFound(new ProblemDetails

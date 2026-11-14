@@ -9,6 +9,7 @@ import {
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
+import ConfirmDialog from "../components/ui/ConfirmDialog.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import ScholarshipFormSummary from "../components/ui/ScholarshipFormSummary.jsx";
 import WorkflowStepper, { SCHOLARSHIP_STEP_LABELS } from "../components/WorkflowStepper.jsx";
@@ -37,6 +38,9 @@ export default function ScholarshipScreeningPage() {
   const [savedMessage, setSavedMessage] = useState(null);
   const [advanceError, setAdvanceError] = useState(null);
   const [isAdvancing, setIsAdvancing] = useState(false);
+  // Saving a verdict and advancing the workflow both ask first; these hold the open confirmations.
+  const [confirmingVerdict, setConfirmingVerdict] = useState(false);
+  const [confirmingAdvance, setConfirmingAdvance] = useState(false);
 
   const loadApplication = useCallback(async () => {
     setIsLoading(true);
@@ -57,13 +61,28 @@ export default function ScholarshipScreeningPage() {
     loadApplication();
   }, [loadApplication]);
 
-  async function handleSubmit(event) {
+  // An applicant below the scholarship's minimum grade can't be marked Qualified (the server refuses it too).
+  const belowMinimum = application?.meetsMinimumGrade === false;
+  const belowMinimumNote = belowMinimum
+    ? `The applicant's grade average (${application.gradeAverage}) is below the minimum required (${application.minimumGradeAverage}), so they can't be marked Qualified.`
+    : null;
+
+  function handleSubmit(event) {
     event.preventDefault();
     if (!verdict) {
       setSaveError("Select a verdict before saving.");
       return;
     }
+    if (verdict === "Qualified" && belowMinimum) {
+      setSaveError(belowMinimumNote);
+      return;
+    }
 
+    setSaveError(null);
+    setConfirmingVerdict(true);
+  }
+
+  async function saveVerdict() {
     setIsSaving(true);
     setSaveError(null);
     setSavedMessage(null);
@@ -75,6 +94,7 @@ export default function ScholarshipScreeningPage() {
       setSaveError(error instanceof ApiError ? error.message : "Failed to save the screening verdict.");
     } finally {
       setIsSaving(false);
+      setConfirmingVerdict(false);
     }
   }
 
@@ -88,8 +108,15 @@ export default function ScholarshipScreeningPage() {
       setAdvanceError(error instanceof ApiError ? error.message : "Failed to advance the application.");
     } finally {
       setIsAdvancing(false);
+      setConfirmingAdvance(false);
     }
   }
+
+  // The stage "Advance to Next Stage" would move the application to, named as the tracker names it.
+  const stages = application?.workflowStages ?? [];
+  const nextStage = stages[stages.indexOf(application?.status) + 1];
+  const nextStageLabel = nextStage ? SCHOLARSHIP_STEP_LABELS[nextStage] ?? nextStage : null;
+  const verdictLabel = SCREENING_VERDICTS.find((option) => option.value === verdict)?.label ?? verdict;
 
   return (
     <AppLayout title="Scholarship Screening">
@@ -128,7 +155,7 @@ export default function ScholarshipScreeningPage() {
               )}
 
               {application.canAdvance && (
-                <button type="button" className="workflow-advance-button" onClick={handleAdvance} disabled={isAdvancing}>
+                <button type="button" className="workflow-advance-button" onClick={() => setConfirmingAdvance(true)} disabled={isAdvancing}>
                   {isAdvancing ? "Advancing..." : "Advance to Next Stage"}
                 </button>
               )}
@@ -329,18 +356,28 @@ export default function ScholarshipScreeningPage() {
                   <span className="form-row-label">Verdict</span>
                   <div className="verdict-options">
                     {SCREENING_VERDICTS.map((option) => (
-                      <label key={option.value} className="verdict-option">
+                      <label
+                        key={option.value}
+                        className={`verdict-option${option.value === "Qualified" && belowMinimum ? " verdict-option-disabled" : ""}`}
+                        title={option.value === "Qualified" && belowMinimum ? belowMinimumNote : undefined}
+                      >
                         <input
                           type="radio"
                           name="verdict"
                           value={option.value}
                           checked={verdict === option.value}
+                          disabled={option.value === "Qualified" && belowMinimum}
                           onChange={(event) => setVerdict(event.target.value)}
                         />
                         {option.label}
                       </label>
                     ))}
                   </div>
+                  {belowMinimum ? (
+                    <p className="form-note verdict-blocked-note" role="status">
+                      {belowMinimumNote}
+                    </p>
+                  ) : null}
                 </div>
 
                 <div className="form-row">
@@ -372,6 +409,30 @@ export default function ScholarshipScreeningPage() {
             </Card>
           </>
         )}
+
+      <ConfirmDialog
+        open={confirmingVerdict}
+        title="Save this screening verdict?"
+        message={`${application?.applicantName ?? "This applicant"} will be recorded as ${verdictLabel} for ${application?.scholarshipName ?? "this scholarship"}. Saving again later replaces this verdict.`}
+        confirmLabel={`Yes, save as ${verdictLabel}`}
+        confirmTone="primary"
+        cancelLabel="Go back"
+        isSubmitting={isSaving}
+        onConfirm={saveVerdict}
+        onCancel={() => setConfirmingVerdict(false)}
+      />
+
+      <ConfirmDialog
+        open={confirmingAdvance}
+        title="Advance to the next stage?"
+        message={`${application?.applicantName ?? "This application"} will move from ${SCHOLARSHIP_STEP_LABELS[application?.status] ?? application?.status} to ${nextStageLabel ?? "the next stage"}. This is recorded in the application's history.`}
+        confirmLabel="Yes, advance"
+        confirmTone="primary"
+        cancelLabel="Go back"
+        isSubmitting={isAdvancing}
+        onConfirm={handleAdvance}
+        onCancel={() => setConfirmingAdvance(false)}
+      />
     </AppLayout>
   );
 }

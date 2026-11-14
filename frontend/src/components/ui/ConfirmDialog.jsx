@@ -13,6 +13,8 @@ export default function ConfirmDialog({
   message,
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
+  // Red for something that can't be undone; "primary" (green) for an ordinary save.
+  confirmTone = "danger",
   isSubmitting = false,
   onConfirm,
   onCancel,
@@ -43,7 +45,7 @@ export default function ConfirmDialog({
           <Button type="button" tone="secondary" onClick={onCancel} disabled={isSubmitting}>
             {cancelLabel}
           </Button>
-          <Button type="button" tone="danger" onClick={onConfirm} loading={isSubmitting}>
+          <Button type="button" tone={confirmTone} onClick={onConfirm} loading={isSubmitting}>
             {isSubmitting ? "Please wait..." : confirmLabel}
           </Button>
         </div>
