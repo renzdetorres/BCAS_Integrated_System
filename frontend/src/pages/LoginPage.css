@@ -634,9 +634,9 @@ html .login-panel .input-with-icon input:focus {
   }
 }
 
-/* Phones: no photo band or wave at the top at all. The seal and name sit above the title instead, so the
-   form starts at the top of the screen and stays in view without scrolling. */
-@media (max-width: 600px) {
+/* Phones and tablets (the stacked layout): no photo band or wave at the top at all. The seal and name sit
+   above the title instead, so the form starts at the top of the screen and stays in view without scrolling. */
+@media (max-width: 900px) {
   .login-page .auth-showcase,
   .login-crest {
     display: none;
