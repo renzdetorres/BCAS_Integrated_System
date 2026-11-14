@@ -226,3 +226,13 @@
 .scholarship-form-note a {
   color: var(--color-primary-text);
 }
+
+/* The "complete your profile first" banner above the page's cards. */
+.scholarship-profile-notice {
+  margin-bottom: var(--space-4);
+}
+
+.scholarship-profile-link {
+  margin-left: var(--space-2);
+  vertical-align: middle;
+}

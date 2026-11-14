@@ -5,9 +5,11 @@ import {
   getMyScholarshipApplications,
   submitScholarshipApplication,
 } from "../api/scholarshipApi.js";
+import { getMyProfile } from "../api/profileApi.js";
 import { ApiError } from "../api/apiClient.js";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
+import Notice from "../components/ui/Notice.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import ConfirmSubmissionModal from "../components/ConfirmSubmissionModal.jsx";
 import {
@@ -64,6 +66,8 @@ export default function ScholarshipApplicationPage() {
   const [form, setForm] = useState(initialForm);
   const [errorMessage, setErrorMessage] = useState(null);
   const [profileIncomplete, setProfileIncomplete] = useState(false);
+  // undefined while unknown (still loading, or the check failed), null when there is no profile yet.
+  const [profile, setProfile] = useState(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
@@ -72,9 +76,12 @@ export default function ScholarshipApplicationPage() {
 
     // Settled independently: a failure loading past applications must not
     // hide the scholarship list (and with it the form).
-    Promise.allSettled([getAvailableScholarships(), getMyScholarshipApplications()]).then(
-      ([scholarshipResult, applicationResult]) => {
+    Promise.allSettled([getAvailableScholarships(), getMyScholarshipApplications(), getMyProfile()]).then(
+      ([scholarshipResult, applicationResult, profileResult]) => {
         if (cancelled) return;
+
+        // A failed profile check leaves it unknown: the server still refuses an application without a profile.
+        if (profileResult.status === "fulfilled") setProfile(profileResult.value);
 
         if (scholarshipResult.status === "fulfilled") {
           const scholarshipData = scholarshipResult.value;
@@ -99,6 +106,9 @@ export default function ScholarshipApplicationPage() {
       cancelled = true;
     };
   }, []);
+
+  // The applicant has no saved profile yet: it has to be completed before a scholarship application can be filed.
+  const profileMissing = profile === null;
 
   const selectedScholarship = scholarships.find((s) => String(s.scholarshipId) === form.scholarshipId);
 
@@ -162,6 +172,18 @@ export default function ScholarshipApplicationPage() {
 
   return (
     <AppLayout title="Scholarship Application">
+      {profileMissing && applications.length === 0 ? (
+        <div className="scholarship-profile-notice">
+          <Notice tone="warning" title="Complete your profile before you apply">
+            Your name, birth date, contact number and address come from your profile, and a scholarship application can only be
+            submitted once it is filled in.{" "}
+            <Link className="btn btn-primary btn-sm scholarship-profile-link" to="/profile">
+              Complete my profile
+            </Link>
+          </Notice>
+        </div>
+      ) : null}
+
       <Card className="scholarship-card">
         <h2>My Scholarship Applications</h2>
         {isLoading && <Skeleton variant="form" />}
@@ -422,7 +444,13 @@ export default function ScholarshipApplicationPage() {
               </p>
             )}
 
-            <button type="submit" disabled={isSubmitting || isLoading || scholarships.length === 0 || !detailsComplete || !allConsented}>
+            {profileMissing ? (
+              <p className="form-hint" role="status">
+                You can submit once your profile is complete. <Link to="/profile">Complete your profile</Link>.
+              </p>
+            ) : null}
+
+            <button type="submit" disabled={isSubmitting || isLoading || profileMissing || scholarships.length === 0 || !detailsComplete || !allConsented}>
               {isSubmitting ? "Submitting..." : "Submit Application"}
             </button>
           </form>
