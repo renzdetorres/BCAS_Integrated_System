@@ -51,6 +51,15 @@ html:has(.login-page) {
   border-radius: 0;
 }
 
+/* Flush with the window edges, so it is the whole window tall (the shared rule leaves a 12px margin). */
+@media (min-width: 901px) {
+  .login-page .auth-showcase {
+    top: 0;
+    height: max(480px, 100vh);
+    height: max(480px, 100dvh);
+  }
+}
+
 .auth-form-side.login-side {
   position: relative;
   z-index: 1;

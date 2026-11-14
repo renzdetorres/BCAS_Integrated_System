@@ -125,6 +125,20 @@
   }
 }
 
+/* Beside the form the photo is exactly one window tall and stays put while the page scrolls. Without this it
+   stretched to the height of the form, so anything that made the form taller (the password checklist
+   growing as you type) made the photo zoom and shift. */
+@media (min-width: 901px) {
+  .auth-showcase {
+    position: sticky;
+    top: 12px;
+    align-self: flex-start;
+    height: max(480px, calc(100vh - 24px));
+    height: max(480px, calc(100dvh - 24px));
+    flex-grow: 1;
+  }
+}
+
 @media (max-width: 900px) {
   .auth-showcase {
     display: none;
