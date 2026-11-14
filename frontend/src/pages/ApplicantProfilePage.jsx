@@ -1,5 +1,7 @@
 import { PHONE_ERROR, PHONE_HINT, cleanPhoneInput, isValidPhone } from "../utils/phone.js";
 import PhoneInput from "../components/ui/PhoneInput.jsx";
+import DatePicker from "../components/ui/DatePicker.jsx";
+import { manilaToday } from "../utils/format.js";
 import { useEffect, useRef, useState } from "react";
 import { getMyProfile, saveMyProfile } from "../api/profileApi.js";
 import { ApiError } from "../api/apiClient.js";
@@ -11,6 +13,12 @@ import ConfirmDialog from "../components/ui/ConfirmDialog.jsx";
 import { useToast } from "../context/ToastContext.jsx";
 import "./ApplicantProfilePage.css";
 import Skeleton from "../components/ui/Skeleton.jsx";
+
+// A birth date has to be in the past, so the newest day the calendar offers is yesterday (Philippine time).
+function manilaYesterday() {
+  const [year, month, day] = manilaToday().split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day - 1)).toISOString().slice(0, 10);
+}
 
 function emptyForm(session) {
   return {
@@ -226,14 +234,14 @@ export default function ApplicantProfilePage() {
 
             <div className="form-row">
               <label htmlFor="birthDate">Birth date</label>
-              <input
+              <DatePicker
                 id="birthDate"
                 name="birthDate"
-                type="date"
-                required
-                max={new Date().toISOString().slice(0, 10)}
+                placeholder="Select your birth date"
+                min="1900-01-01"
+                max={manilaYesterday()}
                 value={form.birthDate}
-                onChange={handleChange}
+                onChange={(next) => changeField("birthDate", next)}
                 {...errorProps("birthDate")}
               />
               {fieldError("birthDate")}

@@ -1,0 +1,144 @@
+/* A date field that opens the schedule calendar. The calendar itself is styled by SlotCalendar.css. */
+
+.date-picker {
+  position: relative;
+}
+
+/* Looks like every other text field on the form. */
+.date-picker-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font: var(--text-body);
+  text-align: left;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+}
+
+.date-picker-trigger:hover {
+  border-color: var(--color-primary-light);
+}
+
+.date-picker-trigger:focus-visible,
+.date-picker-trigger[aria-expanded="true"] {
+  outline: none;
+  border-color: var(--color-primary-light);
+  box-shadow: 0 0 0 3px var(--color-primary-focus-ring);
+}
+
+.date-picker.is-invalid .date-picker-trigger {
+  border-color: var(--color-status-red-text);
+}
+
+.date-picker-placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.date-picker-icon {
+  flex: none;
+  color: var(--color-text-secondary);
+}
+
+.date-picker-panel {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  width: min(352px, 100%);
+  min-width: min(300px, calc(100vw - 32px));
+  max-width: none;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg, 0 12px 32px -8px rgba(0, 0, 0, 0.25));
+  animation: ui-pop-in 160ms var(--ease-out);
+}
+
+.date-picker-head {
+  gap: var(--space-2);
+}
+
+.date-picker .slot-calendar-nav {
+  flex: none;
+  width: 32px;
+  height: 32px;
+}
+
+.date-picker-selects {
+  display: flex;
+  flex: 1 1 auto;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* The shared select style leaves 38px for its chevron; here the row is tight, so the chevron sits closer
+   to the edge and the text gets the room. (The long selector is there to outrank that shared rule.) */
+html .date-picker .date-picker-selects select:not([multiple]):not([size]):not([data-native]) {
+  padding-inline-end: 24px;
+  background-position: right 6px center;
+  background-size: 14px;
+}
+
+/* The month name is longer than the year, so it gets the larger share of the row. */
+.date-picker .date-picker-selects select:first-child {
+  flex: 3 1 0;
+}
+
+.date-picker .date-picker-selects select:last-child {
+  flex: 2 1 0;
+}
+
+.date-picker .date-picker-selects select {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  min-height: 36px;
+  padding: 4px 22px 4px 8px;
+  font-size: 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  font: var(--text-body);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.date-picker-selects select:focus-visible {
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: 2px;
+}
+
+.date-picker .slot-calendar-nav:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Every in-range day is pickable here, so each reads as a normal day, not a greyed-out one. */
+.date-picker-day {
+  color: var(--color-text-primary);
+}
+
+.date-picker-day:disabled {
+  color: var(--color-text-tertiary);
+  opacity: 0.45;
+}
+
+.date-picker-day:not(:disabled):hover:not(.slot-calendar-day-selected) {
+  background: var(--color-primary-tint-strong);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .date-picker-panel {
+    animation: none;
+  }
+}
