@@ -18,5 +18,7 @@ public static class AdminDocumentMappingExtensions
         UpdatedAt = item.UpdatedAt,
         ReviewedByName = item.ReviewedByName,
         ReviewedAt = item.ReviewedAt,
+        HasAdmissionApplication = item.HasAdmissionApplication,
+        HasScholarshipApplication = item.HasScholarshipApplication,
     };
 }

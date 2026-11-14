@@ -224,3 +224,68 @@
   flex-wrap: wrap;
   margin-top: 10px;
 }
+
+/* ---- Queue: what each applicant's documents are, and what they are for ---------------------------------------- */
+
+.dv-docs-cell {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.dv-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* One chip per document: its name, tinted by where it stands (the word is there too, so colour is never the only cue). */
+.dv-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px 2px 7px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dv-chip-good {
+  background: var(--color-status-green-bg);
+  color: var(--color-status-green-text);
+}
+
+.dv-chip-wait {
+  background: var(--color-status-amber-bg);
+  color: var(--color-status-amber-text);
+}
+
+.dv-chip-bad {
+  background: var(--color-status-red-bg);
+  color: var(--color-status-red-text);
+}
+
+.dv-for {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dv-for-chip {
+  padding: 2px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.dv-for-admission {
+  background: var(--color-primary-tint-strong);
+  color: var(--color-primary-text);
+}
+
+.dv-for-scholarship {
+  background: var(--color-status-purple-bg, var(--color-status-amber-bg));
+  color: var(--color-status-purple-text, var(--color-status-amber-text));
+}

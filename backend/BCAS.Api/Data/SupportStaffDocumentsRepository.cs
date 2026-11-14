@@ -9,7 +9,9 @@ public class SupportStaffDocumentsRepository : ISupportStaffDocumentsRepository
     private const string SelectColumns = @"
     d.DocumentId, d.UserId, u.FirstName, u.LastName, u.Email,
     d.DocumentType, d.FileName, d.Status, d.FlaggedReason, d.UploadedAt, d.UpdatedAt,
-    d.ReviewedAt, ru.FirstName AS ReviewedByFirstName, ru.LastName AS ReviewedByLastName";
+    d.ReviewedAt, ru.FirstName AS ReviewedByFirstName, ru.LastName AS ReviewedByLastName,
+    CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.AdmissionApplications aa WHERE aa.UserId = d.UserId AND aa.IsArchived = 0) THEN 1 ELSE 0 END AS bit) AS HasAdmissionApplication,
+    CAST(CASE WHEN EXISTS (SELECT 1 FROM dbo.ScholarshipApplications sa WHERE sa.UserId = d.UserId) THEN 1 ELSE 0 END AS bit) AS HasScholarshipApplication";
 
     private const string FromClause = @"
 FROM dbo.ApplicantDocuments d
@@ -219,6 +221,8 @@ WHERE DocumentId = @DocumentId AND IsArchived = 1;";
             ReviewedByName = reader.IsDBNull(reviewedByFirstNameOrdinal)
                 ? null
                 : $"{reader.GetString(reviewedByFirstNameOrdinal)} {reader.GetString(reader.GetOrdinal("ReviewedByLastName"))}",
+            HasAdmissionApplication = reader.GetBoolean(reader.GetOrdinal("HasAdmissionApplication")),
+            HasScholarshipApplication = reader.GetBoolean(reader.GetOrdinal("HasScholarshipApplication")),
         };
     }
 }

@@ -20,4 +20,11 @@ public class AdminDocumentListItemResponse
     /// <summary>Name of the staff member who last reviewed this document (BISAASS-52); null if never reviewed.</summary>
     public string? ReviewedByName { get; set; }
     public DateTime? ReviewedAt { get; set; }
+
+    /// <summary>
+    /// Which kind of application the applicant has on file, so a reviewer can tell what a document is for (the
+    /// report card and ID picture are shared). Filled in by the Document Verification queue; false elsewhere.
+    /// </summary>
+    public bool HasAdmissionApplication { get; set; }
+    public bool HasScholarshipApplication { get; set; }
 }

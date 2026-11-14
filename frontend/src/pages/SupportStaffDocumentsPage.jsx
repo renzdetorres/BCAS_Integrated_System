@@ -15,6 +15,7 @@ import FilePreviewModal from "../components/FilePreviewModal.jsx";
 import AppLayout from "../components/layout/AppLayout.jsx";
 import Card from "../components/ui/Card.jsx";
 import DataTable, { PersonCell, RowAction } from "../components/ui/DataTable.jsx";
+import Icon from "../components/ui/Icon.jsx";
 import Modal from "../components/ui/Modal.jsx";
 import StatusBadge from "../components/ui/StatusBadge.jsx";
 import "./SupportStaffDocumentsPage.css";
@@ -31,6 +32,51 @@ function formatDateTime(isoDateTime) {
 
 // A document is still waiting on a decision while it is Pending or Flagged; Verified and Rejected are decided.
 const OPEN_STATUSES = new Set(["Pending", "Flagged"]);
+
+// Short names for the chips in the queue; the full names stay in the tooltip and the review window.
+const SHORT_DOCUMENT_LABELS = {
+  ReportCard: "Report Card",
+  IdPicture: "2x2 ID",
+  PSA: "PSA",
+  TOR: "TOR",
+  SF10: "SF10",
+  ScholarshipForm: "Scholarship Form",
+};
+
+const DOCUMENT_FILTER_OPTIONS = Object.keys(SHORT_DOCUMENT_LABELS).map((type) => ({ value: type, label: DOCUMENT_TYPE_LABELS[type] ?? type }));
+
+const STATUS_FILTER_OPTIONS = [
+  { value: "Open", label: "To review (pending or flagged)" },
+  { value: "Pending", label: "Pending" },
+  { value: "Flagged", label: "Flagged" },
+  { value: "Verified", label: "All verified" },
+  { value: "Rejected", label: "Rejected" },
+];
+
+const FOR_FILTER_OPTIONS = [
+  { value: "Admission", label: "Admission" },
+  { value: "Scholarship", label: "Scholarship" },
+];
+
+/**
+ * What an applicant's documents are for: the applications they have on file. The report card and ID picture are
+ * shared, so the signed scholarship form is the one document that is always a scholarship one. An older API that
+ * doesn't say falls back to that and to the admission-only documents (PSA, TOR, SF10).
+ */
+function applicationsOf(documents) {
+  const known = documents.some((d) => typeof d.hasAdmissionApplication === "boolean");
+  const admission = known
+    ? documents.some((d) => d.hasAdmissionApplication)
+    : documents.some((d) => ["PSA", "TOR", "SF10"].includes(d.documentType));
+  const scholarship = known
+    ? documents.some((d) => d.hasScholarshipApplication)
+    : documents.some((d) => d.documentType === "ScholarshipForm");
+  return { admission, scholarship };
+}
+
+/** The tone and icon a document's status is shown with on its chip (the icon, so colour is never the only cue). */
+const CHIP_TONE = { Verified: "good", Pending: "wait", Flagged: "bad", Rejected: "bad" };
+const CHIP_ICON = { Verified: "check", Pending: "clock", Flagged: "alert", Rejected: "x" };
 
 /**
  * One row per applicant, however many documents they uploaded. Applicants with something still to decide come
@@ -73,6 +119,7 @@ function groupByApplicant(documents) {
       openCount: open.length,
       flaggedCount: flagged,
       status,
+      applications: applicationsOf(documentsInOrder),
       waitingSince,
       lastUploadedAt: documentsInOrder.reduce((latest, d) => (d.uploadedAt > latest ? d.uploadedAt : latest), documentsInOrder[0].uploadedAt),
     };
@@ -106,6 +153,10 @@ export default function SupportStaffDocumentsPage() {
   const [errorMessage, setErrorMessage] = useState(null);
   const [openUserId, setOpenUserId] = useState(applicantId);
   const [previewing, setPreviewing] = useState(null);
+  // The queue's filters (an empty value means "any").
+  const [statusFilter, setStatusFilter] = useState("");
+  const [forFilter, setForFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
 
   const [pendingActionId, setPendingActionId] = useState(null);
   const [reasonPromptId, setReasonPromptId] = useState(null);
@@ -132,6 +183,19 @@ export default function SupportStaffDocumentsPage() {
   }, [loadDocuments]);
 
   const groups = useMemo(() => groupByApplicant(documents), [documents]);
+  const filteredGroups = useMemo(
+    () =>
+      groups.filter((group) => {
+        if (statusFilter === "Open" && group.openCount === 0) return false;
+        if (statusFilter && statusFilter !== "Open" && group.status !== statusFilter) return false;
+        if (forFilter === "Admission" && !group.applications.admission) return false;
+        if (forFilter === "Scholarship" && !group.applications.scholarship) return false;
+        if (typeFilter && !group.documents.some((d) => d.documentType === typeFilter)) return false;
+        return true;
+      }),
+    [groups, statusFilter, forFilter, typeFilter],
+  );
+  const isFiltered = Boolean(statusFilter || forFilter || typeFilter);
   const openGroup = groups.find((group) => group.userId === openUserId) ?? null;
   const applicantsToReview = groups.filter((group) => group.openCount > 0).length;
 
@@ -230,11 +294,43 @@ export default function SupportStaffDocumentsPage() {
       render: (group) => <PersonCell name={group.name} detail={group.email} />,
     },
     {
+      key: "for",
+      header: "For",
+      accessor: (group) => [group.applications.admission ? "Admission" : "", group.applications.scholarship ? "Scholarship" : ""].join(" "),
+      searchable: false,
+      render: (group) =>
+        group.applications.admission || group.applications.scholarship ? (
+          <span className="dv-for">
+            {group.applications.admission ? <span className="dv-for-chip dv-for-admission">Admission</span> : null}
+            {group.applications.scholarship ? <span className="dv-for-chip dv-for-scholarship">Scholarship</span> : null}
+          </span>
+        ) : (
+          <span className="ui-cell-muted">-</span>
+        ),
+    },
+    {
       key: "documents",
       header: "Documents",
-      accessor: (group) => summaryText(group),
+      accessor: (group) => group.documents.map((d) => SHORT_DOCUMENT_LABELS[d.documentType] ?? d.documentType).join(" "),
       searchable: false,
-      render: (group) => <span className="dv-summary">{summaryText(group)}</span>,
+      render: (group) => (
+        <div className="dv-docs-cell">
+          <span className="dv-chips">
+            {group.documents.map((d) => (
+              <span
+                key={d.documentId}
+                className={`dv-chip dv-chip-${CHIP_TONE[d.status] ?? "wait"}`}
+                title={`${DOCUMENT_TYPE_LABELS[d.documentType] ?? d.documentType}: ${d.status}`}
+              >
+                <Icon name={CHIP_ICON[d.status] ?? "clock"} size={11} />
+                {SHORT_DOCUMENT_LABELS[d.documentType] ?? d.documentType}
+                <span className="visually-hidden"> ({d.status})</span>
+              </span>
+            ))}
+          </span>
+          <span className="dv-summary">{summaryText(group)}</span>
+        </div>
+      ),
     },
     {
       key: "status",
@@ -297,10 +393,25 @@ export default function SupportStaffDocumentsPage() {
 
         <DataTable
           columns={columns}
-          rows={groups}
+          rows={filteredGroups}
           getRowKey={(group) => group.userId}
           isLoading={isLoading}
-          emptyMessage={applicantId ? "This applicant hasn't uploaded any documents yet." : "No documents have been uploaded yet."}
+          filters={
+            applicantId
+              ? []
+              : [
+                  { key: "status", label: "All statuses", value: statusFilter, onChange: setStatusFilter, options: STATUS_FILTER_OPTIONS },
+                  { key: "for", label: "All types", value: forFilter, onChange: setForFilter, options: FOR_FILTER_OPTIONS },
+                  { key: "type", label: "All documents", value: typeFilter, onChange: setTypeFilter, options: DOCUMENT_FILTER_OPTIONS },
+                ]
+          }
+          emptyMessage={
+            isFiltered
+              ? "No applicants match these filters."
+              : applicantId
+                ? "This applicant hasn't uploaded any documents yet."
+                : "No documents have been uploaded yet."
+          }
           searchPlaceholder="Search by name or email"
           onRowClick={(group) => setOpenUserId(group.userId)}
           footerNote={
