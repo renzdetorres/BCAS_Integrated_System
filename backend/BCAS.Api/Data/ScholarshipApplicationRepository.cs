@@ -219,7 +219,9 @@ WHERE ApplicationId = @ApplicationId;";
 
         const string sql = @"
 SELECT a.ApplicationId, a.UserId, a.ScholarshipId, s.Name AS ScholarshipName, a.ScholarshipType,
-       a.GradeAverage, a.Status, a.SubmittedAt, a.LevelApplied
+       a.GradeAverage, a.Status, a.SubmittedAt, a.LevelApplied,
+       a.ApplicantFullName, a.SchoolLastAttended, a.GuardianRole, a.GuardianName, a.GuardianContact, a.GuardianEmail,
+       a.ConsentTerms, a.ConsentParticipation, a.ConsentCertification, a.ConsentedAt
 FROM dbo.ScholarshipApplications a
 JOIN dbo.Scholarships s ON s.ScholarshipId = a.ScholarshipId
 WHERE a.UserId = @UserId
@@ -374,7 +376,23 @@ VALUES
         SubmittedAt = reader.GetDateTime(reader.GetOrdinal("SubmittedAt")),
         Details = new ScholarshipApplicationDetails
         {
-            LevelApplied = reader.IsDBNull(reader.GetOrdinal("LevelApplied")) ? null : reader.GetString(reader.GetOrdinal("LevelApplied")),
+            LevelApplied = NullableString(reader, "LevelApplied"),
+            ApplicantFullName = NullableString(reader, "ApplicantFullName"),
+            SchoolLastAttended = NullableString(reader, "SchoolLastAttended"),
+            GuardianRole = NullableString(reader, "GuardianRole"),
+            GuardianName = NullableString(reader, "GuardianName"),
+            GuardianContact = NullableString(reader, "GuardianContact"),
+            GuardianEmail = NullableString(reader, "GuardianEmail"),
+            ConsentTerms = NullableBool(reader, "ConsentTerms"),
+            ConsentParticipation = NullableBool(reader, "ConsentParticipation"),
+            ConsentCertification = NullableBool(reader, "ConsentCertification"),
+            ConsentedAt = reader.IsDBNull(reader.GetOrdinal("ConsentedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("ConsentedAt")),
         },
     };
+
+    private static string? NullableString(SqlDataReader reader, string column) =>
+        reader.IsDBNull(reader.GetOrdinal(column)) ? null : reader.GetString(reader.GetOrdinal(column));
+
+    private static bool? NullableBool(SqlDataReader reader, string column) =>
+        reader.IsDBNull(reader.GetOrdinal(column)) ? null : reader.GetBoolean(reader.GetOrdinal(column));
 }

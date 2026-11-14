@@ -180,6 +180,15 @@ export default function ScholarshipApplicationPage() {
                   {application.scholarshipType} &middot; {application.levelApplied ? `${application.levelApplied} · ` : ""}Grade average {application.gradeAverage} &middot;
                   Submitted {formatDate(application.submittedAt)}
                 </p>
+                <p className="scholarship-form-action">
+                  <Link className="btn btn-secondary btn-sm" to={`/scholarships/form/${application.applicationId}`}>
+                    Print form to sign
+                  </Link>
+                  <span className="scholarship-form-note">
+                    Print it, have it signed by you and your parent or guardian, then upload the scan under{" "}
+                    <Link to="/application-tracking">My Application</Link>.
+                  </span>
+                </p>
               </li>
             ))}
           </ul>

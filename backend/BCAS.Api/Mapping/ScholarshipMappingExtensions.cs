@@ -46,5 +46,6 @@ public static class ScholarshipMappingExtensions
         Status = application.Status,
         SubmittedAt = application.SubmittedAt,
         LevelApplied = application.Details.LevelApplied,
+        Form = application.Details,
     };
 }

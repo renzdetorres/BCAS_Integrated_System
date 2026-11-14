@@ -208,3 +208,21 @@
   font-size: 0.95rem;
   cursor: pointer;
 }
+
+/* The ready-to-sign form: a button with a one-line reminder of what to do with it. */
+.scholarship-form-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin: var(--space-3) 0 0;
+}
+
+.scholarship-form-note {
+  font: var(--text-dense);
+  color: var(--color-text-secondary);
+}
+
+.scholarship-form-note a {
+  color: var(--color-primary-text);
+}

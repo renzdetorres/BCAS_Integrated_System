@@ -43,6 +43,7 @@ const ExamSchedulePage = lazyPage(() => import("./pages/ExamSchedulePage.jsx"));
 const ExamPermitPage = lazyPage(() => import("./pages/ExamPermitPage.jsx"));
 const ApplicationTrackingPage = lazyPage(() => import("./pages/ApplicationTrackingPage.jsx"));
 const ApplicationReceiptPage = lazyPage(() => import("./pages/ApplicationReceiptPage.jsx"));
+const ScholarshipFormPrintPage = lazyPage(() => import("./pages/ScholarshipFormPrintPage.jsx"));
 const ScholarshipScreeningPage = lazyPage(() => import("./pages/ScholarshipScreeningPage.jsx"));
 const ScholarshipSlotsPage = lazyPage(() => import("./pages/ScholarshipSlotsPage.jsx"));
 const EvaluatorSettingsPage = lazyPage(() => import("./pages/EvaluatorSettingsPage.jsx"));
@@ -173,6 +174,7 @@ export default function App() {
                 <Route path="/applications" element={<AdmissionApplicationPage />} />
                 <Route path="/applications/history" element={<MyApplicationHistoryPage />} />
                 <Route path="/applications/receipt/:applicationId" element={<ApplicationReceiptPage />} />
+                <Route path="/scholarships/form/:applicationId" element={<ScholarshipFormPrintPage />} />
                 <Route path="/scholarships" element={<ScholarshipApplicationPage />} />
                 <Route path="/documents" element={<DocumentsRedirect />} />
                 <Route path="/payment" element={<PaymentPage />} />
