@@ -184,7 +184,7 @@ export const PROFILE_MENU_BY_ROLE = {
     { to: "/profile", label: "Profile", icon: "user" },
     { to: "/settings", label: "Settings", icon: "settings" },
   ],
-  // Applicants change Appearance and layout on their Profile; every other role has this page.
+  // Applicants change Appearance and layout under Settings (a tab beside Password and Notifications); every other role has this page.
   Admin: [
     { to: "/admin/notification-settings", label: "Notification Settings", icon: "mail" },
     { to: "/admin/settings", label: "System Settings", icon: "settings" },

@@ -9,6 +9,7 @@ import { APPLICANT_SETTINGS_ENTRIES } from "../config/settingsSearchEntries.js";
 import "./ApplicantProfilePage.css";
 import Skeleton from "../components/ui/Skeleton.jsx";
 import PasswordChecklist from "../components/ui/PasswordChecklist.jsx";
+import AppearanceSettings from "../components/AppearanceSettings.jsx";
 import { checkPassword } from "../utils/passwordStrength.js";
 import { useSession } from "../context/SessionContext.jsx";
 
@@ -19,7 +20,10 @@ const SETTINGS_TABS = [
   },
   {
     section: "Preferences",
-    items: [{ key: "notifications", label: "Notification Preferences" }],
+    items: [
+      { key: "notifications", label: "Notification Preferences" },
+      { key: "appearance", label: "Appearance and Layout" },
+    ],
   },
 ];
 
@@ -212,6 +216,8 @@ export default function ApplicantSettingsPage() {
           </form>
       </Card>
       )}
+
+      {activeTab === "appearance" && <AppearanceSettings id="settings-appearance" />}
 
       {activeTab === "notifications" && (
       <Card id="settings-notifications" className="profile-card">

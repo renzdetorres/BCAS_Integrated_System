@@ -27,6 +27,7 @@ export const APPLICANT_SETTINGS_ENTRIES = [
   { id: "newPassword", tab: "password", label: "New password", group: "Change password", hint: "At least 8 characters" },
   { id: "confirmNewPassword", tab: "password", label: "Confirm new password", group: "Change password", keywords: "re-enter repeat retype" },
   { id: "settings-notifications", tab: "notifications", label: "Notification preferences", group: "Preferences", hint: "Choose which updates are emailed to you", keywords: "email alerts updates turn off on" },
+  { id: "settings-appearance", tab: "appearance", label: "Appearance and layout", group: "Preferences", hint: "Color scheme, font size and layout size for this device", keywords: "dark mode theme light contrast text size zoom scale" },
 ];
 
 /** Admin System Settings: the page's own sections and the admission fields worth finding quickly. */

@@ -35,7 +35,7 @@ function ChoiceGroup({ legend, name, options, selected, onChange, layout = "row"
 
 /**
  * Appearance and layout choices, kept in this browser and applied the moment they are picked.
- * Shown on the applicant's Profile and on the Appearance page every other role opens from the
+ * Shown in the applicant's Settings and on the Appearance page every other role opens from the
  * account menu, so everyone reaches the same controls.
  */
 export default function AppearanceSettings({ id = "appearance" }) {
